@@ -105,8 +105,8 @@ Tags are stored as stable, language-neutral keys and shown by their **tag name**
 | `officer_id_not_visible` | Officer ID number not visible | RIO non visible |
 | `police_armband_visible` | Police armband visible | Brassard police visible |
 | `no_police_armband_visible` | No police armband visible | Pas de brassard police visible |
-| `plainclothes_officers` | Plainclothes officers | Policiers en civil |
-| `minor_in_frame` | Minor in frame | Mineur à l'image |
+| `plainclothes_officers` | Plainclothes officers | Police en civil |
+| `minor_in_frame` | Minor in frame | Personne mineure à l'image |
 | `injury_visible` | Injury visible | Blessure visible |
 | `tear_gas` | Tear gas | Gaz lacrymogène |
 | `kettling` | Kettling (crowd encircled and held by police) | Nasse |
