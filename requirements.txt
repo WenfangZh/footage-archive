@@ -1,0 +1,4 @@
+# Runtime dependencies. Direct dependencies only, pinned exactly.
+Django==5.2.18
+argon2-cffi==25.1.0
+python-dotenv==1.2.2
