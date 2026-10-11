@@ -45,4 +45,7 @@ Learning build of a footage archive for defence lawyers. Three documents define 
 
 Fill these in as they're created:
 - Tests: `pytest`
-- Dev server: `python manage.py runserver`
+- Dev server: `python manage.py runserver` (mine to run)
+- System checks: `python manage.py check`
+- Extract translatable strings: `python manage.py makemessages -l fr --ignore=var --ignore=tests --ignore=media_test`, then translate in `locale/fr/LC_MESSAGES/django.po`
+- Compile translations: `python manage.py compilemessages` (the `.mo` files are gitignored; a test fails if they are missing or stale)
