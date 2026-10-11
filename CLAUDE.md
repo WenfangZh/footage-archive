@@ -34,6 +34,7 @@ Learning build of a footage archive for defence lawyers. Three documents define 
 
 - Every user-facing string goes through Django's translation functions (French default, English available). Tags are stored as language-neutral keys with translated tag names (SPEC.md §8).
 - GLOSSARY.md defines the design language of the archive: what its concepts are called in models, fields, UI text, docs and discussion (a `Clip` model, never `Video`). Programming terms used in their technical sense are exempt from its _Avoid_ lists: Django's `User` model, an HTTP file upload, a log handler. Where such a term could be mistaken for a design term, make the technical sense explicit (e.g. a short comment, or a name like `auth_user`).
+- The _Avoid_ lists govern English. French UI text uses natural French, with the one fixed French term GLOSSARY.md gives for each concept; add the French term there when it is first needed, and flag any case where two concepts would share a French word. For people, use gender-neutral phrasing when it stays short ("personne qui…"), otherwise the inclusive point (avocat·e).
 
 ## Environment
 
