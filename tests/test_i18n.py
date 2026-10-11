@@ -6,7 +6,7 @@ from django.urls import reverse
 BASE_DIR = Path(__file__).resolve().parent.parent
 LOCALE_DIR = BASE_DIR / 'locale'
 
-FRENCH_NOTICE = "Version d'apprentissage : non déployée, à ne pas utiliser pour de vraies images."
+FRENCH_NOTICE = "Version d'apprentissage : non déployée, à ne pas utiliser pour de vraies vidéos."
 ENGLISH_NOTICE = 'Learning build: not deployed, not for real footage.'
 
 

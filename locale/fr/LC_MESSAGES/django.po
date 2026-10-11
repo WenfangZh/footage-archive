@@ -22,8 +22,8 @@ msgstr "Anglais"
 
 #: templates/base.html:7 templates/home.html:5
 msgid "Footage archive"
-msgstr "Archive d'images"
+msgstr "Archive de vidéos"
 
 #: templates/home.html:6
 msgid "Learning build: not deployed, not for real footage."
-msgstr "Version d'apprentissage : non déployée, à ne pas utiliser pour de vraies images."
+msgstr "Version d'apprentissage : non déployée, à ne pas utiliser pour de vraies vidéos."
