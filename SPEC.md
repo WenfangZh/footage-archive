@@ -24,33 +24,36 @@ Two principles shape everything:
 |---|---|---|
 | Breach, seizure or compelled disclosure of the server | Everything stored | Data minimisation; operator holds no readable footage (target state, M5) |
 | People trying to identify filmers or protesters | Identities, home locations | Metadata stripping, no accounts linking uploads, no public views |
-| Lawyers acting for other parties | Footage used outside its purpose | Admission by vouching, case-scoped search |
-| Phished or compromised lawyer account | Bulk access | Mandatory 2FA, case scoping, access logs, volume alerts |
+| Lawyers acting for other parties | Footage used outside its purpose; exculpatory clips hidden or discredited | Admission by vouching, case-scoped search, count-based reports and tag removal (no single lawyer can hide a clip or a tag) |
+| Phished or compromised lawyer account | Bulk access | Mandatory 2FA, case scoping with size caps, audit log, alerts |
 | Malicious uploads | Lawyers' machines, archive credibility | Validation, quarantine, never executed, size caps, rate limits |
-| Pressure on the admin | Anything the admin can see | Admin manages accounts, not content |
+| Seizure of a code holder's phone or code card | The clip, its messages, the code holder's identity | Code card label never stored on the server, lawyers anonymous to code holders by default, lawyer tags never shown to code holders |
+| Pressure on the admin | Anything the admin can see | Admin manages accounts, not content; acts on reports only by count |
 
 Known limit outside our control: once a lawyer files a clip in a case, every party to that case can see it.
+
+Known residual risk: cases (time window and area) and the audit log must be server-readable for matching and alerts, so a breach or seizure of the server reveals which lawyer looked into which incident and which clips they downloaded, in effect part of the defence's strategy. M5 looks at how much of this can be encrypted.
 
 ## 4. Non-goals
 
 - No public views of footage: no gallery, feed, share links or embeds. Ever.
-- No automated identification of people (no face recognition).
+- No automated identification of people (no face recognition). The one exception: identifiers that can only belong to police or other public officials acting as such, like an officer's RIO number or a police armband, may be read automatically, for lawyers only. Anything a civilian could also carry or wear (a name tag, a face, clothing, a vehicle plate) is never identified automatically.
 - No custom cryptography, password hashing or authentication.
 - No social features.
 - No real footage or real users during the learning build.
 
 ## 5. Roles
 
-**Anonymous uploader.** No account. Uploads a video with optional fields and receives an upload code, shown once. With it they can come back to edit fields, add files, and read or answer messages from lawyers. Codes carry at least 128 bits of randomness in a human-friendly format (e.g. grouped base32 or a word list) and are stored only as a keyed hash (HMAC-SHA-256 with a server secret), so they can be looked up without being stored. Failed code attempts are rate-limited. A lost code cannot be recovered.
+**Uploader, then code holder.** No account. The **uploader** uploads one video with optional fields and receives an upload code, shown once; one code covers exactly one clip. From then on the system knows only a **code holder**: whoever presents the code. That may be several people, or someone other than the filmer, and the system cannot tell them apart; messages from lawyers are written with that in mind. With the code they can come back to edit fields, delete the clip (its hash record is kept), and read or answer messages from lawyers. The fields as given at upload are kept as the **as-uploaded** values for stated time, stated location and tags; each later **edit** records which field changed and when. Old values of context and contact details are never kept. Codes carry at least 128 bits of randomness in a human-friendly format (e.g. grouped base32 or a word list) and are stored only as a keyed hash (HMAC-SHA-256 with a server secret), so they can be looked up without being stored. Failed code attempts are rate-limited. A lost code cannot be recovered.
 
 **Defence lawyer.** Invitation only. Admission requires:
 1. verification that the person is an avocat, using the bar directory and confirming through the directory's contact details, never those supplied by the applicant;
-2. a vouch from a trusted defence organisation or an existing lawyer member;
+2. a vouch from a trusted defence organisation or an existing lawyer;
 3. admin approval.
 
-2FA mandatory. Access is case-scoped (§7). Admin can suspend or revoke at any time. In the learning build, steps 1 and 2 are recorded as fields on the account (`verified_via`, `vouched_by`), not integrated with anything external.
+An invited person is an **applicant** until admitted. Only an admitted, unsuspended **lawyer** can create cases or see anything about clips; a **suspended lawyer** sees nothing until reinstated. Throughout this spec, "lawyer" means the admitted, unsuspended kind. 2FA mandatory. Access is case-scoped (§7). Admin can suspend a lawyer at any time; suspension removes access and nothing else, and can be undone. Admin can also **revoke** a lawyer, after an explicit confirmation step: revocation closes all their cases and can never be undone. Neither deletes anything: the lawyer's audit entries stay, messages they sent stay visible to code holders (marked "this lawyer no longer has access"), and clips are unaffected. In the learning build, steps 1 and 2 are recorded as fields on the account (`verified_via`, `vouched_by`), not integrated with anything external.
 
-**Admin.** Manages invitations, roles, suspensions, flags and deletions. 2FA mandatory. Target state: cannot view footage or vault contents.
+**Admin.** Manages invitations, admissions, suspensions and revocations; approves cases larger than the caps (§7); deletes withdrawn clips (§7) and nothing else; receives **alerts** (unusual lawyer activity, §7, and a backed-up ingest queue, §9); can read the whole audit log and each clip's tag history. 2FA mandatory. Target state: cannot view footage or vault contents.
 
 Optional uploader accounts (from the first draft) are deferred: see §13.
 
@@ -58,33 +61,41 @@ Optional uploader accounts (from the first draft) are deferred: see §13.
 
 The server can only filter on what it can read, so filterable fields live in a search index restricted to data that is harmless if exposed. Everything else lives in the vault.
 
-- **Index (server-readable):** capture time (precise), coarse location (snapped to a 50 m grid; the grid size is a setting), duration, resolution, tags, upload time, processing status, hash record.
-- **Vault (target: encrypted to lawyer keys in M5):** evidence video file, proxy, attachments, precise location, free-text context, any contact details the uploader chose to give, messages.
+- **Index (server-readable):** capture time (precise; both the metadata time and the stated time, see §8), location (the stated location snapped to a 50 m grid plus its precision, and the metadata location as a grid cell only; the grid size is a setting), duration, resolution, tags (with their source and removal proposals), as-uploaded values and edit records, upload time, clip status (processing, failed, withdrawn), content warning and doubt marker, hash record.
+- **Vault (target: encrypted to lawyer keys in M5):** evidence copy, proxy, free-text context, any contact details the uploader or code holder chose to give, messages. No location is stored at better than grid precision, anywhere: precise GPS shows where the filmer stood, which for a clip filmed from a window is their home.
 
 Before M5 the vault is plaintext, but all vault access goes through a single storage interface so that encryption can be added without touching callers.
 
 ## 7. Lawyer access (case-scoped)
 
-- A lawyer creates a case: a label (no client names), plus a time window and area taken from the police report.
-- Search returns only clips whose capture time and coarse location fall inside that case (with configurable padding). There is no global browsing.
-- Lawyers watch low-res proxies and can download the evidence file with its hash record.
-- Every search, preview and download goes to an append-only audit log: lawyer, case, clip, action, time.
-- Unusual volume (e.g. many downloads in a short period) raises an alert to the admin.
-- A lawyer can send a message to the holder of an upload code. The uploader sees it on their next visit and decides whether to reply or identify themselves.
+- A lawyer creates a case: a **case label** (no client names), plus a time window and area taken from the police report. A case belongs to exactly one lawyer and covers one incident: it is a search scope, not the legal proceeding. Co-counsel each create their own case; a client arrested twice means two cases. A case's time window is at most 2 hours and its area at most 2 km across (both configurable); a larger case needs admin approval, and the request is logged. The window and area are fixed once created: to change them, the lawyer creates a new case. A lawyer can close a case; a closed case allows no searches, previews or downloads, but stays in the audit log. Cases close automatically after a period without use (default 1 year, configurable).
+- Search returns only clips that match the case: any part of the clip (stated time to stated time plus duration) overlaps the time window, and its stated location (the snapped point widened by its precision) overlaps the area, both with configurable padding. There is no global browsing.
+- Lawyers watch low-res proxies and can download the evidence copy with its hash record. Alongside each clip they see its metadata time and location, its as-uploaded values and its edits; a stated time that differs from the metadata time by more than a threshold (default 15 minutes, configurable) is highlighted.
+- Every lawyer action goes to an append-only audit log: case creation and closing, request for a larger case, search, preview, download, message, tag addition, tag removal proposal and report. Each entry records lawyer, case, action, time, and the clip where there is one (for searches, the number of matching clips instead). Entries are kept compact (keys and identifiers rather than text). The admin can read the whole log; each lawyer can read their own entries; no one else can read any of it.
+- Lawyers can add tags to a clip they can see, and propose removing any tag, including the code holder's. A tag is removed once three lawyers holding different cases have proposed removing it, and a removed tag comes back only by the same rule. Removal applies to what lawyers see: the code holder's own view and the as-uploaded values are untouched.
+- Lawyers see each tag's source (code holder or lawyer, never which lawyer), shown by colour plus a small text label so it does not rely on colour alone. Colours are configurable; defaults are blue for the code holder and orange, a pair that stays distinct for colour-blind readers. Lawyer tags and removal proposals are never shown to the code holder.
+- The admin can view each clip's **tag history**: every tag added, proposed for removal and removed on that clip, by whom and when, to spot disputes over a clip's tags. It is drawn from the audit log and the clip's edits, not kept separately.
+- Unusual volume (e.g. many downloads in a short period, or many cases created in a short period) raises an alert to the admin.
+- A lawyer can report a clip. A report that the time or place is wrong reaches the code holder as a message. A doubt about authenticity gets no verdict from anyone: other lawyers whose cases match the clip see a neutral **doubt marker** ("a lawyer has raised a doubt about this clip"), with no free text, which could leak one lawyer's case to another. A report of inappropriate content (not protest footage, sexual content, footage posted to expose someone) cannot be judged by the admin, who cannot view clips, so it works by count: one report puts a **content warning** on the clip for other lawyers; a report from a second lawyer holding a different case **withdraws** the clip (hidden from all search, code holder messaged). The admin may delete a withdrawn clip; its hash record is kept. No single lawyer can hide a clip.
+- A lawyer can send a message to the code holder of a clip. By default the code holder sees the sender only as "a verified defence lawyer"; each lawyer has a setting to identify themselves (name and bar) by default, and can override it per message. The code holder sees messages on their next visit and decides whether to reply or identify themselves. Messages are deleted a set time after the last message in their thread (default 6 months, configurable); lawyers are warned to save what they need into their own files.
 
 ## 8. Upload
 
 The interface is in French by default, with a visible switch to English (Django's built-in translation framework; see §11).
 
+Upload happens in two steps. First the uploader sends the file; it goes straight to quarantine, and a quick ffprobe read there checks that it is a real video (if not, it is deleted at once and no code is issued) and extracts only the metadata time and GPS to pre-fill the form (nothing is executed or served). Then the uploader fills in and confirms the fields below, and only then is the upload code issued. The full ingest (§9) runs after that. If the form is not confirmed within a set time (default 2 hours, configurable), the original is deleted and nothing is kept, not even a hash, since no clip ever existed.
+
 Everything is optional except the video:
 
-- capture time: taken from metadata when present, shown to the uploader to confirm or correct;
-- location: map pin or address, taken from metadata when present, shown to confirm or correct;
+- capture time: the **metadata time** is read from the file and can never be changed by anyone; it is unreliable (phone clocks, time zones, re-saving apps) and trivial to forge, which is why it is kept as found. The uploader sees it and gives a **stated time**, pre-filled with the metadata time, which they may keep or replace. Lawyers see both;
+- location: a **stated location**, given as a map pin or address plus a precision (exact spot, street or neighbourhood), pre-filled from the file's GPS when present as an exact spot. The **metadata location** is kept only as a grid cell;
 - tags: defaults below, plus custom tags;
 - context: free text;
 - contact details or social media handle: explicit opt-in, behind a plain-language warning that anyone who obtains this information could use it against them.
 
-Tags are stored as stable, language-neutral keys and shown in the user's language (French and English for now). Default tags describe what can be seen, not conclusions, and their keys stay country-neutral so the list can travel; the French labels use the French terms.
+If the stated time or stated location is left empty, the form warns plainly that no lawyer will be able to find the clip until both are given (see §13 on how long such clips are kept).
+
+Tags are stored as stable, language-neutral keys and shown by their **tag name** in the user's language (French and English for now). Default tags describe what can be seen, not conclusions, and their keys stay country-neutral so the list can travel; the French labels use the French terms.
 
 | Key | English | French |
 |---|---|---|
@@ -102,33 +113,33 @@ Tags are stored as stable, language-neutral keys and shown in the user's languag
 
 Custom tags are stored as typed, without translation.
 
-After upload, show the upload code once with a clear "save this now, it cannot be recovered" message.
+After upload, show the upload code once on a **code card** designed to be screenshotted, with a clear "save this now, it cannot be recovered" message. The card shows the code and a **card label** the uploader types, pre-filled with a suggestion they can edit (e.g. built from the stated date and tags). The card label appears only on the card and is never stored on the server. A plain-language warning says that anyone who finds the card can read the clip's messages and delete it.
 
 Limits: cap by file size, not duration (default 2 GB, configurable). Rate-limit uploads; IPs may be used transiently for this (in cache, short TTL) but are never written to the database or logs.
 
 ## 9. Ingest pipeline (background job)
 
-1. Store the upload in a quarantine area that is never served over the web.
-2. Validate with ffprobe that it is a real video; reject it otherwise.
+1. The original is already in quarantine (§8), an area that is never served over the web.
+2. Validate again with ffprobe, fully, that it is a real video (the first check ran at upload, §8); reject it otherwise.
 3. Compute SHA-256 of the file exactly as received.
 4. Compute per-stream hashes of the encoded packets (ffmpeg stream copy, no decoding).
-5. Extract metadata (ffprobe; exiftool optional). Capture time goes to the index. GPS goes to the index snapped to the grid, and to the vault at full precision. Device make and model, software versions and unique identifiers are discarded.
-6. Remux: copy the encoded video and audio streams into a new container without decoding or re-encoding them, keeping only those streams (data tracks are dropped) and none of the container metadata. This is the **evidence copy**. It is never re-encoded.
+5. Extract metadata (ffprobe; exiftool optional), confirming the quick read made at upload (§8). The metadata time goes to the index as found. GPS goes to the index as the metadata location, snapped to the grid; the precise value is never stored. Device make and model, software versions and unique identifiers are discarded.
+6. Remux: copy the encoded video and audio streams into a new container without decoding or re-encoding them, keeping only those streams (data tracks are dropped) and none of the container metadata. This is the **evidence copy**. It is never re-encoded. Information the player needs that lives inside the streams (such as rotation) survives; times, locations and tags are held on the clip (§6), not in the file.
 7. Recompute per-stream hashes on the evidence copy. They must equal step 4, or the job fails loudly.
 8. Generate a low-res H.264 proxy for previews. The proxy is never evidence.
-9. Delete the quarantined upload: once step 7 passes, it is the only copy still carrying identifying metadata. Keep the hash record (results of steps 3, 4 and 7, with timestamps). It proves the frames are untouched, and lets a copy of the original (for example, still on the filmer's phone) be matched against what we hold.
+9. Delete the original: once step 7 passes, it is the only copy still carrying identifying metadata. Keep the hash record (results of steps 3, 4 and 7, with timestamps). It proves the frames are untouched, and lets a copy of the original (for example, still on the filmer's phone) be matched against what we hold.
 
-If a job fails or exceeds its time limit, it is retried with backoff for up to 30 minutes. After the last failure, the quarantined upload is deleted immediately and the upload record shows a failed status, so an uploader who returns with their code knows to upload again. Uploads still waiting in the queue are never deleted for age; a backed-up queue alerts the admin instead.
+If a job fails or exceeds its time limit, it is retried with backoff for up to 30 minutes. After the last failure, the original is deleted immediately and the clip shows a failed status, so a code holder who returns with their code knows to upload again (with a new code). Clips still waiting for ingest are never deleted for age; a backed-up queue alerts the admin instead.
 
 Later: a trusted timestamp (RFC 3161) over the hash record.
 
 ## 10. Security requirements
 
 - Django's auth with the Argon2 password hasher. No hand-written auth or crypto.
-- Encryption only through PyNaCl (libsodium). M5 starts with a written design (key management: how a newly admitted lawyer gets access to existing clips, revocation, recovery) that is reviewed before any code is written.
+- Encryption only through PyNaCl (libsodium). M5 starts with a written design that is reviewed before any code is written. It must cover key management (how a newly admitted lawyer gets access to existing clips, revocation, recovery); how code holders, who have no keys, can still read messages addressed to them and their own context and contact details; and whether case labels, case areas and audit details can be encrypted without breaking matching and alerts (§3).
 - 2FA for lawyers and admin through a maintained package (propose options before choosing).
-- Uploaded files are untrusted: validate them, never execute them, never serve them from quarantine. Attachments are limited to an allowlist (images, video, PDF).
-- No IP addresses, user agents or uploader-supplied fields in application logs.
+- Uploaded files are untrusted: validate them, never execute them, never serve them from quarantine. Only video is accepted.
+- No IP addresses, user agents or fields supplied by uploaders or code holders in application logs. (The audit log is not an application log; its entries hold keys and identifiers, not such text.)
 - The audit log is append-only: the application has no update or delete path for it.
 - Secrets come from environment variables; `.env` is gitignored.
 
@@ -150,28 +161,28 @@ Each milestone: plan first, then small steps, with tests green before moving on.
 **M0: Skeleton.** Django project, settings from environment variables, translation set up (French default, English available), `.gitignore` (covering `.env`, `media_test/` and local media storage), pytest wired up, ffmpeg availability check, and a README with setup-from-scratch steps (pyenv included) that opens with a notice: learning build, not deployed, not for real footage.
 *Done when* a fresh clone plus the README steps gives a running server and a passing `pytest`, and the README's first lines carry that notice.
 
-**M1: Anonymous upload.** Upload form (§8) with the default tags in French and English, quarantine storage, size cap, upload code issued once and stored as a keyed hash, return-with-code to edit fields.
-*Done when* tests cover code issuance, wrong-code rejection, editing, and oversize rejection, and the form renders in both languages.
+**M1: Anonymous upload.** Two-step upload form (§8) with the default tags in French and English, quarantine storage, the quick metadata read that pre-fills time and location, size cap, code card, upload code issued once and stored as a keyed hash, return-with-code to edit fields (with as-uploaded values and edit records) or delete the clip, deletion of unconfirmed uploads.
+*Done when* tests cover code issuance, wrong-code rejection, editing (including that the metadata time cannot be changed and that old context and contact details are not kept), deletion, oversize rejection, and deletion of unconfirmed uploads, and the form renders in both languages.
 
 **M2: Ingest pipeline.** Steps 1–9 of §9.
-*Done when* tests show that (a) per-stream hashes match before and after stripping, (b) the evidence copy contains only video and audio streams and no GPS or device metadata, (c) a portrait video still displays upright, (d) a non-video file is rejected, (e) the proxy exists and the quarantined upload is gone, and (f) after a job's last failed retry, its quarantined upload is deleted and the record shows a failed status.
+*Done when* tests show that (a) per-stream hashes match before and after stripping, (b) the evidence copy contains only video and audio streams and no GPS or device metadata, (c) a portrait video still displays upright, (d) a non-video file is rejected, (e) the proxy exists and the original is gone, (f) after a job's last failed retry, its original is deleted and the clip shows a failed status, and (g) no stored location is finer than the grid.
 
-**M3: Roles.** Lawyer invitation and admission flow (§5), admin approval and revocation, mandatory 2FA, audit log model.
-*Done when* tests cover each role's permissions, including that an unapproved or suspended lawyer sees nothing.
+**M3: Roles.** Lawyer invitation and admission flow (§5), admin approval, suspension and revocation, mandatory 2FA, audit log model.
+*Done when* tests cover each role's permissions, including that an applicant, a suspended lawyer or a revoked lawyer sees nothing, and that revocation closes all of a lawyer's cases and cannot be undone.
 
-**M4: Case-scoped search.** Cases, matching, proxy previews, downloads with hash record, audit logging, volume alerts.
-*Done when* tests show that a lawyer only ever sees clips inside their own case windows, and that every access writes a log entry.
+**M4: Case-scoped search.** Cases with size caps, admin approval of larger cases, closing and automatic closing; matching; proxy previews with metadata vs stated values, as-uploaded values, edits and the time-mismatch highlight; downloads with hash record; audit logging; alerts.
+*Done when* tests show that a lawyer only ever sees clips that match their own open cases, that a case over the caps cannot be created without approval, and that every lawyer action writes an audit entry.
 
-**M5: Encryption.** Design document first, reviewed, then implementation behind the vault interface.
+**M5: Encryption.** Design document first (see §10 for what it must cover), reviewed, then implementation behind the vault interface.
 
-**M6: Upload robustness and messaging.** Resumable uploads (tus protocol), attachments (allowlist), lawyer-to-uploader messages through the upload code.
+**M6: Upload robustness, messaging and lawyer collaboration.** Resumable uploads (tus protocol); messages between lawyers and code holders (with the lawyer identification setting and message expiry); reports (wrong time or place, doubt marker, content warning and withdrawal); lawyer tags with tag source, three-lawyer removal and the admin's tag history.
 
-**Later.** Optional uploader accounts; trusted timestamps; verifiable excerpt export (per-packet hashes so an excerpt can be checked against the original); OCR of RIO numbers, lawyer-side only; native app; deployment; external security review.
+**Later.** Optional uploader accounts; a partner password-manager-type service where code holders can keep their upload codes (one-time setup, password-protected; check how far that protects against compelled disclosure under French law); attachments to a clip, allowlisted types only (notably high-resolution photos in which an officer's RIO number is legible); trusted timestamps; verifiable excerpt export (per-packet hashes so an excerpt can be checked against the original); OCR of RIO numbers, lawyer-side only (within the §4 exception); periodic collusion detection over the audit log (lawyers who repeatedly agree on the same tag removals or clip withdrawals), imperfect but a check on abuse of the count-based rules; watch the audit log's size and archive or compact it if it grows (it records human actions, so growth should be slow); native app; deployment; external security review.
 
 ## 13. Open questions
 
-- Keep optional uploader accounts at all, given that they link uploads together?
-- Discard the untouched original after hashing (current default), or also keep it in the vault?
-- Keep precise GPS in the vault, or drop it entirely?
+- Keep optional uploader accounts at all, given that they link uploads together? The same question covers letting a code holder attach a new clip to an existing upload code (for now: one code per clip, always). Linking has no collision risk, but it lets the server, and anyone who seizes it or the code, build a list of protests one person attended, and one leaked code then exposes every linked clip.
+- Discard the untouched original after hashing (current default), or also keep it in the vault? Keeping it would keep precise GPS inside the file, which ADR 0002 rules out unless that decision is revisited.
+- **Clips with no capture time or no location (important, revisit).** They can never match a case, so as they stand they are useless. We hold them for a while so the code holder can come back and add the missing time or place, but holding unfindable footage indefinitely conflicts with data minimisation. To decide: how long they are held, whether the code holder is warned, and what happens when the period ends.
 - Long term: stay standalone, or move to (or build on) GlobaLeaks for international use? Language-neutral tag keys keep that door open.
-- Before any real use: hosting-provider data retention rules versus anonymity, GDPR legal basis and impact assessment (AIPD), who operates the service (an association?), and which defence organisations could vouch for lawyers.
+- Before any real use: hosting-provider data retention rules versus anonymity, hosting-provider duties on illegal content (removal once aware, reporting e.g. to PHAROS) given that the admin cannot view clips, GDPR legal basis and impact assessment (AIPD), who operates the service (an association?), and which defence organisations could vouch for lawyers.

@@ -26,7 +26,8 @@ Learning build of a footage archive for defence lawyers. **SPEC.md is the source
 
 ## Conventions
 
-- Every user-facing string goes through Django's translation functions (French default, English available). Tags are stored as language-neutral keys with translated labels (SPEC.md §8).
+- Every user-facing string goes through Django's translation functions (French default, English available). Tags are stored as language-neutral keys with translated tag names (SPEC.md §8).
+- Use the vocabulary in GLOSSARY.md, in code as well as prose; don't use the words it lists under _Avoid_.
 
 ## Environment
 
