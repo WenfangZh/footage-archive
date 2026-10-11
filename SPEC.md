@@ -158,8 +158,8 @@ Later: a trusted timestamp (RFC 3161) over the hash record.
 
 Each milestone: plan first, then small steps, with tests green before moving on.
 
-**M0: Skeleton.** Django project, settings from environment variables, translation set up (French default, English available), `.gitignore` (covering `.env`, `media_test/` and local media storage), pytest wired up, ffmpeg availability check, and a README with setup-from-scratch steps (pyenv included) that opens with a notice: learning build, not deployed, not for real footage.
-*Done when* a fresh clone plus the README steps gives a running server and a passing `pytest`, and the README's first lines carry that notice.
+**M0: Skeleton.** Django project, settings from environment variables, Argon2 as the password hasher, translation set up (French default, English available), `.gitignore` (covering `.env`, `media_test/` and local media storage), pytest wired up, ffmpeg availability check, and a README with setup-from-scratch steps (pyenv included) that opens with a notice: learning build, not deployed, not for real footage.
+*Done when* a fresh clone plus the README steps gives a running server and a passing `pytest`, a test confirms new passwords are hashed with Argon2, and the README's first lines carry that notice.
 
 **M1: Anonymous upload.** Two-step upload form (§8) with the default tags in French and English, quarantine storage, the quick metadata read that pre-fills time and location, size cap, code card, upload code issued once and stored as a keyed hash, return-with-code to edit fields (with as-uploaded values and edit records) or delete the clip, deletion of originals whose form was never confirmed.
 *Done when* tests cover code issuance, wrong-code rejection, editing (including that the metadata time cannot be changed and that old context and contact details are not kept), deletion, oversize rejection, and deletion of originals whose form was never confirmed, and the form renders in both languages.
@@ -176,6 +176,9 @@ Each milestone: plan first, then small steps, with tests green before moving on.
 **M5: Encryption.** Design document first (see §10 for what it must cover), reviewed, then implementation behind the vault interface.
 
 **M6: Upload robustness, messaging and lawyer collaboration.** Resumable uploads (tus protocol); messages between lawyers and code holders (with the lawyer identification setting and message expiry); reports (wrong time or place, doubt marker, content warning and withdrawal); lawyer tags with tag source, three-lawyer removal and the admin's tag history.
+
+**M7: Licence.** Choose a licence for the code (e.g. MIT, Apache-2.0 or AGPL-3.0) and for the documentation, add it to the repository and name it in the README. Until then the code is all rights reserved. This milestone comes before accepting any outside contribution, whatever milestone we are on.
+*Done when* the repository has a LICENSE file and the README names the licence.
 
 **Later.** Optional uploader accounts; a partner password-manager-type service where code holders can keep their upload codes (one-time setup, password-protected; check how far that protects against compelled disclosure under French law); attachments to a clip, allowlisted types only (notably high-resolution photos in which an officer's RIO number is legible); trusted timestamps; verifiable excerpt export (per-packet hashes so an excerpt can be checked against the original); OCR of RIO numbers, lawyer-side only (within the §4 exception); periodic collusion detection over the audit log (lawyers who repeatedly agree on the same tag removals or clip withdrawals), imperfect but a check on abuse of the count-based rules; watch the audit log's size and archive or compact it if it grows (it records human actions, so growth should be slow); native app; deployment; external security review.
 
