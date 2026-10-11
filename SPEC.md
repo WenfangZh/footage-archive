@@ -81,7 +81,7 @@ Before M5 the vault is plaintext, but all vault access goes through a single sto
 
 ## 8. Upload
 
-The interface is in French by default, with a visible switch to English (Django's built-in translation framework; see §11).
+The interface is in French by default, with a visible switch to English (Django's built-in translation framework; see §11). A visitor whose browser prefers English gets English until they use the switch; a choice made with the switch always wins.
 
 Upload happens in two steps. First the uploader sends the file; it goes straight to quarantine, and a quick ffprobe read there checks that it is a real video (if not, it is deleted at once and no code is issued) and extracts only the metadata time and GPS to pre-fill the form (nothing is executed or served). Then the uploader fills in and confirms the fields below, and only then is the upload code issued. The full ingest (§9) runs after that. If the form is not confirmed within a set time (default 2 hours, configurable), the original is deleted and nothing is kept, not even a hash, since no clip ever existed.
 
