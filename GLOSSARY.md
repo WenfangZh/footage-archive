@@ -63,7 +63,7 @@ One video in the archive, together with its times, locations, tags and hash reco
 _Avoid_: Upload (as a noun), submission, video, footage (except for the material in general)
 
 **Original**:
-The clip's file exactly as received, before any processing. It is never served and never kept: it is deleted once the evidence copy is verified, when ingest finally fails, or when the upload is abandoned.
+The clip's file exactly as received, before any processing. It is never served and never kept: it is deleted once the evidence copy is verified, when ingest finally fails, or when the uploader never confirms the form.
 _Avoid_: Upload, quarantined upload, raw file
 
 **Evidence copy**:
