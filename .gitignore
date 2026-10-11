@@ -1,0 +1,38 @@
+# Secrets and local configuration
+.env
+
+# Local runtime data: SQLite database and media storage
+/var/
+
+# Manual test media (never commit video files)
+/media_test/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Compiled translations (built with `python manage.py compilemessages`)
+*.mo
+
+# Editors
+.idea
+.vscode
+
+# Claude Code: commit shared project settings only
+/.claude/*
+!/.claude/settings.json
+/CLAUDE.local.md
+
+# Empty placeholder files created by the Claude Code sandbox
+/.bash_profile
+/.bashrc
+/.gitconfig
+/.gitmodules
+/.mcp.json
+/.profile
+/.ripgreprc
+/.zprofile
+/.zshrc
