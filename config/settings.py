@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.translation import gettext_lazy as _
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -74,6 +75,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -86,7 +88,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -146,7 +148,17 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+# French by default, English available (SPEC.md §8). The language picked with the
+# switch wins, then the browser's preferred language if it is one of these, then French.
+# Source strings in code are written in English and translated in locale/.
+LANGUAGE_CODE = 'fr'
+
+LANGUAGES = [
+    ('fr', _('French')),
+    ('en', _('English')),
+]
+
+LOCALE_PATHS = [BASE_DIR / 'locale']
 
 # Times are stored in UTC (USE_TZ) and shown in French time, as in police reports.
 TIME_ZONE = 'Europe/Paris'

@@ -1,0 +1,28 @@
+{% load i18n %}<!doctype html>
+{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{% translate "Footage archive" %}{% endblock %}</title>
+</head>
+<body>
+  <header>
+    <form action="{% url 'set_language' %}" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      {% get_available_languages as LANGUAGES %}
+      {% get_language_info_list for LANGUAGES as languages %}
+      {% for language in languages %}
+        <button type="submit" name="language" value="{{ language.code }}" lang="{{ language.code }}"
+          {% if language.code == LANGUAGE_CODE %}aria-current="true" disabled{% endif %}>
+          {{ language.name_local|capfirst }}
+        </button>
+      {% endfor %}
+    </form>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# French translation of the footage archive.
+msgid ""
+msgstr ""
+"Project-Id-Version: footage-archive\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-11 17:25+0200\n"
+"PO-Revision-Date: 2026-10-11 17:30+0200\n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: config/settings.py:157
+msgid "French"
+msgstr "Français"
+
+#: config/settings.py:158
+msgid "English"
+msgstr "Anglais"
+
+#: templates/base.html:7 templates/home.html:5
+msgid "Footage archive"
+msgstr "Archive d'images"
+
+#: templates/home.html:6
+msgid "Learning build: not deployed, not for real footage."
+msgstr "Version d'apprentissage : non déployée, à ne pas utiliser pour de vraies images."
