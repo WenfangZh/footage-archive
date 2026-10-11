@@ -1,6 +1,6 @@
 # SPEC: footage archive for the defence (learning build)
 
-Working title. This file is the source of truth for what we're building and why. If something here seems wrong or ambiguous, ask before guessing; decisions we change get written back here.
+Working title. This file is the source of truth for what we're building and why. If something here seems wrong or ambiguous, ask before guessing; decisions we change get written back here. Terms are defined in GLOSSARY.md; decisions that are hard to reverse are recorded in `docs/adr/`.
 
 ## 1. Purpose
 
