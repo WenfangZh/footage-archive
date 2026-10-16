@@ -8,6 +8,7 @@
 </head>
 <body>
   <header>
+    {% block language_switch %}
     <form action="{% url 'set_language' %}" method="post">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.get_full_path }}">
@@ -20,6 +21,7 @@
         </button>
       {% endfor %}
     </form>
+    {% endblock %}
   </header>
   <main>
     {% block content %}{% endblock %}

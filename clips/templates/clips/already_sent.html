@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Already sent" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "This video was already sent" %}</h1>
+  <p>{% translate "Its upload code was shown once, on the page that opened when the form was confirmed. If you did not save it, it cannot be recovered." %}</p>
+{% endblock %}

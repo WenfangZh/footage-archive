@@ -51,7 +51,7 @@ def test_the_form_states_the_limit_and_checks_it_in_the_browser(client):
     assert 'Maximum size: 2 GB.' in html
     assert 'data-max-bytes="2000000000"' in html
     assert 'accept="video/*"' in html
-    assert '/static/clips/upload.js' in html
+    assert '/static/clips/forms.js' in html
 
 
 def test_the_csrf_token_comes_before_the_file(client):
@@ -168,12 +168,12 @@ def test_step_2_shows_what_the_quick_read_found(client, video):
     response = client.get(reverse('clips:confirm', args=[Original.objects.get().id]), headers=ENGLISH)
     html = response.content.decode()
     assert response.status_code == 200
-    assert 'The video contains a GPS position.' in html
+    assert 'Pre-filled from the GPS position in the video.' in html
     # Neither the page nor the browser's cache keeps it.
     assert 'no-store' in response['Cache-Control']
 
 
-def test_step_2_is_gone_once_the_form_is_confirmed_or_too_old(client, video, settings):
+def test_step_2_is_gone_once_too_old_or_confirmed(client, video, settings):
     post_file(client, video)
     original = Original.objects.get()
     url = reverse('clips:confirm', args=[original.id])
@@ -183,7 +183,7 @@ def test_step_2_is_gone_once_the_form_is_confirmed_or_too_old(client, video, set
     original.received_at = timezone.now()
     original.clip = Clip.objects.create(code_hash='0' * 64)
     original.save()
-    assert client.get(url).status_code == 404
+    assert client.get(url).status_code == 410
 
 
 def test_step_2_for_an_unknown_original_is_not_found(client):

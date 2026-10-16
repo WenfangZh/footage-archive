@@ -1,17 +1,52 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{% translate "Upload a video" %}{% endblock %}
 
 {% block content %}
   <h1>{% translate "Upload a video" %}</h1>
-  <p>{% translate "Step 2 of 2: when and where was it filmed?" %}</p>
-  {# The form itself comes in the next step of M1. #}
-  <p>
-    {% translate "Time found in the video:" %}
-    {% if read.metadata_time %}{{ read.metadata_time|date:"DATETIME_FORMAT" }}{% else %}{% translate "none" %}{% endif %}
-  </p>
-  <p>
-    {% if read.gps %}{% translate "The video contains a GPS position." %}{% else %}{% translate "The video contains no GPS position." %}{% endif %}
-  </p>
+  <p>{% translate "Step 2 of 2. Everything here is optional, and you can change it later with your upload code." %}</p>
+
+  <form method="post" data-submit-once>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <fieldset>
+      <legend>{% translate "Time" %}</legend>
+      <p>
+        {% translate "Time found in the video:" %}
+        {% if read.metadata_time %}{{ read.metadata_time|date:"DATETIME_FORMAT" }}{% else %}{% translate "none" %}{% endif %}
+      </p>
+      <p>{% translate "It is kept as found, and nobody can change it." %}</p>
+      {{ form.stated_time.as_field_group }}
+    </fieldset>
+
+    <fieldset>
+      <legend>{% translate "Place" %}</legend>
+      {% if read.gps %}<p>{% translate "Pre-filled from the GPS position in the video." %}</p>{% endif %}
+      {{ form.latitude.as_field_group }}
+      {{ form.longitude.as_field_group }}
+      {{ form.precision.as_field_group }}
+      {% if read.gps %}
+        {{ form.metadata_precision.as_field_group }}
+        <p>{% translate "Lawyers use it to check the place you give. The exact position is never kept." %}</p>
+      {% endif %}
+    </fieldset>
+
+    <p><strong>{% translate "If you leave the time or the place empty, no lawyer can find this clip until you add both." %}</strong></p>
+
+    {{ form.tags.as_field_group }}
+    {{ form.custom_tags.as_field_group }}
+
+    {{ form.context.as_field_group }}
+
+    <details{% if form.contact_details.value %} open{% endif %}>
+      <summary>{% translate "Leave contact details (optional)" %}</summary>
+      <p><strong>{% translate "Anyone who obtains these details could use them against you. Leave them only if you accept that risk." %}</strong></p>
+      {{ form.contact_details.as_field_group }}
+    </details>
+
+    <button type="submit">{% translate "Confirm and get my upload code" %}</button>
+  </form>
+  <script src="{% static 'clips/forms.js' %}" defer></script>
 {% endblock %}
