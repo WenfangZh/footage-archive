@@ -6,3 +6,7 @@ The archive never stores a location more precise than its grid (50 m by default)
 
 - **Precise GPS in the vault** (encrypted to lawyers from M5): rejected because a breach, seizure or compelled disclosure before or despite encryption would expose filmers' positions.
 - **Snapping the stated location to the grid**: rejected because a stated place like "Bastille" is vaguer than a grid cell, and snapping would invent precision; a stated precision is kept instead.
+
+## Addendum (2026-10-16)
+
+The grid is no longer a 50 m square grid: locations are snapped to H3 cells at resolution 11, about 50 m across (44–50 m over metropolitan France), and the resolution can be made coarser but never finer. ADR 0003 gives the reasons.

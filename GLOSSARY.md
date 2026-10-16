@@ -140,7 +140,7 @@ _French_: lieu des métadonnées
 _Avoid_: GPS, precise location
 
 **Grid**:
-The fixed square grid (50 m by default) that every stored location is snapped to. No location is ever kept more precisely.
+The fixed worldwide grid of cells (about 50 m across by default) that every stored location is snapped to. No location is ever kept more precisely.
 _French_: grille (a cell: maille)
 _Avoid_: Tiles, zones
 _Avoid in French_: case (for a cell; collides with the English Case)
