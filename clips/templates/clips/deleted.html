@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Clip deleted" %}{% endblock %}
+{% block language_next %}{% url 'home' %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Clip deleted" %}</h1>
+  <p>{% translate "The clip and everything it held are deleted. Its upload code no longer works." %}</p>
+{% endblock %}

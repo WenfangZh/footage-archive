@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{% translate "Your clip" %}{% endblock %}
+{# These pages answer only to a code sent by POST: switching language goes back to entering it. #}
+{% block language_next %}{% url 'clips:code_holder' %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Your clip" %}</h1>
+  {% if saved %}<p role="status">{% translate "Your changes are saved." %}</p>{% endif %}
+  <p>{% translate "Status:" %} {{ clip.get_status_display }}</p>
+  <p>
+    {% translate "Time found in the video:" %}
+    {% if clip.metadata_time %}{{ clip.metadata_time|date:"DATETIME_FORMAT" }}{% else %}{% translate "none" %}{% endif %}
+  </p>
+  <p>{% translate "It is kept as found, and nobody can change it." %}</p>
+
+  <form method="post" action="{% url 'clips:edit' %}" data-submit-once>
+    {% csrf_token %}
+    {{ form.code }}
+    {{ form.non_field_errors }}
+
+    <fieldset>
+      <legend>{% translate "Time" %}</legend>
+      {{ form.stated_time.as_field_group }}
+    </fieldset>
+
+    <fieldset>
+      <legend>{% translate "Place" %}</legend>
+      {% if clip.stated_cell %}
+        <p>{% translate "The position shown is the centre of the area we keep, not the exact spot you gave." %}</p>
+      {% endif %}
+      {{ form.latitude.as_field_group }}
+      {{ form.longitude.as_field_group }}
+      {{ form.precision.as_field_group }}
+      {% if metadata_size %}
+        <p>{% translate "GPS position found in the video, as we keep it:" %} {{ metadata_size }}</p>
+        {% if can_coarsen %}
+          {{ form.metadata_precision.as_field_group }}
+          <p>{% translate "You can have it kept less precisely, never more: the exact position is gone." %}</p>
+        {% endif %}
+      {% endif %}
+    </fieldset>
+
+    {{ form.tags.as_field_group }}
+    {{ form.custom_tags.as_field_group }}
+    {{ form.context.as_field_group }}
+
+    <details{% if form.contact_details.value %} open{% endif %}>
+      <summary>{% translate "Contact details (optional)" %}</summary>
+      <p><strong>{% translate "Anyone who obtains these details could use them against you. Leave them only if you accept that risk." %}</strong></p>
+      {{ form.contact_details.as_field_group }}
+    </details>
+
+    <p>{% translate "Lawyers see which details you changed, and roughly when, but not the old values. For the time, the place and the tags, they also see what you gave at upload." %}</p>
+    <button type="submit">{% translate "Save changes" %}</button>
+  </form>
+
+  <h2>{% translate "Delete this clip" %}</h2>
+  <form method="post" action="{% url 'clips:delete' %}">
+    {% csrf_token %}
+    <input type="hidden" name="code" value="{{ form.code.value }}">
+    {% if delete_unconfirmed %}<p role="alert">{% translate "Tick the box to confirm." %}</p>{% endif %}
+    <p>
+      <label>
+        <input type="checkbox" name="confirm_delete" value="yes" required>
+        {% translate "Yes, delete this clip and everything it holds, for good." %}
+      </label>
+    </p>
+    <button type="submit">{% translate "Delete" %}</button>
+  </form>
+  <script src="{% static 'clips/forms.js' %}" defer></script>
+{% endblock %}

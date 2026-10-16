@@ -2,7 +2,7 @@ from django import forms
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
-from .models import Precision
+from .models import STATED_RESOLUTIONS, Precision
 from .tags import CUSTOM_TAG_MAX_LENGTH, DEFAULT_TAGS
 
 CONTEXT_MAX_LENGTH = 4000
@@ -35,8 +35,11 @@ class FileForm(forms.Form):
         })
 
 
-class ConfirmForm(forms.Form):
-    """Upload step 2: everything is optional (SPEC.md §8). The metadata time is not a field."""
+class ClipFieldsForm(forms.Form):
+    """What the uploader gives at upload and the code holder can change later (SPEC.md §5, §8).
+
+    Everything is optional. The metadata time is never a field.
+    """
 
     stated_time = forms.DateTimeField(
         label=_('When was it filmed?'), required=False,
@@ -53,10 +56,6 @@ class ConfirmForm(forms.Form):
     precision = forms.ChoiceField(
         label=_('How precise is this place?'), required=False,
         choices=Precision.choices, widget=forms.RadioSelect,
-    )
-    metadata_precision = forms.ChoiceField(
-        label=_('How precisely may we keep the GPS position found in the video?'),
-        choices=METADATA_PRECISIONS, initial='11', widget=forms.RadioSelect,
     )
     tags = forms.MultipleChoiceField(
         label=_('What can be seen?'), required=False,
@@ -77,11 +76,6 @@ class ConfirmForm(forms.Form):
         label=_('Contact details or social media handle'), required=False,
         max_length=CONTACT_DETAILS_MAX_LENGTH,
     )
-
-    def __init__(self, *args, has_gps, **kwargs):
-        super().__init__(*args, **kwargs)
-        if not has_gps:
-            del self.fields['metadata_precision']
 
     def clean_custom_tags(self):
         names = []
@@ -110,4 +104,55 @@ class ConfirmForm(forms.Form):
             raise forms.ValidationError(_('Give both the latitude and the longitude, or neither.'))
         if latitude is not None and not cleaned.get('precision'):
             self.add_error('precision', _('Say how precise this place is.'))
+        return cleaned
+
+
+class ConfirmForm(ClipFieldsForm):
+    """Upload step 2 (SPEC.md §8)."""
+
+    metadata_precision = forms.ChoiceField(
+        label=_('How precisely may we keep the GPS position found in the video?'),
+        choices=METADATA_PRECISIONS, initial='11', widget=forms.RadioSelect,
+    )
+
+    def __init__(self, *args, has_gps, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not has_gps:
+            del self.fields['metadata_precision']
+
+
+class EditForm(ClipFieldsForm):
+    """The code holder's changes to a clip (SPEC.md §5). The code comes back with each change."""
+
+    code = forms.CharField(widget=forms.HiddenInput)
+    metadata_precision = forms.ChoiceField(
+        label=_('How precisely we keep the GPS position found in the video'),
+        widget=forms.RadioSelect,
+    )
+
+    def __init__(self, *args, stated_centre, stated_resolution, metadata_resolution, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stated_centre = stated_centre
+        self.stated_resolution = stated_resolution
+        # The metadata location can only be made coarser (ADR 0004).
+        coarser = [(value, label) for value, label in METADATA_PRECISIONS
+                   if metadata_resolution is not None and int(value) <= metadata_resolution]
+        if len(coarser) > 1:
+            self.fields['metadata_precision'].choices = coarser
+            self.fields['metadata_precision'].initial = str(metadata_resolution)
+        else:
+            del self.fields['metadata_precision']
+
+    def clean(self):
+        cleaned = super().clean()
+        precision = cleaned.get('precision')
+        position = (cleaned.get('latitude'), cleaned.get('longitude'))
+        # The form shows the centre of the stored cell, not where the clip was filmed.
+        # Making the place more precise from that centre would invent precision.
+        if (
+            precision and self.stated_centre is not None
+            and position == self.stated_centre
+            and STATED_RESOLUTIONS[precision] > self.stated_resolution
+        ):
+            self.add_error('precision', _('To make the place more precise, give its new position.'))
         return cleaned

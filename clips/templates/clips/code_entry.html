@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Come back with your upload code" %}{% endblock %}
+{% block language_next %}{% url 'clips:code_holder' %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Come back with your upload code" %}</h1>
+  {% if wrong_code %}
+    <p role="alert">{% translate "No clip has this code. Check it and try again." %}</p>
+  {% endif %}
+  {# Sent by POST, so the code never appears in a URL, the browser history or a server log. #}
+  <form method="post" action="{% url 'clips:code_holder' %}">
+    {% csrf_token %}
+    <p>
+      <label for="code">{% translate "Upload code" %}</label>
+      <input type="text" id="code" name="code" required autocomplete="off" autocapitalize="characters" spellcheck="false">
+    </p>
+    <button type="submit">{% translate "Open my clip" %}</button>
+  </form>
+{% endblock %}

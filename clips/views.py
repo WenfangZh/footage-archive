@@ -3,19 +3,24 @@ import datetime
 from django.conf import settings
 from django.http import Http404
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
 from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_http_methods
 
-from . import probe
+from . import grid, probe, vault
 from .confirmation import AlreadyConfirmed, confirm_upload
-from .forms import ConfirmForm, FileForm
+from .editing import apply_edits, clip_for_code, code_holder_tags, delete_clip
+from .forms import METADATA_PRECISIONS, ConfirmForm, EditForm, FileForm
 from .models import Original, Precision
 from .tags import DEFAULT_TAGS
 from .upload_codes import display
 from .uploads import size_limit_display
+
+# How the metadata location's cell size is described, by H3 resolution.
+METADATA_SIZES = {int(value): label for value, label in METADATA_PRECISIONS}
 
 # Fields that error reports must never show (SPEC.md §10).
 PRIVATE_FIELDS = ('latitude', 'longitude', 'custom_tags', 'context', 'contact_details')
@@ -82,6 +87,7 @@ def confirm(request, original_id):
                 'missing_time_or_place': (
                     form.cleaned_data['stated_time'] is None or form.cleaned_data['latitude'] is None
                 ),
+                'return_url': request.build_absolute_uri(reverse('clips:code_holder')),
             })
     return render(request, 'clips/confirm.html', {'form': form, 'read': read}, status=400 if form.errors else 200)
 
@@ -109,6 +115,94 @@ def initial_values(read):
         initial['latitude'], initial['longitude'] = (round(value, 6) for value in read.gps)
         initial['precision'] = Precision.EXACT_SPOT
     return initial
+
+
+@never_cache
+@sensitive_post_parameters('code')
+@sensitive_variables('typed')
+@require_http_methods(['GET', 'POST'])
+def code_holder(request):
+    """Coming back with an upload code. The code is never put in a URL or a session."""
+    if request.method == 'GET':
+        return render(request, 'clips/code_entry.html')
+    typed = request.POST.get('code', '')
+    clip = clip_for_code(typed)
+    if clip is None:
+        return wrong_code(request)
+    return render_clip(request, clip, edit_form(clip, code=typed))
+
+
+@never_cache
+@sensitive_post_parameters('code', *PRIVATE_FIELDS)
+@sensitive_variables('typed')
+@require_http_methods(['POST'])
+def edit(request):
+    typed = request.POST.get('code', '')
+    clip = clip_for_code(typed)
+    if clip is None:
+        return wrong_code(request)
+    form = edit_form(clip, data=request.POST)
+    if not form.is_valid():
+        return render_clip(request, clip, form, status=400)
+    changed = apply_edits(clip, form.cleaned_data)
+    return render_clip(request, clip, edit_form(clip, code=typed), saved=bool(changed))
+
+
+@never_cache
+@sensitive_post_parameters('code')
+@sensitive_variables('typed')
+@require_http_methods(['POST'])
+def delete(request):
+    typed = request.POST.get('code', '')
+    clip = clip_for_code(typed)
+    if clip is None:
+        return wrong_code(request)
+    if request.POST.get('confirm_delete') != 'yes':
+        return render_clip(request, clip, edit_form(clip, code=typed), delete_unconfirmed=True, status=400)
+    delete_clip(clip)
+    return render(request, 'clips/deleted.html')
+
+
+def wrong_code(request):
+    # The same answer whether the code is mistyped or unknown.
+    return render(request, 'clips/code_entry.html', {'wrong_code': True}, status=404)
+
+
+def edit_form(clip, code=None, data=None):
+    """The edit form for a clip: pre-filled from it, or bound to what was sent."""
+    stated_centre = None
+    if clip.stated_cell is not None:
+        stated_centre = tuple(round(value, 6) for value in grid.centre(clip.stated_cell))
+    kwargs = {
+        'stated_centre': stated_centre,
+        'stated_resolution': grid.resolution(clip.stated_cell) if clip.stated_cell else None,
+        'metadata_resolution': grid.resolution(clip.metadata_cell) if clip.metadata_cell else None,
+    }
+    if data is not None:
+        return EditForm(data, **kwargs)
+    keys, custom = code_holder_tags(clip)
+    initial = {
+        'code': code,
+        'stated_time': clip.stated_time,
+        'precision': clip.stated_precision,
+        'tags': keys,
+        'custom_tags': ', '.join(custom),
+        'context': vault.get_text(clip, vault.CONTEXT),
+        'contact_details': vault.get_text(clip, vault.CONTACT_DETAILS),
+    }
+    if stated_centre is not None:
+        initial['latitude'], initial['longitude'] = stated_centre
+    return EditForm(initial=initial, **kwargs)
+
+
+def render_clip(request, clip, form, status=200, **flags):
+    return render(request, 'clips/clip.html', {
+        'clip': clip,
+        'form': form,
+        'metadata_size': METADATA_SIZES.get(grid.resolution(clip.metadata_cell)) if clip.metadata_cell else None,
+        'can_coarsen': 'metadata_precision' in form.fields,
+        **flags,
+    }, status=status)
 
 
 def card_label_suggestion(cleaned):

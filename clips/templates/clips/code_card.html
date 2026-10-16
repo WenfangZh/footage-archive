@@ -18,6 +18,7 @@
       <label for="card-label">{% translate "Card label, to recognise this card later. It appears only here and is never sent to us." %}</label>
       <input type="text" id="card-label" value="{{ card_label }}" autocomplete="off">
     </p>
+    <p>{% translate "To come back:" %} <a href="{{ return_url }}">{{ return_url }}</a></p>
   </section>
 
   <p>{% translate "With this code you can come back to change the clip's details, delete the clip, and read messages from lawyers." %}</p>
