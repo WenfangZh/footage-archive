@@ -13,14 +13,14 @@ A footage archive for defence lawyers: people upload short phone videos of arres
 Instead of following the steps below one by one, you can paste this into an AI coding assistant that can run commands in your terminal (such as Claude Code). Read what it proposes before approving: it will ask for `sudo` and change your shell configuration.
 
 ```text
-Set up the footage-archive project on my machine (Ubuntu or WSL2, zsh) by following
+Set up the footage-archive project on my machine (Ubuntu or WSL2, bash or zsh) by following
 the "Setup from scratch" section of its README:
 https://github.com/WenfangZh/footage-archive#setup-from-scratch
 
 - First check what is already installed (apt packages, pyenv, pyenv-virtualenv, the
   footage-archive virtualenv, an existing clone) and skip the steps that are done.
-- Before running any command that uses sudo or changes ~/.zshrc, show it to me and
-  wait for my OK.
+- Before running any command that uses sudo or changes ~/.bashrc or ~/.zshrc, show it
+  to me and wait for my OK.
 - Create .env from .env.example and generate the Django secret key locally, writing it
   straight into .env in single quotes. Never print the key, show it to me or send it
   anywhere, and never commit .env.
@@ -31,7 +31,7 @@ https://github.com/WenfangZh/footage-archive#setup-from-scratch
 
 ## Setup from scratch
 
-These steps assume Ubuntu (including WSL2) and zsh. Keep the repository in the Linux filesystem.
+These steps assume Ubuntu (including WSL2) and bash or zsh. Keep the repository in the Linux filesystem.
 
 ### 1. System packages
 
@@ -52,7 +52,16 @@ Skip this if you already have pyenv with the pyenv-virtualenv plugin.
 curl -fsSL https://pyenv.run | bash
 ```
 
-Then add these lines to `~/.zshrc` and open a new terminal:
+Then add these lines to your shell's startup file and open a new terminal. For bash, in `~/.bashrc`:
+
+```sh
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init - bash)"
+eval "$(pyenv virtualenv-init -)"
+```
+
+For zsh, in `~/.zshrc`:
 
 ```sh
 export PYENV_ROOT="$HOME/.pyenv"
