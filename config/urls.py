@@ -20,6 +20,7 @@ from django.views.generic import TemplateView
 
 urlpatterns = [
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
+    path('', include('clips.urls')),
     # Django's set_language view, used by the language switch.
     path('i18n/', include('django.conf.urls.i18n')),
     path('admin/', admin.site.urls),

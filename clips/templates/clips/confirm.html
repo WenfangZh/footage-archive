@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Upload a video" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Upload a video" %}</h1>
+  <p>{% translate "Step 2 of 2: when and where was it filmed?" %}</p>
+  {# The form itself comes in the next step of M1. #}
+  <p>
+    {% translate "Time found in the video:" %}
+    {% if read.metadata_time %}{{ read.metadata_time|date:"DATETIME_FORMAT" }}{% else %}{% translate "none" %}{% endif %}
+  </p>
+  <p>
+    {% if read.gps %}{% translate "The video contains a GPS position." %}{% else %}{% translate "The video contains no GPS position." %}{% endif %}
+  </p>
+{% endblock %}

@@ -156,6 +156,14 @@ for directory in (QUARANTINE_DIR, FILE_UPLOAD_TEMP_DIR):
 FILE_UPLOAD_PERMISSIONS = 0o600
 FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o700
 
+# Every incoming file passes the size cap first, then goes to a temporary file in
+# quarantine, never to memory (clips.uploads). One file per request.
+FILE_UPLOAD_HANDLERS = [
+    'clips.uploads.SizeCapUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+]
+DATA_UPLOAD_MAX_NUMBER_FILES = 1
+
 
 # Upload (SPEC.md §5, §8)
 

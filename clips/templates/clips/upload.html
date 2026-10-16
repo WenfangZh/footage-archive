@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{% translate "Upload a video" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Upload a video" %}</h1>
+  <p>{% translate "Step 1 of 2: choose the video. Next, you can say when and where it was filmed." %}</p>
+
+  {% if problem == "too_large" %}
+    <p role="alert">{% blocktranslate %}This file is larger than {{ size_limit }}, so it was refused. Nothing was kept.{% endblocktranslate %}</p>
+  {% elif problem == "not_a_video" %}
+    <p role="alert">{% translate "This file is not a video we can accept (MP4, MOV, MKV or WebM). It was deleted, and nothing was kept." %}</p>
+  {% endif %}
+
+  {# The CSRF token comes before the file, so it still arrives if the file is stopped. #}
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.file.errors }}
+    <p>
+      <label for="{{ form.file.id_for_label }}">{{ form.file.label }}</label>
+      {{ form.file }}
+    </p>
+    <p>{% blocktranslate %}Maximum size: {{ size_limit }}.{% endblocktranslate %}</p>
+    <p id="file-too-large" role="alert" hidden>{% blocktranslate %}This file is larger than {{ size_limit }}, so it cannot be sent.{% endblocktranslate %}</p>
+    <button type="submit">{% translate "Send" %}</button>
+  </form>
+  <script src="{% static 'clips/upload.js' %}" defer></script>
+{% endblock %}

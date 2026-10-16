@@ -4,4 +4,5 @@
 {% block content %}
   <h1>{% translate "Footage archive" %}</h1>
   <p>{% translate "Learning build: not deployed, not for real footage." %}</p>
+  <p><a href="{% url 'clips:upload' %}">{% translate "Upload a video" %}</a></p>
 {% endblock %}
