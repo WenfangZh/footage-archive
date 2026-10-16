@@ -21,9 +21,10 @@ https://github.com/WenfangZh/footage-archive#setup-from-scratch
   footage-archive virtualenv, an existing clone) and skip the steps that are done.
 - Before running any command that uses sudo or changes ~/.bashrc or ~/.zshrc, show it
   to me and wait for my OK.
-- Create .env from .env.example and generate the Django secret key locally, writing it
-  straight into .env in single quotes. Never print the key, show it to me or send it
-  anywhere, and never commit .env.
+- Create .env from .env.example and generate its two keys (DJANGO_SECRET_KEY and
+  UPLOAD_CODE_KEY, different from each other) locally, writing them straight into .env
+  in single quotes. Never print the keys, show them to me or send them anywhere, and
+  never commit .env.
 - If a step fails, stop and tell me what failed instead of working around it.
 - Finish by running `python manage.py check` and `pytest`, report the results, and
   give me the command to start the dev server.
@@ -97,10 +98,11 @@ cp .env.example .env
 python -c "from django.core.management.utils import get_random_secret_key as k; print(k())"
 ```
 
-Open `.env` and set the generated key in single quotes, since it can contain `#` or `$`:
+Run the `python -c` command twice: one key for Django, a different one for hashing upload codes. Open `.env` and set them in single quotes, since they can contain `#` or `$`:
 
 ```
-DJANGO_SECRET_KEY='paste-the-generated-key-here'
+DJANGO_SECRET_KEY='paste-the-first-generated-key-here'
+UPLOAD_CODE_KEY='paste-the-second-generated-key-here'
 ```
 
 ### 5. Database and translations
@@ -110,7 +112,7 @@ python manage.py migrate
 python manage.py compilemessages
 ```
 
-The SQLite database and stored media go in `var/` (gitignored).
+The SQLite database, the quarantine and stored media go in `var/` (gitignored).
 
 ### 6. Run
 

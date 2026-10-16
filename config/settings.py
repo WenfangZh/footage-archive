@@ -47,6 +47,22 @@ def env_list(name):
     return [item.strip() for item in os.environ.get(name, '').split(',') if item.strip()]
 
 
+def env_int(name, default, minimum=None, maximum=None):
+    value = os.environ.get(name)
+    if value is None or value == '':
+        number = default
+    else:
+        try:
+            number = int(value)
+        except ValueError:
+            raise ImproperlyConfigured(f'{name} must be a whole number, not {value!r}.') from None
+    if minimum is not None and number < minimum:
+        raise ImproperlyConfigured(f'{name} must be at least {minimum}, not {number}.')
+    if maximum is not None and number > maximum:
+        raise ImproperlyConfigured(f'{name} must be at most {maximum}, not {number}.')
+    return number
+
+
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 SECRET_KEY = env_required('DJANGO_SECRET_KEY')
@@ -71,6 +87,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
+    'clips',
 ]
 
 MIDDLEWARE = [
@@ -117,6 +134,40 @@ DATABASES = {
 # Stored files never get a public URL: footage is only ever served through
 # views that check the lawyer's access (SPEC.md §4, §7).
 MEDIA_ROOT = DATA_DIR / 'media'
+
+# Quarantine: where originals wait until ingest ends (SPEC.md §8, §9). It is never
+# served over the web. Django writes large incoming files to a temporary folder
+# before any view sees them; that folder is inside quarantine, so an untrusted file
+# never sits anywhere else.
+QUARANTINE_DIR = DATA_DIR / 'quarantine'
+FILE_UPLOAD_TEMP_DIR = QUARANTINE_DIR / 'incoming'
+for directory in (QUARANTINE_DIR, FILE_UPLOAD_TEMP_DIR):
+    directory.mkdir(mode=0o700, exist_ok=True)
+    directory.chmod(0o700)
+
+# Only the server's own user can read stored files and folders.
+FILE_UPLOAD_PERMISSIONS = 0o600
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o700
+
+
+# Upload (SPEC.md §5, §8)
+
+# Key for the keyed hash of upload codes. It is separate from SECRET_KEY, so that
+# rotating SECRET_KEY does not invalidate every upload code.
+UPLOAD_CODE_KEY = env_required('UPLOAD_CODE_KEY')
+if len(UPLOAD_CODE_KEY) < 32:
+    raise ImproperlyConfigured('UPLOAD_CODE_KEY must be at least 32 characters (see .env.example).')
+
+# Largest accepted file, in bytes. 2 GB counted in decimal, as phones count it.
+UPLOAD_MAX_BYTES = env_int('UPLOAD_MAX_BYTES', default=2_000_000_000, minimum=1)
+
+# An original whose form is not confirmed within this time is deleted.
+UNCONFIRMED_ORIGINAL_MINUTES = env_int('UNCONFIRMED_ORIGINAL_MINUTES', default=120, minimum=1)
+
+# H3 resolution of the grid that every stored location is snapped to (ADR 0002, 0003).
+# 11 gives cells about 50 m across; lower numbers are coarser. Finer is refused here
+# rather than in a system check, because system checks do not run in production.
+GRID_H3_RESOLUTION = env_int('GRID_H3_RESOLUTION', default=11, minimum=0, maximum=11)
 
 
 # Password hashing: Argon2 only (SPEC.md §10). There are no older hashes to verify.

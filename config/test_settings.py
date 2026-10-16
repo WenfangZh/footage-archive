@@ -1,11 +1,20 @@
-"""Settings for the test suite: the normal settings, with a test-only secret key.
+"""Settings for the test suite: the normal settings, with test-only keys and data folder.
 
-The key is set before the normal settings load, so tests run on a fresh clone
-without a .env file, and never use the key from a developer's .env.
+The keys are set before the normal settings load, so tests run on a fresh clone
+without a .env file, and never use the keys from a developer's .env. Data (the
+quarantine and stored media) goes to a temporary folder, never the developer's var/.
 """
 
+import atexit
 import os
+import shutil
+import tempfile
 
 os.environ['DJANGO_SECRET_KEY'] = 'test-only-not-secret'
+os.environ['UPLOAD_CODE_KEY'] = 'test-only-not-secret-test-only-not-secret'
+
+_data_dir = tempfile.mkdtemp(prefix='footage-archive-tests-')
+atexit.register(shutil.rmtree, _data_dir, ignore_errors=True)
+os.environ['DJANGO_DATA_DIR'] = _data_dir
 
 from .settings import *  # noqa: E402,F403

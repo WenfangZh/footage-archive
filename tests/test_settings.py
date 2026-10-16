@@ -5,12 +5,13 @@ import sys
 from pathlib import Path
 
 import pytest
+from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User as AuthUser
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
 
-from config.settings import env_bool, env_list
+from config.settings import env_bool, env_int, env_list
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -19,15 +20,51 @@ def test_system_checks_pass():
     call_command('check', fail_level='WARNING')
 
 
-def test_missing_secret_key_stops_startup():
-    # An empty value counts as missing, and stops a .env file from filling it in.
-    env = {**os.environ, 'DJANGO_SECRET_KEY': ''}
-    result = subprocess.run(
+def load_settings(**variables):
+    """Import the real settings in a fresh Python with these environment variables set."""
+    return subprocess.run(
         [sys.executable, '-c', 'import config.settings'],
-        cwd=BASE_DIR, env=env, capture_output=True, text=True,
+        cwd=BASE_DIR, env={**os.environ, **variables}, capture_output=True, text=True,
     )
+
+
+@pytest.mark.parametrize('name', ['DJANGO_SECRET_KEY', 'UPLOAD_CODE_KEY'])
+def test_missing_key_stops_startup(name):
+    # An empty value counts as missing, and stops a .env file from filling it in.
+    result = load_settings(**{name: ''})
     assert result.returncode != 0
-    assert 'Set the DJANGO_SECRET_KEY environment variable' in result.stderr
+    assert f'Set the {name} environment variable' in result.stderr
+
+
+def test_short_upload_code_key_stops_startup():
+    result = load_settings(UPLOAD_CODE_KEY='too-short')
+    assert result.returncode != 0
+    assert 'UPLOAD_CODE_KEY must be at least 32 characters' in result.stderr
+
+
+def test_grid_finer_than_resolution_11_stops_startup():
+    result = load_settings(GRID_H3_RESOLUTION='12')
+    assert result.returncode != 0
+    assert 'GRID_H3_RESOLUTION must be at most 11' in result.stderr
+
+
+def test_upload_defaults():
+    assert settings.UPLOAD_MAX_BYTES == 2_000_000_000
+    assert settings.UNCONFIRMED_ORIGINAL_MINUTES == 120
+    assert settings.GRID_H3_RESOLUTION == 11
+
+
+def test_quarantine_is_private_and_holds_incoming_files():
+    for directory in (settings.QUARANTINE_DIR, settings.FILE_UPLOAD_TEMP_DIR):
+        assert directory.is_dir()
+        assert directory.stat().st_mode & 0o777 == 0o700
+    assert settings.FILE_UPLOAD_TEMP_DIR.parent == settings.QUARANTINE_DIR
+    assert settings.FILE_UPLOAD_PERMISSIONS == 0o600
+    assert settings.FILE_UPLOAD_DIRECTORY_PERMISSIONS == 0o700
+
+
+def test_tests_never_use_the_developer_data_folder():
+    assert not settings.DATA_DIR.is_relative_to(BASE_DIR)
 
 
 def test_new_passwords_are_hashed_with_argon2():
@@ -57,9 +94,29 @@ def test_env_list(monkeypatch):
     assert env_list('SOME_LIST') == ['a.example', 'b.example']
 
 
+@pytest.mark.parametrize('value, expected', [('', 7), ('42', 42), ('0', 0)])
+def test_env_int(monkeypatch, value, expected):
+    monkeypatch.setenv('SOME_NUMBER', value)
+    assert env_int('SOME_NUMBER', default=7) == expected
+
+
+@pytest.mark.parametrize('value', ['2GB', '1.5', 'eleven'])
+def test_env_int_rejects_non_numbers(monkeypatch, value):
+    monkeypatch.setenv('SOME_NUMBER', value)
+    with pytest.raises(ImproperlyConfigured, match='whole number'):
+        env_int('SOME_NUMBER', default=7)
+
+
+@pytest.mark.parametrize('value, message', [('0', 'at least 1'), ('12', 'at most 11')])
+def test_env_int_enforces_bounds(monkeypatch, value, message):
+    monkeypatch.setenv('SOME_NUMBER', value)
+    with pytest.raises(ImproperlyConfigured, match=message):
+        env_int('SOME_NUMBER', default=7, minimum=1, maximum=11)
+
+
 def variables_read_by_settings():
     source = (BASE_DIR / 'config' / 'settings.py').read_text()
-    pattern = r"(?:env_required|env_bool|env_list|os\.environ\.get|os\.getenv)\(\s*'([A-Z0-9_]+)'"
+    pattern = r"(?:env_required|env_bool|env_list|env_int|os\.environ\.get|os\.getenv)\(\s*'([A-Z0-9_]+)'"
     return set(re.findall(pattern, source))
 
 
@@ -78,6 +135,7 @@ def test_env_example_lists_exactly_the_variables_settings_read():
     assert read_by_settings == variables_in_env_example()
 
 
-def test_env_example_holds_no_secret_key():
+def test_env_example_holds_no_keys():
     lines = (BASE_DIR / '.env.example').read_text().splitlines()
     assert 'DJANGO_SECRET_KEY=' in lines
+    assert 'UPLOAD_CODE_KEY=' in lines
