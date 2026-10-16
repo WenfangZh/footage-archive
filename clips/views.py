@@ -10,7 +10,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_http_methods
 
-from . import grid, probe, vault
+from . import grid, probe, rate_limits, vault
 from .confirmation import AlreadyConfirmed, confirm_upload
 from .editing import apply_edits, clip_for_code, code_holder_tags, delete_clip
 from .forms import METADATA_PRECISIONS, ConfirmForm, EditForm, FileForm
@@ -126,9 +126,9 @@ def code_holder(request):
     if request.method == 'GET':
         return render(request, 'clips/code_entry.html')
     typed = request.POST.get('code', '')
-    clip = clip_for_code(typed)
-    if clip is None:
-        return wrong_code(request)
+    clip, refusal = clip_or_refusal(request, typed)
+    if refusal:
+        return refusal
     return render_clip(request, clip, edit_form(clip, code=typed))
 
 
@@ -138,9 +138,9 @@ def code_holder(request):
 @require_http_methods(['POST'])
 def edit(request):
     typed = request.POST.get('code', '')
-    clip = clip_for_code(typed)
-    if clip is None:
-        return wrong_code(request)
+    clip, refusal = clip_or_refusal(request, typed)
+    if refusal:
+        return refusal
     form = edit_form(clip, data=request.POST)
     if not form.is_valid():
         return render_clip(request, clip, form, status=400)
@@ -154,18 +154,29 @@ def edit(request):
 @require_http_methods(['POST'])
 def delete(request):
     typed = request.POST.get('code', '')
-    clip = clip_for_code(typed)
-    if clip is None:
-        return wrong_code(request)
+    clip, refusal = clip_or_refusal(request, typed)
+    if refusal:
+        return refusal
     if request.POST.get('confirm_delete') != 'yes':
         return render_clip(request, clip, edit_form(clip, code=typed), delete_unconfirmed=True, status=400)
     delete_clip(clip)
     return render(request, 'clips/deleted.html')
 
 
-def wrong_code(request):
-    # The same answer whether the code is mistyped or unknown.
-    return render(request, 'clips/code_entry.html', {'wrong_code': True}, status=404)
+def clip_or_refusal(request, typed):
+    """The clip for the code sent, or the response refusing it (SPEC.md §5).
+
+    Once a connection has had too many wrong codes, no code is checked at all, not
+    even a right one, so that guessing cannot go on.
+    """
+    if rate_limits.is_limited(request, rate_limits.FAILED_CODES):
+        return None, rate_limits.too_many(request)
+    clip = clip_for_code(typed)
+    if clip is None:
+        rate_limits.count(request, rate_limits.FAILED_CODES)
+        # The same answer whether the code is mistyped or unknown.
+        return None, render(request, 'clips/code_entry.html', {'wrong_code': True}, status=404)
+    return clip, None
 
 
 def edit_form(clip, code=None, data=None):

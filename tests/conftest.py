@@ -1,6 +1,13 @@
 import pytest
+from django.core.cache import cache
 
 from tests.media import H264, TEST_PICTURE, TEST_SOUND, run_ffmpeg
+
+
+@pytest.fixture(autouse=True)
+def empty_cache():
+    """Every test starts with no rate-limit counts: they all come from one address."""
+    cache.clear()
 
 
 @pytest.fixture

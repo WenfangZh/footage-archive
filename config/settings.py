@@ -94,6 +94,8 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
+    # Before CsrfViewMiddleware, which reads the whole upload (clips.rate_limits).
+    'clips.rate_limits.UploadRateLimitMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -178,6 +180,21 @@ UPLOAD_MAX_BYTES = env_int('UPLOAD_MAX_BYTES', default=2_000_000_000, minimum=1)
 
 # An original whose form is not confirmed within this time is deleted.
 UNCONFIRMED_ORIGINAL_MINUTES = env_int('UNCONFIRMED_ORIGINAL_MINUTES', default=120, minimum=1)
+
+# Rate limits per connection (clips.rate_limits): upload attempts, and wrong upload
+# codes, per window. The IP address is kept only as a keyed hash in the cache, for
+# one window at most.
+RATE_LIMIT_WINDOW_MINUTES = env_int('RATE_LIMIT_WINDOW_MINUTES', default=60, minimum=1)
+RATE_LIMIT_UPLOADS = env_int('RATE_LIMIT_UPLOADS', default=20, minimum=1)
+RATE_LIMIT_FAILED_CODES = env_int('RATE_LIMIT_FAILED_CODES', default=20, minimum=1)
+
+# In this process's memory: enough for one development server. Several server
+# processes would each count separately, so a deployment needs a shared cache.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+}
 
 # H3 resolution of the grid that every stored location is snapped to (ADR 0002, 0003).
 # 11 gives cells about 50 m across; lower numbers are coarser. Finer is refused here
