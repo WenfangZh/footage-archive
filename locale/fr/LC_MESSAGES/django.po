@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-11 17:25+0200\n"
+"POT-Creation-Date: 2026-10-17 00:49+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -12,11 +12,440 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: config/settings.py:157
+#: clips/forms.py:14
+msgid "About 50 m"
+msgstr "Environ 50 m"
+
+#: clips/forms.py:15
+msgid "About 130 m"
+msgstr "Environ 130 m"
+
+#: clips/forms.py:16
+msgid "About 340 m"
+msgstr "Environ 340 m"
+
+#: clips/forms.py:24
+msgid "Video"
+msgstr "Vidéo"
+
+#: clips/forms.py:45
+msgid "When was it filmed?"
+msgstr "Quand la vidéo a-t-elle été filmée ?"
+
+#: clips/forms.py:49
+msgid "Latitude"
+msgstr "Latitude"
+
+#: clips/forms.py:53
+msgid "Longitude"
+msgstr "Longitude"
+
+#: clips/forms.py:57
+msgid "How precise is this place?"
+msgstr "Quelle est la précision de ce lieu ?"
+
+#: clips/forms.py:61
+msgid "What can be seen?"
+msgstr "Que voit-on dans la vidéo ?"
+
+#: clips/forms.py:65
+msgid "Other tags, separated by commas"
+msgstr "Autres étiquettes, séparées par des virgules"
+
+#: clips/forms.py:69 clips/models.py:174 clips/models.py:191
+msgid "Context"
+msgstr "Contexte"
+
+#: clips/forms.py:71
+msgid ""
+"What happened, and anything a lawyer should know. Leave out names, and "
+"addresses more precise than the place above."
+msgstr "Ce qui s'est passé, et tout ce qu'un·e avocat·e devrait savoir. N'indiquez pas de noms, ni d'adresse plus précise que le lieu ci-dessus."
+
+#: clips/forms.py:76
+msgid "Contact details or social media handle"
+msgstr "Moyen de contact ou pseudonyme sur un réseau social"
+
+#: clips/forms.py:88
+#, python-format
+msgid "Each tag can be at most %(length)d characters."
+msgstr "Chaque étiquette peut compter au plus %(length)d caractères."
+
+#: clips/forms.py:94
+#, python-format
+msgid "At most %(count)d other tags."
+msgstr "Au plus %(count)d autres étiquettes."
+
+#: clips/forms.py:104
+msgid "Give both the latitude and the longitude, or neither."
+msgstr "Indiquez la latitude et la longitude, ou aucune des deux."
+
+#: clips/forms.py:106
+msgid "Say how precise this place is."
+msgstr "Indiquez la précision de ce lieu."
+
+#: clips/forms.py:114
+msgid "How precisely may we keep the GPS position found in the video?"
+msgstr "Avec quelle précision pouvons-nous garder la position GPS trouvée dans la vidéo ?"
+
+#: clips/forms.py:129
+msgid "How precisely we keep the GPS position found in the video"
+msgstr "Précision avec laquelle nous gardons la position GPS trouvée dans la vidéo"
+
+#: clips/forms.py:157
+msgid "To make the place more precise, give its new position."
+msgstr "Pour rendre le lieu plus précis, indiquez sa nouvelle position."
+
+#: clips/models.py:29
+msgid "Exact spot"
+msgstr "Endroit exact"
+
+#: clips/models.py:30
+msgid "Street"
+msgstr "Rue"
+
+#: clips/models.py:31
+msgid "Neighbourhood"
+msgstr "Quartier"
+
+#: clips/models.py:50
+msgid "Processing"
+msgstr "En préparation"
+
+#: clips/models.py:143
+msgid "code holder"
+msgstr "personne qui détient le code"
+
+#: clips/models.py:144
+msgid "lawyer"
+msgstr "avocat·e"
+
+#: clips/models.py:171
+msgid "Stated time"
+msgstr "Heure indiquée"
+
+#: clips/models.py:172
+msgid "Stated location"
+msgstr "Lieu indiqué"
+
+#: clips/models.py:173
+msgid "Tags"
+msgstr "Étiquettes"
+
+#: clips/models.py:175 clips/models.py:192
+msgid "Contact details"
+msgstr "Moyen de contact"
+
+#: clips/models.py:176
+msgid "Metadata location"
+msgstr "Lieu des métadonnées"
+
+#: clips/tags.py:10
+msgid "Arrest"
+msgstr "Interpellation"
+
+#: clips/tags.py:11
+msgid "Use of force"
+msgstr "Recours à la force"
+
+#: clips/tags.py:12
+msgid "Officer ID number legible"
+msgstr "RIO lisible"
+
+#: clips/tags.py:13
+msgid "Officer ID number not visible"
+msgstr "RIO non visible"
+
+#: clips/tags.py:14
+msgid "Police armband visible"
+msgstr "Brassard police visible"
+
+#: clips/tags.py:15
+msgid "No police armband visible"
+msgstr "Pas de brassard police visible"
+
+#: clips/tags.py:16
+msgid "Plainclothes officers"
+msgstr "Police en civil"
+
+#: clips/tags.py:17
+msgid "Minor in frame"
+msgstr "Personne mineure à l'image"
+
+#: clips/tags.py:18
+msgid "Injury visible"
+msgstr "Blessure visible"
+
+#: clips/tags.py:19
+msgid "Tear gas"
+msgstr "Gaz lacrymogène"
+
+#: clips/tags.py:20
+msgid "Kettling (crowd encircled and held by police)"
+msgstr "Nasse"
+
+#: clips/templates/clips/already_sent.html:4
+msgid "Already sent"
+msgstr "Déjà envoyée"
+
+#: clips/templates/clips/already_sent.html:7
+msgid "This video was already sent"
+msgstr "Cette vidéo a déjà été envoyée"
+
+#: clips/templates/clips/already_sent.html:8
+msgid ""
+"Its upload code was shown once, on the page that opened when the form was "
+"confirmed. If you did not save it, it cannot be recovered."
+msgstr "Son code d'upload a été affiché une seule fois, sur la page qui s'est ouverte à la confirmation du formulaire. Si vous ne l'avez pas gardé, il ne peut pas être retrouvé."
+
+#: clips/templates/clips/clip.html:4 clips/templates/clips/clip.html:9
+msgid "Your clip"
+msgstr "Votre clip"
+
+#: clips/templates/clips/clip.html:10
+msgid "Your changes are saved."
+msgstr "Vos modifications sont enregistrées."
+
+#: clips/templates/clips/clip.html:11
+msgid "Status:"
+msgstr "État :"
+
+#: clips/templates/clips/clip.html:13 clips/templates/clips/confirm.html:17
+msgid "Time found in the video:"
+msgstr "Heure trouvée dans la vidéo :"
+
+#: clips/templates/clips/clip.html:14 clips/templates/clips/confirm.html:18
+msgid "none"
+msgstr "aucune"
+
+#: clips/templates/clips/clip.html:16 clips/templates/clips/confirm.html:20
+msgid "It is kept as found, and nobody can change it."
+msgstr "Elle est gardée telle quelle, et personne ne peut la modifier."
+
+#: clips/templates/clips/clip.html:24 clips/templates/clips/confirm.html:15
+msgid "Time"
+msgstr "Heure"
+
+#: clips/templates/clips/clip.html:29 clips/templates/clips/confirm.html:25
+msgid "Place"
+msgstr "Lieu"
+
+#: clips/templates/clips/clip.html:31
+msgid ""
+"The position shown is the centre of the area we keep, not the exact spot you "
+"gave."
+msgstr "La position affichée est le centre de la zone que nous gardons, pas l'endroit exact que vous aviez indiqué."
+
+#: clips/templates/clips/clip.html:37
+msgid "GPS position found in the video, as we keep it:"
+msgstr "Position GPS trouvée dans la vidéo, telle que nous la gardons :"
+
+#: clips/templates/clips/clip.html:40
+msgid ""
+"You can have it kept less precisely, never more: the exact position is gone."
+msgstr "Vous pouvez la faire garder moins précisément, jamais plus : la position exacte n'existe plus."
+
+#: clips/templates/clips/clip.html:50
+msgid "Contact details (optional)"
+msgstr "Moyen de contact (facultatif)"
+
+#: clips/templates/clips/clip.html:51 clips/templates/clips/confirm.html:45
+msgid ""
+"Anyone who obtains these details could use them against you. Leave them only "
+"if you accept that risk."
+msgstr "Toute personne qui obtiendrait ces informations pourrait s'en servir contre vous. Ne les indiquez que si vous acceptez ce risque."
+
+#: clips/templates/clips/clip.html:55
+msgid ""
+"Lawyers see which details you changed, and roughly when, but not the old "
+"values. For the time, the place and the tags, they also see what you gave at "
+"upload."
+msgstr "Les avocat·es voient quels éléments vous avez modifiés, et à peu près quand, mais pas les anciennes valeurs. Pour l'heure, le lieu et les étiquettes, la version telle qu'uploadée leur reste aussi visible."
+
+#: clips/templates/clips/clip.html:56
+msgid "Save changes"
+msgstr "Enregistrer les modifications"
+
+#: clips/templates/clips/clip.html:59
+msgid "Delete this clip"
+msgstr "Supprimer ce clip"
+
+#: clips/templates/clips/clip.html:63
+msgid "Tick the box to confirm."
+msgstr "Cochez la case pour confirmer."
+
+#: clips/templates/clips/clip.html:67
+msgid "Yes, delete this clip and everything it holds, for good."
+msgstr "Oui, supprimer définitivement ce clip et tout ce qu'il contient."
+
+#: clips/templates/clips/clip.html:70
+msgid "Delete"
+msgstr "Supprimer"
+
+#: clips/templates/clips/code_card.html:4
+#: clips/templates/clips/code_card.html:10
+msgid "Your upload code"
+msgstr "Votre code d'upload"
+
+#: clips/templates/clips/code_card.html:11
+msgid ""
+"Save it now: take a screenshot of this card. The code is shown only once and "
+"cannot be recovered."
+msgstr "Gardez-le maintenant : faites une capture d'écran de cette fiche. Le code n'est affiché qu'une fois et ne peut pas être retrouvé."
+
+#: clips/templates/clips/code_card.html:14
+msgid "Code card"
+msgstr "Fiche de code"
+
+#: clips/templates/clips/code_card.html:18
+msgid ""
+"Card label, to recognise this card later. It appears only here and is never "
+"sent to us."
+msgstr "Libellé de la fiche, pour la reconnaître plus tard. Il n'apparaît qu'ici et ne nous est jamais envoyé."
+
+#: clips/templates/clips/code_card.html:21
+msgid "To come back:"
+msgstr "Pour revenir :"
+
+#: clips/templates/clips/code_card.html:24
+msgid ""
+"With this code you can come back to change the clip's details, delete the "
+"clip, and read messages from lawyers."
+msgstr "Avec ce code, vous pouvez revenir pour modifier les informations du clip, le supprimer et lire les messages des avocat·es."
+
+#: clips/templates/clips/code_card.html:25
+msgid "Anyone who finds this card can read the clip's messages and delete it."
+msgstr "Toute personne qui trouve cette fiche peut lire les messages du clip et le supprimer."
+
+#: clips/templates/clips/code_card.html:27
+msgid ""
+"No lawyer can find this clip until you add the time and the place. Come back "
+"with your code to add them."
+msgstr "Aucun·e avocat·e ne peut trouver ce clip tant que vous n'avez pas ajouté l'heure et le lieu. Revenez avec votre code pour les ajouter."
+
+#: clips/templates/clips/code_entry.html:4
+#: clips/templates/clips/code_entry.html:8 templates/home.html:8
+msgid "Come back with your upload code"
+msgstr "Revenir avec votre code d'upload"
+
+#: clips/templates/clips/code_entry.html:10
+msgid "No clip has this code. Check it and try again."
+msgstr "Aucun clip n'a ce code. Vérifiez-le et réessayez."
+
+#: clips/templates/clips/code_entry.html:16
+msgid "Upload code"
+msgstr "Code d'upload"
+
+#: clips/templates/clips/code_entry.html:19
+msgid "Open my clip"
+msgstr "Ouvrir mon clip"
+
+#: clips/templates/clips/confirm.html:4 clips/templates/clips/confirm.html:7
+#: clips/templates/clips/upload.html:4 clips/templates/clips/upload.html:7
+#: templates/home.html:7
+msgid "Upload a video"
+msgstr "Envoyer une vidéo"
+
+#: clips/templates/clips/confirm.html:8
+msgid ""
+"Step 2 of 2. Everything here is optional, and you can change it later with "
+"your upload code."
+msgstr "Étape 2 sur 2. Tout est facultatif, et vous pourrez le modifier plus tard avec votre code d'upload."
+
+#: clips/templates/clips/confirm.html:26
+msgid "Pre-filled from the GPS position in the video."
+msgstr "Prérempli à partir de la position GPS de la vidéo."
+
+#: clips/templates/clips/confirm.html:32
+msgid ""
+"Lawyers use it to check the place you give. The exact position is never kept."
+msgstr "Les avocat·es s'en servent pour vérifier le lieu que vous indiquez. La position exacte n'est jamais gardée."
+
+#: clips/templates/clips/confirm.html:36
+msgid ""
+"If you leave the time or the place empty, no lawyer can find this clip until "
+"you add both."
+msgstr "Si vous laissez l'heure ou le lieu vide, aucun·e avocat·e ne pourra trouver ce clip tant que vous n'aurez pas ajouté les deux."
+
+#: clips/templates/clips/confirm.html:44
+msgid "Leave contact details (optional)"
+msgstr "Laisser un moyen de contact (facultatif)"
+
+#: clips/templates/clips/confirm.html:49
+msgid "Confirm and get my upload code"
+msgstr "Confirmer et obtenir mon code d'upload"
+
+#: clips/templates/clips/deleted.html:4 clips/templates/clips/deleted.html:8
+msgid "Clip deleted"
+msgstr "Clip supprimé"
+
+#: clips/templates/clips/deleted.html:9
+msgid ""
+"The clip and everything it held are deleted. Its upload code no longer works."
+msgstr "Le clip et tout ce qu'il contenait sont supprimés. Son code d'upload ne fonctionne plus."
+
+#: clips/templates/clips/rate_limited.html:4
+#: clips/templates/clips/rate_limited.html:8
+msgid "Too many attempts"
+msgstr "Trop de tentatives"
+
+#: clips/templates/clips/rate_limited.html:9
+msgid ""
+"There have been too many attempts from your connection. Try again in an hour."
+msgstr "Il y a eu trop de tentatives depuis votre connexion. Réessayez dans une heure."
+
+#: clips/templates/clips/upload.html:8
+msgid ""
+"Step 1 of 2: choose the video. Next, you can say when and where it was "
+"filmed."
+msgstr "Étape 1 sur 2 : choisissez la vidéo. Ensuite, vous pourrez indiquer quand et où elle a été filmée."
+
+#: clips/templates/clips/upload.html:11
+#, python-format
+msgid ""
+"This file is larger than %(size_limit)s, so it was refused. Nothing was kept."
+msgstr "Ce fichier dépasse %(size_limit)s : il a été refusé, et rien n'a été gardé."
+
+#: clips/templates/clips/upload.html:13
+msgid ""
+"This file is not a video we can accept (MP4, MOV, MKV or WebM). It was "
+"deleted, and nothing was kept."
+msgstr "Ce fichier n'est pas une vidéo que nous pouvons accepter (MP4, MOV, MKV ou WebM). Il a été supprimé, et rien n'a été gardé."
+
+#: clips/templates/clips/upload.html:24
+#, python-format
+msgid "Maximum size: %(size_limit)s."
+msgstr "Taille maximale : %(size_limit)s."
+
+#: clips/templates/clips/upload.html:25
+#, python-format
+msgid "This file is larger than %(size_limit)s, so it cannot be sent."
+msgstr "Ce fichier dépasse %(size_limit)s : il ne peut pas être envoyé."
+
+#: clips/templates/clips/upload.html:26
+msgid "Send"
+msgstr "Envoyer"
+
+#: clips/uploads.py:52
+#, python-format
+msgid "%(size)s GB"
+msgstr "%(size)s Go"
+
+#: clips/uploads.py:54
+#, python-format
+msgid "%(size)s MB"
+msgstr "%(size)s Mo"
+
+#: clips/uploads.py:55
+#, python-format
+msgid "%(size)s bytes"
+msgstr "%(size)s octets"
+
+#: config/settings.py:241
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:158
+#: config/settings.py:242
 msgid "English"
 msgstr "Anglais"
 
@@ -26,4 +455,6 @@ msgstr "Archive de vidéos"
 
 #: templates/home.html:6
 msgid "Learning build: not deployed, not for real footage."
-msgstr "Version d'apprentissage : non déployée, à ne pas utiliser pour de vraies vidéos."
+msgstr ""
+"Version d'apprentissage : non déployée, à ne pas utiliser pour de vraies "
+"vidéos."
