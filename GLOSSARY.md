@@ -131,7 +131,7 @@ _Avoid in French_: heure déclarée (suggests a formal declaration)
 
 **Stated location**:
 Where the clip was filmed, as given by the uploader or code holder, with how precise it is (exact spot, street or neighbourhood); it is never kept more precisely than that. Matching uses this location.
-_French_: lieu indiqué
+_French_: lieu indiqué (its precision: endroit exact, rue or quartier)
 _Avoid_: Precise location, GPS, address
 
 **Metadata location**:
@@ -160,6 +160,17 @@ _Avoid in French_: origine (already in fichier d'origine)
 The admin's view of every tag added, proposed for removal and removed on one clip, with who and when.
 _French_: historique des étiquettes
 _Avoid_: Tag log, tag audit
+
+**Context**:
+Free text about a clip from the uploader or code holder: what happened, and anything a lawyer should know.
+_French_: contexte
+_Avoid_: Description, comment, notes
+
+**Contact details**:
+A way to reach the code holder, such as a phone number or a social media handle, that they chose to leave despite the risk.
+_French_: moyen de contact
+_Avoid_: Contact info, identity
+_Avoid in French_: coordonnées (also the coordinates of a position, which the same forms ask for)
 
 **As uploaded**:
 A clip's stated time, stated location and tags as they were at upload, kept unchanged so that later edits can be seen.
