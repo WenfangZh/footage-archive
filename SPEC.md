@@ -148,11 +148,11 @@ Later: a trusted timestamp (RFC 3161) over the hash record.
 - Python 3.12 in a pyenv virtualenv (`footage-archive`, selected via `.python-version`), Django, server-rendered templates, minimal JavaScript. Function over looks.
 - Django's built-in translation framework (its tools need GNU gettext, from apt): French by default, English available. Every user-facing string is translatable from day one.
 - SQLite in development, Postgres later.
-- ffmpeg and ffprobe from apt. Package installs (apt and pip) are done by hand, not by the agent.
+- ffmpeg and ffprobe from apt. Whether package installs (apt and pip) are done by hand or by the agent is set per machine, in that machine's Claude Code instructions (`~/.claude/CLAUDE.machine.md`).
 - A simple background task queue (propose options; fewest moving parts wins).
 - File storage behind Django's storage API: local disk now, S3-compatible object storage later.
 - pytest with pytest-django. Test videos are generated with ffmpeg (synthetic `lavfi` sources with injected fake GPS and device tags), so tests never need real footage.
-- Development on WSL2 (zsh, pyenv), with the repo in the Linux filesystem.
+- Development on Ubuntu (WSL2 or a remote server) with pyenv, the repo in the Linux filesystem.
 
 ## 12. Milestones
 
