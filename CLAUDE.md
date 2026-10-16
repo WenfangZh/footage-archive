@@ -49,3 +49,4 @@ Fill these in as they're created:
 - System checks: `python manage.py check`
 - Extract translatable strings: `python manage.py makemessages -l fr --ignore=var --ignore=tests --ignore=media_test`, then translate in `locale/fr/LC_MESSAGES/django.po`
 - Compile translations: `python manage.py compilemessages` (the `.mo` files are gitignored; a test fails if they are missing or stale)
+- Delete unconfirmed originals: `python manage.py delete_unconfirmed_originals` (scheduling comes with the task queue, M2)
