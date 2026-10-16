@@ -88,7 +88,7 @@ Upload happens in two steps. First the uploader sends the file; it goes straight
 Everything is optional except the video:
 
 - capture time: the **metadata time** is read from the file and can never be changed by anyone; it is unreliable (phone clocks, time zones, re-saving apps) and trivial to forge, which is why it is kept as found. The uploader sees it and gives a **stated time**, pre-filled with the metadata time, which they may keep or replace. Lawyers see both;
-- location: a **stated location**, given as a map pin or address plus a precision (exact spot, street or neighbourhood), pre-filled from the file's GPS when present as an exact spot. The **metadata location** is kept only as a grid cell;
+- location: a **stated location**, given as a map pin or address (for now, coordinates; see §13) plus a precision (exact spot, street or neighbourhood), pre-filled from the file's GPS when present as an exact spot. The **metadata location** is kept only as a grid cell;
 - tags: defaults below, plus custom tags;
 - context: free text;
 - contact details or social media handle: explicit opt-in, behind a plain-language warning that anyone who obtains this information could use it against them.
@@ -189,5 +189,6 @@ Each milestone: plan first, then small steps, with tests green before moving on.
 - **Clips with no capture time or no location (important, revisit).** They can never match a case, so as they stand they are useless. We hold them for a while so the code holder can come back and add the missing time or place, but holding unfindable footage indefinitely conflicts with data minimisation. To decide: how long they are held, whether the code holder is warned, and what happens when the period ends.
 - Django's built-in admin site (`/admin/`) can show any database table, which conflicts with an admin who manages accounts, not content (§5). Decide in M3: remove it, or restrict it to account management.
 - Files over the size cap (§8): what can a filmer with a bigger video do? Trimming it on the phone often re-encodes it and rewrites its metadata time. Resumable uploads (M6) are where a higher cap becomes practical.
+- Choosing the stated location on a map or by address (§8). Map tiles or an address lookup from a public server would tell that server, with the uploader's IP, roughly where they filmed; self-hosted tiles are one answer. Until then the stated location is entered as coordinates, pre-filled from the file's GPS.
 - Long term: stay standalone, or move to (or build on) GlobaLeaks for international use? Language-neutral tag keys keep that door open.
 - Before any real use: hosting-provider data retention rules versus anonymity, hosting-provider duties on illegal content (removal once aware, reporting e.g. to PHAROS) given that the admin cannot view clips, GDPR legal basis and impact assessment (AIPD), who operates the service (an association?), and which defence organisations could vouch for lawyers.
