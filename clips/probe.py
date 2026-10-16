@@ -7,7 +7,9 @@ The file is untrusted, and ffprobe has to parse it, so the run is fenced in:
   open other files or URLs;
 - only local files can be opened, and the path is passed as an argument list, never
   through a shell;
-- ffprobe gets a bare environment, so a flaw in it cannot read the archive's keys;
+- ffprobe gets a bare environment, so the archive's keys are not handed to it. It still
+  runs as the server's own user, so a flaw in it could read the files that user can
+  (.env, the database): only a sandbox would close that;
 - the run is stopped after PROBE_TIMEOUT_SECONDS.
 
 Only the metadata time and the GPS position are taken from the file. The GPS position
