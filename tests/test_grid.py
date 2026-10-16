@@ -1,0 +1,64 @@
+import h3.api.basic_int as h3
+import pytest
+
+from clips import grid
+
+# A public place (Place de la Bastille, Paris), not anyone's position.
+LATITUDE, LONGITUDE = 48.8532, 2.3692
+
+
+def test_a_point_snaps_to_a_cell_of_the_requested_resolution():
+    for resolution in (11, 10, 9):
+        cell = grid.cell_for_point(LATITUDE, LONGITUDE, resolution)
+        assert grid.is_cell(cell)
+        assert grid.resolution(cell) == resolution
+
+
+def test_points_in_the_same_cell_give_the_same_value():
+    cell = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
+    centre_latitude, centre_longitude = grid.centre(cell)
+    assert grid.cell_for_point(centre_latitude, centre_longitude, 11) == cell
+    assert grid.centre(cell) != (LATITUDE, LONGITUDE)
+
+
+@pytest.mark.parametrize('requested', [12, 15])
+def test_never_finer_than_resolution_11(requested):
+    cell = grid.cell_for_point(LATITUDE, LONGITUDE, requested)
+    assert grid.resolution(cell) == 11
+
+
+def test_the_grid_setting_caps_every_resolution(settings):
+    settings.GRID_H3_RESOLUTION = 10
+    assert grid.resolution(grid.cell_for_point(LATITUDE, LONGITUDE, 11)) == 10
+    assert grid.resolution(grid.cell_for_point(LATITUDE, LONGITUDE, 9)) == 9
+
+
+def test_finest_cells_are_about_50_m_across_in_paris():
+    # ADR 0003: 1,840–2,226 m² over metropolitan France; a 50 m square is 2,500 m².
+    cell = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
+    assert 1_800 < h3.cell_area(cell, 'm^2') < 2_300
+
+
+def test_coarsen_gives_the_cell_containing_it():
+    cell = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
+    coarser = grid.coarsen(cell, 9)
+    assert grid.resolution(coarser) == 9
+    assert coarser == grid.cell_for_point(LATITUDE, LONGITUDE, 9)
+    assert grid.coarsen(cell, 11) == cell
+
+
+def test_coarsen_refuses_to_make_a_cell_finer():
+    cell = grid.cell_for_point(LATITUDE, LONGITUDE, 9)
+    with pytest.raises(ValueError, match='finer'):
+        grid.coarsen(cell, 10)
+
+
+@pytest.mark.parametrize('latitude, longitude', [(91, 0), (-90.5, 0), (0, 180.5), (0, -181)])
+def test_positions_off_the_earth_are_refused(latitude, longitude):
+    with pytest.raises(ValueError, match='Not a position on Earth'):
+        grid.cell_for_point(latitude, longitude, 11)
+
+
+@pytest.mark.parametrize('value', [12345, -1, '8b1fb4644934fff', None])
+def test_is_cell_rejects_other_values(value):
+    assert not grid.is_cell(value)
