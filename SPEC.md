@@ -115,7 +115,7 @@ Custom tags are stored as typed, without translation.
 
 After upload, show the upload code once on a **code card** designed to be screenshotted, with a clear "save this now, it cannot be recovered" message. The card shows the code and a **card label** the uploader types, pre-filled with a suggestion they can edit (e.g. built from the stated date and tags). The card label appears only on the card and is never stored on the server. A plain-language warning says that anyone who finds the card can read the clip's messages and delete it.
 
-Limits: cap by file size, not duration (default 2 GB, configurable). A file over the cap is refused whole, never cut: the form states the cap, the browser checks the file's size before sending it, and the server enforces it on the bytes it receives. Rate-limit uploads; IPs may be used transiently for this (in cache, short TTL) but are never written to the database or logs.
+Limits: cap by file size, not duration (default 2 GB, configurable). A file over the cap is refused whole, never cut: the form states the cap, the browser checks the file's size before sending it, and the server enforces it on the bytes it receives. Rate-limit uploads; IPs may be used transiently for this (in cache, short TTL) but are never written to the database or logs. Limits are per connection and generous, since many phones at a protest can share one IP address (defaults: 20 uploads and 20 wrong codes per hour).
 
 ## 9. Ingest pipeline (background job)
 
