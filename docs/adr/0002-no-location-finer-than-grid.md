@@ -10,3 +10,7 @@ The archive never stores a location more precise than its grid (50 m by default)
 ## Addendum (2026-10-16)
 
 The grid is no longer a 50 m square grid: locations are snapped to H3 cells at resolution 11, about 50 m across (44–50 m over metropolitan France), and the resolution can be made coarser but never finer. ADR 0003 gives the reasons.
+
+## Addendum (2026-10-16): cell size follows the precision
+
+The stated location is now snapped to the grid, but to a cell no finer than its stated precision, so this is not the snapping rejected above; the uploader chooses the cell size of the metadata location. ADR 0004 gives the reasons.

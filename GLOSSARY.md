@@ -130,12 +130,12 @@ _Avoid_: Corrected time, user time, manual time
 _Avoid in French_: heure déclarée (suggests a formal declaration)
 
 **Stated location**:
-Where the clip was filmed, as given by the uploader or code holder: a point plus how precise it is (exact spot, street or neighbourhood). Matching uses this location.
+Where the clip was filmed, as given by the uploader or code holder, with how precise it is (exact spot, street or neighbourhood); it is never kept more precisely than that. Matching uses this location.
 _French_: lieu indiqué
 _Avoid_: Precise location, GPS, address
 
 **Metadata location**:
-The grid cell containing the GPS position found in the original, kept only to compare with the stated location.
+The grid cell containing the GPS position found in the original, at a precision the uploader chooses, kept only to compare with the stated location.
 _French_: lieu des métadonnées
 _Avoid_: GPS, precise location
 
