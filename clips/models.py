@@ -180,6 +180,27 @@ class Edit(models.Model):
     edited_at = FourHourBlockField(default=timezone.now)
 
 
+class VaultText(models.Model):
+    """Text held in the vault for a clip. Only clips.vault reads or writes it (SPEC.md §6).
+
+    Plaintext until M5. It deliberately has no readable __str__, so that its content
+    never ends up in logs or error pages through a model's text form.
+    """
+
+    class Kind(models.TextChoices):
+        CONTEXT = 'context', _('Context')
+        CONTACT_DETAILS = 'contact_details', _('Contact details')
+
+    clip = models.ForeignKey(Clip, on_delete=models.CASCADE, related_name='+')
+    kind = models.CharField(max_length=20, choices=Kind.choices)
+    content = models.TextField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['clip', 'kind'], name='one_vault_text_per_kind'),
+        ]
+
+
 def quarantine_storage():
     # Never served over the web: nothing routes to this folder (SPEC.md §8).
     return FileSystemStorage(location=settings.QUARANTINE_DIR)
