@@ -128,6 +128,13 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': DATA_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            # SQLite overwrites deleted and replaced data with zeros instead of leaving
+            # it in free space in the file, so old context and contact details do not
+            # linger there (SPEC.md §5). Copies the file system or disk may keep are
+            # outside its reach.
+            'init_command': 'PRAGMA secure_delete = ON;',
+        },
     }
 }
 

@@ -10,6 +10,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User as AuthUser
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
+from django.db import connection
 
 from config.settings import env_bool, env_int, env_list
 
@@ -23,6 +24,16 @@ def test_system_checks_pass():
 @pytest.mark.django_db
 def test_every_model_change_has_a_migration():
     call_command('makemigrations', '--check', '--dry-run', verbosity=0)
+
+
+@pytest.mark.django_db
+def test_sqlite_zeroes_deleted_data():
+    # Ubuntu's SQLite is built with this on, so also check that we ask for it: other
+    # builds default to off.
+    assert 'PRAGMA secure_delete = ON' in settings.DATABASES['default']['OPTIONS']['init_command']
+    with connection.cursor() as cursor:
+        cursor.execute('PRAGMA secure_delete')
+        assert cursor.fetchone() == (1,)
 
 
 def load_settings(**variables):
