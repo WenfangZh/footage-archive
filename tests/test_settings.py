@@ -20,6 +20,11 @@ def test_system_checks_pass():
     call_command('check', fail_level='WARNING')
 
 
+@pytest.mark.django_db
+def test_every_model_change_has_a_migration():
+    call_command('makemigrations', '--check', '--dry-run', verbosity=0)
+
+
 def load_settings(**variables):
     """Import the real settings in a fresh Python with these environment variables set."""
     return subprocess.run(
