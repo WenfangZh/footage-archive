@@ -9,12 +9,22 @@
   <h1>{% translate "Your clip" %}</h1>
   {% if saved %}<p role="status">{% translate "Your changes are saved." %}</p>{% endif %}
   <p>{% translate "Status:" %} {{ clip.get_status_display }}</p>
+  {% if clip.status == "processing" %}
+    <p>{% translate "Your clip is being prepared. This usually takes a few minutes; you can already change its details." %}</p>
+  {% elif failed %}
+    <p role="alert">{% translate "We could not prepare your clip, and its video has been deleted." %}</p>
+    <p>
+      {% translate "Please upload it again: you will get a new code. With this code, you can only delete what is left." %}
+      <a href="{% url 'clips:upload' %}">{% translate "Upload again" %}</a>
+    </p>
+  {% endif %}
   <p>
     {% translate "Time found in the video:" %}
     {% if clip.metadata_time %}{{ clip.metadata_time|date:"DATETIME_FORMAT" }}{% else %}{% translate "none" %}{% endif %}
   </p>
   <p>{% translate "It is kept as found, and nobody can change it." %}</p>
 
+  {% if not failed %}
   <form method="post" action="{% url 'clips:edit' %}" data-submit-once>
     {% csrf_token %}
     {{ form.code }}
@@ -55,11 +65,12 @@
     <p>{% translate "Lawyers see which details you changed, and roughly when, but not the old values. For the time, the place and the tags, they also see what you gave at upload." %}</p>
     <button type="submit">{% translate "Save changes" %}</button>
   </form>
+  {% endif %}
 
   <h2>{% translate "Delete this clip" %}</h2>
   <form method="post" action="{% url 'clips:delete' %}">
     {% csrf_token %}
-    <input type="hidden" name="code" value="{{ form.code.value }}">
+    <input type="hidden" name="code" value="{{ code }}">
     {% if delete_unconfirmed %}<p role="alert">{% translate "Tick the box to confirm." %}</p>{% endif %}
     <p>
       <label>
