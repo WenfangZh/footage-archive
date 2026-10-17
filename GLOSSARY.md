@@ -106,7 +106,7 @@ _Avoid in French_: relevé d'empreintes (fingerprinting a person in police custo
 
 **Ingest**:
 The processing a clip goes through after upload, from checking the original to producing the evidence copy and proxy.
-_French_: préparation (status: en préparation)
+_French_: préparation (statuses: en préparation, prêt, échec de la préparation)
 _Avoid_: Upload (as a noun), import, conversion
 _Avoid in French_: traitement (data processing in the GDPR sense)
 
