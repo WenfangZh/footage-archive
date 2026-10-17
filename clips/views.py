@@ -14,7 +14,7 @@ from . import grid, probe, rate_limits, vault
 from .confirmation import AlreadyConfirmed, confirm_upload
 from .editing import apply_edits, clip_for_code, code_holder_tags, delete_clip
 from .forms import METADATA_PRECISIONS, ConfirmForm, EditForm, FileForm
-from .models import Original, Precision
+from .models import Clip, Original, Precision
 from .tags import DEFAULT_TAGS
 from .upload_codes import display
 from .uploads import size_limit_display
@@ -141,6 +141,9 @@ def edit(request):
     clip, refusal = clip_or_refusal(request, typed)
     if refusal:
         return refusal
+    if clip.status == Clip.Status.FAILED:
+        # Nothing is left to describe: the code holder uploads again instead.
+        return render_clip(request, clip, edit_form(clip, code=typed), status=409)
     form = edit_form(clip, data=request.POST)
     if not form.is_valid():
         return render_clip(request, clip, form, status=400)
@@ -210,6 +213,8 @@ def render_clip(request, clip, form, status=200, **flags):
     return render(request, 'clips/clip.html', {
         'clip': clip,
         'form': form,
+        'code': form['code'].value(),
+        'failed': clip.status == Clip.Status.FAILED,
         'metadata_size': METADATA_SIZES.get(grid.resolution(clip.metadata_cell)) if clip.metadata_cell else None,
         'can_coarsen': 'metadata_precision' in form.fields,
         **flags,

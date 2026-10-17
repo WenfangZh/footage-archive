@@ -257,3 +257,46 @@ def test_the_code_card_says_where_to_come_back(client, make_media):
         confirm_url = client.post(reverse('clips:upload'), {'file': file})['Location']
     html = client.post(confirm_url, {}).content.decode()
     assert f'href="http://testserver{ENTRY_URL}"' in html
+
+
+def test_a_clip_being_prepared_says_so(client, uploaded):
+    clip, code = uploaded
+    html = open_clip(client, code).content.decode()
+    assert 'Processing' in html and 'being prepared' in html
+
+
+def test_a_ready_clip_says_so(client, uploaded):
+    clip, code = uploaded
+    Clip.objects.filter(pk=clip.pk).update(status=Clip.Status.READY)
+    html = open_clip(client, code).content.decode()
+    assert 'Ready' in html and 'being prepared' not in html
+    assert f'action="{EDIT_URL}"' in html
+
+
+def test_a_failed_clip_asks_for_a_new_upload_and_can_only_be_deleted(client, uploaded):
+    clip, code = uploaded
+    Clip.objects.filter(pk=clip.pk).update(status=Clip.Status.FAILED)
+    response = open_clip(client, code)
+    html = response.content.decode()
+    assert 'could not prepare your clip' in html
+    assert reverse('clips:upload') in html
+    assert f'action="{EDIT_URL}"' not in html
+    assert 'action="{}"'.format(reverse('clips:delete')) in html
+
+    refused = client.post(EDIT_URL, {'code': code, 'stated_time': '2026-05-02T10:00'}, headers=ENGLISH)
+    assert refused.status_code == 409
+    clip.refresh_from_db()
+    assert clip.stated_time.day == 1
+    assert not clip.edits.exists()
+
+    deleted = client.post(reverse('clips:delete'), {'code': code, 'confirm_delete': 'yes'})
+    assert deleted.status_code == 200
+    assert not Clip.objects.exists()
+
+
+def test_the_failed_message_is_in_french(client, uploaded):
+    clip, code = uploaded
+    Clip.objects.filter(pk=clip.pk).update(status=Clip.Status.FAILED)
+    html = client.post(ENTRY_URL, {'code': code}, headers={'accept_language': 'fr'}).content.decode()
+    assert 'Échec de la préparation' in html
+    assert "Nous n'avons pas pu préparer votre clip" in html
