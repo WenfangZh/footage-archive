@@ -1,16 +1,7 @@
 """The quick read at upload (SPEC.md §8): is it a video, and what time and GPS does it carry?
 
-The file is untrusted, and ffprobe has to parse it, so the run is fenced in:
-
-- only the container formats phones record in are allowed. Without this, ffprobe
-  reports a JPEG as a one-frame video, and playlist formats such as HLS can make it
-  open other files or URLs;
-- only local files can be opened, and the path is passed as an argument list, never
-  through a shell;
-- ffprobe gets a bare environment, so the archive's keys are not handed to it. It still
-  runs as the server's own user, so a flaw in it could read the files that user can
-  (.env, the database): only a sandbox would close that;
-- the run is stopped after PROBE_TIMEOUT_SECONDS.
+ffprobe runs fenced in (clips.media_tools): only the formats phones record in, only
+local files, a bare environment and a time limit.
 
 Only the metadata time and the GPS position are taken from the file. The GPS position
 is precise: it may pre-fill the form and give the metadata location's cell, and must
@@ -19,14 +10,12 @@ never be stored itself (ADR 0002). Nothing read from the file is logged.
 
 import datetime
 import json
-import os
 import re
-import subprocess
 from dataclasses import dataclass
 
-# Demuxer names as ffprobe knows them: MP4 and QuickTime (iPhone, most Android
-# phones), and Matroska and WebM (some Android phones).
-ALLOWED_FORMATS = ('mov', 'mp4', 'm4a', '3gp', '3g2', 'mj2', 'matroska', 'webm')
+from . import media_tools
+from .media_tools import ALLOWED_FORMATS
+
 PROBE_TIMEOUT_SECONDS = 30
 
 # Times some software writes when it has none: they are not capture times.
@@ -75,25 +64,16 @@ def quick_read(path):
 
 def run_ffprobe(path):
     command = [
-        'ffprobe', '-v', 'error', '-hide_banner',
-        '-protocol_whitelist', 'file',
-        '-format_whitelist', ','.join(ALLOWED_FORMATS),
+        'ffprobe', '-v', 'error', '-hide_banner', *media_tools.input_options(),
         '-print_format', 'json', '-show_format', '-show_streams',
-        f'file:{os.fspath(path)}',
+        media_tools.file_url(path),
     ]
     try:
-        result = subprocess.run(
-            command, capture_output=True, timeout=PROBE_TIMEOUT_SECONDS,
-            env={'PATH': os.environ.get('PATH', '/usr/bin:/bin'), 'LC_ALL': 'C'},
-        )
-    except subprocess.TimeoutExpired:
-        raise NotAVideo('timeout') from None
-    if result.returncode != 0:
-        if b'not on whitelist' in result.stderr:
-            raise NotAVideo('format_not_allowed')
-        raise NotAVideo('unreadable')
+        output = media_tools.run(command, PROBE_TIMEOUT_SECONDS)
+    except media_tools.ToolFailed as failure:
+        raise NotAVideo(failure.reason) from None
     try:
-        return json.loads(result.stdout)
+        return json.loads(output)
     except ValueError:
         raise NotAVideo('unreadable') from None
 
