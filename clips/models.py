@@ -46,8 +46,12 @@ class Clip(models.Model):
     """One video in the archive, with its times, locations and tags (GLOSSARY.md)."""
 
     class Status(models.TextChoices):
-        # Ingest (M2) adds the other statuses of SPEC.md §6.
+        # Waiting for ingest, or in it (SPEC.md §9).
         PROCESSING = 'processing', _('Processing')
+        # Ingest finished: the clip has its evidence copy, proxy and hash record.
+        READY = 'ready', _('Ready')
+        # Ingest failed for good: the original is deleted, and the code holder can upload again.
+        FAILED = 'failed', _('Failed')
 
     # Random, so that ids say nothing about upload order.
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -58,6 +62,11 @@ class Clip(models.Model):
 
     # Read from the file. Never modified.
     metadata_time = models.DateTimeField(null=True, blank=True)
+    # Read from the file at ingest. Matching uses the duration (SPEC.md §7); the size is
+    # the picture as it displays, so a portrait video is taller than wide.
+    duration = models.DurationField(null=True, blank=True)
+    width = models.PositiveIntegerField(null=True, blank=True)
+    height = models.PositiveIntegerField(null=True, blank=True)
     # An H3 cell; the code holder can make it coarser, never finer.
     metadata_cell = models.BigIntegerField(null=True, blank=True)
 
@@ -178,6 +187,34 @@ class Edit(models.Model):
     clip = models.ForeignKey(Clip, on_delete=models.CASCADE, related_name='edits')
     field = models.CharField(max_length=30, choices=EditableField.choices)
     edited_at = FourHourBlockField(default=timezone.now)
+
+
+class HashRecord(models.Model):
+    """The fingerprints of a clip's original and evidence copy (SPEC.md §9, clips.hashing).
+
+    It outlives the clip: deleting the clip only removes the link. Stream hashes are
+    lists of [kind, hex digest], kind 'v' or 'a', in stream order. Times are kept
+    only to their 4-hour block, like the upload time: hashing runs minutes after
+    upload, so an exact time would give the upload time away (SPEC.md §6).
+    Once written, a hash record never changes.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    clip = models.OneToOneField(
+        Clip, null=True, blank=True, on_delete=models.SET_NULL, related_name='hash_record',
+    )
+    original_sha256 = models.CharField(max_length=64)
+    original_stream_hashes = models.JSONField()
+    original_hashed_at = FourHourBlockField()
+    evidence_sha256 = models.CharField(max_length=64)
+    evidence_stream_hashes = models.JSONField()
+    evidence_hashed_at = FourHourBlockField()
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            # Only the link to a deleted clip may go, which the database does itself.
+            raise ValueError('A hash record cannot be changed.')
+        super().save(*args, **kwargs)
 
 
 class VaultText(models.Model):

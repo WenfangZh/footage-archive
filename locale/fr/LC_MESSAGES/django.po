@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-17 18:18+0200\n"
+"POT-Creation-Date: 2026-10-17 18:20+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -52,7 +52,7 @@ msgstr "Que voit-on dans la vidéo ?"
 msgid "Other tags, separated by commas"
 msgstr "Autres étiquettes, séparées par des virgules"
 
-#: clips/forms.py:69 clips/models.py:174 clips/models.py:191
+#: clips/forms.py:69 clips/models.py:183 clips/models.py:228
 msgid "Context"
 msgstr "Contexte"
 
@@ -117,39 +117,47 @@ msgstr "Quartier"
 msgid "Processing"
 msgstr "En préparation"
 
-#: clips/models.py:143
+#: clips/models.py:52
+msgid "Ready"
+msgstr "Prêt"
+
+#: clips/models.py:54
+msgid "Failed"
+msgstr "Échec de la préparation"
+
+#: clips/models.py:152
 msgid "code holder"
 msgstr "personne qui détient le code"
 
-#: clips/models.py:144
+#: clips/models.py:153
 msgid "lawyer"
 msgstr "avocat·e"
 
-#: clips/models.py:171
+#: clips/models.py:180
 msgid "Stated time"
 msgstr "Heure indiquée"
 
-#: clips/models.py:172
+#: clips/models.py:181
 msgid "Stated location"
 msgstr "Lieu indiqué"
 
-#: clips/models.py:173
+#: clips/models.py:182
 msgid "Tags"
 msgstr "Étiquettes"
 
-#: clips/models.py:175 clips/models.py:192
+#: clips/models.py:184 clips/models.py:229
 msgid "Contact details"
 msgstr "Moyen de contact"
 
-#: clips/models.py:176
+#: clips/models.py:185
 msgid "Metadata location"
 msgstr "Lieu des métadonnées"
 
-#: clips/models.py:217
+#: clips/models.py:254
 msgid "Evidence copy"
 msgstr "Copie de preuve"
 
-#: clips/models.py:218
+#: clips/models.py:255
 msgid "Proxy"
 msgstr "Version de prévisualisation"
 
