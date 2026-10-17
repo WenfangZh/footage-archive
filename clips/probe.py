@@ -45,15 +45,28 @@ class QuickRead:
 
 def quick_read(path):
     """Check that `path` is a video we accept and read its metadata time and GPS position."""
-    probe = run_ffprobe(path)
+    return check_and_read(run_ffprobe(path))
+
+
+def full_read(path, timeout):
+    """The ingest's check (SPEC.md §9, steps 2 and 5): the quick read's, after demuxing
+    every packet of the file without decoding it. Returns ffprobe's description too.
+    """
+    probe = run_ffprobe(path, timeout, extra_options=['-count_packets'])
+    read = check_and_read(probe)
+    if not any(
+        is_video(stream) and int(stream.get('nb_read_packets') or 0) > 0
+        for stream in probe.get('streams', [])
+    ):
+        raise NotAVideo('no_video_packets')
+    return probe, read
+
+
+def check_and_read(probe):
     if not set(probe.get('format', {}).get('format_name', '').split(',')) <= set(ALLOWED_FORMATS):
         raise NotAVideo('format_not_allowed')
     streams = probe.get('streams', [])
-    # Cover art in an audio file shows up as a video stream marked as an attached picture.
-    if not any(
-        stream.get('codec_type') == 'video' and not stream.get('disposition', {}).get('attached_pic')
-        for stream in streams
-    ):
+    if not any(is_video(stream) for stream in streams):
         raise NotAVideo('no_video_stream')
     if not duration(probe) > 0:
         raise NotAVideo('no_duration')
@@ -62,14 +75,19 @@ def quick_read(path):
     return QuickRead(metadata_time=read_time(tags, video_tags), gps=read_gps(tags))
 
 
-def run_ffprobe(path):
+def is_video(stream):
+    # Cover art in an audio file shows up as a video stream marked as an attached picture.
+    return stream.get('codec_type') == 'video' and not stream.get('disposition', {}).get('attached_pic')
+
+
+def run_ffprobe(path, timeout=PROBE_TIMEOUT_SECONDS, extra_options=()):
     command = [
         'ffprobe', '-v', 'error', '-hide_banner', *media_tools.input_options(),
-        '-print_format', 'json', '-show_format', '-show_streams',
+        '-print_format', 'json', '-show_format', '-show_streams', *extra_options,
         media_tools.file_url(path),
     ]
     try:
-        output = media_tools.run(command, PROBE_TIMEOUT_SECONDS)
+        output = media_tools.run(command, timeout)
     except media_tools.ToolFailed as failure:
         raise NotAVideo(failure.reason) from None
     try:
@@ -79,6 +97,7 @@ def run_ffprobe(path):
 
 
 def duration(probe):
+    """The duration in seconds, or 0 if the file gives none."""
     for value in [probe.get('format', {}).get('duration')] + [
         stream.get('duration') for stream in probe.get('streams', [])
     ]:
@@ -129,3 +148,15 @@ def parse_iso_6709(value):
     if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
         return None
     return latitude, longitude
+
+
+def display_size(probe):
+    """(width, height) of the first video stream as it displays, after any rotation."""
+    video = next(stream for stream in probe['streams'] if is_video(stream))
+    width, height = video['width'], video['height']
+    rotation = next(
+        (data['rotation'] for data in video.get('side_data_list', []) if 'rotation' in data), 0,
+    )
+    if abs(int(rotation)) % 180 == 90:
+        return height, width
+    return width, height

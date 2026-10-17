@@ -42,8 +42,8 @@ def get_text(clip, kind):
 def put_file(clip, kind, source_path, extension):
     """Store a copy of the local file at `source_path` as the clip's evidence copy or proxy.
 
-    It replaces any file of that kind the clip already had, such as one left by an
-    earlier ingest attempt. The caller deletes `source_path`.
+    It replaces any file of that kind the clip already had. The caller deletes
+    `source_path`. Returns the stored file's name, for delete_unrecorded_files.
     """
     storage = vault_storage()
     with open(source_path, 'rb') as source:
@@ -57,6 +57,16 @@ def put_file(clip, kind, source_path, extension):
         raise
     if old is not None:
         transaction.on_commit(lambda: storage.delete(old.file.name))
+    return name
+
+
+def delete_unrecorded_files(names):
+    """Delete the named stored files that no clip refers to, such as after a rollback."""
+    storage = vault_storage()
+    recorded = set(VaultFile.objects.filter(file__in=names).values_list('file', flat=True))
+    for name in names:
+        if name not in recorded:
+            storage.delete(name)
 
 
 def has_file(clip, kind):
