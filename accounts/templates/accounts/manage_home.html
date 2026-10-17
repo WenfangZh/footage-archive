@@ -25,4 +25,29 @@
   {% else %}
     <p>{% translate "No applicants." %}</p>
   {% endif %}
+
+  <h2>{% translate "Lawyers' access" %}</h2>
+  {% if lawyers %}
+    <ul>
+      {% for profile in lawyers %}
+        <li>
+          {{ profile.user.first_name }} {{ profile.user.last_name }}, {{ profile.bar }} ({{ profile.user.email }})
+          {% if profile.status == 'suspended' %}({{ profile.get_status_display }}){% endif %}
+          {% if profile.status == 'lawyer' %}
+          <form method="post" action="{% url 'manage:suspend' profile.pk %}">
+            {% csrf_token %}
+            <button type="submit">{% translate "Suspend access" %}</button>
+          </form>
+          {% elif profile.status == 'suspended' %}
+          <form method="post" action="{% url 'manage:reinstate' profile.pk %}">
+            {% csrf_token %}
+            <button type="submit">{% translate "Reinstate access" %}</button>
+          </form>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>{% translate "No lawyers yet." %}</p>
+  {% endif %}
 {% endblock %}

@@ -87,4 +87,7 @@ def manage_home(request):
     applicants = LawyerProfile.objects.filter(status=LawyerProfile.Status.APPLICANT).select_related('user').order_by(
         'user__last_name', 'user__first_name',
     )
-    return render(request, 'accounts/manage_home.html', {'applicants': applicants})
+    lawyers = LawyerProfile.objects.filter(
+        status__in=[LawyerProfile.Status.LAWYER, LawyerProfile.Status.SUSPENDED],
+    ).select_related('user').order_by('user__last_name', 'user__first_name')
+    return render(request, 'accounts/manage_home.html', {'applicants': applicants, 'lawyers': lawyers})
