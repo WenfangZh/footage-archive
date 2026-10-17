@@ -89,6 +89,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # The background task queue: `python manage.py run_huey` runs its worker.
     'huey.contrib.djhuey',
+    # Two-factor authentication (SPEC.md §10): codes from an authenticator app, and
+    # single-use recovery codes. No SMS or email codes.
+    'django_otp',
+    'django_otp.plugins.otp_totp',
+    'django_otp.plugins.otp_static',
     'core',
     'accounts',
     'audit',
@@ -104,6 +109,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Tells whether the session has passed the second factor (request.user.is_verified()).
+    'django_otp.middleware.OTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -242,6 +249,8 @@ LOGIN_URL = 'accounts:login'
 # Sends each person on to their own pages (accounts.views.account_home).
 LOGIN_REDIRECT_URL = 'accounts:home'
 LOGOUT_REDIRECT_URL = 'home'
+# The name authenticator apps show next to the codes.
+OTP_TOTP_ISSUER = 'Footage archive'
 # A login lasts at most this long (SPEC.md §10).
 SESSION_COOKIE_AGE = env_int('SESSION_HOURS', default=24, minimum=1) * 60 * 60
 

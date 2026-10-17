@@ -1,7 +1,7 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
-from . import views
+from . import two_factor, views
 
 app_name = 'accounts'
 
@@ -20,4 +20,6 @@ urlpatterns = [
     # Django's own; it only accepts POST.
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('account/', views.account_home, name='home'),
+    path('account/two-factor/setup/', two_factor.setup, name='two_factor_setup'),
+    path('account/two-factor/', two_factor.verify, name='two_factor_verify'),
 ]

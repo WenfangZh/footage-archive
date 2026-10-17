@@ -82,6 +82,18 @@ The person who manages lawyers' access (invitations, admissions, declining appli
 _French_: administrateur·rice
 _Avoid_: Moderator, operator
 
+**Two-factor authentication**:
+The code an applicant, a lawyer or the admin gives after their password, from an authenticator app on their phone (a six-digit code), or a recovery code.
+_French_: double authentification (its codes: code à six chiffres, code de secours)
+_Avoid_: 2FA in the interface, MFA, OTP
+_Avoid in French_: code alone (the upload code, for code holders)
+
+**Recovery code**:
+A single-use code an applicant, a lawyer or the admin keeps, to log in once if they lose the phone that gives their second factor.
+_French_: code de secours
+_Avoid_: Backup code, upload code
+_Avoid in French_: code alone (the upload code, for code holders)
+
 ### Upload codes
 
 **Upload code**:

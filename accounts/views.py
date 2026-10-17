@@ -10,6 +10,7 @@ from django.views.decorators.cache import never_cache
 from clips import rate_limits
 
 from .models import User
+from . import two_factor
 from .roles import Role, admin_required, lawyer_required, no_access, role
 
 
@@ -62,6 +63,11 @@ def typed_account(request):
 @login_required
 def account_home(request):
     current = role(request.user)
+    if current == Role.NO_ACCESS:
+        return no_access(request)
+    # Applicants too set up their second factor, before admission.
+    if not request.user.is_verified():
+        return two_factor.required_step(request)
     if current == Role.ADMIN:
         return redirect('manage:home')
     if current == Role.LAWYER:

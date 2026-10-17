@@ -1,6 +1,10 @@
 # Runtime dependencies. Direct dependencies only, pinned exactly.
 Django==5.2.18
 argon2-cffi==25.1.0
+# Two-factor authentication (SPEC.md §10): TOTP codes and recovery codes.
+django-otp==1.7.5
 h3==4.5.0
 huey==3.4.0
 python-dotenv==1.2.2
+# Draws the QR code for setting up two-factor authentication, on the server.
+segno==1.6.6
