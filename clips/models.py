@@ -201,6 +201,32 @@ class VaultText(models.Model):
         ]
 
 
+def vault_storage():
+    # Never served over the web: nothing routes to this folder (SPEC.md §4).
+    return FileSystemStorage(location=settings.VAULT_DIR)
+
+
+class VaultFile(models.Model):
+    """A file held in the vault for a clip. Only clips.vault reads or writes it (SPEC.md §6).
+
+    Plaintext until M5. A clip cannot be deleted while it still has vault files, so
+    that no file is left behind on disk: clips.vault.delete_all removes them first.
+    """
+
+    class Kind(models.TextChoices):
+        EVIDENCE_COPY = 'evidence_copy', _('Evidence copy')
+        PROXY = 'proxy', _('Proxy')
+
+    clip = models.ForeignKey(Clip, on_delete=models.PROTECT, related_name='+')
+    kind = models.CharField(max_length=20, choices=Kind.choices)
+    file = models.FileField(storage=vault_storage)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['clip', 'kind'], name='one_vault_file_per_kind'),
+        ]
+
+
 def quarantine_storage():
     # Never served over the web: nothing routes to this folder (SPEC.md §8).
     return FileSystemStorage(location=settings.QUARANTINE_DIR)
