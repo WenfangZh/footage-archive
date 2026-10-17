@@ -38,7 +38,7 @@ _Avoid in French_: demandeur (the claimant in a lawsuit)
 
 **Declined applicant**:
 An applicant the admin has decided not to admit. Their name, bar and email address are erased.
-_French_: candidat·e non retenu·e
+_French_: candidat·e non retenu·e (the act: candidature non retenue)
 _Avoid_: Rejected applicant, refused applicant
 _Avoid in French_: rejeté (the dismissal of a claim or an appeal)
 
@@ -49,9 +49,9 @@ _Avoid_: Member, user, avocat (in code and spec)
 
 **Suspended lawyer**:
 An admitted lawyer whose access the admin has paused. They see nothing until reinstated.
-_French_: avocat·e à l'accès suspendu
+_French_: avocat·e à l'accès suspendu (the act: suspension de l'accès)
 _Avoid_: Inactive lawyer, disabled user
-_Avoid in French_: avocat suspendu (a disciplinary suspension by the bar)
+_Avoid in French_: avocat suspendu (a disciplinary suspension by the bar), suspension alone (also an officer's suspension)
 
 **Reinstatement**:
 The admin's ending of a suspension: the lawyer regains the access they had.
@@ -61,9 +61,9 @@ _Avoid in French_: réintégration (a return to the bar, or to a job)
 
 **Revoked lawyer**:
 A former lawyer whose access the admin has ended for good. Their cases are closed, but nothing they did is erased.
-_French_: avocat·e à l'accès révoqué
+_French_: avocat·e à l'accès révoqué (the act: révocation de l'accès)
 _Avoid_: Deleted lawyer, banned user
-_Avoid in French_: radié (struck off the bar)
+_Avoid in French_: radié (struck off the bar), révocation alone (a civil servant's dismissal)
 
 **Vouch**:
 A trusted defence organisation's or an existing lawyer's statement that an applicant should be admitted; one of the conditions of admission.

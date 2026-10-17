@@ -91,6 +91,7 @@ INSTALLED_APPS = [
     'huey.contrib.djhuey',
     'core',
     'accounts',
+    'audit',
     'clips',
 ]
 
