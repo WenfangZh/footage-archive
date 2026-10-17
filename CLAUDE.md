@@ -10,6 +10,10 @@ Learning build of a footage archive for defence lawyers. Three documents define 
 - One milestone at a time (SPEC.md §12). Before starting one, propose the steps and wait for my OK.
 - Small steps. After each one: run the tests, summarise what changed, propose a commit message.
 - Before committing: check the author identity, stage files by name (never `git add .`), and check the list of staged files. One commit per change.
+- Every change goes through a pull request. Branch off an up-to-date master, named `<area>/<topic>` (e.g. `ci/tests`, `m2/stream-hashes`); never commit to master (branch protection blocks it anyway).
+- Keep each PR small enough to review in one sitting. PRs are squash-merged, so the PR title becomes the commit subject on master.
+- `git push` and `gh pr create` need my OK each time. The PR description opens with the **Security-relevant:** line, then `## Why`, `## What changed`, `## Scope` (including what's left out) and `## Verification`.
+- The `tests` CI check must pass; I review and merge on GitHub. After the merge, switch to master and pull. You may delete the local branch once its diff against master is empty.
 - Ask before adding a dependency, plugin, skill or MCP server: what it does, why we need it, and what the alternative is.
 - If SPEC.md is ambiguous or seems wrong, ask instead of guessing. When we decide something new, propose the matching edit to SPEC.md, update GLOSSARY.md when a term is settled, and propose an ADR for a decision that is hard to reverse, surprising without context, and the result of a real trade-off.
 - Start every summary with a **Security-relevant:** line covering auth, permissions, crypto, file handling or logging of personal data, or "none".
@@ -50,3 +54,4 @@ Fill these in as they're created:
 - Extract translatable strings: `python manage.py makemessages -l fr --ignore=var --ignore=tests --ignore=media_test`, then translate in `locale/fr/LC_MESSAGES/django.po`
 - Compile translations: `python manage.py compilemessages` (the `.mo` files are gitignored; a test fails if they are missing or stale)
 - Delete unconfirmed originals: `python manage.py delete_unconfirmed_originals` (scheduling comes with the task queue, M2)
+- Open a pull request: `gh pr create --base master` (CI: `.github/workflows/tests.yml`)
