@@ -14,6 +14,14 @@ Learning build of a footage archive for defence lawyers. Three documents define 
 - Keep each PR small enough to review in one sitting. PRs are squash-merged, so the PR title becomes the commit subject on master.
 - `git push` and `gh pr create` need my OK each time. The PR description opens with the **Security-relevant:** line, then `## Why`, `## What changed`, `## Scope` (including what's left out) and `## Verification`.
 - The `tests` CI check must pass; I review and merge on GitHub. After the merge, switch to master and pull. You may delete the local branch once its diff against master is empty.
+- A milestone's PRs usually form a stack: each branch starts from the previous one, and each PR is based on the branch before it. They are merged in order. After each merge, retarget the next PR to master before deleting the merged branch (deleting it first closes the next PR), rebase the rest of the stack with `git rebase --onto master <merged branch's old tip> <top branch> --update-refs`, and push the next branch with `--force-with-lease`. `gh pr edit --base` is broken; use `gh api -X PATCH repos/WenfangZh/footage-archive/pulls/<N> -f base=master`.
+
+## Subagents
+
+- One main session builds each milestone and talks to me. Subagents never make decisions that are mine: they report options and findings to the main session, which brings them to me.
+- **Review:** before each PR is pushed, a subagent with no prior context reviews the branch's diff for correctness and security, against SPEC.md, the ADRs and the hard rules below. The main session fixes or answers each finding, and the PR's `## Verification` says what the review found.
+- **Research ahead:** one subagent may prepare what the next decisions need, such as options for a dependency, or a design draft for me to review. It doesn't change the repository; it writes to the scratchpad and reports back.
+- Work that is truly independent of the milestone in progress may run in a separate worktree. Building milestones in parallel is out: they depend on each other, and on my decisions.
 - Ask before adding a dependency, plugin, skill or MCP server: what it does, why we need it, and what the alternative is.
 - If SPEC.md is ambiguous or seems wrong, ask instead of guessing. When we decide something new, propose the matching edit to SPEC.md, update GLOSSARY.md when a term is settled, and propose an ADR for a decision that is hard to reverse, surprising without context, and the result of a real trade-off.
 - Start every summary with a **Security-relevant:** line covering auth, permissions, crypto, file handling or logging of personal data, or "none".
