@@ -1,4 +1,5 @@
 import json
+import re
 import subprocess
 
 import pytest
@@ -70,7 +71,10 @@ def test_the_proxy_carries_no_metadata(synthetic_video, tmp_path):
     described = describe(destination)
     assert set(described['format'].get('tags', {})) <= {'major_brand', 'minor_version', 'compatible_brands'}
     for stream in described['streams']:
-        assert set(stream.get('tags', {})) <= {'handler_name', 'vendor_id', 'language'}
+        tags = stream.get('tags', {})
+        # Older ffmpeg always names the encoder; bitexact leaves out its version.
+        assert re.fullmatch(r'Lavc [a-z0-9_]+', tags.pop('encoder', 'Lavc none'))
+        assert set(tags) <= {'handler_name', 'vendor_id', 'language'}
 
 
 def test_an_existing_file_is_never_overwritten(synthetic_video, tmp_path):

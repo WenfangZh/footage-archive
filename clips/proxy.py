@@ -34,7 +34,8 @@ def make_proxy(evidence_path, destination_path, timeout):
         '-c:a', 'aac', '-b:a', '96k',
         '-movflags', '+faststart',
         '-map_metadata', '-1', '-map_chapters', '-1', '-fflags', '+bitexact',
-        # Encoding adds a tag naming the encoder; an empty value removes it.
+        # Encoding adds a tag naming the encoder; an empty value removes it. Older
+        # ffmpeg (6.1) adds it back, naming only the encoder, without its version.
         '-metadata:s', 'encoder=',
         '-f', 'mp4', media_tools.file_url(destination_path),
     ], timeout)
