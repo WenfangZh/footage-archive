@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-17 23:50+0200\n"
+"POT-Creation-Date: 2026-10-18 00:01+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -12,15 +12,20 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: accounts/access.py:57
+#: accounts/access.py:61
 #, python-format
 msgid "%(name)s's access is suspended."
 msgstr "L'accès de %(name)s est suspendu."
 
-#: accounts/access.py:66
+#: accounts/access.py:70
 #, python-format
 msgid "%(name)s's access is reinstated."
 msgstr "L'accès de %(name)s est rétabli."
+
+#: accounts/access.py:95
+#, python-format
+msgid "%(name)s's access is revoked."
+msgstr "L'accès de %(name)s est révoqué."
 
 #: accounts/admission.py:30
 msgid "How their registration with the bar was verified"
@@ -74,16 +79,27 @@ msgstr "Nom"
 msgid "Bar"
 msgstr "Barreau"
 
-#: accounts/invitations.py:47 accounts/invitations.py:68
+#: accounts/invitations.py:50 accounts/invitations.py:85
 msgid "An account already uses this address."
 msgstr "Un compte utilise déjà cette adresse."
 
-#: accounts/invitations.py:76
+#: accounts/invitations.py:59
+msgid "Invite this address anyway"
+msgstr "Inviter quand même cette adresse"
+
+#: accounts/invitations.py:62
+msgid ""
+"This address belonged to a lawyer whose access was revoked. Tick the box to "
+"invite it again, as a new applicant who needs verifying and a vouch like "
+"anyone else."
+msgstr "Cette adresse appartenait à un·e avocat·e à l'accès révoqué. Cochez la case pour l'inviter de nouveau, comme nouvelle candidature, à vérifier et à parrainer comme toute autre."
+
+#: accounts/invitations.py:93
 #, python-format
 msgid "An invitation link went to %(email)s."
 msgstr "Un lien d'invitation a été envoyé à %(email)s."
 
-#: accounts/invitations.py:106
+#: accounts/invitations.py:123
 msgid "Your invitation to the footage archive"
 msgstr "Votre invitation à l'archive de vidéos"
 
@@ -257,7 +273,7 @@ msgstr "Envoyer l'invitation"
 msgid "Your cases"
 msgstr "Vos dossiers de recherche"
 
-#: accounts/templates/accounts/lawyer_home.html:8
+#: accounts/templates/accounts/lawyer_home.html:13
 msgid "You have no cases yet."
 msgstr "Vous n'avez pas encore de dossier de recherche."
 
@@ -313,7 +329,13 @@ msgstr "Suspendre l'accès"
 msgid "Reinstate access"
 msgstr "Rétablir l'accès"
 
-#: accounts/templates/accounts/manage_home.html:51
+#: accounts/templates/accounts/manage_home.html:47
+#: accounts/templates/accounts/revoke.html:4
+#: accounts/templates/accounts/revoke.html:7
+msgid "Revoke access"
+msgstr "Révoquer l'accès"
+
+#: accounts/templates/accounts/manage_home.html:52
 msgid "No lawyers yet."
 msgstr "Aucun·e avocat·e pour l'instant."
 
@@ -343,6 +365,45 @@ msgstr ""
 #: accounts/templates/accounts/recovery_codes.html:12
 msgid "I have saved them: continue"
 msgstr "Je les ai enregistrés : continuer"
+
+#: accounts/templates/accounts/revoke.html:9
+#, python-format
+msgid ""
+"%(name)s will lose access for good, and their %(cases)s open case will be "
+"closed."
+msgid_plural ""
+"%(name)s will lose access for good, and their %(cases)s open cases will be "
+"closed."
+msgstr[0] ""
+"%(name)s perdra son accès définitivement, et son dossier de recherche ouvert "
+"sera clos."
+msgstr[1] ""
+"%(name)s perdra son accès définitivement, et ses %(cases)s dossiers de "
+"recherche ouverts seront clos."
+
+#: accounts/templates/accounts/revoke.html:11
+#, python-format
+msgid "%(name)s will lose access for good. They have no open cases."
+msgstr "%(name)s perdra son accès définitivement. Cette personne n'a aucun dossier de recherche ouvert."
+
+#: accounts/templates/accounts/revoke.html:13
+msgid ""
+"This can never be undone. Nothing they did is deleted. To suspend their "
+"access for a while instead, use suspension."
+msgstr "C'est définitif. Rien de ce que la personne a fait n'est effacé. Pour suspendre son accès pour un temps, utilisez plutôt la suspension de l'accès."
+
+#: accounts/templates/accounts/revoke.html:16
+msgid "The address typed does not match."
+msgstr "L'adresse saisie ne correspond pas."
+
+#: accounts/templates/accounts/revoke.html:17
+#, python-format
+msgid "To confirm, type their email address (%(email)s):"
+msgstr "Pour confirmer, saisissez son adresse e-mail (%(email)s) :"
+
+#: accounts/templates/accounts/revoke.html:19
+msgid "Revoke access for good"
+msgstr "Révoquer l'accès définitivement"
 
 #: accounts/templates/accounts/two_factor_setup.html:4
 #: accounts/templates/accounts/two_factor_setup.html:7
@@ -406,7 +467,7 @@ msgstr "Trop de codes erronés. Attendez quelques minutes avant de réessayer."
 msgid "Six-digit code from the app, or recovery code"
 msgstr "Code à six chiffres de l'application, ou code de secours"
 
-#: accounts/views.py:21
+#: accounts/views.py:22
 msgid ""
 "Please enter a correct email address and password. The password is case-"
 "sensitive."
@@ -437,6 +498,18 @@ msgstr "Rétablissement de l'accès"
 #: audit/models.py:28
 msgid "Revocation"
 msgstr "Révocation de l'accès"
+
+#: cases/models.py:37
+msgid "Closed by its lawyer"
+msgstr "Clos par son avocat·e"
+
+#: cases/models.py:38
+msgid "Closed when its lawyer's access was revoked"
+msgstr "Clos à la révocation de l'accès de son avocat·e"
+
+#: cases/models.py:39
+msgid "Closed after a long time without use"
+msgstr "Clos après une longue période sans usage"
 
 #: clips/forms.py:14
 msgid "About 50 m"
@@ -944,11 +1017,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:311
+#: config/settings.py:312
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:312
+#: config/settings.py:313
 msgid "English"
 msgstr "Anglais"
 

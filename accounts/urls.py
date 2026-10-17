@@ -19,6 +19,7 @@ manage_patterns = [
     path('applicants/<int:profile_id>/decline/', admission.decline, name='decline'),
     path('lawyers/<int:profile_id>/suspend/', access.suspend, name='suspend'),
     path('lawyers/<int:profile_id>/reinstate/', access.reinstate, name='reinstate'),
+    path('lawyers/<int:profile_id>/revoke/', access.revoke, name='revoke'),
 ]
 
 urlpatterns = [

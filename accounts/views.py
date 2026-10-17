@@ -7,6 +7,7 @@ from django.shortcuts import redirect, render
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.cache import never_cache
 
+from cases.models import Case
 from clips import rate_limits
 
 from .models import LawyerProfile, User
@@ -79,7 +80,8 @@ def account_home(request):
 
 @lawyer_required
 def lawyer_home(request):
-    return render(request, 'accounts/lawyer_home.html')
+    cases = Case.objects.filter(lawyer_profile__user=request.user).open().order_by('-opened_at')
+    return render(request, 'accounts/lawyer_home.html', {'cases': cases})
 
 
 @admin_required

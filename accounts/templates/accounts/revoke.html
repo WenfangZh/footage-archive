@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Revoke access" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Revoke access" %}</h1>
+  {% if open_cases %}
+  <p>{% blocktranslate with name=profile.user.get_full_name count cases=open_cases %}{{ name }} will lose access for good, and their {{ cases }} open case will be closed.{% plural %}{{ name }} will lose access for good, and their {{ cases }} open cases will be closed.{% endblocktranslate %}</p>
+  {% else %}
+  <p>{% blocktranslate with name=profile.user.get_full_name %}{{ name }} will lose access for good. They have no open cases.{% endblocktranslate %}</p>
+  {% endif %}
+  <p>{% translate "This can never be undone. Nothing they did is deleted. To suspend their access for a while instead, use suspension." %}</p>
+  <form method="post" action="{% url 'manage:revoke' profile.pk %}">
+    {% csrf_token %}
+    {% if wrong %}<p role="alert">{% translate "The address typed does not match." %}</p>{% endif %}
+    <label>{% blocktranslate with email=profile.user.email %}To confirm, type their email address ({{ email }}):{% endblocktranslate %}
+      <input type="email" name="email" required autocomplete="off"></label>
+    <button type="submit">{% translate "Revoke access for good" %}</button>
+  </form>
+{% endblock %}

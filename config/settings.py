@@ -97,6 +97,7 @@ INSTALLED_APPS = [
     'core',
     'accounts',
     'audit',
+    'cases',
     'clips',
 ]
 
