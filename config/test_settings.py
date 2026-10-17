@@ -18,3 +18,6 @@ atexit.register(shutil.rmtree, _data_dir, ignore_errors=True)
 os.environ['DJANGO_DATA_DIR'] = _data_dir
 
 from .settings import *  # noqa: E402,F403
+
+# Tasks run at once, in memory, without a worker.
+HUEY = {**HUEY, 'immediate': True}  # noqa: F405

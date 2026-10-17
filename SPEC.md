@@ -129,7 +129,7 @@ Limits: cap by file size, not duration (default 2 GB, configurable). A file over
 8. Generate a low-res H.264 proxy for previews. The proxy is never evidence.
 9. Delete the original: once step 7 passes, it is the only copy still carrying identifying metadata. Keep the hash record (results of steps 3, 4 and 7, plus the SHA-256 of the evidence copy so a lawyer can check a download, with timestamps kept to their 4-hour block, §6). It proves the frames are untouched, and lets a copy of the original (for example, still on the filmer's phone) be matched against what we hold.
 
-If a job fails or exceeds its time limit, it is retried with backoff for up to 30 minutes. After the last failure, the original is deleted immediately and the clip shows a failed status, so a code holder who returns with their code knows to upload again (with a new code). Clips still waiting for ingest are never deleted for age; a backed-up queue alerts the admin instead.
+If a job fails or exceeds its time limit (default 10 minutes per attempt, configurable), it is retried with backoff: five retries, after 1, 2, 4, 8 and 16 minutes. A file that is not a video, or no longer shows what the quick read at upload found, fails at once without retries. After the last failure, the original is deleted immediately and the clip shows a failed status, so a code holder who returns with their code knows to upload again (with a new code). Clips still waiting for ingest are never deleted for age; a backed-up queue alerts the admin instead.
 
 Later: a trusted timestamp (RFC 3161) over the hash record.
 
@@ -149,7 +149,7 @@ Later: a trusted timestamp (RFC 3161) over the hash record.
 - Django's built-in translation framework (its tools need GNU gettext, from apt): French by default, English available. Every user-facing string is translatable from day one.
 - SQLite in development, Postgres later.
 - ffmpeg and ffprobe from apt. Whether package installs (apt and pip) are done by hand or by the agent is set per machine, in that machine's Claude Code instructions (`~/.claude/CLAUDE.machine.md`).
-- A simple background task queue (propose options; fewest moving parts wins).
+- Background tasks with Huey, its queue in a SQLite file of its own: no broker to run, retries with backoff and scheduled tasks built in. Tasks carry only identifiers. The worker runs as `python manage.py run_huey`.
 - File storage behind Django's storage API: local disk now, S3-compatible object storage later.
 - pytest with pytest-django. Test videos are generated with ffmpeg (synthetic `lavfi` sources with injected fake GPS and device tags), so tests never need real footage.
 - Development on Ubuntu (WSL2 or a remote server) with pyenv, the repo in the Linux filesystem.

@@ -53,5 +53,6 @@ Fill these in as they're created:
 - System checks: `python manage.py check`
 - Extract translatable strings: `python manage.py makemessages -l fr --ignore=var --ignore=tests --ignore=media_test`, then translate in `locale/fr/LC_MESSAGES/django.po`
 - Compile translations: `python manage.py compilemessages` (the `.mo` files are gitignored; a test fails if they are missing or stale)
-- Delete unconfirmed originals: `python manage.py delete_unconfirmed_originals` (scheduling comes with the task queue, M2)
+- Background worker (ingest, and scheduled deletion of unconfirmed originals): `python manage.py run_huey`
+- Delete unconfirmed originals by hand: `python manage.py delete_unconfirmed_originals`
 - Open a pull request: `gh pr create --base master` (CI: `.github/workflows/tests.yml`)

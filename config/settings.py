@@ -86,6 +86,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # The background task queue: `python manage.py run_huey` runs its worker.
+    'huey.contrib.djhuey',
     'core',
     'clips',
 ]
@@ -206,6 +208,19 @@ CACHES = {
 # Time limit for one ingest attempt, in minutes; each run of ffmpeg or ffprobe within
 # it stops at this limit too.
 INGEST_ATTEMPT_MINUTES = env_int('INGEST_ATTEMPT_MINUTES', default=10, minimum=1)
+
+# The background task queue (clips.tasks), kept in a SQLite file of its own. Tasks
+# always go through the worker, never run inside a web request: Huey would otherwise
+# run them immediately whenever DEBUG is on.
+HUEY = {
+    'huey_class': 'huey.SqliteHuey',
+    'name': 'footage-archive',
+    'filename': str(DATA_DIR / 'queue.sqlite3'),
+    'immediate': False,
+    'results': False,
+    'utc': True,
+    'consumer': {'workers': 1, 'worker_type': 'thread'},
+}
 
 # H3 resolution of the grid that every stored location is snapped to (ADR 0002, 0003).
 # 11 gives cells about 50 m across; lower numbers are coarser. Finer is refused here
