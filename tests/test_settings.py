@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 from django.apps import apps
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
-from django.contrib.auth.models import User as AuthUser
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
 from django.db import connection
@@ -99,7 +99,7 @@ def test_tests_never_use_the_developer_data_folder():
 
 
 def test_new_passwords_are_hashed_with_argon2():
-    auth_user = AuthUser(username='someone')
+    auth_user = get_user_model()(email='someone@example.org')
     auth_user.set_password('a long test passphrase')
     assert auth_user.password.startswith('argon2$')
     assert check_password('a long test passphrase', auth_user.password)
