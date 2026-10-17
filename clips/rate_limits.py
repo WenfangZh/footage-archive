@@ -21,6 +21,8 @@ UPLOADS = 'uploads'
 FAILED_CODES = 'failed_codes'
 FAILED_LOGINS = 'failed_logins'
 FAILED_LOGINS_FOR_ACCOUNT = 'failed_logins_for_account'
+# Counted per account from any connection, never to refuse anything: only for the alert.
+FAILED_LOGINS_ANYWHERE = 'failed_logins_anywhere'
 
 
 def limit(action):
@@ -29,6 +31,7 @@ def limit(action):
         FAILED_CODES: settings.RATE_LIMIT_FAILED_CODES,
         FAILED_LOGINS: settings.RATE_LIMIT_FAILED_LOGINS,
         FAILED_LOGINS_FOR_ACCOUNT: settings.RATE_LIMIT_FAILED_LOGINS_FOR_ACCOUNT,
+        FAILED_LOGINS_ANYWHERE: settings.ALERT_FAILED_LOGINS,
     }[action]
 
 
@@ -36,7 +39,10 @@ def cache_key(request, action, account=None):
     # Per connection, or per account on that connection when one is given (the email address
     # as typed, normalised).
     address = request.META.get('REMOTE_ADDR', '')
-    subject = address if account is None else f'{account}\n{address}'
+    if action == FAILED_LOGINS_ANYWHERE:
+        subject = account
+    else:
+        subject = address if account is None else f'{account}\n{address}'
     digest = salted_hmac(f'clips.rate_limits.{action}', subject, algorithm='sha256').hexdigest()
     return f'rate-limit:{action}:{digest}'
 

@@ -5,6 +5,20 @@
 
 {% block content %}
   <h1>{% translate "Administration" %}</h1>
+  {% if alerts %}
+  <h2>{% translate "Alerts" %}</h2>
+  <ul>
+    {% for alert in alerts %}
+      <li>
+        {{ alert.get_kind_display }}{% if alert.account %} ({{ alert.account.email|default:alert.account.former_email }}){% endif %}, {{ alert.raised_at|date:"DATETIME_FORMAT" }}
+        <form method="post" action="{% url 'manage:alert_seen' alert.pk %}">
+          {% csrf_token %}
+          <button type="submit">{% translate "Mark as seen" %}</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
   <p><a href="{% url 'manage:invite' %}">{% translate "Send an invitation" %}</a></p>
 
   <h2>{% translate "Applicants" %}</h2>

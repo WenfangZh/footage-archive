@@ -7,6 +7,8 @@ from django.shortcuts import redirect, render
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.cache import never_cache
 
+from alerts.checks import failed_login
+from alerts.models import Alert
 from cases.models import Case
 from clips import rate_limits
 
@@ -44,6 +46,10 @@ class LoginView(auth_views.LoginView):
                 or for_account > rate_limits.limit(rate_limits.FAILED_LOGINS_FOR_ACCOUNT)):
             return rate_limits.too_many(request, 'accounts/login_limited.html')
         return super().post(request, *args, **kwargs)
+
+    def form_invalid(self, form):
+        failed_login(self.request, typed_account(self.request))
+        return super().form_invalid(form)
 
     def form_valid(self, form):
         rate_limits.uncount(self.request, rate_limits.FAILED_LOGINS)
@@ -92,4 +98,5 @@ def manage_home(request):
     lawyers = LawyerProfile.objects.filter(
         status__in=[LawyerProfile.Status.LAWYER, LawyerProfile.Status.SUSPENDED],
     ).select_related('user').order_by('user__last_name', 'user__first_name')
-    return render(request, 'accounts/manage_home.html', {'applicants': applicants, 'lawyers': lawyers})
+    alerts = Alert.objects.filter(seen_at__isnull=True).select_related('account').order_by('-raised_at')
+    return render(request, 'accounts/manage_home.html', {'alerts': alerts, 'applicants': applicants, 'lawyers': lawyers})

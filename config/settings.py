@@ -98,6 +98,7 @@ INSTALLED_APPS = [
     'accounts',
     'audit',
     'cases',
+    'alerts',
     'clips',
 ]
 
@@ -208,6 +209,9 @@ RATE_LIMIT_FAILED_CODES = env_int('RATE_LIMIT_FAILED_CODES', default=20, minimum
 # Failed logins (SPEC.md §10): per connection, and per account on one connection.
 RATE_LIMIT_FAILED_LOGINS = env_int('RATE_LIMIT_FAILED_LOGINS', default=20, minimum=1)
 RATE_LIMIT_FAILED_LOGINS_FOR_ACCOUNT = env_int('RATE_LIMIT_FAILED_LOGINS_FOR_ACCOUNT', default=10, minimum=1)
+# Failed logins or wrong second-factor codes for one account, from any connection, that
+# alert the admin within one window: nobody is locked out by them.
+ALERT_FAILED_LOGINS = env_int('ALERT_FAILED_LOGINS', default=30, minimum=1)
 
 # In this process's memory: enough for one development server. Several server
 # processes would each count separately, and this cache drops entries once it holds 300,
@@ -224,6 +228,12 @@ CACHES = {
 # Time limit for one ingest attempt, in minutes; each run of ffmpeg or ffprobe within
 # it stops at this limit too.
 INGEST_ATTEMPT_MINUTES = env_int('INGEST_ATTEMPT_MINUTES', default=10, minimum=1)
+
+# The ingest queue counts as backed up, and alerts the admin, when more than this many
+# clips wait, or when a clip still waits this many hours after its 4-hour upload block
+# ended (alerts.checks). Ingest takes at most about 1.5 hours with all its retries.
+QUEUE_ALERT_CLIPS = env_int('QUEUE_ALERT_CLIPS', default=20, minimum=1)
+QUEUE_ALERT_HOURS = env_int('QUEUE_ALERT_HOURS', default=2, minimum=1)
 
 # The background task queue (clips.tasks), kept in a SQLite file of its own. Tasks
 # always go through the worker, never run inside a web request: Huey would otherwise
