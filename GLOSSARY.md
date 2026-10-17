@@ -24,11 +24,23 @@ Whoever presents the upload code for a clip. This may be several people, or some
 _French_: personne qui détient le code
 _Avoid_: Uploader (after upload), owner, user
 
+**Invitation**:
+The admin's offer to a person to join as a lawyer, sent by email. It makes them an applicant; only admission makes them a lawyer.
+_French_: invitation
+_Avoid_: Sign-up, registration, invite (as a noun)
+_Avoid in French_: convocation (a summons)
+
 **Applicant**:
 A person invited to join as a lawyer who has not yet been admitted.
 _French_: candidat·e
 _Avoid_: Pending lawyer, candidate
 _Avoid in French_: demandeur (the claimant in a lawsuit)
+
+**Declined applicant**:
+An applicant the admin has decided not to admit. Their name, bar and email address are erased.
+_French_: candidat·e non retenu·e
+_Avoid_: Rejected applicant, refused applicant
+_Avoid in French_: rejeté (the dismissal of a claim or an appeal)
 
 **Lawyer**:
 An admitted defence lawyer whose access is not suspended. The only kind of person who can create cases or see clips.
@@ -40,6 +52,12 @@ An admitted lawyer whose access the admin has paused. They see nothing until rei
 _French_: avocat·e à l'accès suspendu
 _Avoid_: Inactive lawyer, disabled user
 _Avoid in French_: avocat suspendu (a disciplinary suspension by the bar)
+
+**Reinstatement**:
+The admin's ending of a suspension: the lawyer regains the access they had.
+_French_: rétablissement de l'accès
+_Avoid_: Reactivation, unsuspension
+_Avoid in French_: réintégration (a return to the bar, or to a job)
 
 **Revoked lawyer**:
 A former lawyer whose access the admin has ended for good. Their cases are closed, but nothing they did is erased.
@@ -53,8 +71,14 @@ _French_: parrainage
 _Avoid_: Reference, sponsorship, endorsement
 _Avoid in French_: caution (also bail), attestation (a witness statement in court)
 
+**Admission**:
+The admin's decision that makes an applicant a lawyer, once their registration with a bar is verified and they have a vouch.
+_French_: admission
+_Avoid_: Approval (alone), activation, onboarding
+_Avoid in French_: inscription (a lawyer's registration with the bar itself)
+
 **Admin**:
-The person who manages lawyers' access (invitations, admissions, suspensions, revocations), approves oversized cases, deletes withdrawn clips and receives alerts. Not meant to see footage.
+The person who manages lawyers' access (invitations, admissions, declining applicants, suspensions, reinstatements, revocations), approves oversized cases, deletes withdrawn clips and receives alerts. Not meant to see footage.
 _French_: administrateur·rice
 _Avoid_: Moderator, operator
 
@@ -238,12 +262,12 @@ _French_: retiré
 _Avoid_: Hidden, removed, banned, suspended
 
 **Alert**:
-A notice to the admin of something needing attention: a lawyer's activity looks unusual (such as many downloads in a short period), or the ingest queue is backed up.
+A notice to the admin of something needing attention: a lawyer's activity looks unusual (such as many downloads in a short period), logins for one account keep failing, or the ingest queue is backed up.
 _French_: alerte
 _Avoid_: Flag, warning
 
 **Audit log**:
-The permanent record of every action a lawyer takes in the archive. It can only be added to.
+The permanent record of every action a lawyer takes in the archive, and of the admin's actions on applicants' and lawyers' accounts. It can only be added to.
 _French_: journal d'audit
 _Avoid_: Access log, history
 
