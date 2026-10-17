@@ -1,3 +1,5 @@
+import datetime
+import os
 import uuid
 from pathlib import Path
 
@@ -159,3 +161,58 @@ def test_the_text_form_of_a_vault_file_hides_its_name(clip, local_file):
     entry = VaultFile.objects.get()
     assert entry.file.name not in str(entry)
     assert entry.file.name not in repr(entry)
+
+
+def age(path, delta):
+    moment = (datetime.datetime.now(datetime.UTC) - delta).timestamp()
+    os.utime(path, (moment, moment))
+
+
+def test_old_files_no_clip_refers_to_are_deleted(clip, local_file):
+    vault.put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
+    [kept] = vault_files_on_disk()
+    old_stray = settings.VAULT_DIR / f'{uuid.uuid4().hex}.mp4'
+    recent_stray = settings.VAULT_DIR / f'{uuid.uuid4().hex}.mp4'
+    not_ours = settings.VAULT_DIR / 'keys.bin'
+    for path in (old_stray, recent_stray, not_ours):
+        path.write_bytes(b'left over')
+    for path in (kept, old_stray, not_ours):
+        age(path, vault.STRAY_FILE_AGE + datetime.timedelta(minutes=1))
+
+    assert vault.delete_stray_files() == 1
+    assert not old_stray.exists()
+    assert kept.exists() and vault.has_file(clip, vault.EVIDENCE_COPY)
+    # It may belong to an ingest whose transaction has not committed yet.
+    assert recent_stray.exists()
+    # Only names the vault gives its files are ever swept.
+    assert not_ours.exists()
+
+
+def test_a_stored_file_counts_as_new_however_old_its_source(clip, local_file):
+    # The sweep's margin relies on this: an old source must not make a fresh copy look stray.
+    age(local_file, vault.STRAY_FILE_AGE * 3)
+    vault.put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
+    VaultFile.objects.all().delete()  # As if its transaction had not committed yet.
+    assert vault.delete_stray_files() == 0
+    assert len(vault_files_on_disk()) == 1
+
+
+def test_the_files_of_a_crash_after_delete_all_are_swept_up(clip, local_file):
+    vault.put_file(clip, vault.PROXY, local_file, 'mp4')
+    # The callback that deletes the files never runs, as if the process died after the commit.
+    vault.delete_all(clip)
+    [left] = vault_files_on_disk()
+    age(left, vault.STRAY_FILE_AGE + datetime.timedelta(minutes=1))
+    assert vault.delete_stray_files() == 1
+    assert vault_files_on_disk() == set()
+
+
+def test_too_many_strays_at_once_are_all_kept():
+    # As after restoring an old database: these may be the only copies.
+    paths = [settings.VAULT_DIR / f'{uuid.uuid4().hex}.mp4' for _ in range(vault.MAX_STRAY_FILES + 1)]
+    for path in paths:
+        path.write_bytes(b'maybe the only copy')
+        age(path, vault.STRAY_FILE_AGE * 2)
+    with pytest.raises(vault.TooManyStrays):
+        vault.delete_stray_files()
+    assert all(path.exists() for path in paths)

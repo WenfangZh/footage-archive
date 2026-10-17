@@ -1,4 +1,5 @@
 import datetime
+import os
 import uuid
 
 import pytest
@@ -144,6 +145,15 @@ def test_unconfirmed_originals_are_deleted_on_a_schedule():
     old.file.save('original', ContentFile(b'synthetic bytes'))
     tasks.delete_unconfirmed_originals.call_local()
     assert not Original.objects.exists()
+
+
+def test_stray_vault_files_are_deleted_on_a_schedule(settings):
+    stray = settings.VAULT_DIR / f'{uuid.uuid4().hex}.mp4'
+    stray.write_bytes(b'left over')
+    moment = (datetime.datetime.now(datetime.UTC) - 2 * vault.STRAY_FILE_AGE).timestamp()
+    os.utime(stray, (moment, moment))
+    tasks.delete_stray_vault_files.call_local()
+    assert not stray.exists()
 
 
 def test_the_worker_never_runs_inside_a_request_outside_tests():
