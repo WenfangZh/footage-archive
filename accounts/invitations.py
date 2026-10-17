@@ -40,12 +40,29 @@ class InvitationForm(forms.Form):
     first_name = forms.CharField(label=_('First name'), max_length=150)
     last_name = forms.CharField(label=_('Last name'), max_length=150)
     bar = forms.CharField(label=_('Bar'), max_length=100)
+    # Shown only when needed: a revoked lawyer's address may be invited again, knowingly.
+    # Ticking it confirms that one address only, so it cannot carry over to another.
+    invite_former_address = forms.CharField(required=False, widget=forms.HiddenInput)
 
     def clean_email(self):
         email = User.objects.normalize_email(self.cleaned_data['email'])
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError(_('An account already uses this address.'))
         return email
+
+    def clean(self):
+        cleaned = super().clean()
+        email = cleaned.get('email')
+        confirmed = cleaned.get('invite_former_address') == email
+        if email and not confirmed and User.objects.filter(former_email=email).exists():
+            field = self.fields['invite_former_address']
+            field.label = _('Invite this address anyway')
+            field.widget = forms.CheckboxInput(attrs={'value': email}, check_test=lambda value: False)
+            self.add_error('invite_former_address', _(
+                'This address belonged to a lawyer whose access was revoked. Tick the box to invite it again, '
+                'as a new applicant who needs verifying and a vouch like anyone else.'
+            ))
+        return cleaned
 
 
 @admin_required

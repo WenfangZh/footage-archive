@@ -5,5 +5,11 @@
 
 {% block content %}
   <h1>{% translate "Your cases" %}</h1>
-  <p>{% translate "You have no cases yet." %}</p>
+  {% if cases %}
+    <ul>
+      {% for case in cases %}<li>{{ case.label }}</li>{% endfor %}
+    </ul>
+  {% else %}
+    <p>{% translate "You have no cases yet." %}</p>
+  {% endif %}
 {% endblock %}
