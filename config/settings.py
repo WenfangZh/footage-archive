@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     # The background task queue: `python manage.py run_huey` runs its worker.
     'huey.contrib.djhuey',
     'core',
+    'accounts',
     'clips',
 ]
 
@@ -227,6 +228,10 @@ HUEY = {
 # 11 gives cells about 50 m across; lower numbers are coarser. Finer is refused here
 # rather than in a system check, because system checks do not run in production.
 GRID_H3_RESOLUTION = env_int('GRID_H3_RESOLUTION', default=11, minimum=0, maximum=11)
+
+
+# Accounts log in with an email address (accounts.models).
+AUTH_USER_MODEL = 'accounts.User'
 
 
 # Password hashing: Argon2 only (SPEC.md §10). There are no older hashes to verify.

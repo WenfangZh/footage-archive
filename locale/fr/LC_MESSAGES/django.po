@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-17 18:33+0200\n"
+"POT-Creation-Date: 2026-10-17 23:06+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -11,6 +11,30 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: accounts/models.py:71
+msgid "email address"
+msgstr "adresse e-mail"
+
+#: accounts/models.py:123
+msgid "Applicant"
+msgstr "Candidat·e"
+
+#: accounts/models.py:124
+msgid "Declined applicant"
+msgstr "Candidat·e non retenu·e"
+
+#: accounts/models.py:126
+msgid "Lawyer"
+msgstr "Avocat·e"
+
+#: accounts/models.py:127
+msgid "Suspended lawyer"
+msgstr "Avocat·e à l'accès suspendu"
+
+#: accounts/models.py:128
+msgid "Revoked lawyer"
+msgstr "Avocat·e à l'accès révoqué"
 
 #: clips/forms.py:14
 msgid "About 50 m"
@@ -523,11 +547,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:267
+#: config/settings.py:273
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:268
+#: config/settings.py:274
 msgid "English"
 msgstr "Anglais"
 
