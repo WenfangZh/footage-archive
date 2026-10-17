@@ -150,7 +150,12 @@ MEDIA_ROOT = DATA_DIR / 'media'
 # never sits anywhere else.
 QUARANTINE_DIR = DATA_DIR / 'quarantine'
 FILE_UPLOAD_TEMP_DIR = QUARANTINE_DIR / 'incoming'
-for directory in (QUARANTINE_DIR, FILE_UPLOAD_TEMP_DIR):
+
+# The vault's files: evidence copies and proxies (SPEC.md §6, clips.vault). Never
+# served directly: lawyers will reach them only through views that check access (M4).
+VAULT_DIR = DATA_DIR / 'vault'
+
+for directory in (QUARANTINE_DIR, FILE_UPLOAD_TEMP_DIR, VAULT_DIR):
     directory.mkdir(mode=0o700, exist_ok=True)
     directory.chmod(0o700)
 

@@ -79,6 +79,12 @@ def test_quarantine_is_private_and_holds_incoming_files():
     assert settings.FILE_UPLOAD_DIRECTORY_PERMISSIONS == 0o700
 
 
+def test_the_vault_folder_is_private_and_apart_from_quarantine():
+    assert settings.VAULT_DIR.is_dir()
+    assert settings.VAULT_DIR.stat().st_mode & 0o777 == 0o700
+    assert not settings.VAULT_DIR.is_relative_to(settings.QUARANTINE_DIR)
+
+
 def test_tests_never_use_the_developer_data_folder():
     assert not settings.DATA_DIR.is_relative_to(BASE_DIR)
 

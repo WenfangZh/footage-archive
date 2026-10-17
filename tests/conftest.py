@@ -1,4 +1,5 @@
 import pytest
+from django.conf import settings
 from django.core.cache import cache
 
 from tests.media import H264, TEST_PICTURE, TEST_SOUND, run_ffmpeg
@@ -8,6 +9,14 @@ from tests.media import H264, TEST_PICTURE, TEST_SOUND, run_ffmpeg
 def empty_cache():
     """Every test starts with no rate-limit counts: they all come from one address."""
     cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def empty_vault_folder():
+    """Files outlive each test's database rollback, so every test starts with an empty vault."""
+    for path in settings.VAULT_DIR.rglob('*'):
+        if path.is_file():
+            path.unlink()
 
 
 @pytest.fixture
