@@ -1,6 +1,8 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
+from alerts import views as alert_views
+
 from . import access, admission, invitations, two_factor, views
 
 app_name = 'accounts'
@@ -20,6 +22,7 @@ manage_patterns = [
     path('lawyers/<int:profile_id>/suspend/', access.suspend, name='suspend'),
     path('lawyers/<int:profile_id>/reinstate/', access.reinstate, name='reinstate'),
     path('lawyers/<int:profile_id>/revoke/', access.revoke, name='revoke'),
+    path('alerts/<int:alert_id>/seen/', alert_views.mark_seen, name='alert_seen'),
 ]
 
 urlpatterns = [

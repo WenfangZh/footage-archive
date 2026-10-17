@@ -29,6 +29,8 @@ from django_otp import login as otp_login
 from django_otp.plugins.otp_static.models import StaticDevice, StaticToken
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
+from alerts.checks import failed_login
+
 RECOVERY_CODES = 10
 # A key shown on the setup page stays valid this long, so that reloading the page does
 # not replace the key the person has just scanned.
@@ -163,5 +165,6 @@ def verify(request):
         if verdict is True:
             otp_login(request, device)
             return redirect(next_page(request))
+        failed_login(request, request.user.email)
         form.add_error('code', TOO_MANY if verdict == TOO_MANY else WRONG_APP_CODE if is_app_code else WRONG_RECOVERY_CODE)
     return render(request, 'accounts/two_factor_verify.html', {'form': form, 'next': next_page(request)})
