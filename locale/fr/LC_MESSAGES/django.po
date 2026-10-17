@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-17 23:06+0200\n"
+"POT-Creation-Date: 2026-10-17 23:07+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -35,6 +35,30 @@ msgstr "Avocat·e à l'accès suspendu"
 #: accounts/models.py:128
 msgid "Revoked lawyer"
 msgstr "Avocat·e à l'accès révoqué"
+
+#: audit/models.py:22
+msgid "Invitation"
+msgstr "Invitation"
+
+#: audit/models.py:23
+msgid "Declining"
+msgstr "Candidature non retenue"
+
+#: audit/models.py:24
+msgid "Admission"
+msgstr "Admission"
+
+#: audit/models.py:25
+msgid "Suspension"
+msgstr "Suspension de l'accès"
+
+#: audit/models.py:26
+msgid "Reinstatement"
+msgstr "Rétablissement de l'accès"
+
+#: audit/models.py:27
+msgid "Revocation"
+msgstr "Révocation de l'accès"
 
 #: clips/forms.py:14
 msgid "About 50 m"
@@ -547,11 +571,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:273
+#: config/settings.py:274
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:274
+#: config/settings.py:275
 msgid "English"
 msgstr "Anglais"
 
