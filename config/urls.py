@@ -14,7 +14,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import TemplateView
 
@@ -23,5 +22,4 @@ urlpatterns = [
     path('', include('clips.urls')),
     # Django's set_language view, used by the language switch.
     path('i18n/', include('django.conf.urls.i18n')),
-    path('admin/', admin.site.urls),
 ]

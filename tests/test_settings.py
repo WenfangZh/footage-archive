@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User as AuthUser
@@ -19,6 +20,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 def test_system_checks_pass():
     call_command('check', fail_level='WARNING')
+
+
+@pytest.mark.django_db
+def test_django_admin_site_is_not_installed(client):
+    # It can show and change any table; the admin manages accounts, not content (SPEC.md §10).
+    assert not apps.is_installed('django.contrib.admin')
+    assert client.get('/admin/').status_code == 404
 
 
 @pytest.mark.django_db

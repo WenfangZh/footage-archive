@@ -79,8 +79,9 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # Application definition
 
+# Django's admin site is not installed: it can show and change any table, and the admin
+# manages accounts, not content (SPEC.md §5, §10). The admin's pages are the archive's own.
 INSTALLED_APPS = [
-    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
