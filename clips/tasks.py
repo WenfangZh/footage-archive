@@ -11,6 +11,7 @@ clip's id, never anything read from a file or typed by an uploader.
   attempts on one clip never run together, and a clip that is no longer processing is
   left alone.
 - Every 15 minutes, originals whose form was never confirmed are deleted (clips.cleanup).
+- Every hour, vault files left over from a crash are deleted (clips.vault).
 """
 
 import logging
@@ -18,7 +19,7 @@ import logging
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, db_task, lock_task, on_startup
 
-from . import cleanup, ingest
+from . import cleanup, ingest, vault
 from .models import Clip
 
 logger = logging.getLogger(__name__)
@@ -60,3 +61,15 @@ def delete_unconfirmed_originals():
     waiting = Clip.objects.filter(status=Clip.Status.PROCESSING).count()
     # Until alerts exist (M3), the size of the ingest queue goes to the log.
     logger.info('%s clips waiting for ingest.', waiting)
+
+
+@db_periodic_task(crontab(minute='7'))
+def delete_stray_vault_files():
+    try:
+        deleted = vault.delete_stray_files()
+    except vault.TooManyStrays as refusal:
+        logger.error('%s vault files have no row; none deleted. Check the database first.', refusal)
+        return
+    # A count only: file names say nothing useful and are better not logged.
+    if deleted:
+        logger.warning('Deleted %s vault files left over from a crash.', deleted)

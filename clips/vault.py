@@ -9,13 +9,17 @@ value removes it: old values of context and contact details are never kept (SPEC
 
 Files are stored under random names. A file is removed from disk only once the
 database has let go of it, so a failure never leaves a row pointing at nothing; at
-worst it leaves a file no row points to.
+worst, if the process dies in between, it leaves a file no row points to, which
+delete_stray_files removes once it is old enough.
 """
 
+import datetime
+import re
 import uuid
 
 from django.core.files import File
 from django.db import transaction
+from django.utils import timezone
 
 from .models import VaultFile, VaultText, vault_storage
 
@@ -23,6 +27,18 @@ CONTEXT = VaultText.Kind.CONTEXT
 CONTACT_DETAILS = VaultText.Kind.CONTACT_DETAILS
 EVIDENCE_COPY = VaultFile.Kind.EVIDENCE_COPY
 PROXY = VaultFile.Kind.PROXY
+
+# A file no row points to is left over from a crash once it is this old. Ingest stores
+# a file and its row in one transaction, which never lasts this long; deleting the file
+# of a transaction still open would lose an evidence copy. This relies on put_file
+# writing each file anew, so that its modification time is when it was stored.
+STRAY_FILE_AGE = datetime.timedelta(days=1)
+# The names put_file gives files (Django may add '_' and 7 characters to avoid a clash).
+# Nothing else in the vault folder is ever swept.
+# More strays than this at once means something else went wrong, such as a database
+# restored from an old backup: then nothing is deleted, since these may be the only copies.
+MAX_STRAY_FILES = 10
+VAULT_FILE_NAME = re.compile(r'[0-9a-f]{32}(_[A-Za-z0-9]{7})?\.[A-Za-z0-9]+')
 
 
 def put_text(clip, kind, text):
@@ -90,3 +106,31 @@ def delete_all(clip):
             storage.delete(name)
 
     transaction.on_commit(delete_files)
+
+
+def delete_stray_files(now=None):
+    """Delete files that no clip refers to and that are older than STRAY_FILE_AGE; returns how many.
+
+    Over MAX_STRAY_FILES, it deletes none and raises TooManyStrays instead.
+    """
+    now = now or timezone.now()
+    storage = vault_storage()
+    known = set(VaultFile.objects.values_list('file', flat=True))
+    strays = []
+    for name in storage.listdir('')[1]:
+        if not VAULT_FILE_NAME.fullmatch(name) or name in known:
+            continue
+        try:
+            if now - storage.get_modified_time(name) >= STRAY_FILE_AGE:
+                strays.append(name)
+        except FileNotFoundError:  # Deleted meanwhile.
+            continue
+    if len(strays) > MAX_STRAY_FILES:
+        raise TooManyStrays(len(strays))
+    for name in strays:
+        storage.delete(name)
+    return len(strays)
+
+
+class TooManyStrays(Exception):
+    """More vault files than MAX_STRAY_FILES look stray at once; none was deleted."""
