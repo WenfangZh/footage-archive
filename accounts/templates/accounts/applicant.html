@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Waiting for admission" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Waiting for admission" %}</h1>
+  <p>{% translate "Your account is ready, but the admin has not admitted you yet. Until then, the archive shows you nothing." %}</p>
+{% endblock %}

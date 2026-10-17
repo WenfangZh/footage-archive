@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-17 23:07+0200\n"
+"POT-Creation-Date: 2026-10-17 23:09+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -35,6 +35,73 @@ msgstr "Avocat·e à l'accès suspendu"
 #: accounts/models.py:128
 msgid "Revoked lawyer"
 msgstr "Avocat·e à l'accès révoqué"
+
+#: accounts/templates/accounts/applicant.html:4
+#: accounts/templates/accounts/applicant.html:7
+msgid "Waiting for admission"
+msgstr "En attente d'admission"
+
+#: accounts/templates/accounts/applicant.html:8
+msgid ""
+"Your account is ready, but the admin has not admitted you yet. Until then, "
+"the archive shows you nothing."
+msgstr ""
+"Votre compte est prêt, mais l'administrateur·rice ne vous a pas encore "
+"admis·e. D'ici là, l'archive ne vous montre rien."
+
+#: accounts/templates/accounts/lawyer_home.html:4
+#: accounts/templates/accounts/lawyer_home.html:7
+msgid "Your cases"
+msgstr "Vos dossiers de recherche"
+
+#: accounts/templates/accounts/lawyer_home.html:8
+msgid "You have no cases yet."
+msgstr "Vous n'avez pas encore de dossier de recherche."
+
+#: accounts/templates/accounts/login.html:4
+#: accounts/templates/accounts/login.html:7
+#: accounts/templates/accounts/login.html:13
+msgid "Log in"
+msgstr "Se connecter"
+
+#: accounts/templates/accounts/login.html:8
+msgid "For defence lawyers and the admin. Uploading a video needs no account."
+msgstr ""
+"Pour les avocat·es de la défense et l'administrateur·rice. Envoyer une vidéo "
+"ne demande pas de compte."
+
+#: accounts/templates/accounts/login_limited.html:4
+#: accounts/templates/accounts/login_limited.html:8
+#: clips/templates/clips/rate_limited.html:4
+#: clips/templates/clips/rate_limited.html:8
+msgid "Too many attempts"
+msgstr "Trop de tentatives"
+
+#: accounts/templates/accounts/login_limited.html:9
+msgid "There have been too many attempts to log in. Try again in an hour."
+msgstr "Il y a eu trop de tentatives de connexion. Réessayez dans une heure."
+
+#: accounts/templates/accounts/manage_home.html:4
+#: accounts/templates/accounts/manage_home.html:7
+msgid "Administration"
+msgstr "Administration"
+
+#: accounts/templates/accounts/no_access.html:4
+#: accounts/templates/accounts/no_access.html:8
+msgid "No access"
+msgstr "Accès refusé"
+
+#: accounts/templates/accounts/no_access.html:9
+msgid "Your account does not give access to this page."
+msgstr "Votre compte ne donne pas accès à cette page."
+
+#: accounts/views.py:20
+msgid ""
+"Please enter a correct email address and password. The password is case-"
+"sensitive."
+msgstr ""
+"Saisissez une adresse e-mail et un mot de passe valides. Le mot de passe "
+"tient compte des majuscules et des minuscules."
 
 #: audit/models.py:22
 msgid "Invitation"
@@ -507,11 +574,6 @@ msgstr ""
 "Le clip et tout ce qu'il contenait sont supprimés. Son code d'upload ne "
 "fonctionne plus."
 
-#: clips/templates/clips/rate_limited.html:4
-#: clips/templates/clips/rate_limited.html:8
-msgid "Too many attempts"
-msgstr "Trop de tentatives"
-
 #: clips/templates/clips/rate_limited.html:9
 msgid ""
 "There have been too many attempts from your connection. Try again in an hour."
@@ -571,11 +633,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:274
+#: config/settings.py:285
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:275
+#: config/settings.py:286
 msgid "English"
 msgstr "Anglais"
 
@@ -583,8 +645,16 @@ msgstr "Anglais"
 msgid "Footage archive"
 msgstr "Archive de vidéos"
 
+#: templates/base.html:28
+msgid "Log out"
+msgstr "Se déconnecter"
+
 #: templates/home.html:6
 msgid "Learning build: not deployed, not for real footage."
 msgstr ""
 "Version d'apprentissage : non déployée, à ne pas utiliser pour de vraies "
 "vidéos."
+
+#: templates/home.html:9
+msgid "Defence lawyers: log in"
+msgstr "Avocat·es de la défense : se connecter"

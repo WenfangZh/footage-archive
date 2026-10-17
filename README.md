@@ -114,6 +114,12 @@ python manage.py compilemessages
 
 The SQLite database, the task queue, the quarantine and the vault go in `var/` (gitignored).
 
+To log in as the admin, create the admin's account; it asks for an email address and a password:
+
+```sh
+python manage.py createsuperuser
+```
+
 ### 6. Run
 
 ```sh

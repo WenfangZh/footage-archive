@@ -22,6 +22,12 @@
       {% endfor %}
     </form>
     {% endblock %}
+    {% if user.is_authenticated %}
+    <form action="{% url 'accounts:logout' %}" method="post">
+      {% csrf_token %}
+      <button type="submit">{% translate "Log out" %}</button>
+    </form>
+    {% endif %}
   </header>
   <main>
     {% block content %}{% endblock %}

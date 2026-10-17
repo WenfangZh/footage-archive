@@ -197,9 +197,14 @@ UNCONFIRMED_ORIGINAL_MINUTES = env_int('UNCONFIRMED_ORIGINAL_MINUTES', default=1
 RATE_LIMIT_WINDOW_MINUTES = env_int('RATE_LIMIT_WINDOW_MINUTES', default=60, minimum=1)
 RATE_LIMIT_UPLOADS = env_int('RATE_LIMIT_UPLOADS', default=20, minimum=1)
 RATE_LIMIT_FAILED_CODES = env_int('RATE_LIMIT_FAILED_CODES', default=20, minimum=1)
+# Failed logins (SPEC.md §10): per connection, and per account on one connection.
+RATE_LIMIT_FAILED_LOGINS = env_int('RATE_LIMIT_FAILED_LOGINS', default=20, minimum=1)
+RATE_LIMIT_FAILED_LOGINS_FOR_ACCOUNT = env_int('RATE_LIMIT_FAILED_LOGINS_FOR_ACCOUNT', default=10, minimum=1)
 
 # In this process's memory: enough for one development server. Several server
-# processes would each count separately, so a deployment needs a shared cache.
+# processes would each count separately, and this cache drops entries once it holds 300,
+# which lets a flood of logins for other addresses reset a count; a deployment needs a
+# shared cache.
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -233,6 +238,12 @@ GRID_H3_RESOLUTION = env_int('GRID_H3_RESOLUTION', default=11, minimum=0, maximu
 
 # Accounts log in with an email address (accounts.models).
 AUTH_USER_MODEL = 'accounts.User'
+LOGIN_URL = 'accounts:login'
+# Sends each person on to their own pages (accounts.views.account_home).
+LOGIN_REDIRECT_URL = 'accounts:home'
+LOGOUT_REDIRECT_URL = 'home'
+# A login lasts at most this long (SPEC.md §10).
+SESSION_COOKIE_AGE = env_int('SESSION_HOURS', default=24, minimum=1) * 60 * 60
 
 
 # Password hashing: Argon2 only (SPEC.md §10). There are no older hashes to verify.
