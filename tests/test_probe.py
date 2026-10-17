@@ -152,3 +152,25 @@ def test_parse_iso_6709(value, expected):
 ])
 def test_parse_time(value, expected):
     assert probe.parse_time(value) == expected
+
+
+def test_the_full_read_counts_the_packets(synthetic_video):
+    described, read = probe.full_read(synthetic_video, 60)
+    video = next(s for s in described['streams'] if s['codec_type'] == 'video')
+    assert int(video['nb_read_packets']) == 10
+    assert read == quick_read(synthetic_video)
+
+
+def test_the_full_read_refuses_what_the_quick_read_refuses(make_media):
+    with pytest.raises(NotAVideo, match='format_not_allowed'):
+        probe.full_read(make_media('video.avi', '-an'), 60)
+
+
+@pytest.mark.parametrize('rotation, size', [(None, (160, 120)), ('90', (120, 160)), ('180', (160, 120))])
+def test_the_display_size_follows_the_rotation(make_media, tmp_path, rotation, size):
+    path = make_media('video.mp4', *H264, '-an')
+    if rotation:
+        rotated = tmp_path / 'rotated.mp4'
+        run_ffmpeg('-display_rotation', rotation, '-i', str(path), '-c', 'copy', str(rotated))
+        path = rotated
+    assert probe.display_size(probe.run_ffprobe(path)) == size

@@ -68,6 +68,7 @@ def test_upload_defaults():
     assert settings.UPLOAD_MAX_BYTES == 2_000_000_000
     assert settings.UNCONFIRMED_ORIGINAL_MINUTES == 120
     assert settings.GRID_H3_RESOLUTION == 11
+    assert settings.INGEST_ATTEMPT_MINUTES == 10
 
 
 def test_quarantine_is_private_and_holds_incoming_files():
