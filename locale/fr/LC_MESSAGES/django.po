@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-17 23:09+0200\n"
+"POT-Creation-Date: 2026-10-17 23:33+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -95,7 +95,85 @@ msgstr "Accès refusé"
 msgid "Your account does not give access to this page."
 msgstr "Votre compte ne donne pas accès à cette page."
 
-#: accounts/views.py:20
+#: accounts/templates/accounts/recovery_codes.html:4
+#: accounts/templates/accounts/recovery_codes.html:7
+msgid "Your recovery codes"
+msgstr "Vos codes de secours"
+
+#: accounts/templates/accounts/recovery_codes.html:8
+msgid ""
+"Keep these codes somewhere safe, away from your phone. Each one lets you log "
+"in once if you lose the phone. They are shown only now."
+msgstr ""
+"Gardez ces codes en lieu sûr, loin de votre téléphone. Chacun permet de vous "
+"connecter une fois si vous perdez le téléphone. Ils ne sont affichés que "
+"maintenant."
+
+#: accounts/templates/accounts/recovery_codes.html:12
+msgid "I have saved them: continue"
+msgstr "Je les ai enregistrés : continuer"
+
+#: accounts/templates/accounts/two_factor_setup.html:4
+#: accounts/templates/accounts/two_factor_setup.html:7
+msgid "Set up two-factor authentication"
+msgstr "Activer la double authentification"
+
+#: accounts/templates/accounts/two_factor_setup.html:8
+msgid ""
+"Every login needs a code from an authenticator app on your phone, as well as "
+"your password."
+msgstr ""
+"Chaque connexion demande, en plus de votre mot de passe, un code d'une "
+"application d'authentification sur votre téléphone."
+
+#: accounts/templates/accounts/two_factor_setup.html:9
+msgid ""
+"Scan this QR code with the app, or type in the key below, then enter the six-"
+"digit code the app shows."
+msgstr ""
+"Scannez ce QR code avec l'application, ou saisissez la clé ci-dessous, puis "
+"entrez le code à six chiffres qu'elle affiche."
+
+#: accounts/templates/accounts/two_factor_setup.html:11
+msgid "Key:"
+msgstr "Clé :"
+
+#: accounts/templates/accounts/two_factor_setup.html:16
+#: accounts/templates/accounts/two_factor_verify.html:13
+msgid "Confirm"
+msgstr "Confirmer"
+
+#: accounts/templates/accounts/two_factor_verify.html:4
+#: accounts/templates/accounts/two_factor_verify.html:7
+msgid "Two-factor authentication"
+msgstr "Double authentification"
+
+#: accounts/templates/accounts/two_factor_verify.html:8
+msgid ""
+"Enter the six-digit code from your authenticator app, or one of your "
+"recovery codes."
+msgstr ""
+"Saisissez le code à six chiffres de votre application d'authentification, ou "
+"l'un de vos codes de secours."
+
+#: accounts/two_factor.py:38
+msgid ""
+"This six-digit code is not right. Check the time on your phone and try again."
+msgstr "Ce code à six chiffres n'est pas valide. Vérifiez l'heure de votre téléphone et réessayez."
+
+#: accounts/two_factor.py:39
+msgid "This recovery code is not right, or has been used already."
+msgstr "Ce code de secours n'est pas valide, ou a déjà servi."
+
+#: accounts/two_factor.py:40
+msgid "Too many wrong codes. Wait a few minutes before trying again."
+msgstr "Trop de codes erronés. Attendez quelques minutes avant de réessayer."
+
+#: accounts/two_factor.py:45
+msgid "Six-digit code from the app, or recovery code"
+msgstr "Code à six chiffres de l'application, ou code de secours"
+
+#: accounts/views.py:21
 msgid ""
 "Please enter a correct email address and password. The password is case-"
 "sensitive."
@@ -103,27 +181,27 @@ msgstr ""
 "Saisissez une adresse e-mail et un mot de passe valides. Le mot de passe "
 "tient compte des majuscules et des minuscules."
 
-#: audit/models.py:22
+#: audit/models.py:23
 msgid "Invitation"
 msgstr "Invitation"
 
-#: audit/models.py:23
+#: audit/models.py:24
 msgid "Declining"
 msgstr "Candidature non retenue"
 
-#: audit/models.py:24
+#: audit/models.py:25
 msgid "Admission"
 msgstr "Admission"
 
-#: audit/models.py:25
+#: audit/models.py:26
 msgid "Suspension"
 msgstr "Suspension de l'accès"
 
-#: audit/models.py:26
+#: audit/models.py:27
 msgid "Reinstatement"
 msgstr "Rétablissement de l'accès"
 
-#: audit/models.py:27
+#: audit/models.py:28
 msgid "Revocation"
 msgstr "Révocation de l'accès"
 
@@ -633,11 +711,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:285
+#: config/settings.py:294
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:286
+#: config/settings.py:295
 msgid "English"
 msgstr "Anglais"
 
@@ -658,3 +736,6 @@ msgstr ""
 #: templates/home.html:9
 msgid "Defence lawyers: log in"
 msgstr "Avocat·es de la défense : se connecter"
+
+#~ msgid "Code"
+#~ msgstr "Code à six chiffres ou code de secours"

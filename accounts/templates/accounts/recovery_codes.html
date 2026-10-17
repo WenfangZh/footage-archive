@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Your recovery codes" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Your recovery codes" %}</h1>
+  <p>{% translate "Keep these codes somewhere safe, away from your phone. Each one lets you log in once if you lose the phone. They are shown only now." %}</p>
+  <ul>
+    {% for code in codes %}<li><code>{{ code }}</code></li>{% endfor %}
+  </ul>
+  <p><a href="{{ next }}">{% translate "I have saved them: continue" %}</a></p>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Set up two-factor authentication" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Set up two-factor authentication" %}</h1>
+  <p>{% translate "Every login needs a code from an authenticator app on your phone, as well as your password." %}</p>
+  <p>{% translate "Scan this QR code with the app, or type in the key below, then enter the six-digit code the app shows." %}</p>
+  <div>{{ qr_code|safe }}</div>
+  <p>{% translate "Key:" %} <code>{{ key }}</code></p>
+  <form method="post" action="{% url 'accounts:two_factor_setup' %}">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit">{% translate "Confirm" %}</button>
+  </form>
+{% endblock %}

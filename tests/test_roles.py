@@ -14,6 +14,7 @@ from django.urls.resolvers import RoutePattern
 
 from accounts.models import LawyerProfile
 from accounts.roles import Role, role
+from tests.conftest import log_in_with_second_factor
 
 pytestmark = pytest.mark.django_db
 
@@ -80,8 +81,7 @@ def make_account(kind):
 @pytest.fixture
 def client_for(client):
     def log_in(kind):
-        client.force_login(make_account(kind))
-        return client
+        return log_in_with_second_factor(client, make_account(kind))
     return log_in
 
 
@@ -129,6 +129,16 @@ def test_no_response_from_either_area_is_cached(client_for, client, kind, area):
     client = client_for(kind) if kind else client
     for url in area_urls(area):
         assert_never_cached(client.get(url), url)
+
+
+@pytest.mark.parametrize('kind, area', [('lawyer', LAWYER_AREA), ('admin', ADMIN_AREA)])
+@pytest.mark.parametrize('method', ['get', 'post'])
+def test_no_page_opens_without_a_second_factor(client, kind, area, method):
+    client.force_login(make_account(kind))  # A password, but no code yet.
+    for url in area_urls(area):
+        response = getattr(client, method)(url)
+        assert response.status_code == 302, url
+        assert response['Location'].startswith(reverse('accounts:two_factor_setup')), url
 
 
 def test_a_lawyer_sees_the_lawyer_pages(client_for):

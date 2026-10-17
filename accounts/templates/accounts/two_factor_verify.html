@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Two-factor authentication" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Two-factor authentication" %}</h1>
+  <p>{% translate "Enter the six-digit code from your authenticator app, or one of your recovery codes." %}</p>
+  <form method="post" action="{% url 'accounts:two_factor_verify' %}">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit">{% translate "Confirm" %}</button>
+  </form>
+{% endblock %}

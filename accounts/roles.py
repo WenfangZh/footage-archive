@@ -1,5 +1,8 @@
 """Who may see what (SPEC.md §5): the one place that decides a person's role.
 
+A lawyer or the admin also needs a verified second factor in this session; without one,
+they are sent to set it up or to enter a code (accounts.two_factor).
+
 Every lawyer page is wrapped in lawyer_required and every admin page in admin_required,
 outermost, so that nobody else learns anything from them, not even which methods a
 page accepts. The role is read from the database on every request: a suspension or a
@@ -14,6 +17,7 @@ from django.contrib.auth.views import redirect_to_login
 from django.shortcuts import render
 from django.utils.cache import add_never_cache_headers
 
+from . import two_factor
 from .models import LawyerProfile
 
 
@@ -56,6 +60,8 @@ def _required(needed):
                 response = redirect_to_login(request.get_full_path())
             elif current != needed:
                 response = no_access(request)
+            elif not request.user.is_verified():
+                response = two_factor.required_step(request)
             else:
                 response = view(request, *args, **kwargs)
             add_never_cache_headers(response)

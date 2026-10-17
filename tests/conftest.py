@@ -1,4 +1,6 @@
 import pytest
+from django_otp import DEVICE_ID_SESSION_KEY
+from django_otp.plugins.otp_totp.models import TOTPDevice
 from django.conf import settings
 from django.core.cache import cache
 
@@ -42,3 +44,13 @@ def make_media(tmp_path):
         run_ffmpeg(*TEST_PICTURE, *TEST_SOUND, *options, '-shortest', str(path))
         return path
     return make
+
+
+def log_in_with_second_factor(client, user):
+    """Log `user` in as if they had given their password and a code from their app."""
+    device = TOTPDevice.objects.create(user=user, name='authenticator app', confirmed=True)
+    client.force_login(user)
+    session = client.session
+    session[DEVICE_ID_SESSION_KEY] = device.persistent_id
+    session.save()
+    return client

@@ -6,6 +6,8 @@ from django.core.cache import cache
 from django.db import connection
 from django.test import Client
 from django.urls import reverse
+from django_otp import DEVICE_ID_SESSION_KEY
+from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from accounts.models import LawyerProfile
 
@@ -46,21 +48,36 @@ def test_the_login_page_is_in_french_and_english(client):
     assert 'Log in' in client.get(LOGIN_URL, headers={'accept-language': 'en'}).content.decode()
 
 
-def test_a_lawyer_logs_in_with_their_email_address_and_lands_on_their_pages(client, lawyer):
+def pass_second_factor(client, user):
+    device = TOTPDevice.objects.create(user=user, name='authenticator app', confirmed=True)
+    session = client.session
+    session[DEVICE_ID_SESSION_KEY] = device.persistent_id
+    session.save()
+
+
+def test_a_password_alone_leads_to_setting_up_the_second_factor(client, lawyer):
     response = log_in(client, 'Lawyer@Example.org')
     assert response.status_code == 302
-    assert client.get(response['Location'])['Location'] == reverse('lawyer:home')
+    assert client.get(response['Location'])['Location'].startswith(reverse('accounts:two_factor_setup'))
+
+
+def test_a_lawyer_lands_on_their_pages(client, lawyer):
+    log_in(client, 'lawyer@example.org')
+    pass_second_factor(client, lawyer)
+    assert client.get(reverse('accounts:home'))['Location'] == reverse('lawyer:home')
 
 
 def test_the_admin_lands_on_the_admin_pages(client):
-    User.objects.create_superuser('admin@example.org', PASSWORD)
-    response = log_in(client, 'admin@example.org')
-    assert client.get(response['Location'])['Location'] == reverse('manage:home')
+    admin = User.objects.create_superuser('admin@example.org', PASSWORD)
+    log_in(client, 'admin@example.org')
+    pass_second_factor(client, admin)
+    assert client.get(reverse('accounts:home'))['Location'] == reverse('manage:home')
 
 
 def test_an_applicant_lands_on_a_page_that_shows_nothing(client, applicant):
-    response = log_in(client, 'applicant@example.org')
-    page = client.get(response['Location'])
+    log_in(client, 'applicant@example.org')
+    pass_second_factor(client, applicant)
+    page = client.get(reverse('accounts:home'))
     assert page.status_code == 200
     assert [template.name for template in page.templates][0] == 'accounts/applicant.html'
 
