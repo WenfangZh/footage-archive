@@ -249,6 +249,23 @@ LOGIN_URL = 'accounts:login'
 # Sends each person on to their own pages (accounts.views.account_home).
 LOGIN_REDIRECT_URL = 'accounts:home'
 LOGOUT_REDIRECT_URL = 'home'
+# An invitation link works once and expires after this many days (SPEC.md §5). It is
+# Django's set-password link, the one behind its password reset, which nothing else uses.
+INVITATION_DAYS = env_int('INVITATION_DAYS', default=3, minimum=1)
+PASSWORD_RESET_TIMEOUT = INVITATION_DAYS * 24 * 60 * 60
+
+# Email (SPEC.md §11). In development, printed in the terminal of the process that sends
+# it; anywhere else a backend must be set, since the console would put invitation links
+# in the server's logs. A mail provider comes with deployment.
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND') or (
+    'django.core.mail.backends.console.EmailBackend' if DEBUG else None
+)
+if EMAIL_BACKEND is None:
+    raise ImproperlyConfigured('Set EMAIL_BACKEND, or DJANGO_DEBUG=true for development (see .env.example).')
+# Seconds to wait for the mail server: an invitation is sent inside a database transaction.
+EMAIL_TIMEOUT = env_int('EMAIL_TIMEOUT', default=10, minimum=1)
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or 'archive@localhost'
+
 # The name authenticator apps show next to the codes.
 OTP_TOTP_ISSUER = 'Footage archive'
 # A login lasts at most this long (SPEC.md §10).

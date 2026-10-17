@@ -1,7 +1,7 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
-from . import two_factor, views
+from . import invitations, two_factor, views
 
 app_name = 'accounts'
 
@@ -13,6 +13,8 @@ lawyer_patterns = [
 ]
 manage_patterns = [
     path('', views.manage_home, name='home'),
+    path('invite/', invitations.invite, name='invite'),
+    path('applicants/<int:profile_id>/new-link/', invitations.send_new_link, name='send_new_link'),
 ]
 
 urlpatterns = [
@@ -22,4 +24,6 @@ urlpatterns = [
     path('account/', views.account_home, name='home'),
     path('account/two-factor/setup/', two_factor.setup, name='two_factor_setup'),
     path('account/two-factor/', two_factor.verify, name='two_factor_verify'),
+    # Django's set-password page, reached from the link in an invitation.
+    path('account/invitation/<uidb64>/<token>/', invitations.accept_invitation, name='accept_invitation'),
 ]

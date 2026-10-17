@@ -1,0 +1,8 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate %}You have been invited to the footage archive for defence lawyers.
+
+Set your password here:{% endblocktranslate %}
+
+{{ link }}
+
+{% blocktranslate count days=days %}The link works once and expires in {{ days }} day.{% plural %}The link works once and expires in {{ days }} days.{% endblocktranslate %}
+{% translate "If you did not expect this invitation, ignore this email." %}{% endautoescape %}

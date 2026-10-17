@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-17 23:33+0200\n"
+"POT-Creation-Date: 2026-10-17 23:37+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -11,6 +11,39 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: accounts/invitations.py:38
+msgid "Email address"
+msgstr "Adresse e-mail"
+
+#: accounts/invitations.py:38
+msgid "The person's own professional address."
+msgstr "L'adresse professionnelle de la personne elle-même."
+
+#: accounts/invitations.py:40
+msgid "First name"
+msgstr "Prénom"
+
+#: accounts/invitations.py:41
+msgid "Last name"
+msgstr "Nom"
+
+#: accounts/invitations.py:42
+msgid "Bar"
+msgstr "Barreau"
+
+#: accounts/invitations.py:47 accounts/invitations.py:68
+msgid "An account already uses this address."
+msgstr "Un compte utilise déjà cette adresse."
+
+#: accounts/invitations.py:76
+#, python-format
+msgid "An invitation link went to %(email)s."
+msgstr "Un lien d'invitation a été envoyé à %(email)s."
+
+#: accounts/invitations.py:106
+msgid "Your invitation to the footage archive"
+msgstr "Votre invitation à l'archive de vidéos"
 
 #: accounts/models.py:71
 msgid "email address"
@@ -36,6 +69,31 @@ msgstr "Avocat·e à l'accès suspendu"
 msgid "Revoked lawyer"
 msgstr "Avocat·e à l'accès révoqué"
 
+#: accounts/templates/accounts/accept_invitation.html:4
+#: accounts/templates/accounts/accept_invitation.html:9
+msgid "Set your password"
+msgstr "Définissez votre mot de passe"
+
+#: accounts/templates/accounts/accept_invitation.html:10
+msgid "Next, you will set up two-factor authentication."
+msgstr "Ensuite, vous activerez la double authentification."
+
+#: accounts/templates/accounts/accept_invitation.html:14
+msgid "Set the password"
+msgstr "Enregistrer le mot de passe"
+
+#: accounts/templates/accounts/accept_invitation.html:17
+msgid "This link no longer works"
+msgstr "Ce lien ne fonctionne plus"
+
+#: accounts/templates/accounts/accept_invitation.html:18
+msgid ""
+"It has been used already, has expired, or a newer link was sent. Ask the "
+"admin for a new one."
+msgstr ""
+"Il a déjà servi, il a expiré, ou un lien plus récent a été envoyé. Demandez-"
+"en un nouveau à l'administrateur·rice."
+
 #: accounts/templates/accounts/applicant.html:4
 #: accounts/templates/accounts/applicant.html:7
 msgid "Waiting for admission"
@@ -48,6 +106,46 @@ msgid ""
 msgstr ""
 "Votre compte est prêt, mais l'administrateur·rice ne vous a pas encore "
 "admis·e. D'ici là, l'archive ne vous montre rien."
+
+#: accounts/templates/accounts/invitation_email.txt:1
+msgid ""
+"You have been invited to the footage archive for defence lawyers.\n"
+"\n"
+"Set your password here:"
+msgstr ""
+"Vous êtes invité·e à rejoindre l'archive de vidéos pour les avocat·es de la "
+"défense.\n"
+"\n"
+"Définissez votre mot de passe ici :"
+
+#: accounts/templates/accounts/invitation_email.txt:7
+#, python-format
+msgid "The link works once and expires in %(days)s day."
+msgid_plural "The link works once and expires in %(days)s days."
+msgstr[0] "Le lien fonctionne une fois et expire dans %(days)s jour."
+msgstr[1] "Le lien fonctionne une fois et expire dans %(days)s jours."
+
+#: accounts/templates/accounts/invitation_email.txt:8
+msgid "If you did not expect this invitation, ignore this email."
+msgstr "Si vous n'attendiez pas cette invitation, ignorez ce message."
+
+#: accounts/templates/accounts/invite.html:4
+#: accounts/templates/accounts/invite.html:7
+#: accounts/templates/accounts/manage_home.html:8
+msgid "Send an invitation"
+msgstr "Envoyer une invitation"
+
+#: accounts/templates/accounts/invite.html:8
+msgid ""
+"The person receives a link by email to set their password. They are an "
+"applicant, and see nothing, until you admit them."
+msgstr ""
+"La personne reçoit par e-mail un lien pour définir son mot de passe. Elle "
+"reste candidat·e, et ne voit rien, tant que vous ne l'avez pas admise."
+
+#: accounts/templates/accounts/invite.html:12
+msgid "Send the invitation"
+msgstr "Envoyer l'invitation"
 
 #: accounts/templates/accounts/lawyer_home.html:4
 #: accounts/templates/accounts/lawyer_home.html:7
@@ -85,6 +183,18 @@ msgstr "Il y a eu trop de tentatives de connexion. Réessayez dans une heure."
 #: accounts/templates/accounts/manage_home.html:7
 msgid "Administration"
 msgstr "Administration"
+
+#: accounts/templates/accounts/manage_home.html:10
+msgid "Applicants"
+msgstr "Candidat·es"
+
+#: accounts/templates/accounts/manage_home.html:19
+msgid "Send a new invitation link"
+msgstr "Envoyer un nouveau lien d'invitation"
+
+#: accounts/templates/accounts/manage_home.html:26
+msgid "No applicants."
+msgstr "Aucun·e candidat·e."
 
 #: accounts/templates/accounts/no_access.html:4
 #: accounts/templates/accounts/no_access.html:8
@@ -159,7 +269,9 @@ msgstr ""
 #: accounts/two_factor.py:38
 msgid ""
 "This six-digit code is not right. Check the time on your phone and try again."
-msgstr "Ce code à six chiffres n'est pas valide. Vérifiez l'heure de votre téléphone et réessayez."
+msgstr ""
+"Ce code à six chiffres n'est pas valide. Vérifiez l'heure de votre téléphone "
+"et réessayez."
 
 #: accounts/two_factor.py:39
 msgid "This recovery code is not right, or has been used already."
@@ -711,11 +823,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:294
+#: config/settings.py:311
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:295
+#: config/settings.py:312
 msgid "English"
 msgstr "Anglais"
 
@@ -736,6 +848,15 @@ msgstr ""
 #: templates/home.html:9
 msgid "Defence lawyers: log in"
 msgstr "Avocat·es de la défense : se connecter"
+
+#~ msgid "Invitation sent"
+#~ msgstr "Invitation envoyée"
+
+#~ msgid "Back to administration"
+#~ msgstr "Retour à l'administration"
+
+#~ msgid "Invite a lawyer"
+#~ msgstr "Inviter un·e avocat·e"
 
 #~ msgid "Code"
 #~ msgstr "Code à six chiffres ou code de secours"

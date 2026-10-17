@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Set your password" %}{% endblock %}
+{% block language_next %}{{ request.path }}{% endblock %}
+
+{% block content %}
+  {% if validlink %}
+    <h1>{% translate "Set your password" %}</h1>
+    <p>{% translate "Next, you will set up two-factor authentication." %}</p>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_div }}
+      <button type="submit">{% translate "Set the password" %}</button>
+    </form>
+  {% else %}
+    <h1>{% translate "This link no longer works" %}</h1>
+    <p>{% translate "It has been used already, has expired, or a newer link was sent. Ask the admin for a new one." %}</p>
+  {% endif %}
+{% endblock %}

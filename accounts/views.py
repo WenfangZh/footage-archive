@@ -9,7 +9,7 @@ from django.views.decorators.cache import never_cache
 
 from clips import rate_limits
 
-from .models import User
+from .models import LawyerProfile, User
 from . import two_factor
 from .roles import Role, admin_required, lawyer_required, no_access, role
 
@@ -84,4 +84,7 @@ def lawyer_home(request):
 
 @admin_required
 def manage_home(request):
-    return render(request, 'accounts/manage_home.html')
+    applicants = LawyerProfile.objects.filter(status=LawyerProfile.Status.APPLICANT).select_related('user').order_by(
+        'user__last_name', 'user__first_name',
+    )
+    return render(request, 'accounts/manage_home.html', {'applicants': applicants})

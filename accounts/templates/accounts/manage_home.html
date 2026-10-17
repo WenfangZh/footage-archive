@@ -5,4 +5,24 @@
 
 {% block content %}
   <h1>{% translate "Administration" %}</h1>
+  <p><a href="{% url 'manage:invite' %}">{% translate "Send an invitation" %}</a></p>
+
+  <h2>{% translate "Applicants" %}</h2>
+  {% if applicants %}
+    <ul>
+      {% for profile in applicants %}
+        <li>
+          {{ profile.user.first_name }} {{ profile.user.last_name }}, {{ profile.bar }} ({{ profile.user.email }})
+          {% if not profile.user.has_usable_password %}
+          <form method="post" action="{% url 'manage:send_new_link' profile.pk %}">
+            {% csrf_token %}
+            <button type="submit">{% translate "Send a new invitation link" %}</button>
+          </form>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>{% translate "No applicants." %}</p>
+  {% endif %}
 {% endblock %}
