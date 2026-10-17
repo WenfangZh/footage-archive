@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-17 23:48+0200\n"
+"POT-Creation-Date: 2026-10-17 23:50+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -11,6 +11,16 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: accounts/access.py:57
+#, python-format
+msgid "%(name)s's access is suspended."
+msgstr "L'accès de %(name)s est suspendu."
+
+#: accounts/access.py:66
+#, python-format
+msgid "%(name)s's access is reinstated."
+msgstr "L'accès de %(name)s est rétabli."
 
 #: accounts/admission.py:30
 msgid "How their registration with the bar was verified"
@@ -23,7 +33,9 @@ msgstr "Qui assure son parrainage"
 #: accounts/admission.py:34
 msgid ""
 "Through the bar directory's contact details, never those the person gave."
-msgstr "Par les coordonnées de l'annuaire du barreau, jamais celles données par la personne."
+msgstr ""
+"Par les coordonnées de l'annuaire du barreau, jamais celles données par la "
+"personne."
 
 #: accounts/admission.py:35
 msgid "A trusted defence organisation or an admitted lawyer."
@@ -33,7 +45,9 @@ msgstr "Une organisation de défense de confiance, ou un·e avocat·e admis·e."
 msgid ""
 "They can be admitted once they have set their password and two-factor "
 "authentication."
-msgstr "La personne pourra être admise une fois son mot de passe et sa double authentification activés."
+msgstr ""
+"La personne pourra être admise une fois son mot de passe et sa double "
+"authentification activés."
 
 #: accounts/admission.py:77
 #, python-format
@@ -145,13 +159,16 @@ msgstr "Adresse e-mail :"
 
 #: accounts/templates/accounts/applicant_review.html:11
 msgid "They have set their password and two-factor authentication."
-msgstr "La personne a défini son mot de passe et activé la double authentification."
+msgstr ""
+"La personne a défini son mot de passe et activé la double authentification."
 
 #: accounts/templates/accounts/applicant_review.html:11
 msgid ""
 "They have not yet set their password and two-factor authentication: they "
 "cannot be admitted before then."
-msgstr "La personne n'a pas encore défini son mot de passe ni activé la double authentification : elle ne peut pas être admise avant."
+msgstr ""
+"La personne n'a pas encore défini son mot de passe ni activé la double "
+"authentification : elle ne peut pas être admise avant."
 
 #: accounts/templates/accounts/applicant_review.html:13
 msgid "Admit"
@@ -161,7 +178,9 @@ msgstr "Admettre"
 msgid ""
 "Admit them only once their registration with the bar is verified and someone "
 "has vouched for them."
-msgstr "N'admettez la personne qu'une fois son inscription au barreau vérifiée et son parrainage obtenu."
+msgstr ""
+"N'admettez la personne qu'une fois son inscription au barreau vérifiée et "
+"son parrainage obtenu."
 
 #: accounts/templates/accounts/applicant_review.html:18
 msgid "Admit as a lawyer"
@@ -184,7 +203,10 @@ msgid ""
 "%(name)s will no longer be able to log in. Their name, bar and email address "
 "will be erased. This cannot be undone; they can be invited again later as a "
 "new applicant."
-msgstr "%(name)s ne pourra plus se connecter. Son nom, son barreau et son adresse e-mail seront effacés. C'est définitif ; la personne pourra plus tard être invitée de nouveau, comme nouveau·elle candidat·e."
+msgstr ""
+"%(name)s ne pourra plus se connecter. Son nom, son barreau et son adresse e-"
+"mail seront effacés. C'est définitif ; la personne pourra plus tard être "
+"invitée de nouveau, comme nouveau·elle candidat·e."
 
 #: accounts/templates/accounts/decline.html:11
 msgid "I confirm"
@@ -278,6 +300,22 @@ msgstr "Envoyer un nouveau lien d'invitation"
 #: accounts/templates/accounts/manage_home.html:26
 msgid "No applicants."
 msgstr "Aucun·e candidat·e."
+
+#: accounts/templates/accounts/manage_home.html:29
+msgid "Lawyers' access"
+msgstr "Accès des avocat·es"
+
+#: accounts/templates/accounts/manage_home.html:39
+msgid "Suspend access"
+msgstr "Suspendre l'accès"
+
+#: accounts/templates/accounts/manage_home.html:44
+msgid "Reinstate access"
+msgstr "Rétablir l'accès"
+
+#: accounts/templates/accounts/manage_home.html:51
+msgid "No lawyers yet."
+msgstr "Aucun·e avocat·e pour l'instant."
 
 #: accounts/templates/accounts/no_access.html:4
 #: accounts/templates/accounts/no_access.html:8
