@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Too many attempts" %}{% endblock %}
+{% block language_next %}{% url 'home' %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Too many attempts" %}</h1>
+  <p>{% translate "There have been too many attempts to log in. Try again in an hour." %}</p>
+{% endblock %}

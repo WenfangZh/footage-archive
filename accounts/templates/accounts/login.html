@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Log in" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Log in" %}</h1>
+  <p>{% translate "For defence lawyers and the admin. Uploading a video needs no account." %}</p>
+  <form method="post" action="{% url 'accounts:login' %}">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit">{% translate "Log in" %}</button>
+  </form>
+{% endblock %}
