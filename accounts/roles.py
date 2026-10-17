@@ -14,8 +14,10 @@ import enum
 from functools import wraps
 
 from django.contrib.auth.views import redirect_to_login
+from django.http import Http404
 from django.shortcuts import render
 from django.utils.cache import add_never_cache_headers
+from django.views.defaults import page_not_found
 
 from . import two_factor
 from .models import LawyerProfile
@@ -63,7 +65,11 @@ def _required(needed):
             elif not request.user.is_verified():
                 response = two_factor.required_step(request)
             else:
-                response = view(request, *args, **kwargs)
+                try:
+                    response = view(request, *args, **kwargs)
+                except Http404 as exception:
+                    # Answered here, so that a page not found is not cached either.
+                    response = page_not_found(request, exception)
             add_never_cache_headers(response)
             return response
         return wrapped

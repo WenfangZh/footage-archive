@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Decline this applicant" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Decline this applicant" %}</h1>
+  <p>{% blocktranslate with name=profile.user.get_full_name %}{{ name }} will no longer be able to log in. Their name, bar and email address will be erased. This cannot be undone; they can be invited again later as a new applicant.{% endblocktranslate %}</p>
+  <form method="post" action="{% url 'manage:decline' profile.pk %}">
+    {% csrf_token %}
+    <label><input type="checkbox" name="confirm" value="yes" required> {% translate "I confirm" %}</label>
+    <button type="submit">{% translate "Decline" %}</button>
+  </form>
+{% endblock %}

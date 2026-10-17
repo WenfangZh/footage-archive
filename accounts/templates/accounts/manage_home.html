@@ -12,7 +12,7 @@
     <ul>
       {% for profile in applicants %}
         <li>
-          {{ profile.user.first_name }} {{ profile.user.last_name }}, {{ profile.bar }} ({{ profile.user.email }})
+          <a href="{% url 'manage:applicant' profile.pk %}">{{ profile.user.first_name }} {{ profile.user.last_name }}</a>, {{ profile.bar }} ({{ profile.user.email }})
           {% if not profile.user.has_usable_password %}
           <form method="post" action="{% url 'manage:send_new_link' profile.pk %}">
             {% csrf_token %}
