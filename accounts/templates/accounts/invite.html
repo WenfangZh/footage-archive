@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Send an invitation" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Send an invitation" %}</h1>
+  <p>{% translate "The person receives a link by email to set their password. They are an applicant, and see nothing, until you admit them." %}</p>
+  <form method="post" action="{% url 'manage:invite' %}">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <button type="submit">{% translate "Send the invitation" %}</button>
+  </form>
+{% endblock %}
