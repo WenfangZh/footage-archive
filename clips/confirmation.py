@@ -3,7 +3,7 @@
 from django.db import transaction
 from django.views.decorators.debug import sensitive_variables
 
-from . import upload_codes, vault
+from . import tasks, upload_codes, vault
 from .models import Clip, ClipTag, Original
 from .time_blocks import four_hour_block
 
@@ -51,4 +51,6 @@ def confirm_upload(original, read, cleaned):
         )
         vault.put_text(clip, vault.CONTEXT, cleaned['context'])
         vault.put_text(clip, vault.CONTACT_DETAILS, cleaned['contact_details'])
+        # Only once committed, or the worker might look for a clip not there yet.
+        transaction.on_commit(lambda: tasks.ingest_clip(clip.pk))
     return code

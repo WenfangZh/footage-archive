@@ -112,12 +112,18 @@ python manage.py migrate
 python manage.py compilemessages
 ```
 
-The SQLite database, the quarantine and stored media go in `var/` (gitignored).
+The SQLite database, the task queue, the quarantine and the vault go in `var/` (gitignored).
 
 ### 6. Run
 
 ```sh
 python manage.py runserver
+```
+
+In a second terminal, start the background worker, which ingests uploaded clips and deletes originals whose form was never confirmed:
+
+```sh
+python manage.py run_huey
 ```
 
 Open http://127.0.0.1:8000/: the page is in French, or in English if your browser prefers English, with a switch between the two.
