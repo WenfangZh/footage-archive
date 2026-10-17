@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-17 23:37+0200\n"
+"POT-Creation-Date: 2026-10-17 23:48+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -11,6 +11,34 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: accounts/admission.py:30
+msgid "How their registration with the bar was verified"
+msgstr "Comment son inscription au barreau a été vérifiée"
+
+#: accounts/admission.py:31
+msgid "Who vouched for them"
+msgstr "Qui assure son parrainage"
+
+#: accounts/admission.py:34
+msgid ""
+"Through the bar directory's contact details, never those the person gave."
+msgstr "Par les coordonnées de l'annuaire du barreau, jamais celles données par la personne."
+
+#: accounts/admission.py:35
+msgid "A trusted defence organisation or an admitted lawyer."
+msgstr "Une organisation de défense de confiance, ou un·e avocat·e admis·e."
+
+#: accounts/admission.py:73
+msgid ""
+"They can be admitted once they have set their password and two-factor "
+"authentication."
+msgstr "La personne pourra être admise une fois son mot de passe et sa double authentification activés."
+
+#: accounts/admission.py:77
+#, python-format
+msgid "%(name)s is admitted."
+msgstr "%(name)s est admis·e."
 
 #: accounts/invitations.py:38
 msgid "Email address"
@@ -49,7 +77,7 @@ msgstr "Votre invitation à l'archive de vidéos"
 msgid "email address"
 msgstr "adresse e-mail"
 
-#: accounts/models.py:123
+#: accounts/models.py:123 accounts/templates/accounts/applicant_review.html:4
 msgid "Applicant"
 msgstr "Candidat·e"
 
@@ -106,6 +134,61 @@ msgid ""
 msgstr ""
 "Votre compte est prêt, mais l'administrateur·rice ne vous a pas encore "
 "admis·e. D'ici là, l'archive ne vous montre rien."
+
+#: accounts/templates/accounts/applicant_review.html:8
+msgid "Bar:"
+msgstr "Barreau :"
+
+#: accounts/templates/accounts/applicant_review.html:9
+msgid "Email address:"
+msgstr "Adresse e-mail :"
+
+#: accounts/templates/accounts/applicant_review.html:11
+msgid "They have set their password and two-factor authentication."
+msgstr "La personne a défini son mot de passe et activé la double authentification."
+
+#: accounts/templates/accounts/applicant_review.html:11
+msgid ""
+"They have not yet set their password and two-factor authentication: they "
+"cannot be admitted before then."
+msgstr "La personne n'a pas encore défini son mot de passe ni activé la double authentification : elle ne peut pas être admise avant."
+
+#: accounts/templates/accounts/applicant_review.html:13
+msgid "Admit"
+msgstr "Admettre"
+
+#: accounts/templates/accounts/applicant_review.html:14
+msgid ""
+"Admit them only once their registration with the bar is verified and someone "
+"has vouched for them."
+msgstr "N'admettez la personne qu'une fois son inscription au barreau vérifiée et son parrainage obtenu."
+
+#: accounts/templates/accounts/applicant_review.html:18
+msgid "Admit as a lawyer"
+msgstr "Admettre comme avocat·e"
+
+#: accounts/templates/accounts/applicant_review.html:21
+#: accounts/templates/accounts/decline.html:12
+msgid "Decline"
+msgstr "Ne pas retenir"
+
+#: accounts/templates/accounts/applicant_review.html:22
+#: accounts/templates/accounts/decline.html:4
+#: accounts/templates/accounts/decline.html:7
+msgid "Decline this applicant"
+msgstr "Ne pas retenir cette candidature"
+
+#: accounts/templates/accounts/decline.html:8
+#, python-format
+msgid ""
+"%(name)s will no longer be able to log in. Their name, bar and email address "
+"will be erased. This cannot be undone; they can be invited again later as a "
+"new applicant."
+msgstr "%(name)s ne pourra plus se connecter. Son nom, son barreau et son adresse e-mail seront effacés. C'est définitif ; la personne pourra plus tard être invitée de nouveau, comme nouveau·elle candidat·e."
+
+#: accounts/templates/accounts/decline.html:11
+msgid "I confirm"
+msgstr "Je confirme"
 
 #: accounts/templates/accounts/invitation_email.txt:1
 msgid ""

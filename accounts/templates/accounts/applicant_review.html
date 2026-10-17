@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Applicant" %}{% endblock %}
+
+{% block content %}
+  <h1>{{ profile.user.get_full_name }}</h1>
+  <p>{% translate "Bar:" %} {{ profile.bar }}</p>
+  <p>{% translate "Email address:" %} {{ profile.user.email }}</p>
+
+  <p>{% if ready %}{% translate "They have set their password and two-factor authentication." %}{% else %}{% translate "They have not yet set their password and two-factor authentication: they cannot be admitted before then." %}{% endif %}</p>
+
+  <h2>{% translate "Admit" %}</h2>
+  <p>{% translate "Admit them only once their registration with the bar is verified and someone has vouched for them." %}</p>
+  <form method="post" action="{% url 'manage:applicant' profile.pk %}">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <button type="submit">{% translate "Admit as a lawyer" %}</button>
+  </form>
+
+  <h2>{% translate "Decline" %}</h2>
+  <p><a href="{% url 'manage:decline' profile.pk %}">{% translate "Decline this applicant" %}</a></p>
+{% endblock %}

@@ -1,7 +1,7 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
-from . import invitations, two_factor, views
+from . import admission, invitations, two_factor, views
 
 app_name = 'accounts'
 
@@ -14,7 +14,9 @@ lawyer_patterns = [
 manage_patterns = [
     path('', views.manage_home, name='home'),
     path('invite/', invitations.invite, name='invite'),
+    path('applicants/<int:profile_id>/', admission.applicant, name='applicant'),
     path('applicants/<int:profile_id>/new-link/', invitations.send_new_link, name='send_new_link'),
+    path('applicants/<int:profile_id>/decline/', admission.decline, name='decline'),
 ]
 
 urlpatterns = [
