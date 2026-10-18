@@ -109,3 +109,10 @@ def test_a_span_is_measured_over_cells_of_one_resolution():
         grid.span_metres([cell, grid.coarsen(cell, 9)])
     with pytest.raises(ValueError, match='empty'):
         grid.span_metres([])
+
+
+def test_cells_around_a_point_reach_about_the_radius():
+    centre = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
+    assert grid.cells_around(LATITUDE, LONGITUDE, 0) == {centre}
+    assert grid.cells_around(LATITUDE, LONGITUDE, 200) == grid.widen([centre], 4)
+    assert 900 < grid.span_metres(grid.cells_around(LATITUDE, LONGITUDE, 450)) < 1_000

@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-18 16:52+0200\n"
+"POT-Creation-Date: 2026-10-19 01:42+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -273,12 +273,24 @@ msgstr "Envoyer l'invitation"
 
 #: accounts/templates/accounts/lawyer_home.html:4
 #: accounts/templates/accounts/lawyer_home.html:7
+#: cases/templates/cases/case.html:18
 msgid "Your cases"
 msgstr "Vos dossiers de recherche"
 
 #: accounts/templates/accounts/lawyer_home.html:13
 msgid "You have no cases yet."
 msgstr "Vous n'avez pas encore de dossier de recherche."
+
+#: accounts/templates/accounts/lawyer_home.html:15
+#: cases/templates/cases/new_case.html:4 cases/templates/cases/new_case.html:7
+msgid "New case"
+msgstr "Nouveau dossier de recherche"
+
+#: accounts/templates/accounts/lawyer_home.html:16
+#: cases/templates/cases/default_margin.html:4
+#: cases/templates/cases/default_margin.html:7
+msgid "Default margin"
+msgstr "Marge par défaut"
 
 #: accounts/templates/accounts/login.html:4
 #: accounts/templates/accounts/login.html:7
@@ -522,47 +534,191 @@ msgstr "Rétablissement de l'accès"
 msgid "Revocation"
 msgstr "Révocation de l'accès"
 
-#: audit/models.py:33
+#: audit/models.py:35
 msgctxt "audit log action"
 msgid "Case creation"
 msgstr "Création d'un dossier de recherche"
 
-#: audit/models.py:34
+#: audit/models.py:36
 msgctxt "audit log action"
 msgid "Case closing"
 msgstr "Clôture d'un dossier de recherche"
 
-#: audit/models.py:35
+#: audit/models.py:37
 msgctxt "audit log action"
 msgid "Request for a larger case"
 msgstr "Demande de dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:36
+#: audit/models.py:38
 msgctxt "audit log action"
 msgid "Search"
 msgstr "Recherche"
 
-#: audit/models.py:37
+#: audit/models.py:39
 msgctxt "audit log action"
 msgid "Preview"
 msgstr "Prévisualisation"
 
-#: audit/models.py:38
+#: audit/models.py:40
 msgctxt "audit log action"
 msgid "Download"
 msgstr "Téléchargement"
 
-#: cases/models.py:37
+#: cases/forms.py:16
+msgid "Margin around the time window, in minutes"
+msgstr "Marge autour de la plage horaire, en minutes"
+
+#: cases/forms.py:20
+msgid "Margin around the area, in rings of cells about 50 m wide"
+msgstr "Marge autour du périmètre, en anneaux de mailles d'environ 50 m"
+
+#: cases/forms.py:40
+msgid "Case label"
+msgstr "Libellé du dossier de recherche"
+
+#: cases/forms.py:41
+msgid "Something to recognise the case by. Never a client's name."
+msgstr ""
+"De quoi reconnaître le dossier de recherche. Jamais le nom d'un·e client·e."
+
+#: cases/forms.py:44
+msgid "Start of the time window"
+msgstr "Début de la plage horaire"
+
+#: cases/forms.py:48
+msgid "End of the time window"
+msgstr "Fin de la plage horaire"
+
+#: cases/forms.py:52 clips/forms.py:49
+msgid "Latitude"
+msgstr "Latitude"
+
+#: cases/forms.py:55 clips/forms.py:53
+msgid "Longitude"
+msgstr "Longitude"
+
+#: cases/forms.py:56
+msgid ""
+"The place in the police report. Only the grid cells around it are kept, not "
+"the place itself."
+msgstr ""
+"Le lieu indiqué dans le procès-verbal. Seules les mailles de la grille "
+"autour de ce lieu sont gardées, pas le lieu lui-même."
+
+#: cases/forms.py:59
+msgid "Radius around that place, in metres"
+msgstr "Rayon autour de ce lieu, en mètres"
+
+#: cases/forms.py:68
+msgid "The time window must end after it starts."
+msgstr "La plage horaire doit se terminer après son début."
+
+#: cases/forms.py:85
+#, python-format
+msgid ""
+"With its margin, this case lasts %(minutes)s minutes and is about %(metres)s "
+"m across. No case can last more than %(ceiling_minutes)s minutes or be more "
+"than %(ceiling_metres)s m across."
+msgstr ""
+"Avec sa marge, ce dossier de recherche couvre %(minutes)s minutes et environ"
+" %(metres)s m de large. Aucun dossier de recherche ne peut dépasser "
+"%(ceiling_minutes)s minutes ni %(ceiling_metres)s m de large."
+
+#: cases/forms.py:92
+#, python-format
+msgid ""
+"With its margin, this case lasts %(minutes)s minutes and is about %(metres)s "
+"m across. Without the admin's approval, a case lasts at most %(cap_minutes)s "
+"minutes and is at most %(cap_metres)s m across."
+msgstr ""
+"Avec sa marge, ce dossier de recherche couvre %(minutes)s minutes et environ"
+" %(metres)s m de large. Sans validation par l'administrateur·rice, un "
+"dossier de recherche couvre au plus %(cap_minutes)s minutes et "
+"%(cap_metres)s m de large."
+
+#: cases/models.py:69
 msgid "Closed by its lawyer"
 msgstr "Clos par son avocat·e"
 
-#: cases/models.py:38
+#: cases/models.py:70
 msgid "Closed when its lawyer's access was revoked"
 msgstr "Clos à la révocation de l'accès de son avocat·e"
 
-#: cases/models.py:39
+#: cases/models.py:71
 msgid "Closed after a long time without use"
 msgstr "Clos après une longue période sans usage"
+
+#: cases/templates/cases/case.html:8
+#, python-format
+msgid "Closed on %(closed_at)s."
+msgstr "Clos le %(closed_at)s."
+
+#: cases/templates/cases/case.html:10
+msgid "Time window"
+msgstr "Plage horaire"
+
+#: cases/templates/cases/case.html:12
+msgid "Area"
+msgstr "Périmètre"
+
+#: cases/templates/cases/case.html:13
+#, python-format
+msgid "%(cells)s cell, about %(metres)s m across"
+msgid_plural "%(cells)s cells, about %(metres)s m across"
+msgstr[0] "%(cells)s maille, environ %(metres)s m de large"
+msgstr[1] "%(cells)s mailles, environ %(metres)s m de large"
+
+#: cases/templates/cases/case.html:14
+msgid "Margin"
+msgstr "Marge"
+
+#: cases/templates/cases/case.html:15
+#, python-format
+msgid "%(minutes)s minute"
+msgid_plural "%(minutes)s minutes"
+msgstr[0] "%(minutes)s minute"
+msgstr[1] "%(minutes)s minutes"
+
+#: cases/templates/cases/case.html:16
+#, python-format
+msgid "%(rings)s ring of cells"
+msgid_plural "%(rings)s rings of cells"
+msgstr[0] "%(rings)s anneau de mailles"
+msgstr[1] "%(rings)s anneaux de mailles"
+
+#: cases/templates/cases/default_margin.html:8
+msgid ""
+"The margin widens a case's time window and area, to find clips just outside "
+"them; they are shown apart, as margin matches. Each new case starts with "
+"this margin, and you can change it there. Cases you already have keep theirs."
+msgstr ""
+"La marge élargit la plage horaire et le périmètre d'un dossier de recherche,"
+" pour trouver les clips juste à côté : ils sont présentés à part, comme "
+"correspondances de marge. Chaque nouveau dossier de recherche commence avec "
+"cette marge, que vous pouvez y modifier. Vos dossiers de recherche existants"
+" gardent la leur."
+
+#: cases/templates/cases/default_margin.html:12
+msgid "Save"
+msgstr "Enregistrer"
+
+#: cases/templates/cases/new_case.html:8
+msgid ""
+"Take the time window and place from the police report. Once the case is "
+"created, they cannot be changed: for a different window or area, create a "
+"new case."
+msgstr ""
+"Reprenez la plage horaire et le lieu du procès-verbal. Une fois le dossier "
+"de recherche créé, ils ne peuvent plus être modifiés : pour une autre plage "
+"horaire ou un autre périmètre, créez un nouveau dossier de recherche."
+
+#: cases/templates/cases/new_case.html:12
+msgid "Create the case"
+msgstr "Créer le dossier de recherche"
+
+#: cases/views.py:64
+msgid "Your new cases will start with this margin."
+msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
 
 #: clips/forms.py:14
 msgid "About 50 m"
@@ -583,14 +739,6 @@ msgstr "Vidéo"
 #: clips/forms.py:45
 msgid "When was it filmed?"
 msgstr "Quand la vidéo a-t-elle été filmée ?"
-
-#: clips/forms.py:49
-msgid "Latitude"
-msgstr "Latitude"
-
-#: clips/forms.py:53
-msgid "Longitude"
-msgstr "Longitude"
 
 #: clips/forms.py:57
 msgid "How precise is this place?"
@@ -705,11 +853,11 @@ msgstr "Moyen de contact"
 msgid "Metadata location"
 msgstr "Lieu des métadonnées"
 
-#: clips/models.py:254
+#: clips/models.py:267
 msgid "Evidence copy"
 msgstr "Copie de preuve"
 
-#: clips/models.py:255
+#: clips/models.py:268
 msgid "Proxy"
 msgstr "Version de prévisualisation"
 
@@ -1070,11 +1218,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:322
+#: config/settings.py:332
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:323
+#: config/settings.py:333
 msgid "English"
 msgstr "Anglais"
 

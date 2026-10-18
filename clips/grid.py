@@ -72,8 +72,23 @@ def span_metres(cells, rings=0):
     hull = _convex_hull(centres)
     farthest = max((_metres(centres[a], centres[b]) for a, b in combinations(hull, 2)), default=0)
     half_width = max(_metres(centres[cell], corner) for cell in hull for corner in h3.cell_to_boundary(cell))
-    spacing = max(_metres(centres[cell], h3.cell_to_latlng(near)) for cell in hull for near in h3.grid_ring(cell, 1))
+    spacing = max(spacing_metres(cell) for cell in hull)
     return farthest + 2 * half_width + 2 * rings * spacing
+
+
+def spacing_metres(cell):
+    """The largest distance from a cell's centre to a neighbour's: how far one ring reaches."""
+    centre = h3.cell_to_latlng(cell)
+    return max(_metres(centre, h3.cell_to_latlng(near)) for near in h3.grid_ring(cell, 1))
+
+
+def cells_around(latitude, longitude, radius_metres):
+    """The grid's finest cell containing a point, and as many rings around it as reach about `radius_metres`.
+
+    The point is used only to find its cell, then dropped.
+    """
+    centre = cell_for_point(latitude, longitude, finest_resolution())
+    return widen([centre], round(radius_metres / spacing_metres(centre)))
 
 
 def _metres(a, b):

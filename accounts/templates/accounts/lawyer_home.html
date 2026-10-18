@@ -7,9 +7,11 @@
   <h1>{% translate "Your cases" %}</h1>
   {% if cases %}
     <ul>
-      {% for case in cases %}<li>{{ case.label }}</li>{% endfor %}
+      {% for case in cases %}<li><a href="{% url 'lawyer:case' case_id=case.pk %}">{{ case.label }}</a></li>{% endfor %}
     </ul>
   {% else %}
     <p>{% translate "You have no cases yet." %}</p>
   {% endif %}
+  <p><a href="{% url 'lawyer:new_case' %}">{% translate "New case" %}</a></p>
+  <p><a href="{% url 'lawyer:default_margin' %}">{% translate "Default margin" %}</a></p>
 {% endblock %}
