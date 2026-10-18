@@ -1,3 +1,5 @@
+import math
+
 import h3.api.basic_int as h3
 import pytest
 
@@ -111,8 +113,31 @@ def test_a_span_is_measured_over_cells_of_one_resolution():
         grid.span_metres([])
 
 
-def test_cells_around_a_point_reach_about_the_radius():
+def circle(latitude, longitude, radius_metres, points=120):
+    """Points on the circle of `radius_metres` around a point."""
+    distance = radius_metres / 6_371_008.8
+    lat = math.radians(latitude)
+    for step in range(points):
+        bearing = 2 * math.pi * step / points
+        on_lat = math.asin(math.sin(lat) * math.cos(distance) + math.cos(lat) * math.sin(distance) * math.cos(bearing))
+        on_lng = math.radians(longitude) + math.atan2(
+            math.sin(bearing) * math.sin(distance) * math.cos(lat), math.cos(distance) - math.sin(lat) * math.sin(on_lat),
+        )
+        yield math.degrees(on_lat), math.degrees(on_lng)
+
+
+@pytest.mark.parametrize('radius', [10, 50, 200, 900])
+def test_cells_around_a_point_contain_the_whole_circle_wherever_the_point_is_in_its_cell(radius):
     centre = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
-    assert grid.cells_around(LATITUDE, LONGITUDE, 0) == {centre}
-    assert grid.cells_around(LATITUDE, LONGITUDE, 200) == grid.widen([centre], 4)
-    assert 900 < grid.span_metres(grid.cells_around(LATITUDE, LONGITUDE, 450)) < 1_000
+    for corner in [grid.centre(centre), *h3.cell_to_boundary(centre)]:
+        # Just inside the corner, still in the same cell.
+        point = tuple(c + (m - c) * 0.02 for c, m in zip(corner, grid.centre(centre)))
+        cells = grid.cells_around(*point, radius)
+        assert cells == grid.cells_around(LATITUDE, LONGITUDE, radius)
+        assert all(grid.cell_for_point(*on, 11) in cells for on in circle(*point, radius))
+
+
+def test_cells_around_a_point_are_about_as_wide_as_the_circle():
+    assert grid.cells_around(LATITUDE, LONGITUDE, 0) == {grid.cell_for_point(LATITUDE, LONGITUDE, 11)}
+    for radius in (200, 900):
+        assert 2 * radius < grid.span_metres(grid.cells_around(LATITUDE, LONGITUDE, radius)) < 2 * radius + 200

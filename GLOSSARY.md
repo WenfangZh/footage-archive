@@ -247,6 +247,15 @@ _French_: périmètre
 _Avoid_: Zone, perimeter, region, radius (the radius is only how the area is made)
 _Avoid in French_: zone (the interface already uses it for a grid cell)
 
+**Radius**:
+How far around the police report's place a lawyer wants the area to reach, typed when creating a case. The area is made to contain that whole circle; neither the place nor the radius is kept.
+_French_: rayon
+
+**Ring**:
+One layer of the grid's cells around a cell or a set of cells. A case's margin around its area is counted in rings.
+_French_: anneau (de mailles)
+_Avoid_: Band, buffer
+
 **Closed case**:
 A case that can no longer be used to search, preview or download, closed by its lawyer, by revocation, or after a long period without use. It remains in the audit log.
 _French_: dossier de recherche clos

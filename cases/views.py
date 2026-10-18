@@ -49,18 +49,19 @@ def new_case(request):
 
 @lawyer_required
 def case(request, case_id):
-    case = get_object_or_404(Case, pk=case_id, lawyer_profile__user=request.user)
-    area = case.area()
+    own_case = get_object_or_404(Case, pk=case_id, lawyer_profile__user=request.user)
+    area = own_case.area()
     return render(request, 'cases/case.html', {
-        'case': case, 'cells': len(area), 'area_metres': round(size.area_metres(area, 0)),
+        'case': own_case, 'cells': len(area), 'area_metres': round(size.area_metres(area, 0)),
     })
 
 
 @lawyer_required
 def default_margin(request):
-    form = DefaultMarginForm(request.POST or None, instance=own_profile(request))
+    form = DefaultMarginForm(request.POST if request.method == 'POST' else None, instance=own_profile(request))
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        # These two fields only: the rest of the profile may have changed since it was read.
+        form.instance.save(update_fields=['default_margin_minutes', 'default_margin_rings'])
         messages.success(request, _('Your new cases will start with this margin.'))
         return redirect('lawyer:home')
     return render(request, 'cases/default_margin.html', {'form': form}, status=400 if form.errors else 200)

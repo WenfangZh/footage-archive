@@ -83,12 +83,37 @@ def spacing_metres(cell):
 
 
 def cells_around(latitude, longitude, radius_metres):
-    """The grid's finest cell containing a point, and as many rings around it as reach about `radius_metres`.
+    """The cells containing the circle of `radius_metres` around a point, and no others that it
+    could not reach.
 
-    The point is used only to find its cell, then dropped.
+    The point is used only to find its grid cell, then dropped: the cells depend on that
+    cell alone, so they tell no more about the point than it does. Wherever the point lies
+    in its cell, it is at most a centre-to-corner distance from the centre, so the cells
+    kept are those that come within the radius plus that distance of the centre.
     """
     centre = cell_for_point(latitude, longitude, finest_resolution())
-    return widen([centre], round(radius_metres / spacing_metres(centre)))
+    if radius_metres <= 0:
+        return {centre}
+    middle = h3.cell_to_latlng(centre)
+    reach = radius_metres + _corner_metres(centre)
+
+    def within_reach(cell):
+        return _metres(middle, h3.cell_to_latlng(cell)) - _corner_metres(cell) < reach
+
+    cells, rings = {centre}, 0
+    # Grow ring by ring until a whole ring is out of reach: every farther ring is too.
+    while True:
+        rings += 1
+        reached = {cell for cell in h3.grid_ring(centre, rings) if within_reach(cell)}
+        if not reached:
+            return cells
+        cells |= reached
+
+
+def _corner_metres(cell):
+    """How far a cell reaches from its centre: to its farthest corner."""
+    middle = h3.cell_to_latlng(cell)
+    return max(_metres(middle, corner) for corner in h3.cell_to_boundary(cell))
 
 
 def _metres(a, b):

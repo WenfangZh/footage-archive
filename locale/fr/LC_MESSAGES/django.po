@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-19 01:42+0200\n"
+"POT-Creation-Date: 2026-10-19 01:55+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -564,40 +564,49 @@ msgctxt "audit log action"
 msgid "Download"
 msgstr "Téléchargement"
 
-#: cases/forms.py:16
+#: cases/forms.py:20
 msgid "Margin around the time window, in minutes"
 msgstr "Marge autour de la plage horaire, en minutes"
 
-#: cases/forms.py:20
+#: cases/forms.py:24
 msgid "Margin around the area, in rings of cells about 50 m wide"
 msgstr "Marge autour du périmètre, en anneaux de mailles d'environ 50 m"
 
-#: cases/forms.py:40
+#: cases/forms.py:52
+#, python-format
+msgid "Enter a date between %(first)s and next year."
+msgstr "Saisissez une date entre %(first)s et l'an prochain."
+
+#: cases/forms.py:70
 msgid "Case label"
 msgstr "Libellé du dossier de recherche"
 
-#: cases/forms.py:41
+#: cases/forms.py:71
 msgid "Something to recognise the case by. Never a client's name."
 msgstr ""
 "De quoi reconnaître le dossier de recherche. Jamais le nom d'un·e client·e."
 
-#: cases/forms.py:44
+#: cases/forms.py:73
 msgid "Start of the time window"
 msgstr "Début de la plage horaire"
 
-#: cases/forms.py:48
+#: cases/forms.py:75
 msgid "End of the time window"
 msgstr "Fin de la plage horaire"
 
-#: cases/forms.py:52 clips/forms.py:49
+#: cases/forms.py:75
+msgid "French time, as in the police report."
+msgstr "Heure française, comme dans le procès-verbal."
+
+#: cases/forms.py:78 clips/forms.py:49
 msgid "Latitude"
 msgstr "Latitude"
 
-#: cases/forms.py:55 clips/forms.py:53
+#: cases/forms.py:81 clips/forms.py:53
 msgid "Longitude"
 msgstr "Longitude"
 
-#: cases/forms.py:56
+#: cases/forms.py:82
 msgid ""
 "The place in the police report. Only the grid cells around it are kept, not "
 "the place itself."
@@ -605,46 +614,46 @@ msgstr ""
 "Le lieu indiqué dans le procès-verbal. Seules les mailles de la grille "
 "autour de ce lieu sont gardées, pas le lieu lui-même."
 
-#: cases/forms.py:59
+#: cases/forms.py:85
 msgid "Radius around that place, in metres"
 msgstr "Rayon autour de ce lieu, en mètres"
 
-#: cases/forms.py:68
+#: cases/forms.py:94
 msgid "The time window must end after it starts."
 msgstr "La plage horaire doit se terminer après son début."
 
-#: cases/forms.py:85
+#: cases/forms.py:111
 #, python-format
 msgid ""
 "With its margin, this case lasts %(minutes)s minutes and is about %(metres)s "
 "m across. No case can last more than %(ceiling_minutes)s minutes or be more "
 "than %(ceiling_metres)s m across."
 msgstr ""
-"Avec sa marge, ce dossier de recherche couvre %(minutes)s minutes et environ"
-" %(metres)s m de large. Aucun dossier de recherche ne peut dépasser "
+"Avec sa marge, ce dossier de recherche couvre %(minutes)s minutes et environ "
+"%(metres)s m de large. Aucun dossier de recherche ne peut dépasser "
 "%(ceiling_minutes)s minutes ni %(ceiling_metres)s m de large."
 
-#: cases/forms.py:92
+#: cases/forms.py:118
 #, python-format
 msgid ""
 "With its margin, this case lasts %(minutes)s minutes and is about %(metres)s "
 "m across. Without the admin's approval, a case lasts at most %(cap_minutes)s "
 "minutes and is at most %(cap_metres)s m across."
 msgstr ""
-"Avec sa marge, ce dossier de recherche couvre %(minutes)s minutes et environ"
-" %(metres)s m de large. Sans validation par l'administrateur·rice, un "
-"dossier de recherche couvre au plus %(cap_minutes)s minutes et "
-"%(cap_metres)s m de large."
+"Avec sa marge, ce dossier de recherche couvre %(minutes)s minutes et environ "
+"%(metres)s m de large. Sans validation par l'administrateur·rice, un dossier "
+"de recherche couvre au plus %(cap_minutes)s minutes et %(cap_metres)s m de "
+"large."
 
-#: cases/models.py:69
+#: cases/models.py:72
 msgid "Closed by its lawyer"
 msgstr "Clos par son avocat·e"
 
-#: cases/models.py:70
+#: cases/models.py:73
 msgid "Closed when its lawyer's access was revoked"
 msgstr "Clos à la révocation de l'accès de son avocat·e"
 
-#: cases/models.py:71
+#: cases/models.py:74
 msgid "Closed after a long time without use"
 msgstr "Clos après une longue période sans usage"
 
@@ -692,11 +701,11 @@ msgid ""
 "them; they are shown apart, as margin matches. Each new case starts with "
 "this margin, and you can change it there. Cases you already have keep theirs."
 msgstr ""
-"La marge élargit la plage horaire et le périmètre d'un dossier de recherche,"
-" pour trouver les clips juste à côté : ils sont présentés à part, comme "
+"La marge élargit la plage horaire et le périmètre d'un dossier de recherche, "
+"pour trouver les clips juste à côté : ils sont présentés à part, comme "
 "correspondances de marge. Chaque nouveau dossier de recherche commence avec "
-"cette marge, que vous pouvez y modifier. Vos dossiers de recherche existants"
-" gardent la leur."
+"cette marge, que vous pouvez modifier en le créant. Vos dossiers de "
+"recherche existants gardent la leur."
 
 #: cases/templates/cases/default_margin.html:12
 msgid "Save"
@@ -716,7 +725,7 @@ msgstr ""
 msgid "Create the case"
 msgstr "Créer le dossier de recherche"
 
-#: cases/views.py:64
+#: cases/views.py:65
 msgid "Your new cases will start with this margin."
 msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
 

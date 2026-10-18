@@ -1,8 +1,11 @@
 import datetime
+from unittest import mock
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.db import connection
 from django.test import Client
+from django.views.debug import SafeExceptionReporterFilter
 from django.urls import reverse
 
 from accounts.models import LawyerProfile
@@ -62,7 +65,7 @@ def test_a_lawyer_creates_a_case_from_a_place_and_a_radius(lawyer, lawyer_client
     paris = datetime.timezone(datetime.timedelta(hours=2))
     assert case.starts_at == datetime.datetime(2026, 6, 15, 18, tzinfo=paris)
     assert case.ends_at - case.starts_at == datetime.timedelta(hours=1)
-    assert case.area() == grid.cells_around(*BASTILLE, 200) and len(case.area()) == 61
+    assert case.area() == grid.cells_around(*BASTILLE, 200) and len(case.area()) == 111
 
 
 def test_creating_a_case_writes_an_audit_entry(lawyer, lawyer_client):
@@ -81,25 +84,59 @@ def test_the_typed_place_is_never_sent_back(lawyer_client):
     assert FORM['radius_metres'] in page and not Case.objects.exists()
 
 
-def test_the_typed_place_is_never_kept(lawyer_client):
-    create(lawyer_client)
+# An unusual place, so that its digits are found nowhere by chance.
+ODD_PLACE = {'latitude': '48.85417', 'longitude': '2.36923'}
+
+
+def test_the_typed_place_is_never_kept_or_logged(lawyer_client, caplog):
+    create(lawyer_client, **ODD_PLACE)
+    create(lawyer_client, label='', **ODD_PLACE)
     case = Case.objects.get()
-    stored = [str(value) for value in Case.objects.filter(pk=case.pk).values().get().values()]
-    assert not any(FORM['latitude'][:6] in value or FORM['longitude'][:5] in value for value in stored)
+    database = '\n'.join(connection.connection.iterdump())
     page = lawyer_client.get(reverse('lawyer:case', kwargs={'case_id': case.pk})).content.decode()
-    assert FORM['latitude'][:6] not in page and FORM['longitude'][:5] not in page
+    for kept in (database, page, caplog.text):
+        assert '85417' not in kept and '36923' not in kept
 
 
 def test_the_typed_place_is_left_out_of_error_reports(lawyer_client):
     request = create(lawyer_client, label='').wsgi_request
-    assert set(request.sensitive_post_parameters) == {'latitude', 'longitude'}
+    shown = SafeExceptionReporterFilter().get_post_parameters(request)
+    assert shown['latitude'] == shown['longitude'] == SafeExceptionReporterFilter.cleansed_substitute
+    assert shown['label'] == ''
 
 
-def test_a_case_over_the_size_caps_is_refused_with_its_size(lawyer_client):
+def test_a_case_over_the_size_caps_is_refused_with_its_size(lawyer_client, settings):
+    settings.LANGUAGE_CODE = 'en'
     response = create(lawyer_client, starts_at='2026-06-15T17:00', ends_at='2026-06-15T19:00')
     assert response.status_code == 400 and not Case.objects.exists() and not AuditEntry.objects.exists()
     page = response.content.decode()
-    assert '140' in page and '120' in page
+    assert 'this case lasts 140 minutes' in page and 'a case lasts at most 120 minutes' in page
+
+
+def test_a_case_and_its_audit_entry_are_made_together(lawyer_client, monkeypatch):
+    monkeypatch.setattr('cases.views.record', mock.Mock(side_effect=RuntimeError))
+    with pytest.raises(RuntimeError):
+        create(lawyer_client)
+    assert not Case.objects.exists()
+
+
+@pytest.mark.parametrize('starts_at, ends_at, offset', [
+    ('2026-01-15T18:00', '2026-01-15T19:00', 1),
+    # Clocks go back at 03:00 on 25 October 2026: the first 02:30 is meant.
+    ('2026-10-25T02:30', '2026-10-25T03:30', 2),
+])
+def test_times_are_french_time_in_winter_and_in_the_repeated_hour(lawyer_client, starts_at, ends_at, offset):
+    assert create(lawyer_client, starts_at=starts_at, ends_at=ends_at).status_code == 302
+    case = Case.objects.get()
+    local = datetime.timezone(datetime.timedelta(hours=offset))
+    assert case.starts_at == datetime.datetime.fromisoformat(starts_at).replace(tzinfo=local)
+    assert case.ends_at - case.starts_at == datetime.timedelta(hours=2 if offset == 2 else 1)
+
+
+@pytest.mark.parametrize('starts_at', ['0001-01-01T00:00', '1999-12-31T23:00'])
+def test_dates_far_off_are_refused(lawyer_client, starts_at):
+    response = create(lawyer_client, starts_at=starts_at)
+    assert response.status_code == 400 and 'starts_at' in response.context['form'].errors
 
 
 def test_a_case_beyond_the_ceiling_says_so(lawyer_client, settings):
@@ -118,9 +155,15 @@ def test_a_time_window_must_end_after_it_starts(lawyer_client):
     ('radius_metres', '5001'), ('radius_metres', '-1'), ('margin_rings', '101'), ('margin_minutes', '-1'),
     ('latitude', '91'),
 ])
-def test_out_of_range_numbers_are_refused_before_any_cell_is_made(lawyer_client, field, value):
+def test_out_of_range_numbers_are_refused(lawyer_client, field, value):
     response = create(lawyer_client, **{field: value})
     assert response.status_code == 400 and field in response.context['form'].errors
+
+
+@pytest.mark.parametrize('field, value', [('radius_metres', '5001'), ('latitude', '91')])
+def test_a_bad_place_or_radius_makes_no_cells(lawyer_client, monkeypatch, field, value):
+    monkeypatch.setattr(grid, 'cells_around', mock.Mock(side_effect=AssertionError('cells made')))
+    assert create(lawyer_client, **{field: value}).status_code == 400
 
 
 def test_a_lawyer_sees_only_their_own_cases(lawyer, lawyer_client):
@@ -146,6 +189,10 @@ def test_a_lawyer_sets_their_default_margin(lawyer, lawyer_client):
     assert response.status_code == 302
     lawyer.refresh_from_db()
     assert (lawyer.default_margin_minutes, lawyer.default_margin_rings) == (5, 0)
+
+
+def test_an_empty_default_margin_is_refused(lawyer, lawyer_client):
+    assert lawyer_client.post(reverse('lawyer:default_margin'), {}).status_code == 400
 
 
 def test_a_default_margin_is_bounded(lawyer, lawyer_client):

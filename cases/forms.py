@@ -1,5 +1,9 @@
+import datetime
+import zoneinfo
+
 from django import forms
 from django.conf import settings
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import LawyerProfile
@@ -23,6 +27,32 @@ def margin_fields():
     return minutes, rings
 
 
+# Footage in the archive is recent; anything outside these years is a typing mistake.
+EARLIEST_YEAR = 2000
+
+
+class ParisDateTimeField(forms.DateTimeField):
+    """A time typed as on a police report: French time, read without refusing the hour that
+    clocks repeat or skip when they change.
+
+    In the repeated autumn hour, the first one is meant; a time in the skipped spring hour
+    is read with the winter offset, an hour later in summer time.
+    """
+
+    widget = forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M')
+
+    def to_python(self, value):
+        # Django's own refuses those hours: read the time as UTC, then put French time on it.
+        with timezone.override(datetime.UTC):
+            parsed = super().to_python(value)
+        if parsed is None:
+            return None
+        local = parsed.replace(tzinfo=zoneinfo.ZoneInfo(settings.TIME_ZONE), fold=0)
+        if not EARLIEST_YEAR <= local.year <= timezone.now().year + 1:
+            raise forms.ValidationError(_('Enter a date between %(first)s and next year.'), params={'first': EARLIEST_YEAR})
+        return local
+
+
 class ForgottenNumberInput(forms.NumberInput):
     """A number field whose value is never sent back to the browser: typed coordinates are not kept."""
 
@@ -40,13 +70,9 @@ class CaseForm(forms.Form):
         label=_('Case label'), max_length=LABEL_MAX_LENGTH,
         help_text=_("Something to recognise the case by. Never a client's name."),
     )
-    starts_at = forms.DateTimeField(
-        label=_('Start of the time window'),
-        widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
-    )
-    ends_at = forms.DateTimeField(
-        label=_('End of the time window'),
-        widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
+    starts_at = ParisDateTimeField(label=_('Start of the time window'))
+    ends_at = ParisDateTimeField(
+        label=_('End of the time window'), help_text=_('French time, as in the police report.'),
     )
     latitude = forms.FloatField(
         label=_('Latitude'), min_value=-90, max_value=90, widget=ForgottenNumberInput(attrs={'step': 'any'}),

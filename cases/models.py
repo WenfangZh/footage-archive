@@ -34,6 +34,9 @@ class CaseQuerySet(models.QuerySet):
             raise ValueError("A case's area is a set of the grid's finest cells.")
         if not (timezone.is_aware(starts_at) and timezone.is_aware(ends_at) and starts_at < ends_at):
             raise ValueError("A case's time window has time zones, and ends after it starts.")
+        if starts_at.year < 1900 or ends_at.year > 9998:
+            # Near the ends of what Python's dates hold, converting to UTC overflows.
+            raise ValueError("A case's time window is in the years a database can store.")
         for margin in (margin_minutes, margin_rings):
             # A bool is an int in Python; an absurd number of rings is caught by the size check.
             if type(margin) is not int or margin < 0:
