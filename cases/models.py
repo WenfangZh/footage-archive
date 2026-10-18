@@ -25,23 +25,34 @@ class CaseQuerySet(models.QuerySet):
         return super(CaseQuerySet, self.open()).update(closed_at=now or timezone.now(), closed_because=because)
 
     def create_with_area(self, lawyer_profile, label, starts_at, ends_at, cells, margin_minutes, margin_rings):
-        """Open a case whose area is a set of the grid's finest cells.
+        """Open a case whose area is a set of the grid's finest cells: the only way to make one.
 
         Raises size.CaseTooLarge for a case over the size caps, margin included.
         """
         cells = set(cells)
         if not cells or not all(grid.is_cell(cell) and grid.resolution(cell) == grid.finest_resolution() for cell in cells):
             raise ValueError("A case's area is a set of the grid's finest cells.")
-        if not starts_at < ends_at:
-            raise ValueError("A case's time window ends after it starts.")
+        if not (timezone.is_aware(starts_at) and timezone.is_aware(ends_at) and starts_at < ends_at):
+            raise ValueError("A case's time window has time zones, and ends after it starts.")
+        for margin in (margin_minutes, margin_rings):
+            # A bool is an int in Python; an absurd number of rings is caught by the size check.
+            if type(margin) is not int or margin < 0:
+                raise ValueError("A case's margin is a whole number, zero or more.")
         size.check(starts_at, ends_at, cells, margin_minutes, margin_rings)
         with transaction.atomic():
-            case = self.create(
+            case = self.model(
                 lawyer_profile=lawyer_profile, label=label, starts_at=starts_at, ends_at=ends_at,
                 margin_minutes=margin_minutes, margin_rings=margin_rings,
             )
-            CaseCell.objects.bulk_create(CaseCell(case=case, cell=cell) for cell in cells)
+            case.save(_checked=True)
+            CaseCell.objects.bulk_create((CaseCell(case=case, cell=cell) for cell in cells), _checked=True)
         return case
+
+    def create(self, **kwargs):
+        raise ValueError('Cases are made only through create_with_area(), which checks their size.')
+
+    def bulk_create(self, objs, *args, **kwargs):
+        raise ValueError('Cases are made only through create_with_area(), which checks their size.')
 
     def update(self, **kwargs):
         raise ValueError('Cases change only by being closed, through close().')
@@ -90,8 +101,10 @@ class Case(models.Model):
 
     FIXED_FIELDS = ('lawyer_profile_id', 'starts_at', 'ends_at', 'margin_minutes', 'margin_rings')
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, _checked=False, **kwargs):
         if self._state.adding:
+            if not _checked:
+                raise ValueError('Cases are made only through create_with_area(), which checks their size.')
             if LawyerProfile.objects.filter(pk=self.lawyer_profile_id).values_list('status', flat=True).first() != (
                 LawyerProfile.Status.LAWYER
             ):
@@ -114,6 +127,11 @@ class Case(models.Model):
 
 
 class CaseCellQuerySet(models.QuerySet):
+    def bulk_create(self, objs, *args, _checked=False, **kwargs):
+        if not _checked:
+            raise ValueError("A case's area is added only with the case, by create_with_area().")
+        return super().bulk_create(objs, *args, **kwargs)
+
     def update(self, **kwargs):
         raise ValueError("A case's area never changes.")
 
@@ -141,10 +159,7 @@ class CaseCell(models.Model):
         constraints = [models.UniqueConstraint(fields=['case', 'cell'], name='each_cell_once_per_case')]
 
     def save(self, *args, **kwargs):
-        if not self._state.adding:
-            raise ValueError("A case's area never changes.")
-        kwargs['force_insert'] = True
-        super().save(*args, **kwargs)
+        raise ValueError("A case's area is added only with the case, by create_with_area().")
 
     def delete(self, *args, **kwargs):
         raise ValueError("A case's area never changes.")

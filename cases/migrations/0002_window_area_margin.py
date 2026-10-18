@@ -8,7 +8,7 @@ def refuse_existing_cases(apps, schema_editor):
     # M3's cases had no time window or area, and were never made outside development: one
     # found here would get a made-up window, so stop instead.
     if apps.get_model('cases', 'Case').objects.exists():
-        raise RuntimeError('Cases from before M4 have no time window or area. Close them out by hand first.')
+        raise RuntimeError('Cases from before M4 have no time window or area. Start from an empty development database.')
 
 
 class Migration(migrations.Migration):

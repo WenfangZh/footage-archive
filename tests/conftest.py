@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 from django_otp import DEVICE_ID_SESSION_KEY
 from django_otp.plugins.otp_totp.models import TOTPDevice
@@ -65,9 +67,9 @@ def log_in_with_second_factor(client, user):
 
 def make_case(lawyer_profile, label='A case', rings=2, **fields):
     """A small case for `lawyer_profile`: one hour around a public place, with the default margin."""
-    starts_at = timezone.now() - timezone.timedelta(days=30)
+    starts_at = timezone.now() - datetime.timedelta(days=30)
     values = {
-        'starts_at': starts_at, 'ends_at': starts_at + timezone.timedelta(hours=1),
+        'starts_at': starts_at, 'ends_at': starts_at + datetime.timedelta(hours=1),
         'cells': grid.widen([grid.cell_for_point(*BASTILLE, 11)], rings), 'margin_minutes': 10, 'margin_rings': 1,
     }
     return Case.objects.create_with_area(lawyer_profile, label, **{**values, **fields})

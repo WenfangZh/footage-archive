@@ -20,8 +20,8 @@ def window_minutes(starts_at, ends_at, margin_minutes):
 
 
 def area_metres(cells, margin_rings):
-    """How far across the area is with its margin of rings."""
-    return grid.span_metres(grid.widen(cells, margin_rings))
+    """How far across the area is, edge to edge, with its margin of rings."""
+    return grid.span_metres(cells, margin_rings)
 
 
 def check(starts_at, ends_at, cells, margin_minutes, margin_rings):

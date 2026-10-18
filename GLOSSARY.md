@@ -242,9 +242,9 @@ _French_: plage horaire
 _Avoid_: Period, time range, timeframe
 
 **Area**:
-The place a case covers: a set of the grid's finest cells, made from the place in the police report and a radius. Fixed when the case is created; the coordinates typed to make it are not kept.
+The place a case covers: a set of the grid's finest cells, made from the place in the police report and a radius. Fixed when the case is created; the coordinates typed to make it are not kept. Its size is how far across it is: between its two farthest points, edge to edge.
 _French_: périmètre
-_Avoid_: Zone, perimeter, region, radius (the radius only makes the area)
+_Avoid_: Zone, perimeter, region, radius (the radius is only how the area is made)
 _Avoid in French_: zone (the interface already uses it for a grid cell)
 
 **Closed case**:
@@ -274,7 +274,7 @@ _French_: plafonds
 _Avoid_: Limits (alone), quota
 
 **Ceiling**:
-The size no case may exceed, even with the admin's approval: 24 hours and 10 km across, margin included. It is fixed in the code, so raising it takes a public change; the size caps can be set lower than it, never higher.
+The size no case may exceed, even with the admin's approval: 24 hours and 10 km across, margin included. It is fixed in the code, so raising it takes a public change; the size caps can be set no higher than it. Not to be confused with the size caps (plafonds), which approval can exceed.
 _French_: limite absolue
 _Avoid_: Maximum, hard cap
 

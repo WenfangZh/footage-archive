@@ -6,6 +6,7 @@ No cell is finer than settings.GRID_H3_RESOLUTION (11, about 50 m across, at mos
 """
 
 from itertools import combinations
+from math import cos, radians
 
 import h3.api.basic_int as h3
 from django.conf import settings
@@ -52,20 +53,51 @@ def widen(cells, rings):
     return widened
 
 
-def span_metres(cells):
-    """About how far across a set of cells is, from edge to edge.
+def span_metres(cells, rings=0):
+    """How far across a set of cells is, edge to edge, once widened by `rings`.
 
-    The farthest two centres are always on the set's outer edge, so only those cells are
-    compared. Beyond each of the two centres lies at most half a cell: the distance from a
-    centre to its farthest corner, of the widest outer cell, is added at both ends.
+    Never less than the truth, and at resolution 11 a few metres more. The farthest two
+    centres are corners of the centres' convex hull, so only those are compared. Beyond
+    each of the two lies at most half a cell (a centre-to-corner distance), and each ring
+    adds at most one centre-to-centre spacing at each end, so the set is never widened
+    here. Both are taken at their largest among the hull's cells: over the few kilometres
+    a case spans, cells differ in size by a tiny fraction.
     """
-    cells = set(cells)
-    outer = [cell for cell in cells if not cells.issuperset(h3.grid_disk(cell, 1))]
-    centres = [h3.cell_to_latlng(cell) for cell in outer]
-    farthest = max((h3.great_circle_distance(a, b, 'm') for a, b in combinations(centres, 2)), default=0)
-    half_width = max(
-        h3.great_circle_distance(centre, corner, 'm')
-        for cell, centre in zip(outer, centres)
-        for corner in h3.cell_to_boundary(cell)
-    )
-    return farthest + 2 * half_width
+    centres = {cell: h3.cell_to_latlng(cell) for cell in set(cells)}
+    if not centres:
+        raise ValueError('An empty set of cells has no span.')
+    hull = _convex_hull(centres)
+    farthest = max((_metres(centres[a], centres[b]) for a, b in combinations(hull, 2)), default=0)
+    half_width = max(_metres(centres[cell], corner) for cell in hull for corner in h3.cell_to_boundary(cell))
+    spacing = max(_metres(centres[cell], h3.cell_to_latlng(near)) for cell in hull for near in h3.grid_ring(cell, 1))
+    return farthest + 2 * half_width + 2 * rings * spacing
+
+
+def _metres(a, b):
+    return h3.great_circle_distance(a, b, 'm')
+
+
+def _convex_hull(centres):
+    """The cells whose centres are corners of the convex hull of all `centres`.
+
+    Andrew's monotone chain, on a flat projection around one of the centres: accurate
+    enough over a few kilometres, and a set spread wider is far beyond any case's ceiling.
+    """
+    latitude = next(iter(centres.values()))[0]
+    stretch = cos(radians(latitude))
+    points = sorted((lng * stretch, lat, cell) for cell, (lat, lng) in centres.items())
+    if len(points) <= 2:
+        return [cell for _, _, cell in points]
+
+    def turns_left(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]) > 0
+
+    def chain(ordered):
+        kept = []
+        for point in ordered:
+            while len(kept) >= 2 and not turns_left(kept[-2], kept[-1], point):
+                kept.pop()
+            kept.append(point)
+        return kept[:-1]
+
+    return [cell for _, _, cell in chain(points) + chain(reversed(points))]
