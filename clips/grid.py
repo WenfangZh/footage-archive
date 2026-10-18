@@ -76,6 +76,14 @@ def span_metres(cells, rings=0):
     return farthest + 2 * half_width + 2 * rings * spacing
 
 
+def middle_cell(cells):
+    """The cell of a set nearest the average of their centres: where to say the set is."""
+    centres = {cell: h3.cell_to_latlng(cell) for cell in cells}
+    latitude = sum(lat for lat, _ in centres.values()) / len(centres)
+    longitude = sum(lng for _, lng in centres.values()) / len(centres)
+    return min(centres, key=lambda cell: _metres(centres[cell], (latitude, longitude)))
+
+
 def spacing_metres(cell):
     """The largest distance from a cell's centre to a neighbour's: how far one ring reaches."""
     centre = h3.cell_to_latlng(cell)

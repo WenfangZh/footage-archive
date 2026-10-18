@@ -2,6 +2,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from alerts import views as alert_views
+from cases import approval as case_approval
 from cases import views as case_views
 
 from . import access, admission, invitations, two_factor, views
@@ -27,6 +28,8 @@ manage_patterns = [
     path('lawyers/<int:profile_id>/reinstate/', access.reinstate, name='reinstate'),
     path('lawyers/<int:profile_id>/revoke/', access.revoke, name='revoke'),
     path('alerts/<int:alert_id>/seen/', alert_views.mark_seen, name='alert_seen'),
+    path('cases/', case_approval.case_requests, name='case_requests'),
+    path('cases/<int:case_id>/', case_approval.case_request, name='case_request'),
 ]
 
 urlpatterns = [

@@ -4,6 +4,10 @@ A case has a case label, a time window and an area, and a margin around both; th
 area and margin are fixed once the case is created, which goes through
 `Case.objects.create_with_area`. A case is opened only for a lawyer, and never deleted: a
 closed case stays as it was, and in the audit log. Closing goes through `close`.
+
+A case over the size caps is made only with the lawyer's reason, and waits for the admin's
+decision in its CaseApproval: until it is approved, it cannot be used; refused, it is
+closed. A case within the caps has no CaseApproval.
 """
 
 from django.db import models, transaction
@@ -12,6 +16,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import LawyerProfile
+from audit.models import Action, record
 from cases import size
 from clips import grid
 
@@ -20,14 +25,30 @@ class CaseQuerySet(models.QuerySet):
     def open(self):
         return self.filter(closed_at__isnull=True)
 
-    def close(self, because, now=None):
-        """Close the open cases among these; closed ones keep their time and reason."""
-        return super(CaseQuerySet, self.open()).update(closed_at=now or timezone.now(), closed_because=because)
+    def usable(self):
+        """Open cases that can be searched: within the caps, or approved by the admin."""
+        return self.open().filter(Q(approval__isnull=True) | Q(approval__approved=True))
 
-    def create_with_area(self, lawyer_profile, label, starts_at, ends_at, cells, margin_minutes, margin_rings):
+    def close(self, because, now=None):
+        """Close the open cases among these; closed ones keep their time and reason.
+
+        A request for a larger case that is still waiting goes with it, and so does its reason.
+        """
+        with transaction.atomic():
+            closing = list(self.open().values_list('pk', flat=True))
+            CaseApproval.objects.filter(case__in=closing, decided_at__isnull=True)._delete_reasons()
+            return super(CaseQuerySet, self.filter(pk__in=closing)).update(
+                closed_at=now or timezone.now(), closed_because=because,
+            )
+
+    def create_with_area(
+        self, lawyer_profile, label, starts_at, ends_at, cells, margin_minutes, margin_rings, approval_reason='',
+    ):
         """Open a case whose area is a set of the grid's finest cells: the only way to make one.
 
-        Raises size.CaseTooLarge for a case over the size caps, margin included.
+        Raises size.CaseTooLarge for a case beyond the ceiling, or over the size caps
+        without an `approval_reason`; with one, the case waits for the admin's approval.
+        A reason given for a case within the caps is not kept.
         """
         cells = set(cells)
         if not cells or not all(grid.is_cell(cell) and grid.resolution(cell) == grid.finest_resolution() for cell in cells):
@@ -41,7 +62,13 @@ class CaseQuerySet(models.QuerySet):
             # A bool is an int in Python; an absurd number of rings is caught by the size check.
             if type(margin) is not int or margin < 0:
                 raise ValueError("A case's margin is a whole number, zero or more.")
-        size.check(starts_at, ends_at, cells, margin_minutes, margin_rings)
+        try:
+            size.check(starts_at, ends_at, cells, margin_minutes, margin_rings)
+            needs_approval = False
+        except size.CaseTooLarge as too_large:
+            if too_large.beyond_ceiling or not approval_reason.strip():
+                raise
+            needs_approval = True
         with transaction.atomic():
             case = self.model(
                 lawyer_profile=lawyer_profile, label=label, starts_at=starts_at, ends_at=ends_at,
@@ -49,6 +76,8 @@ class CaseQuerySet(models.QuerySet):
             )
             case.save(_checked=True)
             CaseCell.objects.bulk_create((CaseCell(case=case, cell=cell) for cell in cells), _checked=True)
+            if needs_approval:
+                CaseApproval(case=case, reason=approval_reason.strip()).save(_checked=True)
         return case
 
     def create(self, **kwargs):
@@ -72,6 +101,7 @@ class Case(models.Model):
         LAWYER = 'lawyer', _('Closed by its lawyer')
         REVOCATION = 'revocation', _("Closed when its lawyer's access was revoked")
         INACTIVITY = 'inactivity', _('Closed after a long time without use')
+        REFUSAL = 'refusal', _('Closed when the admin refused it')
 
     lawyer_profile = models.ForeignKey(LawyerProfile, on_delete=models.PROTECT, related_name='cases')
     # Never a client's name (SPEC.md §7).
@@ -92,7 +122,8 @@ class Case(models.Model):
         base_manager_name = 'objects'
         constraints = [
             models.CheckConstraint(
-                condition=Q(closed_because__in=['', 'lawyer', 'revocation', 'inactivity']), name='known_reason',
+                condition=Q(closed_because__in=['', 'lawyer', 'revocation', 'inactivity', 'refusal']),
+                name='known_reason',
             ),
             models.CheckConstraint(
                 condition=Q(closed_at__isnull=True, closed_because='')
@@ -127,6 +158,84 @@ class Case(models.Model):
 
     def area(self):
         return set(self.cells.values_list('cell', flat=True))
+
+    def waiting_for_approval(self):
+        return CaseApproval.objects.filter(case=self, decided_at__isnull=True).exists()
+
+
+REASON_MAX_LENGTH = 2000
+ADMIN_NOTE_MAX_LENGTH = 1000
+
+
+class CaseApprovalQuerySet(models.QuerySet):
+    def waiting(self):
+        return self.filter(decided_at__isnull=True, case__closed_at__isnull=True)
+
+    def _delete_reasons(self):
+        return super().update(reason='')
+
+    def update(self, **kwargs):
+        raise ValueError('A request for a larger case changes only through decide().')
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValueError('A request for a larger case changes only through decide().')
+
+    def bulk_create(self, objs, *args, **kwargs):
+        raise ValueError('A request for a larger case is made only with its case, by create_with_area().')
+
+    def delete(self):
+        raise ValueError('Requests for larger cases are never deleted.')
+
+
+class CaseApproval(models.Model):
+    """A case over the size caps, its lawyer's reason, and the admin's decision (SPEC.md §7).
+
+    The reason is for the admin to decide with: it is deleted once they have, or once the
+    case is closed. The admin's own note, if any, is kept.
+    """
+
+    case = models.OneToOneField(Case, on_delete=models.PROTECT, primary_key=True, related_name='approval')
+    reason = models.TextField(max_length=REASON_MAX_LENGTH, blank=True)
+    requested_at = models.DateTimeField(default=timezone.now)
+    decided_at = models.DateTimeField(null=True, blank=True)
+    approved = models.BooleanField(null=True)
+    admin_note = models.TextField(max_length=ADMIN_NOTE_MAX_LENGTH, blank=True)
+
+    objects = CaseApprovalQuerySet.as_manager()
+
+    class Meta:
+        base_manager_name = 'objects'
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(decided_at__isnull=True, approved__isnull=True, admin_note='')
+                | Q(decided_at__isnull=False, approved__isnull=False, reason=''),
+                name='decided_once_with_the_reason_deleted',
+            ),
+        ]
+
+    def save(self, *args, _checked=False, **kwargs):
+        if not (self._state.adding and _checked):
+            raise ValueError('A request for a larger case is made only with its case, by create_with_area().')
+        kwargs['force_insert'] = True
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError('Requests for larger cases are never deleted.')
+
+    def decide(self, approved, admin, note=''):
+        """Approve or refuse the case, once: delete the reason, close a refused case, and log it."""
+        with transaction.atomic():
+            updated = super(CaseApprovalQuerySet, CaseApproval.objects.waiting().filter(pk=self.pk)).update(
+                decided_at=timezone.now(), approved=approved, admin_note=note.strip(), reason='',
+            )
+            if updated != 1:
+                raise ValueError('This request has already been decided, or its case closed.')
+            case = Case.objects.get(pk=self.pk)
+            if not approved:
+                Case.objects.filter(pk=case.pk).close(Case.ClosedBecause.REFUSAL)
+            action = Action.CASE_APPROVAL if approved else Action.CASE_REFUSAL
+            record(action, case.lawyer_profile, admin=admin, case=case)
+        self.refresh_from_db()
 
 
 class CaseCellQuerySet(models.QuerySet):
