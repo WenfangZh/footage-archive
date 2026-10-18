@@ -105,7 +105,7 @@ def test_a_span_is_measured_from_edge_to_edge():
 
 def test_a_span_is_measured_over_cells_of_one_resolution():
     cell = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='one resolution'):
         grid.span_metres([cell, grid.coarsen(cell, 9)])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='empty'):
         grid.span_metres([])

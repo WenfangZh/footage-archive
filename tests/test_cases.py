@@ -169,6 +169,20 @@ def test_a_case_s_lawyer_window_and_margin_never_change(lawyer):
         Case.objects.get(pk=case.pk).save()
 
 
+def test_cells_are_added_for_one_case_at_a_time(lawyer):
+    now = datetime.datetime.now(datetime.UTC)
+    bare = []
+    for label in ('One', 'Two'):
+        # Cases without cells, past create_with_area, so that only the one-case rule is left to refuse.
+        case = Case(lawyer_profile=lawyer, label=label, starts_at=now - datetime.timedelta(hours=1), ends_at=now,
+                    margin_minutes=0, margin_rings=0)
+        case.save(_checked=True)
+        bare.append(case)
+    with pytest.raises(ValueError, match='only with the case'):
+        CaseCell.objects.bulk_create([CaseCell(case=case, cell=CENTRE) for case in bare], _checked=True)
+    assert not CaseCell.objects.exists()
+
+
 def test_a_case_s_area_never_changes(lawyer):
     case = make_case(lawyer)
     cell = case.cells.first()
