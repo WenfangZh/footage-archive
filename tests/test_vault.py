@@ -11,7 +11,7 @@ from django.db.models import ProtectedError
 
 from clips import vault
 from clips.editing import delete_clip
-from clips.models import Clip, VaultFile, VaultText
+from clips.models import Clip, VaultFile, VaultStorage, VaultText
 
 pytestmark = pytest.mark.django_db
 
@@ -169,6 +169,24 @@ def test_a_name_clash_fails_without_touching_the_file_there(clip, local_file, mo
         vault.store_file(local_file, 'mp4')
     assert vault_files_on_disk() == {existing}
     assert existing.read_bytes() == b'someone else\'s evidence copy'
+
+
+def test_a_file_appearing_at_the_name_meanwhile_is_left_alone(clip, local_file, monkeypatch):
+    # It appears after the storage has checked the name and before it creates the file,
+    # so Django's own save finds the clash. That relies on Django creating the file
+    # before it reads the first chunk: if a new Django changed that, this test fails.
+    check_name = VaultStorage.get_available_name
+
+    def name_taken_meanwhile(self, name, max_length=None):
+        name = check_name(self, name, max_length)
+        (settings.VAULT_DIR / name).write_bytes(b"someone else's evidence copy")
+        return name
+
+    monkeypatch.setattr(VaultStorage, 'get_available_name', name_taken_meanwhile)
+    with pytest.raises(FileExistsError):
+        vault.store_file(local_file, 'mp4')
+    [path] = vault_files_on_disk()
+    assert path.read_bytes() == b"someone else's evidence copy"
 
 
 def test_delete_all_removes_the_files_from_disk(clip, local_file, django_capture_on_commit_callbacks):
