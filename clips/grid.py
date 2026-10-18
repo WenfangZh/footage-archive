@@ -54,18 +54,21 @@ def widen(cells, rings):
 
 
 def span_metres(cells, rings=0):
-    """How far across a set of cells is, edge to edge, once widened by `rings`.
+    """How far across a set of cells of one resolution is, edge to edge, once widened by `rings`.
 
-    Never less than the truth, and at resolution 11 a few metres more. The farthest two
-    centres are corners of the centres' convex hull, so only those are compared. Beyond
-    each of the two lies at most half a cell (a centre-to-corner distance), and each ring
-    adds at most one centre-to-centre spacing at each end, so the set is never widened
-    here. Both are taken at their largest among the hull's cells: over the few kilometres
-    a case spans, cells differ in size by a tiny fraction.
+    Never less than the truth: at resolution 11, a few metres more, plus up to about 13 m
+    per ring. The farthest two centres are corners of the centres' convex hull, so only
+    those are compared. Beyond each of the two lies at most half a cell (a centre-to-corner
+    distance), and each ring adds at most one centre-to-centre spacing at each end (rings
+    reach less far in some directions), so the widened set is never built. Both are taken
+    at their largest among the hull's cells: over the few kilometres a case spans, cells
+    differ in size by a tiny fraction.
     """
     centres = {cell: h3.cell_to_latlng(cell) for cell in set(cells)}
     if not centres:
         raise ValueError('An empty set of cells has no span.')
+    if len({h3.get_resolution(cell) for cell in centres}) > 1:
+        raise ValueError('A span is measured over cells of one resolution.')
     hull = _convex_hull(centres)
     farthest = max((_metres(centres[a], centres[b]) for a, b in combinations(hull, 2)), default=0)
     half_width = max(_metres(centres[cell], corner) for cell in hull for corner in h3.cell_to_boundary(cell))
@@ -82,6 +85,7 @@ def _convex_hull(centres):
 
     Andrew's monotone chain, on a flat projection around one of the centres: accurate
     enough over a few kilometres, and a set spread wider is far beyond any case's ceiling.
+    Across the 180° meridian or near a pole it measures too wide, which only refuses.
     """
     latitude = next(iter(centres.values()))[0]
     stretch = cos(radians(latitude))

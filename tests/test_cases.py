@@ -1,11 +1,12 @@
 import datetime
+from unittest import mock
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 
 from accounts.models import LawyerProfile
-from cases.models import Case, CaseCell
+from cases.models import Case, CaseCell, CaseCellQuerySet
 from cases.size import CaseTooLarge
 from clips import grid
 from tests.conftest import BASTILLE, make_case
@@ -123,10 +124,19 @@ def test_beyond_the_ceiling_is_said_apart_from_over_the_caps(lawyer):
     assert not refused.value.beyond_ceiling
 
 
-def test_a_huge_margin_is_refused_without_widening_the_area(lawyer):
+def test_a_huge_margin_is_refused_without_widening_the_area(lawyer, monkeypatch):
+    cells = grid.widen([CENTRE], 2)
+    monkeypatch.setattr(grid, 'widen', mock.Mock(side_effect=AssertionError('widened')))
     with pytest.raises(CaseTooLarge) as refused:
-        make_case(lawyer, margin_rings=30_000)
+        make_case(lawyer, cells=cells, margin_rings=30_000)
     assert refused.value.beyond_ceiling
+
+
+def test_a_case_is_made_whole_or_not_at_all(lawyer, monkeypatch):
+    monkeypatch.setattr(CaseCellQuerySet, 'bulk_create', mock.Mock(side_effect=IntegrityError))
+    with pytest.raises(IntegrityError):
+        make_case(lawyer)
+    assert not Case.objects.exists()
 
 
 def test_lower_caps_refuse_smaller_cases(lawyer, settings):
@@ -176,4 +186,6 @@ def test_a_case_s_area_never_changes(lawyer):
         CaseCell.objects.create(case=case, cell=far)
     with pytest.raises(ValueError, match='only with the case'):
         CaseCell.objects.bulk_create([CaseCell(case=case, cell=far)])
+    with pytest.raises(ValueError, match='only with the case'):
+        CaseCell.objects.bulk_create([CaseCell(case=case, cell=far)], _checked=True)
     assert case.area() == grid.widen([CENTRE], 2)

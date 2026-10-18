@@ -128,7 +128,9 @@ class Case(models.Model):
 
 class CaseCellQuerySet(models.QuerySet):
     def bulk_create(self, objs, *args, _checked=False, **kwargs):
-        if not _checked:
+        objs = list(objs)
+        cases = {obj.case_id for obj in objs}
+        if not _checked or len(cases) != 1 or self.filter(case_id__in=cases).exists():
             raise ValueError("A case's area is added only with the case, by create_with_area().")
         return super().bulk_create(objs, *args, **kwargs)
 

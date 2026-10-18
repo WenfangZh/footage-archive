@@ -70,6 +70,8 @@ def make_case(lawyer_profile, label='A case', rings=2, **fields):
     starts_at = timezone.now() - datetime.timedelta(days=30)
     values = {
         'starts_at': starts_at, 'ends_at': starts_at + datetime.timedelta(hours=1),
-        'cells': grid.widen([grid.cell_for_point(*BASTILLE, 11)], rings), 'margin_minutes': 10, 'margin_rings': 1,
+        'margin_minutes': 10, 'margin_rings': 1,
     }
+    if 'cells' not in fields:
+        values['cells'] = grid.widen([grid.cell_for_point(*BASTILLE, 11)], rings)
     return Case.objects.create_with_area(lawyer_profile, label, **{**values, **fields})

@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 from django.contrib.auth import authenticate, get_user_model
 from django.core import mail
@@ -204,6 +206,6 @@ def test_only_a_lawyer_gets_a_new_case(admin_client, lawyer):
 ])
 def test_the_database_checks_how_a_case_is_closed(lawyer, fields):
     with pytest.raises(IntegrityError), transaction.atomic():
-        window = {'starts_at': timezone.now() - timezone.timedelta(hours=1), 'ends_at': timezone.now()}
+        window = {'starts_at': timezone.now() - datetime.timedelta(hours=1), 'ends_at': timezone.now()}
         # Past create_with_area's own checks, to reach the database's.
         Case(lawyer_profile=lawyer, label='A case', margin_minutes=0, margin_rings=0, **window, **fields).save(_checked=True)

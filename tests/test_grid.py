@@ -101,3 +101,11 @@ def test_a_span_is_measured_from_edge_to_edge():
     assert 1_900 < grid.span_metres(grid.widen([cell], 19)) < 2_000
     two_apart = grid.cell_for_point(LATITUDE + 0.01, LONGITUDE, 11)
     assert 1_100 < grid.span_metres([cell, two_apart]) < 1_200
+
+
+def test_a_span_is_measured_over_cells_of_one_resolution():
+    cell = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
+    with pytest.raises(ValueError):
+        grid.span_metres([cell, grid.coarsen(cell, 9)])
+    with pytest.raises(ValueError):
+        grid.span_metres([])
