@@ -238,9 +238,22 @@ class VaultText(models.Model):
         ]
 
 
+class VaultStorage(FileSystemStorage):
+    """The vault's folder on disk. Unlike Django's, it never picks another name on a clash.
+
+    Names are random, so a clash is a bug. Picking another name would also hide which
+    file a failed save wrote, and clips.vault must remove only what it created.
+    """
+
+    def get_available_name(self, name, max_length=None):
+        if super().get_available_name(name, max_length) != name:
+            raise FileExistsError(name)
+        return name
+
+
 def vault_storage():
     # Never served over the web: nothing routes to this folder (SPEC.md §4).
-    return FileSystemStorage(location=settings.VAULT_DIR)
+    return VaultStorage(location=settings.VAULT_DIR)
 
 
 class VaultFile(models.Model):

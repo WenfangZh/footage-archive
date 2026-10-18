@@ -13,6 +13,7 @@ worst, if the process dies in between, it leaves a file no row points to, which
 delete_stray_files removes once it is old enough.
 """
 
+import contextlib
 import datetime
 import re
 import uuid
@@ -62,9 +63,34 @@ def store_file(source_path, extension):
     transaction, then record them with record_file inside it. Until it does, the file
     is unrecorded: delete_unrecorded_files removes it, and so would delete_stray_files
     once it is old enough.
+
+    If the copy fails partway (a full disk, say), the partial file is removed again,
+    so retries do not pile up copies of up to 2 GB.
     """
+    storage = vault_storage()
+    name = f'{uuid.uuid4().hex}.{extension}'
     with open(source_path, 'rb') as source:
-        return vault_storage().save(f'{uuid.uuid4().hex}.{extension}', File(source))
+        content = _Copy(source)
+        try:
+            return storage.save(name, content)
+        except BaseException:
+            # Django has created the file by the time it first asks for a chunk, and the
+            # storage refuses a name that is taken, so then the file at `name` is ours.
+            # Before that, nothing was written and a file at `name` is not ours to touch.
+            if content.started:
+                with contextlib.suppress(OSError):  # Else delete_stray_files gets it later.
+                    storage.delete(name)
+            raise
+
+
+class _Copy(File):
+    """A file being copied into the vault, which notes whether the copying has begun."""
+
+    started = False
+
+    def chunks(self, chunk_size=None):
+        self.started = True
+        yield from super().chunks(chunk_size)
 
 
 def record_file(clip, kind, name):

@@ -1,10 +1,12 @@
 import datetime
+import errno
 import os
 import uuid
 from pathlib import Path
 
 import pytest
 from django.conf import settings
+from django.core.files.base import File as BaseFile
 from django.db.models import ProtectedError
 
 from clips import vault
@@ -143,6 +145,30 @@ def test_a_stored_file_belongs_to_no_clip_until_it_is_recorded(clip, local_file)
     vault.delete_unrecorded_files([name])
     assert vault.has_file(clip, vault.EVIDENCE_COPY)
     assert len(vault_files_on_disk()) == 1
+
+
+def test_a_failed_copy_leaves_no_file_and_keeps_the_others(clip, local_file, monkeypatch):
+    put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
+    before = {path: path.read_bytes() for path in vault_files_on_disk()}
+
+    def disk_fills_up(self, chunk_size=None):
+        yield b'the first chunk'
+        raise OSError(errno.ENOSPC, 'No space left on device')
+
+    monkeypatch.setattr(BaseFile, 'chunks', disk_fills_up)
+    with pytest.raises(OSError):
+        vault.store_file(local_file, 'mp4')
+    assert {path: path.read_bytes() for path in vault_files_on_disk()} == before
+
+
+def test_a_name_clash_fails_without_touching_the_file_there(clip, local_file, monkeypatch):
+    monkeypatch.setattr(vault.uuid, 'uuid4', lambda: uuid.UUID(int=1))
+    existing = settings.VAULT_DIR / f'{uuid.UUID(int=1).hex}.mp4'
+    existing.write_bytes(b'someone else\'s evidence copy')
+    with pytest.raises(FileExistsError):
+        vault.store_file(local_file, 'mp4')
+    assert vault_files_on_disk() == {existing}
+    assert existing.read_bytes() == b'someone else\'s evidence copy'
 
 
 def test_delete_all_removes_the_files_from_disk(clip, local_file, django_capture_on_commit_callbacks):
