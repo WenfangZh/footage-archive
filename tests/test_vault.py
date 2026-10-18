@@ -16,6 +16,11 @@ pytestmark = pytest.mark.django_db
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def put_file(clip, kind, source_path, extension):
+    """Store a file and record it as the clip's, as ingest does."""
+    vault.record_file(clip, kind, vault.store_file(source_path, extension))
+
+
 @pytest.fixture
 def clip():
     return Clip.objects.create(code_hash=uuid.uuid4().hex * 2)
@@ -99,14 +104,14 @@ def local_file(tmp_path):
 
 @pytest.mark.parametrize('kind', [vault.EVIDENCE_COPY, vault.PROXY])
 def test_a_file_goes_in_and_comes_out(clip, local_file, kind):
-    vault.put_file(clip, kind, local_file, 'mp4')
+    put_file(clip, kind, local_file, 'mp4')
     assert vault.has_file(clip, kind)
     with vault.open_file(clip, kind) as stored:
         assert stored.read() == local_file.read_bytes()
 
 
 def test_files_are_stored_privately_under_random_names(clip, local_file):
-    vault.put_file(clip, vault.EVIDENCE_COPY, local_file, 'mov')
+    put_file(clip, vault.EVIDENCE_COPY, local_file, 'mov')
     [path] = vault_files_on_disk()
     assert path.parent == settings.VAULT_DIR
     assert path.suffix == '.mov' and len(path.stem) == 32 and 'work' not in path.name
@@ -117,21 +122,34 @@ def test_files_are_stored_privately_under_random_names(clip, local_file):
 def test_a_new_file_replaces_the_old_one_on_disk(
     clip, local_file, tmp_path, django_capture_on_commit_callbacks,
 ):
-    vault.put_file(clip, vault.PROXY, local_file, 'mp4')
+    put_file(clip, vault.PROXY, local_file, 'mp4')
     second = tmp_path / 'second.mp4'
     second.write_bytes(b'second attempt')
     with django_capture_on_commit_callbacks(execute=True):
-        vault.put_file(clip, vault.PROXY, second, 'mp4')
+        put_file(clip, vault.PROXY, second, 'mp4')
     [path] = vault_files_on_disk()
     assert path.read_bytes() == b'second attempt'
     assert VaultFile.objects.count() == 1
 
 
+def test_a_stored_file_belongs_to_no_clip_until_it_is_recorded(clip, local_file):
+    name = vault.store_file(local_file, 'mp4')
+    assert not VaultFile.objects.exists()
+    vault.delete_unrecorded_files([name])
+    assert not vault_files_on_disk()
+
+    name = vault.store_file(local_file, 'mp4')
+    vault.record_file(clip, vault.EVIDENCE_COPY, name)
+    vault.delete_unrecorded_files([name])
+    assert vault.has_file(clip, vault.EVIDENCE_COPY)
+    assert len(vault_files_on_disk()) == 1
+
+
 def test_delete_all_removes_the_files_from_disk(clip, local_file, django_capture_on_commit_callbacks):
     other = Clip.objects.create(code_hash=uuid.uuid4().hex * 2)
-    vault.put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
-    vault.put_file(clip, vault.PROXY, local_file, 'mp4')
-    vault.put_file(other, vault.PROXY, local_file, 'mp4')
+    put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
+    put_file(clip, vault.PROXY, local_file, 'mp4')
+    put_file(other, vault.PROXY, local_file, 'mp4')
     with django_capture_on_commit_callbacks(execute=True):
         vault.delete_all(clip)
     assert not vault.has_file(clip, vault.EVIDENCE_COPY) and not vault.has_file(clip, vault.PROXY)
@@ -140,7 +158,7 @@ def test_delete_all_removes_the_files_from_disk(clip, local_file, django_capture
 
 
 def test_a_clip_with_files_cannot_be_deleted_around_the_vault(clip, local_file):
-    vault.put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
+    put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
     with pytest.raises(ProtectedError):
         clip.delete()
 
@@ -148,8 +166,8 @@ def test_a_clip_with_files_cannot_be_deleted_around_the_vault(clip, local_file):
 def test_the_code_holder_deleting_a_clip_removes_its_files(
     clip, local_file, django_capture_on_commit_callbacks,
 ):
-    vault.put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
-    vault.put_file(clip, vault.PROXY, local_file, 'mp4')
+    put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
+    put_file(clip, vault.PROXY, local_file, 'mp4')
     with django_capture_on_commit_callbacks(execute=True):
         delete_clip(clip)
     assert not Clip.objects.exists()
@@ -157,7 +175,7 @@ def test_the_code_holder_deleting_a_clip_removes_its_files(
 
 
 def test_the_text_form_of_a_vault_file_hides_its_name(clip, local_file):
-    vault.put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
+    put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
     entry = VaultFile.objects.get()
     assert entry.file.name not in str(entry)
     assert entry.file.name not in repr(entry)
@@ -169,7 +187,7 @@ def age(path, delta):
 
 
 def test_old_files_no_clip_refers_to_are_deleted(clip, local_file):
-    vault.put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
+    put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
     [kept] = vault_files_on_disk()
     old_stray = settings.VAULT_DIR / f'{uuid.uuid4().hex}.mp4'
     recent_stray = settings.VAULT_DIR / f'{uuid.uuid4().hex}.mp4'
@@ -191,14 +209,14 @@ def test_old_files_no_clip_refers_to_are_deleted(clip, local_file):
 def test_a_stored_file_counts_as_new_however_old_its_source(clip, local_file):
     # The sweep's margin relies on this: an old source must not make a fresh copy look stray.
     age(local_file, vault.STRAY_FILE_AGE * 3)
-    vault.put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
+    put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
     VaultFile.objects.all().delete()  # As if its transaction had not committed yet.
     assert vault.delete_stray_files() == 0
     assert len(vault_files_on_disk()) == 1
 
 
 def test_the_files_of_a_crash_after_delete_all_are_swept_up(clip, local_file):
-    vault.put_file(clip, vault.PROXY, local_file, 'mp4')
+    put_file(clip, vault.PROXY, local_file, 'mp4')
     # The callback that deletes the files never runs, as if the process died after the commit.
     vault.delete_all(clip)
     [left] = vault_files_on_disk()

@@ -132,18 +132,24 @@ def confirm_quick_read(clip, read):
 
 def finish(clip, original, result):
     """Step 9: the files go to the vault, the hash record is kept, the original deleted."""
+    # The files are copied before the transaction, not inside it. SQLite locks the whole
+    # database while a transaction is open, so copying up to 2 GB inside one would hold
+    # up every other write, such as lawyers' audit entries, until they gave up with
+    # "database is locked". Postgres locks rows, so there this mainly keeps the
+    # transaction short.
     stored = []
     try:
+        stored.append(vault.store_file(result['evidence_path'], result['extension']))
+        stored.append(vault.store_file(result['proxy_path'], proxy.PROXY_EXTENSION))
+        evidence_name, proxy_name = stored
         with transaction.atomic():
             # The code holder may have deleted the clip meanwhile.
             if not Clip.objects.select_for_update().filter(
                 pk=clip.pk, status=Clip.Status.PROCESSING,
             ).exists():
                 return
-            stored.append(vault.put_file(
-                clip, vault.EVIDENCE_COPY, result['evidence_path'], result['extension'],
-            ))
-            stored.append(vault.put_file(clip, vault.PROXY, result['proxy_path'], proxy.PROXY_EXTENSION))
+            vault.record_file(clip, vault.EVIDENCE_COPY, evidence_name)
+            vault.record_file(clip, vault.PROXY, proxy_name)
             record = result['hash_record']
             record.clip = clip
             record.save()
@@ -156,10 +162,9 @@ def finish(clip, original, result):
             )
             original.delete()
             transaction.on_commit(lambda: original.file.delete(save=False))
-    except BaseException:
-        # Rolled back: the files just stored belong to no clip, and must not stay.
+    finally:
+        # Whatever no row took, after a failure or a clip deleted meanwhile, must not stay.
         vault.delete_unrecorded_files(stored)
-        raise
     clip.refresh_from_db()
 
 
