@@ -6,10 +6,13 @@ the manager Django uses internally and the update that save_base() and fixtures 
 run. What bypasses the models is outside this guard: raw SQL and migrations. Entries hold keys and identifiers, never text typed by
 anyone (CLAUDE.md).
 
-M3 records the admin's actions on applicants' and lawyers' accounts. Lawyers' own actions
-(M4, M6) bring the case, clip and count that SPEC.md §7 lists.
+Each entry names the applicant or lawyer concerned and, on the admin's actions, the admin.
+A lawyer's own actions also name their case and, where there is one, the clip: as a plain
+id, so that deleting a clip never deletes or changes an entry. A search records how many
+clips it found instead (SPEC.md §7).
 """
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
@@ -26,6 +29,12 @@ class Action(models.TextChoices):
     SUSPENSION = 'suspension', _('Suspension')
     REINSTATEMENT = 'reinstatement', _('Reinstatement')
     REVOCATION = 'revocation', _('Revocation')
+    CASE_CREATION = 'case_creation', _('Case creation')
+    CASE_CLOSING = 'case_closing', _('Case closing')
+    LARGER_CASE_REQUEST = 'larger_case_request', _('Request for a larger case')
+    SEARCH = 'search', _('Search')
+    PREVIEW = 'preview', _('Preview')
+    DOWNLOAD = 'download', _('Download')
 
 
 # Actions the admin takes; every other action is a lawyer's own.
@@ -33,6 +42,13 @@ ADMIN_ACTIONS = [
     Action.INVITATION, Action.DECLINING, Action.ADMISSION, Action.SUSPENSION,
     Action.REINSTATEMENT, Action.REVOCATION,
 ]
+# Actions on a case; all but the admin's are lawyers' own.
+CASE_ACTIONS = [
+    Action.CASE_CREATION, Action.CASE_CLOSING, Action.LARGER_CASE_REQUEST, Action.SEARCH,
+    Action.PREVIEW, Action.DOWNLOAD,
+]
+CLIP_ACTIONS = [Action.PREVIEW, Action.DOWNLOAD]
+COUNT_ACTIONS = [Action.SEARCH]
 
 
 class AppendOnly(Exception):
@@ -55,7 +71,10 @@ class AuditEntryQuerySet(models.QuerySet):
 
 
 class AuditEntry(models.Model):
-    """One action in the audit log: what was done, about whom, by the admin or not, and when."""
+    """One action in the audit log: what was done, about whom, by the admin or not, and when.
+
+    A lawyer's actions also record the case, and the clip or the number of clips found.
+    """
 
     action = models.CharField(max_length=30, choices=Action.choices)
     # The applicant or lawyer the entry is about: the lawyer who acted, or the person
@@ -65,6 +84,17 @@ class AuditEntry(models.Model):
     admin = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name='+',
     )
+    # The case the action was taken in. Cases are never deleted (cases.models).
+    case = models.ForeignKey(
+        'cases.Case', null=True, blank=True, on_delete=models.PROTECT, related_name='audit_entries',
+    )
+    # The clip previewed or downloaded: its id alone, never a link that deleting the clip
+    # would follow.
+    clip_id = models.UUIDField(null=True, blank=True)
+    # A search's results: its core matches (in the case's area and time window) and its
+    # margin matches (found only in the margin around them).
+    core_count = models.PositiveIntegerField(null=True, blank=True)
+    margin_count = models.PositiveIntegerField(null=True, blank=True)
     # The time of writing, never one passed in. Precise: alerts look for many actions in a
     # short time (SPEC.md §7).
     at = models.DateTimeField(auto_now_add=True)
@@ -81,6 +111,21 @@ class AuditEntry(models.Model):
                 | (~Q(action__in=ADMIN_ACTIONS) & Q(admin__isnull=True)),
                 name='admin_on_admin_actions_only',
             ),
+            models.CheckConstraint(
+                condition=Q(action__in=CASE_ACTIONS, case__isnull=False)
+                | (~Q(action__in=CASE_ACTIONS) & Q(case__isnull=True)),
+                name='case_on_case_actions_only',
+            ),
+            models.CheckConstraint(
+                condition=Q(action__in=CLIP_ACTIONS, clip_id__isnull=False)
+                | (~Q(action__in=CLIP_ACTIONS) & Q(clip_id__isnull=True)),
+                name='clip_on_clip_actions_only',
+            ),
+            models.CheckConstraint(
+                condition=Q(action__in=COUNT_ACTIONS, core_count__isnull=False, margin_count__isnull=False)
+                | (~Q(action__in=COUNT_ACTIONS) & Q(core_count__isnull=True, margin_count__isnull=True)),
+                name='counts_on_searches_only',
+            ),
         ]
 
     def save(self, *args, **kwargs):
@@ -93,6 +138,11 @@ class AuditEntry(models.Model):
             pk=self.admin_id, is_staff=True,
         ).exists():
             raise ValueError("Only the admin's account can be the admin on an audit entry.")
+        # The stored case, as above: an entry is about the case's own lawyer.
+        if self.case_id is not None and not apps.get_model('cases', 'Case').objects.filter(
+            pk=self.case_id, lawyer_profile_id=self.lawyer_profile_id,
+        ).exists():
+            raise ValueError("An audit entry about a case names the case's lawyer.")
         # Always a new row: an entry given an existing id fails instead of replacing it.
         kwargs['force_insert'] = True
         super().save(*args, **kwargs)
@@ -105,6 +155,9 @@ class AuditEntry(models.Model):
         raise AppendOnly('Audit entries cannot be deleted.')
 
 
-def record(action, lawyer_profile, admin=None):
+def record(action, lawyer_profile, admin=None, case=None, clip=None, core_count=None, margin_count=None):
     """Add an entry to the audit log: the way every entry is meant to be written."""
-    return AuditEntry.objects.create(action=action, lawyer_profile=lawyer_profile, admin=admin)
+    return AuditEntry.objects.create(
+        action=action, lawyer_profile=lawyer_profile, admin=admin, case=case,
+        clip_id=clip.pk if clip is not None else None, core_count=core_count, margin_count=margin_count,
+    )

@@ -243,9 +243,24 @@ _Avoid_: Archived case, deleted case
 _Avoid in French_: classé (a case dropped by the prosecutor)
 
 **Match**:
-A clip matches a case when any part of the clip, by its stated time, falls inside the case's time window, and its stated location overlaps the case's area.
+A clip matches a case when any part of the clip, by its stated time, falls inside the case's time window, and its stated location overlaps the case's area, each widened by the case's margin. A match is either a core match or a margin match.
 _French_: correspondance (a clip correspond à un dossier de recherche)
 _Avoid_: Hit, result
+
+**Core match**:
+A match inside the case's time window and area themselves, without the margin.
+_French_: correspondance centrale
+_Avoid_: Priority 1 result, primary match
+
+**Margin match**:
+A match found only in the case's margin: just outside its time window or its area.
+_French_: correspondance de marge
+_Avoid_: Priority 2 result, secondary match
+
+**Margin**:
+The band a case adds around its time window and its area, fixed when the case is created (by default 10 minutes, and one ring of the grid's finest cells); each lawyer sets their own default. The time window and area, margin included, must fit the size caps.
+_French_: marge
+_Avoid_: Padding, buffer, tolerance
 
 **Message**:
 A note between a lawyer and the code holder of a clip, carried by the archive. The code holder sees the sender as a verified defence lawyer, named only if the lawyer chooses.
