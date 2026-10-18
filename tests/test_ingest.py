@@ -194,6 +194,24 @@ def test_files_stored_before_a_failure_are_removed(phone_video, monkeypatch, set
     assert Original.objects.filter(clip=clip).exists()
 
 
+def test_files_are_copied_to_the_vault_outside_the_transaction(phone_video, monkeypatch):
+    # Inside it, SQLite would hold up every other write while a large file is copied.
+    clip = confirmed_clip(phone_video)
+    depth_outside = len(connection.atomic_blocks)
+    depths = []
+    real_store_file = vault.store_file
+
+    def store_file(*args):
+        depths.append(len(connection.atomic_blocks))
+        return real_store_file(*args)
+
+    monkeypatch.setattr(vault, 'store_file', store_file)
+    ingest.ingest(clip)
+    clip.refresh_from_db()
+    assert clip.status == Clip.Status.READY
+    assert depths == [depth_outside, depth_outside]
+
+
 def test_a_ready_clip_is_left_alone(phone_video):
     clip = confirmed_clip(phone_video)
     ingest.ingest(clip)

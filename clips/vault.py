@@ -29,11 +29,11 @@ EVIDENCE_COPY = VaultFile.Kind.EVIDENCE_COPY
 PROXY = VaultFile.Kind.PROXY
 
 # A file no row points to is left over from a crash once it is this old. Ingest stores
-# a file and its row in one transaction, which never lasts this long; deleting the file
-# of a transaction still open would lose an evidence copy. This relies on put_file
-# writing each file anew, so that its modification time is when it was stored.
+# its files and then records them in one short transaction, which together never last
+# this long; deleting a file not yet recorded would lose an evidence copy. This relies
+# on store_file writing each file anew, so that its modification time is when it was stored.
 STRAY_FILE_AGE = datetime.timedelta(days=1)
-# The names put_file gives files (Django may add '_' and 7 characters to avoid a clash).
+# The names store_file gives files (Django may add '_' and 7 characters to avoid a clash).
 # Nothing else in the vault folder is ever swept.
 # More strays than this at once means something else went wrong, such as a database
 # restored from an old backup: then nothing is deleted, since these may be the only copies.
@@ -55,25 +55,26 @@ def get_text(clip, kind):
     return entry.content if entry else ''
 
 
-def put_file(clip, kind, source_path, extension):
-    """Store a copy of the local file at `source_path` as the clip's evidence copy or proxy.
+def store_file(source_path, extension):
+    """Store a copy of the local file at `source_path`, belonging to no clip yet; returns its name.
 
-    It replaces any file of that kind the clip already had. The caller deletes
-    `source_path`. Returns the stored file's name, for delete_unrecorded_files.
+    It touches no database row, so a caller can copy large files before opening its
+    transaction, then record them with record_file inside it. Until it does, the file
+    is unrecorded: delete_unrecorded_files removes it, and so would delete_stray_files
+    once it is old enough.
     """
-    storage = vault_storage()
     with open(source_path, 'rb') as source:
-        name = storage.save(f'{uuid.uuid4().hex}.{extension}', File(source))
-    try:
-        with transaction.atomic():
-            old = VaultFile.objects.select_for_update().filter(clip=clip, kind=kind).first()
-            VaultFile.objects.update_or_create(clip=clip, kind=kind, defaults={'file': name})
-    except BaseException:
-        storage.delete(name)
-        raise
+        return vault_storage().save(f'{uuid.uuid4().hex}.{extension}', File(source))
+
+
+def record_file(clip, kind, name):
+    """Make the stored file `name` the clip's evidence copy or proxy, replacing any old one."""
+    with transaction.atomic():
+        old = VaultFile.objects.select_for_update().filter(clip=clip, kind=kind).first()
+        VaultFile.objects.update_or_create(clip=clip, kind=kind, defaults={'file': name})
     if old is not None:
+        storage = vault_storage()
         transaction.on_commit(lambda: storage.delete(old.file.name))
-    return name
 
 
 def delete_unrecorded_files(names):
