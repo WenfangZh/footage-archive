@@ -45,6 +45,11 @@ def test_an_open_ended_range_runs_to_the_end():
     assert response['Content-Length'] == str(SIZE - 2000)
 
 
+def test_the_unit_is_read_in_any_case():
+    response, _ = serve('Bytes=0-9')
+    assert response.status_code == 206
+
+
 def test_a_suffix_range_gets_the_last_bytes():
     response, _ = serve('bytes=-100')
     assert response.status_code == 206
@@ -91,7 +96,11 @@ def test_any_range_of_an_empty_file_gets_416():
 
 
 @pytest.mark.parametrize(
-    'header', ['bytes=0-9,20-29', 'bytes=-', 'bytes=20-10', 'bytes=a-b', 'items=0-9', 'bytes 0-9', ''],
+    'header', [
+        'bytes=0-9,20-29', 'bytes=-', 'bytes=20-10', 'bytes=a-b', 'items=0-9', 'bytes 0-9', '',
+        # Too long for int() to read, and for any file.
+        'bytes=0-' + '9' * 5000,
+    ],
 )
 def test_a_malformed_or_multiple_range_is_ignored(header):
     response, _ = serve(header)

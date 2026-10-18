@@ -11,8 +11,8 @@ from django.http import HttpResponse, StreamingHttpResponse
 
 CHUNK_SIZE = 64 * 1024
 # One range only: a multi-range request does not match, and gets the whole file, which
-# the HTTP spec allows.
-RANGE = re.compile(r'bytes=(\d*)-(\d*)')
+# the HTTP spec allows. So does a number too long to be a file size.
+RANGE = re.compile(r'bytes=(\d{0,15})-(\d{0,15})', re.IGNORECASE)
 
 
 class _Slice:
@@ -43,10 +43,11 @@ def file_response(request, file, size, content_type):
     The response closes `file` when it is closed.
     """
     match = RANGE.fullmatch(request.headers.get('Range', ''))
+    first, last = match.groups() if match else ('', '')
     start, end = 0, size - 1
     status = 200
-    if match and (match[1] or match[2]) and not (match[1] and match[2] and int(match[2]) < int(match[1])):
-        first, last = match.groups()
+    # A range that asks for nothing, or ends before it starts, is invalid: it is ignored.
+    if (first or last) and not (first and last and int(last) < int(first)):
         if first:
             start, end = int(first), min(int(last or size - 1), size - 1)
         else:  # A suffix range: the last `last` bytes.
