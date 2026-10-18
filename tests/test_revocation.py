@@ -12,7 +12,7 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from cases.models import Case
-from tests.conftest import log_in_with_second_factor
+from tests.conftest import log_in_with_second_factor, make_case
 
 pytestmark = pytest.mark.django_db
 
@@ -49,17 +49,16 @@ def test_revocation_needs_the_address_typed_as_confirmation(admin_client, lawyer
 
 
 def test_revocation_closes_all_the_lawyer_s_cases_and_no_one_else_s(admin_client, lawyer):
-    open_cases = [Case.objects.create(lawyer_profile=lawyer, label=f'Case {n}') for n in range(2)]
+    open_cases = [make_case(lawyer, f'Case {n}') for n in range(2)]
     earlier = timezone.now()
-    already_closed = Case.objects.create(
-        lawyer_profile=lawyer, label='Old case', closed_at=earlier, closed_because=Case.ClosedBecause.LAWYER,
-    )
+    already_closed = make_case(lawyer, 'Old case')
+    Case.objects.filter(pk=already_closed.pk).close(Case.ClosedBecause.LAWYER, now=earlier)
     other_user = User.objects.create_user('other@example.org')
     other = LawyerProfile.objects.create(user=other_user, bar='Lyon')
     other.verified_via, other.vouched_by = 'The bar directory', 'A defence organisation'
     other.save()
     other.change_status(Status.LAWYER)
-    others_case = Case.objects.create(lawyer_profile=other, label='Not theirs')
+    others_case = make_case(other, 'Not theirs')
 
     revoke(admin_client, lawyer)
     for case in open_cases:
@@ -95,7 +94,7 @@ def test_revocation_cannot_be_undone(admin_client, lawyer):
 
 
 def test_revocation_deletes_nothing_and_keeps_the_address_apart_from_the_login(admin_client, lawyer):
-    Case.objects.create(lawyer_profile=lawyer, label='A case')
+    make_case(lawyer, 'A case')
     revoke(admin_client, lawyer)
     lawyer.refresh_from_db()
     user = lawyer.user
@@ -107,7 +106,7 @@ def test_revocation_deletes_nothing_and_keeps_the_address_apart_from_the_login(a
 
 
 def test_a_suspended_lawyer_can_be_revoked_and_their_cases_closed(admin_client, lawyer):
-    case = Case.objects.create(lawyer_profile=lawyer, label='A case')
+    case = make_case(lawyer, 'A case')
     admin_client.post(reverse('manage:suspend', args=[lawyer.pk]))
     revoke(admin_client, lawyer)
     lawyer.refresh_from_db()
@@ -159,7 +158,7 @@ def test_inviting_a_revoked_lawyer_s_address_again_needs_a_second_look(admin_cli
 
 
 def test_cases_are_never_deleted(lawyer):
-    case = Case.objects.create(lawyer_profile=lawyer, label='A case')
+    case = make_case(lawyer, 'A case')
     with pytest.raises(ValueError):
         case.delete()
     with pytest.raises(ValueError):
@@ -167,21 +166,21 @@ def test_cases_are_never_deleted(lawyer):
 
 
 def test_a_lawyer_sees_their_open_cases_only(lawyer):
-    Case.objects.create(lawyer_profile=lawyer, label='Bastille, 15 June')
-    Case.objects.create(lawyer_profile=lawyer, label='Closed one').__class__.objects.filter(label='Closed one').close(
+    make_case(lawyer, 'Bastille, 15 June')
+    make_case(lawyer, 'Closed one').__class__.objects.filter(label='Closed one').close(
         Case.ClosedBecause.LAWYER,
     )
     other = LawyerProfile.objects.create(user=User.objects.create_user('other@example.org'), bar='Lyon')
     other.verified_via, other.vouched_by = 'The bar directory', 'A defence organisation'
     other.save()
     other.change_status(Status.LAWYER)
-    Case.objects.create(lawyer_profile=other, label='Not theirs')
+    make_case(other, 'Not theirs')
     page = log_in_with_second_factor(Client(), lawyer.user).get(reverse('lawyer:home')).content.decode()
     assert 'Bastille, 15 June' in page and 'Closed one' not in page and 'Not theirs' not in page
 
 
 def test_a_closed_case_never_reopens_or_changes(lawyer):
-    case = Case.objects.create(lawyer_profile=lawyer, label='A case')
+    case = make_case(lawyer, 'A case')
     Case.objects.filter(pk=case.pk).close(Case.ClosedBecause.LAWYER)
     case.refresh_from_db()
     case.closed_at, case.closed_because = None, ''
@@ -195,7 +194,7 @@ def test_a_closed_case_never_reopens_or_changes(lawyer):
 def test_only_a_lawyer_gets_a_new_case(admin_client, lawyer):
     revoke(admin_client, lawyer)
     with pytest.raises(ValueError):
-        Case.objects.create(lawyer_profile=lawyer, label='Too late')
+        make_case(lawyer, 'Too late')
 
 
 @pytest.mark.parametrize('fields', [
@@ -205,4 +204,5 @@ def test_only_a_lawyer_gets_a_new_case(admin_client, lawyer):
 ])
 def test_the_database_checks_how_a_case_is_closed(lawyer, fields):
     with pytest.raises(IntegrityError), transaction.atomic():
-        Case.objects.create(lawyer_profile=lawyer, label='A case', **fields)
+        window = {'starts_at': timezone.now() - timezone.timedelta(hours=1), 'ends_at': timezone.now()}
+        Case.objects.create(lawyer_profile=lawyer, label='A case', margin_minutes=0, margin_rings=0, **window, **fields)

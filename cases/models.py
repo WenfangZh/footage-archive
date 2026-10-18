@@ -1,17 +1,19 @@
 """Cases (SPEC.md §7): a lawyer's search scope for one incident.
 
-M3 has only what revocation needs: whose case it is, its case label, and whether it is
-closed and why. M4 adds the time window and area, the size caps, creating cases, and
-search. A case is opened only for a lawyer, and never deleted: a closed case stays as it
-was, and in the audit log. Closing goes through `close`.
+A case has a case label, a time window and an area, and a margin around both; the window,
+area and margin are fixed once the case is created, which goes through
+`Case.objects.create_with_area`. A case is opened only for a lawyer, and never deleted: a
+closed case stays as it was, and in the audit log. Closing goes through `close`.
 """
 
-from django.db import models
-from django.db.models import Q
+from django.db import models, transaction
+from django.db.models import F, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import LawyerProfile
+from cases import size
+from clips import grid
 
 
 class CaseQuerySet(models.QuerySet):
@@ -21,6 +23,25 @@ class CaseQuerySet(models.QuerySet):
     def close(self, because, now=None):
         """Close the open cases among these; closed ones keep their time and reason."""
         return super(CaseQuerySet, self.open()).update(closed_at=now or timezone.now(), closed_because=because)
+
+    def create_with_area(self, lawyer_profile, label, starts_at, ends_at, cells, margin_minutes, margin_rings):
+        """Open a case whose area is a set of the grid's finest cells.
+
+        Raises size.CaseTooLarge for a case over the size caps, margin included.
+        """
+        cells = set(cells)
+        if not cells or not all(grid.is_cell(cell) and grid.resolution(cell) == grid.finest_resolution() for cell in cells):
+            raise ValueError("A case's area is a set of the grid's finest cells.")
+        if not starts_at < ends_at:
+            raise ValueError("A case's time window ends after it starts.")
+        size.check(starts_at, ends_at, cells, margin_minutes, margin_rings)
+        with transaction.atomic():
+            case = self.create(
+                lawyer_profile=lawyer_profile, label=label, starts_at=starts_at, ends_at=ends_at,
+                margin_minutes=margin_minutes, margin_rings=margin_rings,
+            )
+            CaseCell.objects.bulk_create(CaseCell(case=case, cell=cell) for cell in cells)
+        return case
 
     def update(self, **kwargs):
         raise ValueError('Cases change only by being closed, through close().')
@@ -42,6 +63,12 @@ class Case(models.Model):
     # Never a client's name (SPEC.md §7).
     label = models.CharField(max_length=100)
     opened_at = models.DateTimeField(default=timezone.now)
+    # Taken from the police report (SPEC.md §7). The margin widens the window at both ends,
+    # and the area by rings of the grid's finest cells.
+    starts_at = models.DateTimeField()
+    ends_at = models.DateTimeField()
+    margin_minutes = models.PositiveSmallIntegerField()
+    margin_rings = models.PositiveSmallIntegerField()
     closed_at = models.DateTimeField(null=True, blank=True)
     closed_because = models.CharField(max_length=20, choices=ClosedBecause.choices, blank=True)
 
@@ -58,7 +85,10 @@ class Case(models.Model):
                 | (Q(closed_at__isnull=False) & ~Q(closed_because='')),
                 name='closed_with_a_reason',
             ),
+            models.CheckConstraint(condition=Q(ends_at__gt=F('starts_at')), name='window_ends_after_it_starts'),
         ]
+
+    FIXED_FIELDS = ('lawyer_profile_id', 'starts_at', 'ends_at', 'margin_minutes', 'margin_rings')
 
     def save(self, *args, **kwargs):
         if self._state.adding:
@@ -68,9 +98,53 @@ class Case(models.Model):
                 raise ValueError('Only a lawyer can have a new case.')
             # Always a new row: a case given an existing id fails instead of replacing it.
             kwargs['force_insert'] = True
-        elif Case.objects.filter(pk=self.pk, closed_at__isnull=False).exists():
-            raise ValueError('A closed case never changes again.')
+        else:
+            stored = Case.objects.filter(pk=self.pk).values('closed_at', *self.FIXED_FIELDS).get()
+            if stored['closed_at'] is not None:
+                raise ValueError('A closed case never changes again.')
+            if any(stored[field] != getattr(self, field) for field in self.FIXED_FIELDS):
+                raise ValueError("A case's lawyer, time window and margin never change.")
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         raise ValueError('Cases are never deleted.')
+
+    def area(self):
+        return set(self.cells.values_list('cell', flat=True))
+
+
+class CaseCellQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValueError("A case's area never changes.")
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValueError("A case's area never changes.")
+
+    def delete(self):
+        raise ValueError("A case's area never changes.")
+
+
+class CaseCell(models.Model):
+    """One of the grid's finest cells in a case's area, added with the case and kept as is.
+
+    An area is a set of cells rather than a centre and radius, so that a map can later let
+    the lawyer pick cells one by one. The coordinates typed to make it are never kept.
+    """
+
+    case = models.ForeignKey(Case, on_delete=models.PROTECT, related_name='cells')
+    cell = models.BigIntegerField()
+
+    objects = CaseCellQuerySet.as_manager()
+
+    class Meta:
+        base_manager_name = 'objects'
+        constraints = [models.UniqueConstraint(fields=['case', 'cell'], name='each_cell_once_per_case')]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValueError("A case's area never changes.")
+        kwargs['force_insert'] = True
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("A case's area never changes.")

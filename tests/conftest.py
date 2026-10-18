@@ -3,8 +3,15 @@ from django_otp import DEVICE_ID_SESSION_KEY
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django.conf import settings
 from django.core.cache import cache
+from django.utils import timezone
+
+from cases.models import Case
+from clips import grid
 
 from tests.media import H264, TEST_PICTURE, TEST_SOUND, run_ffmpeg
+
+# A public place (Place de la Bastille, Paris), not anyone's position.
+BASTILLE = 48.8532, 2.3692
 
 
 @pytest.fixture(autouse=True)
@@ -54,3 +61,13 @@ def log_in_with_second_factor(client, user):
     session[DEVICE_ID_SESSION_KEY] = device.persistent_id
     session.save()
     return client
+
+
+def make_case(lawyer_profile, label='A case', rings=2, **fields):
+    """A small case for `lawyer_profile`: one hour around a public place, with the default margin."""
+    starts_at = timezone.now() - timezone.timedelta(days=30)
+    values = {
+        'starts_at': starts_at, 'ends_at': starts_at + timezone.timedelta(hours=1),
+        'cells': grid.widen([grid.cell_for_point(*BASTILLE, 11)], rings), 'margin_minutes': 10, 'margin_rings': 1,
+    }
+    return Case.objects.create_with_area(lawyer_profile, label, **{**values, **fields})

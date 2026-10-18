@@ -72,6 +72,18 @@ def test_grid_finer_than_resolution_11_stops_startup():
     assert 'GRID_H3_RESOLUTION must be at most 11' in result.stderr
 
 
+@pytest.mark.parametrize('name, value', [('CASE_WINDOW_CAP_MINUTES', '1441'), ('CASE_AREA_CAP_METRES', '10001')])
+def test_case_caps_beyond_the_ceiling_stop_startup(name, value):
+    result = load_settings(**{name: value})
+    assert result.returncode != 0
+    assert f'{name} must be at most {int(value) - 1}' in result.stderr
+
+
+def test_case_caps_default_to_2_hours_and_2_km_under_a_ceiling_of_24_hours_and_10_km():
+    assert (settings.CASE_WINDOW_CAP_MINUTES, settings.CASE_AREA_CAP_METRES) == (120, 2_000)
+    assert (settings.CASE_WINDOW_CEILING_MINUTES, settings.CASE_AREA_CEILING_METRES) == (1_440, 10_000)
+
+
 def test_upload_defaults():
     assert settings.UPLOAD_MAX_BYTES == 2_000_000_000
     assert settings.UNCONFIRMED_ORIGINAL_MINUTES == 120

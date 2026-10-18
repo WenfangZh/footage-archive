@@ -62,3 +62,20 @@ def test_positions_off_the_earth_are_refused(latitude, longitude):
 @pytest.mark.parametrize('value', [12345, -1, '8b1fb4644934fff', None])
 def test_is_cell_rejects_other_values(value):
     assert not grid.is_cell(value)
+
+
+def test_widening_adds_rings_around_every_cell():
+    cell = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
+    assert grid.widen([cell], 0) == {cell}
+    assert len(grid.widen([cell], 1)) == 7 and len(grid.widen([cell], 2)) == 19
+    far = grid.cell_for_point(LATITUDE + 1, LONGITUDE, 11)
+    assert grid.widen([cell, far], 1) == grid.widen([cell], 1) | grid.widen([far], 1)
+
+
+def test_a_span_is_measured_from_edge_to_edge():
+    cell = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
+    assert 50 < grid.span_metres([cell]) < 65
+    # Each ring adds about one cell spacing (about 50 m) on each side.
+    assert 1_900 < grid.span_metres(grid.widen([cell], 19)) < 2_000
+    two_apart = grid.cell_for_point(LATITUDE + 0.01, LONGITUDE, 11)
+    assert 1_100 < grid.span_metres([cell, two_apart]) < 1_200
