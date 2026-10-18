@@ -18,6 +18,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from accounts.models import LawyerProfile
 
@@ -29,12 +30,14 @@ class Action(models.TextChoices):
     SUSPENSION = 'suspension', _('Suspension')
     REINSTATEMENT = 'reinstatement', _('Reinstatement')
     REVOCATION = 'revocation', _('Revocation')
-    CASE_CREATION = 'case_creation', _('Case creation')
-    CASE_CLOSING = 'case_closing', _('Case closing')
-    LARGER_CASE_REQUEST = 'larger_case_request', _('Request for a larger case')
-    SEARCH = 'search', _('Search')
-    PREVIEW = 'preview', _('Preview')
-    DOWNLOAD = 'download', _('Download')
+    # Lawyers' actions. The context keeps these nouns apart from the same English words
+    # on buttons ("Download": Téléchargement, not Télécharger).
+    CASE_CREATION = 'case_creation', pgettext_lazy('audit log action', 'Case creation')
+    CASE_CLOSING = 'case_closing', pgettext_lazy('audit log action', 'Case closing')
+    LARGER_CASE_REQUEST = 'larger_case_request', pgettext_lazy('audit log action', 'Request for a larger case')
+    SEARCH = 'search', pgettext_lazy('audit log action', 'Search')
+    PREVIEW = 'preview', pgettext_lazy('audit log action', 'Preview')
+    DOWNLOAD = 'download', pgettext_lazy('audit log action', 'Download')
 
 
 # Actions the admin takes; every other action is a lawyer's own.
@@ -42,7 +45,7 @@ ADMIN_ACTIONS = [
     Action.INVITATION, Action.DECLINING, Action.ADMISSION, Action.SUSPENSION,
     Action.REINSTATEMENT, Action.REVOCATION,
 ]
-# Actions on a case; all but the admin's are lawyers' own.
+# Lawyers' own actions on a case.
 CASE_ACTIONS = [
     Action.CASE_CREATION, Action.CASE_CLOSING, Action.LARGER_CASE_REQUEST, Action.SEARCH,
     Action.PREVIEW, Action.DOWNLOAD,

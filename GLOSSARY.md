@@ -257,6 +257,11 @@ A match found only in the case's margin: just outside its time window or its are
 _French_: correspondance de marge
 _Avoid_: Priority 2 result, secondary match
 
+**Size caps**:
+The largest time window and area a case may have without the admin's approval (by default 2 hours and 2 km across, margin included).
+_French_: plafonds
+_Avoid_: Limits (alone), quota
+
 **Margin**:
 The band a case adds around its time window and its area, fixed when the case is created (by default 10 minutes, and one ring of the grid's finest cells); each lawyer sets their own default. The time window and area, margin included, must fit the size caps.
 _French_: marge
