@@ -1,15 +1,17 @@
 import datetime
+import errno
 import os
 import uuid
 from pathlib import Path
 
 import pytest
 from django.conf import settings
+from django.core.files.base import File as BaseFile
 from django.db.models import ProtectedError
 
 from clips import vault
 from clips.editing import delete_clip
-from clips.models import Clip, VaultFile, VaultText
+from clips.models import Clip, VaultFile, VaultStorage, VaultText
 
 pytestmark = pytest.mark.django_db
 
@@ -143,6 +145,48 @@ def test_a_stored_file_belongs_to_no_clip_until_it_is_recorded(clip, local_file)
     vault.delete_unrecorded_files([name])
     assert vault.has_file(clip, vault.EVIDENCE_COPY)
     assert len(vault_files_on_disk()) == 1
+
+
+def test_a_failed_copy_leaves_no_file_and_keeps_the_others(clip, local_file, monkeypatch):
+    put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
+    before = {path: path.read_bytes() for path in vault_files_on_disk()}
+
+    def disk_fills_up(self, chunk_size=None):
+        yield b'the first chunk'
+        raise OSError(errno.ENOSPC, 'No space left on device')
+
+    monkeypatch.setattr(BaseFile, 'chunks', disk_fills_up)
+    with pytest.raises(OSError):
+        vault.store_file(local_file, 'mp4')
+    assert {path: path.read_bytes() for path in vault_files_on_disk()} == before
+
+
+def test_a_name_clash_fails_without_touching_the_file_there(clip, local_file, monkeypatch):
+    monkeypatch.setattr(vault.uuid, 'uuid4', lambda: uuid.UUID(int=1))
+    existing = settings.VAULT_DIR / f'{uuid.UUID(int=1).hex}.mp4'
+    existing.write_bytes(b'someone else\'s evidence copy')
+    with pytest.raises(FileExistsError):
+        vault.store_file(local_file, 'mp4')
+    assert vault_files_on_disk() == {existing}
+    assert existing.read_bytes() == b'someone else\'s evidence copy'
+
+
+def test_a_file_appearing_at_the_name_meanwhile_is_left_alone(clip, local_file, monkeypatch):
+    # It appears after the storage has checked the name and before it creates the file,
+    # so Django's own save finds the clash. That relies on Django creating the file
+    # before it reads the first chunk: if a new Django changed that, this test fails.
+    check_name = VaultStorage.get_available_name
+
+    def name_taken_meanwhile(self, name, max_length=None):
+        name = check_name(self, name, max_length)
+        (settings.VAULT_DIR / name).write_bytes(b"someone else's evidence copy")
+        return name
+
+    monkeypatch.setattr(VaultStorage, 'get_available_name', name_taken_meanwhile)
+    with pytest.raises(FileExistsError):
+        vault.store_file(local_file, 'mp4')
+    [path] = vault_files_on_disk()
+    assert path.read_bytes() == b"someone else's evidence copy"
 
 
 def test_delete_all_removes_the_files_from_disk(clip, local_file, django_capture_on_commit_callbacks):

@@ -14,6 +14,7 @@ delete_stray_files removes once it is old enough.
 """
 
 import datetime
+import logging
 import re
 import uuid
 
@@ -22,6 +23,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import VaultFile, VaultText, vault_storage
+
+logger = logging.getLogger(__name__)
 
 CONTEXT = VaultText.Kind.CONTEXT
 CONTACT_DETAILS = VaultText.Kind.CONTACT_DETAILS
@@ -33,7 +36,8 @@ PROXY = VaultFile.Kind.PROXY
 # this long; deleting a file not yet recorded would lose an evidence copy. This relies
 # on store_file writing each file anew, so that its modification time is when it was stored.
 STRAY_FILE_AGE = datetime.timedelta(days=1)
-# The names store_file gives files (Django may add '_' and 7 characters to avoid a clash).
+# The names store_file gives files (before VaultStorage refused clashes, Django could add
+# '_' and 7 characters to avoid one).
 # Nothing else in the vault folder is ever swept.
 # More strays than this at once means something else went wrong, such as a database
 # restored from an old backup: then nothing is deleted, since these may be the only copies.
@@ -62,9 +66,37 @@ def store_file(source_path, extension):
     transaction, then record them with record_file inside it. Until it does, the file
     is unrecorded: delete_unrecorded_files removes it, and so would delete_stray_files
     once it is old enough.
+
+    If the copy fails partway (a full disk, say), the partial file is removed again,
+    so retries do not pile up copies of up to 2 GB.
     """
+    storage = vault_storage()
+    name = f'{uuid.uuid4().hex}.{extension}'
     with open(source_path, 'rb') as source:
-        return vault_storage().save(f'{uuid.uuid4().hex}.{extension}', File(source))
+        content = _Copy(source)
+        try:
+            return storage.save(name, content)
+        except BaseException:
+            # Django has created the file by the time it first asks for a chunk, and the
+            # storage refuses a name that is taken, so then the file at `name` is ours.
+            # Before that, nothing was written and a file at `name` is not ours to touch.
+            if content.started:
+                try:
+                    storage.delete(name)
+                except OSError:
+                    # delete_stray_files gets it later. The name is random: safe to log.
+                    logger.warning('Could not remove the partial vault file %s', name)
+            raise
+
+
+class _Copy(File):
+    """A file being copied into the vault, which notes whether the copying has begun."""
+
+    started = False
+
+    def chunks(self, chunk_size=None):
+        self.started = True
+        yield from super().chunks(chunk_size)
 
 
 def record_file(clip, kind, name):
