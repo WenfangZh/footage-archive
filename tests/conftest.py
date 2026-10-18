@@ -7,10 +7,13 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
+from audit import limits
 from cases.models import Case
 from clips import grid
 
 from tests.media import H264, TEST_PICTURE, TEST_SOUND, run_ffmpeg
+
+RECORD_IF_CHANGED = limits.record_if_changed
 
 # A public place (Place de la Bastille, Paris), not anyone's position.
 BASTILLE = 48.8532, 2.3692
@@ -20,6 +23,17 @@ BASTILLE = 48.8532, 2.3692
 def empty_cache():
     """Every test starts with no rate-limit counts: they all come from one address."""
     cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def no_limits_check(monkeypatch):
+    """Each test client checks the limits on its first request: off, but in tests/test_limits.py."""
+    monkeypatch.setattr(limits, 'record_if_changed', lambda: None)
+
+
+@pytest.fixture
+def limits_check(monkeypatch):
+    monkeypatch.setattr(limits, 'record_if_changed', RECORD_IF_CHANGED)
 
 
 @pytest.fixture(autouse=True)

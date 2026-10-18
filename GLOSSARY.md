@@ -324,7 +324,7 @@ _French_: alerte
 _Avoid_: Flag, warning
 
 **Audit log**:
-The permanent record of every action a lawyer takes in the archive, and of the admin's actions on applicants' and lawyers' accounts. It can only be added to.
+The permanent record of every action a lawyer takes in the archive, of the admin's actions on applicants' and lawyers' accounts and decisions on larger cases, and of changes to the size caps and alert limits. It can only be added to.
 _French_: journal d'audit
 _Avoid_: Access log, history
 

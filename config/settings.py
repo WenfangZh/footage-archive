@@ -104,6 +104,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Records a change of the size caps or alert limits when the archive starts (SPEC.md §7).
+    'audit.limits.LimitsCheckMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     # Before CsrfViewMiddleware, which reads the whole upload (clips.rate_limits).
