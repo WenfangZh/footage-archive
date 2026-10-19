@@ -17,6 +17,7 @@ import datetime
 import logging
 import re
 import uuid
+from pathlib import PurePath
 
 from django.core.files import File
 from django.db import transaction
@@ -124,7 +125,7 @@ def has_file(clip, kind):
 
 def extension(clip, kind):
     """The file extension of the clip's evidence copy or proxy, such as 'mp4'."""
-    return VaultFile.objects.get(clip=clip, kind=kind).file.name.rsplit('.', 1)[-1].lower()
+    return PurePath(VaultFile.objects.get(clip=clip, kind=kind).file.name).suffix.lstrip('.').lower()
 
 
 def open_file(clip, kind):

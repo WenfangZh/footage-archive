@@ -19,6 +19,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
+from django.utils.http import content_disposition_header
 from django.views.decorators.http import require_GET
 
 from accounts.roles import lawyer_required
@@ -109,20 +110,30 @@ def preview(request, case_id, clip_id):
 CONTENT_TYPES = {'mp4': 'video/mp4', 'mov': 'video/quicktime', 'mkv': 'video/x-matroska'}
 
 
+# A download resumed within this time asks only for the rest of the file: the same download.
+DOWNLOAD_REPEAT = datetime.timedelta(hours=2)
+
+
 @lawyer_required
+@require_GET
 def download(request, case_id, clip_id):
     case, clip, _ = case_and_clip(request, case_id, clip_id)
-    if not vault.has_file(clip, vault.EVIDENCE_COPY):
-        raise Http404
-    extension = vault.extension(clip, vault.EVIDENCE_COPY)
-    evidence = vault.open_file(clip, vault.EVIDENCE_COPY)
-    served, _ = requested_range(request, evidence.size)
-    # Every download asks for the first byte at some point; a download resumed later
-    # asks only for the rest, and is the same download.
-    if served is not None and served[0] == 0:
-        record(Action.DOWNLOAD, case.lawyer_profile, case=case, clip=clip)
-    response = file_response(request, evidence, evidence.size, CONTENT_TYPES.get(extension, 'application/octet-stream'))
-    response['Content-Disposition'] = f'attachment; filename="clip-{clip.pk}.{extension}"'
+    evidence, size = open_or_404(clip, vault.EVIDENCE_COPY)
+    try:
+        extension = vault.extension(clip, vault.EVIDENCE_COPY)
+        served, _ = requested_range(request, size)
+        recently = AuditEntry.objects.filter(
+            action=Action.DOWNLOAD, case=case, clip_id=clip.pk, at__gte=timezone.now() - DOWNLOAD_REPEAT,
+        )
+        # Logged whenever it starts from the first byte, and otherwise unless it carries on a
+        # download logged within two hours: no part of the file is served unlogged.
+        if served is not None and (served[0] == 0 or not recently.exists()):
+            record(Action.DOWNLOAD, case.lawyer_profile, case=case, clip=clip)
+        response = file_response(request, evidence, size, CONTENT_TYPES.get(extension, 'application/octet-stream'))
+    except BaseException:
+        evidence.close()
+        raise
+    response['Content-Disposition'] = content_disposition_header(True, f'clip-{clip.pk}.{extension}')
     return response
 
 
@@ -150,6 +161,6 @@ def hash_record(request, case_id, clip_id):
     if stored is None:
         raise Http404
     response = HttpResponse(json.dumps(hash_record_data(stored), indent=2), content_type='application/json')
-    response['Content-Disposition'] = f'attachment; filename="clip-{clip.pk}-hash-record.json"'
+    response['Content-Disposition'] = content_disposition_header(True, f'clip-{clip.pk}-hash-record.json')
     response['X-Content-Type-Options'] = 'nosniff'
     return response

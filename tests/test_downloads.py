@@ -2,6 +2,7 @@
 
 import datetime
 import json
+from unittest import mock
 
 import pytest
 from django.test import Client
@@ -52,16 +53,37 @@ def test_every_download_is_logged(case, evidence, lawyer_client):
     assert downloads().count() == 2
 
 
-@pytest.mark.parametrize('asked, logged', [
-    ('bytes=0-99', True),
-    ('bytes=100-', False),          # a download resumed: the same download
-    (f'bytes=-{len(EVIDENCE_BYTES)}', True),  # the whole file, from its end
-    ('bytes=-10', False),
-    ('bytes=99999-', False),        # nothing to serve
-])
-def test_a_download_is_logged_when_it_asks_for_the_first_byte(case, evidence, lawyer_client, asked, logged):
+@pytest.mark.parametrize('asked', ['bytes=0-99', 'bytes=1-', f'bytes=-{len(EVIDENCE_BYTES)}', 'bytes=-10'])
+def test_any_first_request_that_serves_bytes_is_logged(case, evidence, lawyer_client, asked):
     lawyer_client.get(url('download', case, evidence), HTTP_RANGE=asked)
-    assert downloads().exists() is logged
+    assert downloads().count() == 1
+
+
+def test_a_download_resumed_soon_after_is_the_same_download(case, evidence, lawyer_client):
+    lawyer_client.get(url('download', case, evidence), HTTP_RANGE='bytes=0-99')
+    lawyer_client.get(url('download', case, evidence), HTTP_RANGE='bytes=100-')
+    assert downloads().count() == 1
+
+
+def test_a_request_that_serves_nothing_is_not_logged(case, evidence, lawyer_client):
+    assert lawyer_client.get(url('download', case, evidence), HTTP_RANGE='bytes=99999-').status_code == 416
+    assert not downloads().exists()
+
+
+@pytest.mark.parametrize('method', ['head', 'post'])
+def test_a_download_is_only_a_get(case, evidence, lawyer_client, method):
+    assert getattr(lawyer_client, method)(url('download', case, evidence)).status_code == 405
+    assert not downloads().exists()
+
+
+def test_the_file_is_closed_if_logging_fails(case, evidence, lawyer_client, monkeypatch):
+    opened = []
+    real_open = vault.open_file
+    monkeypatch.setattr(vault, 'open_file', lambda *args: opened.append(real_open(*args)) or opened[-1])
+    monkeypatch.setattr('cases.clip_pages.record', mock.Mock(side_effect=RuntimeError))
+    with pytest.raises(RuntimeError):
+        lawyer_client.get(url('download', case, evidence))
+    assert opened and opened[0].closed
 
 
 def test_the_hash_record_comes_as_json(case, evidence, lawyer_client):
@@ -75,6 +97,8 @@ def test_the_hash_record_comes_as_json(case, evidence, lawyer_client):
     assert response.status_code == 200 and response['Content-Type'] == 'application/json'
     assert response['Content-Disposition'] == f'attachment; filename="clip-{evidence.pk}-hash-record.json"'
     data = json.loads(response.content)
+    assert set(data) == {'hash_record', 'clip', 'original', 'evidence_copy'}
+    assert set(data['original']) == {'sha256', 'streams', 'hashed_in_4_hour_block_from'}
     assert data['hash_record'] == str(stored.pk) and data['clip'] == str(evidence.pk)
     assert data['original']['sha256'] == 'a' * 64
     assert data['original']['streams'] == [{'kind': 'video', 'sha256': 'b' * 64}, {'kind': 'audio', 'sha256': 'c' * 64}]

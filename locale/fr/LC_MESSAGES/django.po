@@ -894,7 +894,7 @@ msgstr "Télécharger la copie de preuve"
 
 #: cases/templates/cases/clip.html:17
 msgid "Download its hash record"
-msgstr "Télécharger ses empreintes numériques (hash)"
+msgstr "Télécharger les empreintes numériques (hash)"
 
 #: cases/templates/cases/clip.html:18
 msgid ""
