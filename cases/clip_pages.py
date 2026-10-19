@@ -5,7 +5,8 @@ there is no other way to a clip. The page shows what the clip says about itself 
 and metadata values, as uploaded, edits, tags, context, contact details) and plays its proxy. Each preview
 is logged, but a lawyer watching the same clip in the same case again within two hours is
 not logged again: a video player asks for many pieces of one file. Two first requests at
-once may both be logged, which only ever logs too much. Opening the page is not a preview.
+once may both be logged, which only ever logs too much. Opening the page is logged the
+same way, as a view.
 The evidence copy is downloaded as it is, and every download is logged; its hash record
 comes as a JSON file.
 """
@@ -59,9 +60,23 @@ def tag_names(keys, custom):
     return [DEFAULT_TAGS.get(key, key) for key in keys] + list(custom)
 
 
+def record_once_in_a_while(action, case, clip):
+    """Log `action` on the clip in the case, unless it was logged within PREVIEW_REPEAT."""
+    recently = AuditEntry.objects.filter(
+        lawyer_profile=case.lawyer_profile, action=action, case=case, clip_id=clip.pk,
+        at__gte=timezone.now() - PREVIEW_REPEAT,
+    )
+    if not recently.exists():
+        record(action, case.lawyer_profile, case=case, clip=clip)
+
+
 @lawyer_required
+@require_GET
 def clip_page(request, case_id, clip_id):
     case, clip, match = case_and_clip(request, case_id, clip_id)
+    # What the page shows (context, tags, times and places) is access too: logged, but
+    # not again within two hours, like the preview.
+    record_once_in_a_while(Action.CLIP_VIEW, case, clip)
     mismatch = None
     if clip.stated_time and clip.metadata_time:
         gap = abs(clip.stated_time - clip.metadata_time)
@@ -99,11 +114,7 @@ def preview(request, case_id, clip_id):
     case, clip, _ = case_and_clip(request, case_id, clip_id)
     proxy, size = open_or_404(clip, vault.PROXY)
     try:
-        recently = AuditEntry.objects.filter(
-            action=Action.PREVIEW, case=case, clip_id=clip.pk, at__gte=timezone.now() - PREVIEW_REPEAT,
-        )
-        if not recently.exists():
-            record(Action.PREVIEW, case.lawyer_profile, case=case, clip=clip)
+        record_once_in_a_while(Action.PREVIEW, case, clip)
         return file_response(request, proxy, size, 'video/mp4')
     except BaseException:
         proxy.close()
@@ -127,7 +138,8 @@ def download(request, case_id, clip_id):
         extension = vault.extension(clip, vault.EVIDENCE_COPY)
         served, _ = requested_range(request, size)
         recently = AuditEntry.objects.filter(
-            action=Action.DOWNLOAD, case=case, clip_id=clip.pk, at__gte=timezone.now() - DOWNLOAD_REPEAT,
+            lawyer_profile=case.lawyer_profile, action=Action.DOWNLOAD, case=case, clip_id=clip.pk,
+            at__gte=timezone.now() - DOWNLOAD_REPEAT,
         )
         # Logged whenever it starts from the first byte, and otherwise unless it carries on a
         # download logged within two hours: no part of the file is served unlogged.

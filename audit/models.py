@@ -41,6 +41,7 @@ class Action(models.TextChoices):
     SEARCH = 'search', pgettext_lazy('audit log action', 'Search')
     PREVIEW = 'preview', pgettext_lazy('audit log action', 'Preview')
     DOWNLOAD = 'download', pgettext_lazy('audit log action', 'Download')
+    CLIP_VIEW = 'clip_view', pgettext_lazy('audit log action', "Viewing a clip's page")
     CASE_APPROVAL = 'case_approval', pgettext_lazy('audit log action', 'Approval of a larger case')
     CASE_REFUSAL = 'case_refusal', pgettext_lazy('audit log action', 'Refusal of a larger case')
     LIMITS_CHANGE = 'limits_change', pgettext_lazy('audit log action', 'Change of the size caps and alert limits')
@@ -57,9 +58,9 @@ ADMIN_CASE_ACTIONS = [Action.CASE_APPROVAL, Action.CASE_REFUSAL]
 # Lawyers' own actions on a case.
 CASE_ACTIONS = [
     Action.CASE_CREATION, Action.CASE_CLOSING, Action.LARGER_CASE_REQUEST, Action.SEARCH,
-    Action.PREVIEW, Action.DOWNLOAD,
+    Action.PREVIEW, Action.DOWNLOAD, Action.CLIP_VIEW,
 ]
-CLIP_ACTIONS = [Action.PREVIEW, Action.DOWNLOAD]
+CLIP_ACTIONS = [Action.PREVIEW, Action.DOWNLOAD, Action.CLIP_VIEW]
 COUNT_ACTIONS = [Action.SEARCH]
 # Entries about the archive itself, which name no applicant or lawyer.
 ARCHIVE_ACTIONS = [Action.LIMITS_CHANGE]
@@ -135,6 +136,9 @@ class AuditEntry(models.Model):
     class Meta:
         # Django's internal updates and deletions go through this manager too.
         base_manager_name = 'objects'
+        # Counting one lawyer's recent actions of one kind: the activity alerts, after each
+        # download and case creation, and the checks for a repeat preview or view.
+        indexes = [models.Index(fields=['lawyer_profile', 'action', 'at'], name='entries_by_lawyer_action_time')]
         constraints = [
             models.CheckConstraint(condition=Q(action__in=Action.values), name='known_action'),
             models.CheckConstraint(

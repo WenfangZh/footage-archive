@@ -95,9 +95,21 @@ def test_uploader_text_is_escaped(case, clip, lawyer_client):
     assert '<b>here' not in page and '&amp; &lt;b&gt;here' in page
 
 
-def test_viewing_the_page_is_not_a_preview(case, clip, lawyer_client):
-    lawyer_client.get(url('clip', case, clip))
+def test_viewing_the_page_is_logged_once_in_two_hours_and_is_not_a_preview(case, clip, lawyer_client):
+    for _ in range(2):
+        lawyer_client.get(url('clip', case, clip))
+    entry = AuditEntry.objects.get()
+    assert (entry.action, entry.case, entry.clip_id) == (Action.CLIP_VIEW, case, clip.pk)
+    later = timezone.now() + datetime.timedelta(hours=2, minutes=1)
+    with mock.patch('django.utils.timezone.now', return_value=later):
+        lawyer_client.get(url('clip', case, clip))
+    assert AuditEntry.objects.filter(action=Action.CLIP_VIEW).count() == 2
     assert not AuditEntry.objects.filter(action=Action.PREVIEW).exists()
+
+
+def test_the_page_is_only_a_get(case, clip, lawyer_client):
+    assert lawyer_client.post(url('clip', case, clip)).status_code == 405
+    assert not AuditEntry.objects.exists()
 
 
 def test_a_time_mismatch_is_highlighted(case, clip, lawyer_client, settings):
