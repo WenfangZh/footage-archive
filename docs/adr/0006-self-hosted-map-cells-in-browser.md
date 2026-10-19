@@ -6,12 +6,12 @@ Lawyers can set a case's area on a map (SPEC §7, §12 M4.5). Everything the map
 
 - **A hosted tile service** (OpenFreeMap, MapTiler, OpenStreetMap's own tile servers): nothing to download or serve, but every tile request tells a third party where a lawyer is looking.
 - **A tile server of our own** (tileserver-gl or Martin, over MBTiles): one more service to run, for nothing a single PMTiles file served by Django lacks.
-- **Leaflet with pre-drawn raster tiles**: simpler JavaScript and no WebGL, but the tiles for the same area are many times larger, and their style and language are fixed when they are drawn.
+- **Leaflet with pre-drawn raster tiles**: simpler JavaScript and no WebGL, but the tiles for the same area are larger, and their style and language are fixed when they are drawn.
 - **Cells found on the server**: the browser would have to send the click or the map's view, which is finer than the grid.
 
 ## Consequences
 
-- The map data does not update itself: it is downloaded by a management command, out of git. Outside the extract (Île-de-France for now) the map shows no streets; the typed place and radius work anywhere.
-- The map data is an OpenStreetMap Produced Work under the ODbL: "© OpenStreetMap contributors" stays visible on the map.
-- Each request for map data still tells the archive's own server roughly where the lawyer is looking (a tile is under a kilometre across in Paris at the finest zoom kept), though not for which case. The archive never logs these requests; a deployment's web server must not log them either.
+- The map data does not update itself: it is downloaded by a management command, out of git. Outside the extract (Île-de-France up to zoom 15 for now) the map is blank, though cells can still be picked there, and the typed place and radius work anywhere.
+- The extract is OpenStreetMap data under the ODbL, and the drawn map is a Produced Work: "© OpenStreetMap contributors" stays visible on the map, as text without a link, since the map page links to no other origin. We don't change the data; if we ever did and offered it beyond the archive, the ODbL's share-alike terms would apply.
+- Each request for map data still tells the archive's own server roughly where the lawyer is looking (a tile is under a kilometre across in Paris at zoom 15, the finest kept), though not for which case. The archive never logs these requests, in the audit log or in Django's own request log; a deployment's web server must not log them either.
 - MapLibre GL JS 6 needs WebGL2. On a device without it, the typed place and radius still work.

@@ -259,7 +259,6 @@ _Avoid_: Band, buffer
 **Map**:
 Where a lawyer can pick a case's area cell by cell, instead of typing a place and a radius. It shows streets and place names from the archive's own map data, never clips.
 _French_: carte
-_Avoid_: Map view (the case keeps no view of the map)
 
 **Map data**:
 What the map is drawn from: its tiles, style and fonts, all served by the archive itself and only to lawyers.
