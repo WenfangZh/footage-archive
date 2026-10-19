@@ -21,6 +21,7 @@ from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, db_task, lock_task, on_startup
 
 from alerts.checks import check_ingest_queue
+from audit import limits
 
 from . import cleanup, ingest, vault
 from .models import Clip
@@ -50,6 +51,12 @@ def ingest_clip(clip_id, task=None):
                 )
                 raise
             ingest.give_up(clip, type(failure).__name__)
+
+
+@on_startup()
+def record_changed_limits():
+    # The worker reads the queue's alert limits, and serves no request that would check them.
+    limits.record_if_changed()
 
 
 @on_startup()

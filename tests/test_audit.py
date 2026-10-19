@@ -7,7 +7,9 @@ from django.db import IntegrityError, models, transaction
 from django.db.models import ProtectedError
 
 from accounts.models import LawyerProfile
-from audit.models import ADMIN_ACTIONS, CASE_ACTIONS, CLIP_ACTIONS, Action, AppendOnly, AuditEntry, record
+from audit.models import (
+    ADMIN_ACTIONS, ADMIN_CASE_ACTIONS, CASE_ACTIONS, CLIP_ACTIONS, Action, AppendOnly, AuditEntry, record,
+)
 from clips.editing import delete_clip
 from clips.models import Clip
 from tests.conftest import make_case
@@ -61,7 +63,7 @@ def test_the_time_cannot_be_backdated(admin, applicant):
     assert AuditEntry.objects.get(pk=entry.pk).at.year != 2000
 
 
-@pytest.mark.parametrize('action', ADMIN_ACTIONS)
+@pytest.mark.parametrize('action', [action for action in ADMIN_ACTIONS if action not in ADMIN_CASE_ACTIONS])
 def test_the_admin_actions_name_the_admin(action, applicant):
     with pytest.raises(IntegrityError), transaction.atomic():
         record(action, applicant)
@@ -264,3 +266,40 @@ def test_an_entry_about_a_case_names_the_cases_own_lawyer(case):
     with pytest.raises(ValueError):
         record(Action.CASE_CREATION, other, case=case)
     assert not AuditEntry.objects.exists()
+
+
+@pytest.mark.parametrize('action', ADMIN_CASE_ACTIONS)
+def test_the_admins_decision_on_a_case_names_the_admin_the_case_and_its_lawyer(action, admin, case):
+    entry = record(action, case.lawyer_profile, admin=admin, case=case)
+    stored = AuditEntry.objects.get(pk=entry.pk)
+    assert (stored.action, stored.admin, stored.case, stored.lawyer_profile) == (action, admin, case, case.lawyer_profile)
+    for missing in [{'case': case}, {'admin': admin}]:
+        with pytest.raises(IntegrityError), transaction.atomic():
+            record(action, case.lawyer_profile, **missing)
+
+
+LIMITS = {'before': None, 'after': {'CASE_AREA_CAP_METRES': 2000}}
+
+
+def test_a_change_of_limits_names_nobody_and_records_the_numbers():
+    entry = record(Action.LIMITS_CHANGE, None, limits=LIMITS)
+    stored = AuditEntry.objects.get(pk=entry.pk)
+    assert (stored.limits, stored.lawyer_profile, stored.admin, stored.case) == (LIMITS, None, None, None)
+    with pytest.raises(ValueError):
+        record(Action.LIMITS_CHANGE, None)
+
+
+def test_a_change_of_limits_names_no_person(admin, applicant):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.LIMITS_CHANGE, applicant, limits=LIMITS)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.LIMITS_CHANGE, None, admin=admin, limits=LIMITS)
+
+
+def test_every_other_entry_names_a_person_and_no_limits(admin, applicant, case):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.INVITATION, None, admin=admin)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.INVITATION, applicant, admin=admin, limits=LIMITS)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.CASE_CREATION, case.lawyer_profile, case=case, limits=LIMITS)

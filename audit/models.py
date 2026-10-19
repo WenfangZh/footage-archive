@@ -9,7 +9,9 @@ anyone (CLAUDE.md).
 Each entry names the applicant or lawyer concerned and, on the admin's actions, the admin.
 A lawyer's own actions also name their case and, where there is one, the clip: as a plain
 id, so that deleting a clip never deletes or changes an entry. A search records how many
-clips it found instead (SPEC.md §7).
+clips it found instead (SPEC.md §7). The admin's decision on a larger case names the case.
+One entry names nobody: a change of the size caps or alert limits found when the archive
+starts, with the numbers before and after (audit.limits).
 """
 
 from django.apps import apps
@@ -38,13 +40,18 @@ class Action(models.TextChoices):
     SEARCH = 'search', pgettext_lazy('audit log action', 'Search')
     PREVIEW = 'preview', pgettext_lazy('audit log action', 'Preview')
     DOWNLOAD = 'download', pgettext_lazy('audit log action', 'Download')
+    CASE_APPROVAL = 'case_approval', pgettext_lazy('audit log action', 'Approval of a larger case')
+    CASE_REFUSAL = 'case_refusal', pgettext_lazy('audit log action', 'Refusal of a larger case')
+    LIMITS_CHANGE = 'limits_change', pgettext_lazy('audit log action', 'Change of the size caps and alert limits')
 
 
-# Actions the admin takes; every other action is a lawyer's own.
+# Actions the admin takes; every other action is a lawyer's own, or about the archive.
 ADMIN_ACTIONS = [
     Action.INVITATION, Action.DECLINING, Action.ADMISSION, Action.SUSPENSION,
-    Action.REINSTATEMENT, Action.REVOCATION,
+    Action.REINSTATEMENT, Action.REVOCATION, Action.CASE_APPROVAL, Action.CASE_REFUSAL,
 ]
+# The admin's decisions on a lawyer's case.
+ADMIN_CASE_ACTIONS = [Action.CASE_APPROVAL, Action.CASE_REFUSAL]
 # Lawyers' own actions on a case.
 CASE_ACTIONS = [
     Action.CASE_CREATION, Action.CASE_CLOSING, Action.LARGER_CASE_REQUEST, Action.SEARCH,
@@ -52,6 +59,16 @@ CASE_ACTIONS = [
 ]
 CLIP_ACTIONS = [Action.PREVIEW, Action.DOWNLOAD]
 COUNT_ACTIONS = [Action.SEARCH]
+# Entries about the archive itself, which name no applicant or lawyer.
+ARCHIVE_ACTIONS = [Action.LIMITS_CHANGE]
+# The settings a change of limits records (audit.limits): each new size cap or alert limit
+# is added here.
+LIMIT_SETTINGS = [
+    # Size caps on cases, and the ceilings above them.
+    'CASE_WINDOW_CEILING_MINUTES', 'CASE_AREA_CEILING_METRES', 'CASE_WINDOW_CAP_MINUTES', 'CASE_AREA_CAP_METRES',
+    # Alert limits.
+    'ALERT_FAILED_LOGINS', 'QUEUE_ALERT_CLIPS', 'QUEUE_ALERT_HOURS',
+]
 
 
 class AppendOnly(Exception):
@@ -81,9 +98,11 @@ class AuditEntry(models.Model):
 
     action = models.CharField(max_length=30, choices=Action.choices)
     # The applicant or lawyer the entry is about: the lawyer who acted, or the person
-    # whose account the admin changed.
-    lawyer_profile = models.ForeignKey(LawyerProfile, on_delete=models.PROTECT, related_name='+')
-    # The admin's account, on the admin's actions; empty on a lawyer's own.
+    # whose account or case the admin decided on. Empty only on entries about the archive.
+    lawyer_profile = models.ForeignKey(
+        LawyerProfile, null=True, blank=True, on_delete=models.PROTECT, related_name='+',
+    )
+    # The admin's account, on the admin's actions; empty on all others.
     admin = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name='+',
     )
@@ -98,6 +117,9 @@ class AuditEntry(models.Model):
     # margin matches (found only in the margin around them).
     core_count = models.PositiveIntegerField(null=True, blank=True)
     margin_count = models.PositiveIntegerField(null=True, blank=True)
+    # A change of limits: {"before": {setting: number}, "after": {setting: number}}, with
+    # "before" null the first time. Setting names and numbers only.
+    limits = models.JSONField(null=True, blank=True)
     # The time of writing, never one passed in. Precise: alerts look for many actions in a
     # short time (SPEC.md §7).
     at = models.DateTimeField(auto_now_add=True)
@@ -115,8 +137,13 @@ class AuditEntry(models.Model):
                 name='admin_on_admin_actions_only',
             ),
             models.CheckConstraint(
-                condition=Q(action__in=CASE_ACTIONS, case__isnull=False)
-                | (~Q(action__in=CASE_ACTIONS) & Q(case__isnull=True)),
+                condition=Q(action__in=ARCHIVE_ACTIONS, lawyer_profile__isnull=True)
+                | (~Q(action__in=ARCHIVE_ACTIONS) & Q(lawyer_profile__isnull=False)),
+                name='nobody_on_archive_actions_only',
+            ),
+            models.CheckConstraint(
+                condition=Q(action__in=CASE_ACTIONS + ADMIN_CASE_ACTIONS, case__isnull=False)
+                | (~Q(action__in=CASE_ACTIONS + ADMIN_CASE_ACTIONS) & Q(case__isnull=True)),
                 name='case_on_case_actions_only',
             ),
             models.CheckConstraint(
@@ -128,6 +155,11 @@ class AuditEntry(models.Model):
                 condition=Q(action__in=COUNT_ACTIONS, core_count__isnull=False, margin_count__isnull=False)
                 | (~Q(action__in=COUNT_ACTIONS) & Q(core_count__isnull=True, margin_count__isnull=True)),
                 name='counts_on_searches_only',
+            ),
+            models.CheckConstraint(
+                condition=Q(action__in=ARCHIVE_ACTIONS, limits__isnull=False)
+                | (~Q(action__in=ARCHIVE_ACTIONS) & Q(limits__isnull=True)),
+                name='limits_on_limits_changes_only',
             ),
         ]
 
@@ -146,6 +178,8 @@ class AuditEntry(models.Model):
             pk=self.case_id, lawyer_profile_id=self.lawyer_profile_id,
         ).exists():
             raise ValueError("An audit entry about a case names the case's lawyer.")
+        if self.action in ARCHIVE_ACTIONS and not _only_numbers_of_settings(self.limits):
+            raise ValueError('A change of limits records setting names and whole numbers, nothing else.')
         # Always a new row: an entry given an existing id fails instead of replacing it.
         kwargs['force_insert'] = True
         super().save(*args, **kwargs)
@@ -158,9 +192,24 @@ class AuditEntry(models.Model):
         raise AppendOnly('Audit entries cannot be deleted.')
 
 
-def record(action, lawyer_profile, admin=None, case=None, clip=None, core_count=None, margin_count=None):
+def _only_numbers_of_settings(limits):
+    """Whether `limits` is {"before": numbers or None, "after": numbers}: never text from anyone."""
+    def numbers(values):
+        return isinstance(values, dict) and set(values) <= set(LIMIT_SETTINGS) and all(
+            type(number) is int for number in values.values()
+        )
+    return (
+        isinstance(limits, dict) and set(limits) == {'before', 'after'}
+        and (limits['before'] is None or numbers(limits['before'])) and numbers(limits['after'])
+    )
+
+
+def record(
+    action, lawyer_profile, admin=None, case=None, clip=None, core_count=None, margin_count=None, limits=None,
+):
     """Add an entry to the audit log: the way every entry is meant to be written."""
     return AuditEntry.objects.create(
         action=action, lawyer_profile=lawyer_profile, admin=admin, case=case,
         clip_id=clip.pk if clip is not None else None, core_count=core_count, margin_count=margin_count,
+        limits=limits,
     )
