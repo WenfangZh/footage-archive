@@ -9,6 +9,8 @@ from django.views.decorators.http import require_POST
 
 from accounts.models import LawyerProfile
 from accounts.roles import lawyer_required
+from alerts.checks import check_activity
+from alerts.models import AlertLimitRaise
 from audit.models import Action, record
 
 from . import size
@@ -41,6 +43,7 @@ def new_case(request):
                         approval_reason=fields['reason'] if fields['needs_approval'] else '',
                     )
                     record(Action.CASE_CREATION, profile, case=case)
+                    check_activity(profile, AlertLimitRaise.Activity.CASES)
                     if fields['needs_approval']:
                         record(Action.LARGER_CASE_REQUEST, profile, case=case)
             except size.CaseTooLarge as too_large:
