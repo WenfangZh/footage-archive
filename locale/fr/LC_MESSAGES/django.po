@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-18 00:05+0200\n"
+"POT-Creation-Date: 2026-10-18 16:52+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -498,29 +498,59 @@ msgstr "La file de préparation est engorgée"
 msgid "Many failed logins for one account"
 msgstr "Nombreuses connexions échouées pour un même compte"
 
-#: audit/models.py:23
+#: audit/models.py:27
 msgid "Invitation"
 msgstr "Invitation"
 
-#: audit/models.py:24
+#: audit/models.py:28
 msgid "Declining"
 msgstr "Candidature non retenue"
 
-#: audit/models.py:25
+#: audit/models.py:29
 msgid "Admission"
 msgstr "Admission"
 
-#: audit/models.py:26
+#: audit/models.py:30
 msgid "Suspension"
 msgstr "Suspension de l'accès"
 
-#: audit/models.py:27
+#: audit/models.py:31
 msgid "Reinstatement"
 msgstr "Rétablissement de l'accès"
 
-#: audit/models.py:28
+#: audit/models.py:32
 msgid "Revocation"
 msgstr "Révocation de l'accès"
+
+#: audit/models.py:33
+msgctxt "audit log action"
+msgid "Case creation"
+msgstr "Création d'un dossier de recherche"
+
+#: audit/models.py:34
+msgctxt "audit log action"
+msgid "Case closing"
+msgstr "Clôture d'un dossier de recherche"
+
+#: audit/models.py:35
+msgctxt "audit log action"
+msgid "Request for a larger case"
+msgstr "Demande de dépassement des plafonds d'un dossier de recherche"
+
+#: audit/models.py:36
+msgctxt "audit log action"
+msgid "Search"
+msgstr "Recherche"
+
+#: audit/models.py:37
+msgctxt "audit log action"
+msgid "Preview"
+msgstr "Prévisualisation"
+
+#: audit/models.py:38
+msgctxt "audit log action"
+msgid "Download"
+msgstr "Téléchargement"
 
 #: cases/models.py:37
 msgid "Closed by its lawyer"

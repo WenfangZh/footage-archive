@@ -7,7 +7,10 @@ from django.db import IntegrityError, models, transaction
 from django.db.models import ProtectedError
 
 from accounts.models import LawyerProfile
-from audit.models import ADMIN_ACTIONS, Action, AppendOnly, AuditEntry, record
+from audit.models import ADMIN_ACTIONS, CASE_ACTIONS, CLIP_ACTIONS, Action, AppendOnly, AuditEntry, record
+from cases.models import Case
+from clips.editing import delete_clip
+from clips.models import Clip
 
 pytestmark = pytest.mark.django_db
 
@@ -167,3 +170,97 @@ def test_the_admin_can_be_given_as_django_gives_the_logged_in_account(admin, app
     from django.utils.functional import SimpleLazyObject
     entry = record(Action.INVITATION, applicant, admin=SimpleLazyObject(lambda: admin))
     assert AuditEntry.objects.get(pk=entry.pk).admin == admin
+
+
+@pytest.fixture
+def case(applicant):
+    applicant.verified_via, applicant.vouched_by = 'The bar directory', 'A defence organisation'
+    applicant.save()
+    applicant.change_status(LawyerProfile.Status.LAWYER)
+    return Case.objects.create(lawyer_profile=applicant, label='A case')
+
+
+@pytest.fixture
+def clip():
+    return Clip.objects.create(code_hash='0' * 64)
+
+
+def test_a_lawyers_action_records_the_case_and_the_clip(case, clip):
+    entry = record(Action.PREVIEW, case.lawyer_profile, case=case, clip=clip)
+    stored = AuditEntry.objects.get(pk=entry.pk)
+    assert (stored.action, stored.lawyer_profile, stored.admin) == (Action.PREVIEW, case.lawyer_profile, None)
+    assert (stored.case, stored.clip_id, stored.core_count) == (case, clip.pk, None)
+    assert list(case.audit_entries.all()) == [stored]
+
+
+def test_a_search_records_the_numbers_of_clips_found(case):
+    entry = record(Action.SEARCH, case.lawyer_profile, case=case, core_count=3, margin_count=0)
+    stored = AuditEntry.objects.get(pk=entry.pk)
+    assert (stored.core_count, stored.margin_count, stored.clip_id) == (3, 0, None)
+
+
+def test_deleting_a_clip_leaves_its_entries_as_they_were(case, clip):
+    entry = record(Action.DOWNLOAD, case.lawyer_profile, case=case, clip=clip)
+    clip_id = clip.pk
+    delete_clip(clip)
+    assert AuditEntry.objects.get(pk=entry.pk).clip_id == clip_id
+
+
+def fields_taken_by(action, clip):
+    """The fields other than the case that `action` takes, so that only the case is missing."""
+    if action in CLIP_ACTIONS:
+        return {'clip': clip}
+    if action == Action.SEARCH:
+        return {'core_count': 1, 'margin_count': 1}
+    return {}
+
+
+@pytest.mark.parametrize('action', CASE_ACTIONS)
+def test_actions_on_a_case_name_it(action, case, clip):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(action, case.lawyer_profile, **fields_taken_by(action, clip))
+    record(action, case.lawyer_profile, case=case, **fields_taken_by(action, clip))
+
+
+@pytest.mark.parametrize('action', CLIP_ACTIONS)
+def test_previews_and_downloads_name_the_clip(action, case):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(action, case.lawyer_profile, case=case)
+
+
+def test_a_search_records_both_numbers(case):
+    for counts in [{}, {'core_count': 1}, {'margin_count': 1}]:
+        with pytest.raises(IntegrityError), transaction.atomic():
+            record(Action.SEARCH, case.lawyer_profile, case=case, **counts)
+
+
+@pytest.mark.parametrize('extra', ['case', 'clip', 'count'])
+def test_the_admins_account_actions_name_no_case_clip_or_count(extra, admin, case, clip):
+    given = {'case': {'case': case}, 'clip': {'clip': clip}, 'count': {'core_count': 1, 'margin_count': 1}}[extra]
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.SUSPENSION, case.lawyer_profile, admin=admin, **given)
+
+
+def test_a_search_names_no_clip(case, clip):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.SEARCH, case.lawyer_profile, case=case, clip=clip, core_count=1, margin_count=1)
+
+
+@pytest.mark.parametrize('counts', [{'core_count': 1}, {'margin_count': 1}])
+def test_a_preview_names_no_count(counts, case, clip):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.PREVIEW, case.lawyer_profile, case=case, clip=clip, **counts)
+
+
+@pytest.mark.parametrize('extra', ['clip', 'count'])
+def test_a_case_creation_names_no_clip_or_count(extra, case, clip):
+    given = {'clip': {'clip': clip}, 'count': {'core_count': 1, 'margin_count': 1}}[extra]
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.CASE_CREATION, case.lawyer_profile, case=case, **given)
+
+
+def test_an_entry_about_a_case_names_the_cases_own_lawyer(case):
+    other = LawyerProfile.objects.create(user=User.objects.create_user('other@example.org'), bar='Lyon')
+    with pytest.raises(ValueError):
+        record(Action.CASE_CREATION, other, case=case)
+    assert not AuditEntry.objects.exists()
