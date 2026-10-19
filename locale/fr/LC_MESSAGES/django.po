@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-19 11:56+0200\n"
+"POT-Creation-Date: 2026-10-19 16:18+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -273,7 +273,8 @@ msgstr "Envoyer l'invitation"
 
 #: accounts/templates/accounts/lawyer_home.html:4
 #: accounts/templates/accounts/lawyer_home.html:7
-#: cases/templates/cases/case.html:26
+#: cases/templates/cases/case.html:31
+#: cases/templates/cases/closed_cases.html:15
 msgid "Your cases"
 msgstr "Vos dossiers de recherche"
 
@@ -291,6 +292,12 @@ msgid "New case"
 msgstr "Nouveau dossier de recherche"
 
 #: accounts/templates/accounts/lawyer_home.html:16
+#: cases/templates/cases/closed_cases.html:4
+#: cases/templates/cases/closed_cases.html:7
+msgid "Closed cases"
+msgstr "Dossiers de recherche clos"
+
+#: accounts/templates/accounts/lawyer_home.html:17
 #: cases/templates/cases/default_margin.html:4
 #: cases/templates/cases/default_margin.html:7
 msgid "Default margin"
@@ -669,8 +676,8 @@ msgid ""
 msgstr ""
 "Seulement pour un dossier de recherche au-delà des plafonds : "
 "l'administrateur·rice lit votre justification pour décider, puis elle est "
-"supprimée ; pour un dossier dans les plafonds, elle n'est pas gardée. Jamais"
-" le nom d'un·e client·e."
+"supprimée ; pour un dossier dans les plafonds, elle n'est pas gardée. Jamais "
+"le nom d'un·e client·e."
 
 #: cases/forms.py:109
 msgid "The time window must end after it starts."
@@ -695,12 +702,11 @@ msgid ""
 "minutes and is at most %(cap_metres)s m across. To ask for it, give your "
 "reason in the field \"Why this case needs to be larger than the size caps\"."
 msgstr ""
-"Avec sa marge, ce dossier de recherche couvre %(minutes)s minutes et environ"
-" %(metres)s m de large. Sans validation par l'administrateur·rice, un "
-"dossier de recherche couvre au plus %(cap_minutes)s minutes et "
-"%(cap_metres)s m de large. Pour demander cette validation, donnez votre "
-"justification dans le champ « Pourquoi ce dossier de recherche doit dépasser"
-" les plafonds »."
+"Avec sa marge, ce dossier de recherche couvre %(minutes)s minutes et environ "
+"%(metres)s m de large. Sans validation par l'administrateur·rice, un dossier "
+"de recherche couvre au plus %(cap_minutes)s minutes et %(cap_metres)s m de "
+"large. Pour demander cette validation, donnez votre justification dans le "
+"champ « Pourquoi ce dossier de recherche doit dépasser les plafonds »."
 
 #: cases/forms.py:157
 msgid "Decision"
@@ -724,19 +730,19 @@ msgstr ""
 "Gardée avec le dossier de recherche, et visible par son avocat·e. Jamais le "
 "nom d'un·e client·e."
 
-#: cases/models.py:104
+#: cases/models.py:120
 msgid "Closed by its lawyer"
 msgstr "Clos par son avocat·e"
 
-#: cases/models.py:105
+#: cases/models.py:121
 msgid "Closed when its lawyer's access was revoked"
 msgstr "Clos à la révocation de l'accès de son avocat·e"
 
-#: cases/models.py:106
+#: cases/models.py:122
 msgid "Closed after a long time without use"
 msgstr "Clos après une longue période sans usage"
 
-#: cases/models.py:107
+#: cases/models.py:123
 msgid "Closed when the admin refused it"
 msgstr "Clos au refus de l'administrateur·rice"
 
@@ -796,6 +802,21 @@ msgid_plural "%(rings)s rings of cells"
 msgstr[0] "%(rings)s anneau de mailles"
 msgstr[1] "%(rings)s anneaux de mailles"
 
+#: cases/templates/cases/case.html:26 cases/templates/cases/close_case.html:4
+#: cases/templates/cases/close_case.html:7
+msgid "Close this case"
+msgstr "Clore ce dossier de recherche"
+
+#: cases/templates/cases/case.html:27
+msgid "Case log"
+msgstr "Journal du dossier de recherche"
+
+#: cases/templates/cases/case.html:29
+#, python-format
+msgid "core matches: %(core)s, margin matches: %(margin)s"
+msgstr ""
+"correspondances centrales : %(core)s, correspondances de marge : %(margin)s"
+
 #: cases/templates/cases/case_request.html:4
 #: cases/templates/cases/case_request.html:7
 msgid "Request for a larger case"
@@ -838,6 +859,28 @@ msgstr "Décider"
 msgid "No requests are waiting."
 msgstr "Aucune demande en attente."
 
+#: cases/templates/cases/close_case.html:8
+#, python-format
+msgid ""
+"Once \"%(label)s\" is closed, it allows no searches, previews or downloads, "
+"and it cannot be reopened. It stays in your cases and in the audit log."
+msgstr ""
+"Une fois « %(label)s » clos, il ne permet plus ni recherche, ni "
+"prévisualisation, ni téléchargement, et il ne peut pas être rouvert. Il "
+"reste parmi vos dossiers de recherche et dans le journal d'audit."
+
+#: cases/templates/cases/close_case.html:11
+msgid "Close the case"
+msgstr "Clore le dossier de recherche"
+
+#: cases/templates/cases/close_case.html:13
+msgid "Keep it open"
+msgstr "Le garder ouvert"
+
+#: cases/templates/cases/closed_cases.html:13
+msgid "You have no closed cases."
+msgstr "Vous n'avez aucun dossier de recherche clos."
+
 #: cases/templates/cases/default_margin.html:8
 msgid ""
 "The margin widens a case's time window and area, to find clips just outside "
@@ -868,9 +911,13 @@ msgstr ""
 msgid "Create the case"
 msgstr "Créer le dossier de recherche"
 
-#: cases/views.py:72
+#: cases/views.py:74
 msgid "Your new cases will start with this margin."
 msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
+
+#: cases/views.py:85
+msgid "The case is closed."
+msgstr "Le dossier de recherche est clos."
 
 #: clips/forms.py:14
 msgid "About 50 m"
@@ -1370,11 +1417,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:334
+#: config/settings.py:337
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:335
+#: config/settings.py:338
 msgid "English"
 msgstr "Anglais"
 

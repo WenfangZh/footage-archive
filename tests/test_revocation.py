@@ -96,15 +96,16 @@ def test_revocation_cannot_be_undone(admin_client, lawyer):
 
 
 def test_revocation_deletes_nothing_and_keeps_the_address_apart_from_the_login(admin_client, lawyer):
-    make_case(lawyer, 'A case')
+    case = make_case(lawyer, 'A case')
     revoke(admin_client, lawyer)
     lawyer.refresh_from_db()
     user = lawyer.user
     assert (user.email, user.former_email) == (None, 'lawyer@example.org')
     assert (user.first_name, lawyer.bar, lawyer.vouched_by) == ('Camille', 'Paris', 'A defence organisation')
     assert Case.objects.filter(lawyer_profile=lawyer).exists()
-    entry = AuditEntry.objects.get()
-    assert entry.action == Action.REVOCATION and entry.lawyer_profile == lawyer
+    # One closing entry per case, then the revocation.
+    entries = list(AuditEntry.objects.order_by('pk').values_list('action', 'lawyer_profile', 'case'))
+    assert entries == [(Action.CASE_CLOSING, lawyer.pk, case.pk), (Action.REVOCATION, lawyer.pk, None)]
 
 
 def test_a_suspended_lawyer_can_be_revoked_and_their_cases_closed(admin_client, lawyer):

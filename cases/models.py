@@ -13,7 +13,7 @@ closed. A case within the caps has no CaseApproval.
 from django.db import models, transaction
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_variables
-from django.db.models import F, Q
+from django.db.models import F, Max, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -32,16 +32,32 @@ class CaseQuerySet(models.QuerySet):
         return self.open().filter(Q(approval__isnull=True) | Q(approval__approved=True))
 
     def close(self, because, now=None):
-        """Close the open cases among these; closed ones keep their time and reason.
+        """Close the open cases among these, each with an audit entry; closed ones keep their time and reason.
 
         A request for a larger case that is still waiting goes with it, and so does its reason.
+        The entry names the case's lawyer, whoever closed it: why is the case's own reason.
         """
+        now = now or timezone.now()
         with transaction.atomic():
             closing = list(self.open().values_list('pk', flat=True))
             CaseApproval.objects.filter(case__in=closing, decided_at__isnull=True)._delete_reasons()
-            return super(CaseQuerySet, self.filter(pk__in=closing, closed_at__isnull=True)).update(
-                closed_at=now or timezone.now(), closed_because=because,
+            super(CaseQuerySet, self.filter(pk__in=closing, closed_at__isnull=True)).update(
+                closed_at=now, closed_because=because,
             )
+            # Only those closed here: another request may have closed one in between.
+            closed = list(Case.objects.filter(pk__in=closing, closed_at=now, closed_because=because).select_related(
+                'lawyer_profile',
+            ))
+            for case in closed:
+                record(Action.CASE_CLOSING, case.lawyer_profile, case=case)
+            return len(closed)
+
+    def unused_since(self, cutoff):
+        """Open cases not used since `cutoff`: no search, preview or download, and not created, since then."""
+        uses = [Action.CASE_CREATION, Action.SEARCH, Action.PREVIEW, Action.DOWNLOAD]
+        return self.open().annotate(
+            last_use=Max('audit_entries__at', filter=Q(audit_entries__action__in=uses)),
+        ).filter(Q(last_use__lt=cutoff) | Q(last_use__isnull=True, opened_at__lt=cutoff))
 
     @method_decorator(sensitive_variables('approval_reason'))
     def create_with_area(

@@ -23,5 +23,10 @@
     <dd>{% blocktranslate count minutes=case.margin_minutes %}{{ minutes }} minute{% plural %}{{ minutes }} minutes{% endblocktranslate %},
       {% blocktranslate count rings=case.margin_rings %}{{ rings }} ring of cells{% plural %}{{ rings }} rings of cells{% endblocktranslate %}</dd>
   </dl>
+  {% if not case.closed_at %}<p><a href="{% url 'lawyer:close_case' case_id=case.pk %}">{% translate "Close this case" %}</a></p>{% endif %}
+  <h2>{% translate "Case log" %}</h2>
+  <ul>
+    {% for entry in entries %}<li>{{ entry.at|date:"j F Y H:i" }}: {{ entry.get_action_display }}{% if entry.clip_id %} ({{ entry.clip_id }}){% endif %}{% if entry.core_count is not None %} ({% blocktranslate with core=entry.core_count margin=entry.margin_count %}core matches: {{ core }}, margin matches: {{ margin }}{% endblocktranslate %}){% endif %}</li>{% endfor %}
+  </ul>
   <p><a href="{% url 'lawyer:home' %}">{% translate "Your cases" %}</a></p>
 {% endblock %}

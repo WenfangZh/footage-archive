@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Close this case" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Close this case" %}</h1>
+  <p>{% blocktranslate with label=case.label %}Once "{{ label }}" is closed, it allows no searches, previews or downloads, and it cannot be reopened. It stays in your cases and in the audit log.{% endblocktranslate %}</p>
+  <form method="post" action="{% url 'lawyer:close_case' case_id=case.pk %}">
+    {% csrf_token %}
+    <button type="submit">{% translate "Close the case" %}</button>
+  </form>
+  <p><a href="{% url 'lawyer:case' case_id=case.pk %}">{% translate "Keep it open" %}</a></p>
+{% endblock %}
