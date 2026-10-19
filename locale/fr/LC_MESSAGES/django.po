@@ -665,20 +665,25 @@ msgstr "Téléchargement"
 
 #: audit/models.py:44
 msgctxt "audit log action"
+msgid "Viewing a clip's page"
+msgstr "Consultation de la page d'un clip"
+
+#: audit/models.py:45
+msgctxt "audit log action"
 msgid "Approval of a larger case"
 msgstr "Validation d'un dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:45
+#: audit/models.py:46
 msgctxt "audit log action"
 msgid "Refusal of a larger case"
 msgstr "Refus d'un dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:46
+#: audit/models.py:47
 msgctxt "audit log action"
 msgid "Change of the size caps and alert limits"
 msgstr "Changement des plafonds et des seuils d'alerte"
 
-#: audit/models.py:47
+#: audit/models.py:48
 msgctxt "audit log action"
 msgid "Temporary raise of a lawyer's alert limit"
 msgstr "Relèvement temporaire d'un seuil d'alerte pour un·e avocat·e"
