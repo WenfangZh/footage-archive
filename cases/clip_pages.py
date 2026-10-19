@@ -23,6 +23,8 @@ from django.utils.http import content_disposition_header
 from django.views.decorators.http import require_GET
 
 from accounts.roles import lawyer_required
+from alerts.checks import check_activity
+from alerts.models import AlertLimitRaise
 from audit.models import Action, AuditEntry, record
 from clips import grid, vault
 from clips.models import Clip, HashRecord
@@ -129,6 +131,7 @@ def download(request, case_id, clip_id):
         # download logged within two hours: no part of the file is served unlogged.
         if served is not None and (served[0] == 0 or not recently.exists()):
             record(Action.DOWNLOAD, case.lawyer_profile, case=case, clip=clip)
+            check_activity(case.lawyer_profile, AlertLimitRaise.Activity.DOWNLOADS)
         response = file_response(request, evidence, size, CONTENT_TYPES.get(extension, 'application/octet-stream'))
     except BaseException:
         evidence.close()

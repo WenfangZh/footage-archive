@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-19 17:11+0200\n"
+"POT-Creation-Date: 2026-10-19 18:04+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -328,6 +328,7 @@ msgstr "Il y a eu trop de tentatives de connexion. Réessayez dans une heure."
 
 #: accounts/templates/accounts/manage_home.html:4
 #: accounts/templates/accounts/manage_home.html:7
+#: alerts/templates/alerts/raise_limit.html:18
 #: cases/templates/cases/case_requests.html:17
 msgid "Administration"
 msgstr "Administration"
@@ -376,7 +377,13 @@ msgstr "Rétablir l'accès"
 msgid "Revoke access"
 msgstr "Révoquer l'accès"
 
-#: accounts/templates/accounts/manage_home.html:67
+#: accounts/templates/accounts/manage_home.html:63
+#: alerts/templates/alerts/raise_limit.html:4
+#: alerts/templates/alerts/raise_limit.html:7
+msgid "Raise an alert limit"
+msgstr "Relever un seuil d'alerte"
+
+#: accounts/templates/accounts/manage_home.html:68
 msgid "No lawyers yet."
 msgstr "Aucun·e avocat·e pour l'instant."
 
@@ -527,6 +534,79 @@ msgstr "La file de préparation est engorgée"
 #: alerts/models.py:19
 msgid "Many failed logins for one account"
 msgstr "Nombreuses connexions échouées pour un même compte"
+
+#: alerts/models.py:20
+msgid "Many downloads by one lawyer in a short time"
+msgstr "Beaucoup de téléchargements par un·e avocat·e en peu de temps"
+
+#: alerts/models.py:21
+msgid "Many cases created by one lawyer in a short time"
+msgstr ""
+"Beaucoup de dossiers de recherche créés par un·e avocat·e en peu de temps"
+
+#: alerts/models.py:39
+msgid "Downloads"
+msgstr "Téléchargements"
+
+#: alerts/models.py:40
+msgid "Cases created"
+msgstr "Dossiers de recherche créés"
+
+#: alerts/templates/alerts/raise_limit.html:8
+#, python-format
+msgid ""
+"For %(name)s, for a few days, such as while they work on a large case. "
+"Usually you are alerted at %(downloads)s downloads or %(cases)s cases "
+"created in a short time. The raise is recorded in the audit log."
+msgstr ""
+"Pour %(name)s, pendant quelques jours, par exemple pendant un dossier "
+"important. D'habitude, vous êtes alerté·e à %(downloads)s téléchargements ou"
+" %(cases)s dossiers de recherche créés en peu de temps. Le relèvement est "
+"inscrit au journal d'audit."
+
+#: alerts/templates/alerts/raise_limit.html:10
+msgid "Raises in force"
+msgstr "Relèvements en cours"
+
+#: alerts/templates/alerts/raise_limit.html:11
+#, python-format
+msgid "%(activity)s: %(limit)s, until %(until)s"
+msgstr "%(activity)s : %(limit)s, jusqu'au %(until)s"
+
+#: alerts/templates/alerts/raise_limit.html:16
+msgid "Raise the limit"
+msgstr "Relever le seuil"
+
+#: alerts/views.py:31
+msgid "Alert"
+msgstr "Alerte"
+
+#: alerts/views.py:32
+msgid "New limit"
+msgstr "Nouveau seuil"
+
+#: alerts/views.py:33
+msgid "For how many days"
+msgstr "Pendant combien de jours"
+
+#: alerts/views.py:40
+#, python-format
+msgid "At most %(days)s."
+msgstr "Au plus %(days)s."
+
+#: alerts/views.py:49
+#, python-format
+msgid "A raise must be higher than the limit now: %(limit)s."
+msgstr "Le nouveau seuil doit dépasser le seuil actuel : %(limit)s."
+
+#: alerts/views.py:51
+#, python-format
+msgid "At most ten times the usual limit: %(limit)s."
+msgstr "Au plus dix fois le seuil habituel : %(limit)s."
+
+#: alerts/views.py:75
+msgid "The alert limit is raised."
+msgstr "Le seuil d'alerte est relevé."
 
 #: audit/models.py:30
 msgid "Invitation"
@@ -1097,11 +1177,11 @@ msgstr ""
 "Clips trouvés seulement dans la marge, juste en dehors de la plage horaire "
 "ou du périmètre."
 
-#: cases/views.py:77
+#: cases/views.py:80
 msgid "Your new cases will start with this margin."
 msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
 
-#: cases/views.py:88
+#: cases/views.py:91
 msgid "The case is closed."
 msgstr "Le dossier de recherche est clos."
 

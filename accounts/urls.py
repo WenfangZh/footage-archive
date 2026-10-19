@@ -36,6 +36,7 @@ manage_patterns = [
     path('lawyers/<int:profile_id>/reinstate/', access.reinstate, name='reinstate'),
     path('lawyers/<int:profile_id>/revoke/', access.revoke, name='revoke'),
     path('alerts/<int:alert_id>/seen/', alert_views.mark_seen, name='alert_seen'),
+    path('lawyers/<int:profile_id>/alert-limit/', alert_views.raise_limit, name='raise_limit'),
     path('cases/', case_approval.case_requests, name='case_requests'),
     path('cases/<int:case_id>/', case_approval.case_request, name='case_request'),
 ]
