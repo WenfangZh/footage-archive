@@ -27,6 +27,11 @@ def area_metres(cells, margin_rings):
 def check(starts_at, ends_at, cells, margin_minutes, margin_rings):
     """Raise CaseTooLarge for a case over the caps, saying whether it is beyond a ceiling too."""
     window = window_minutes(starts_at, ends_at, margin_minutes)
+    # A set spread wider than the ceiling is refused before it is measured, which costs far
+    # more on a wide, scattered set; its size is then given as at least this reach.
+    reach = grid.reach_metres(cells)
+    if reach > settings.CASE_AREA_CEILING_METRES:
+        raise CaseTooLarge(window, reach, beyond_ceiling=True)
     area = area_metres(cells, margin_rings)
     if window > settings.CASE_WINDOW_CEILING_MINUTES or area > settings.CASE_AREA_CEILING_METRES:
         raise CaseTooLarge(window, area, beyond_ceiling=True)
