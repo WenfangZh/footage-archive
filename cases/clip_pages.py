@@ -6,23 +6,27 @@ and metadata values, as uploaded, edits, tags, context) and plays its proxy. Eac
 is logged, but a lawyer watching the same clip in the same case again within two hours is
 not logged again: a video player asks for many pieces of one file. Two first requests at
 once may both be logged, which only ever logs too much. Opening the page is not a preview.
+The evidence copy is downloaded as it is, and every download is logged; its hash record
+comes as a JSON file.
 """
 
 import datetime
+import json
 import os
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
+from django.utils.http import content_disposition_header
 from django.views.decorators.http import require_GET
 
 from accounts.roles import lawyer_required
 from audit.models import Action, AuditEntry, record
 from clips import grid, vault
-from clips.models import Clip
-from clips.streaming import file_response
+from clips.models import Clip, HashRecord
+from clips.streaming import file_response, requested_range
 from clips.tags import DEFAULT_TAGS
 
 from .models import Case
@@ -100,3 +104,65 @@ def preview(request, case_id, clip_id):
     except BaseException:
         proxy.close()
         raise
+
+
+# The evidence copy keeps the original's container (clips.evidence).
+CONTENT_TYPES = {'mp4': 'video/mp4', 'mov': 'video/quicktime', 'mkv': 'video/x-matroska'}
+
+
+# A download resumed within this time asks only for the rest of the file: the same download.
+DOWNLOAD_REPEAT = datetime.timedelta(hours=2)
+
+
+@lawyer_required
+@require_GET
+def download(request, case_id, clip_id):
+    case, clip, _ = case_and_clip(request, case_id, clip_id)
+    evidence, size = open_or_404(clip, vault.EVIDENCE_COPY)
+    try:
+        extension = vault.extension(clip, vault.EVIDENCE_COPY)
+        served, _ = requested_range(request, size)
+        recently = AuditEntry.objects.filter(
+            action=Action.DOWNLOAD, case=case, clip_id=clip.pk, at__gte=timezone.now() - DOWNLOAD_REPEAT,
+        )
+        # Logged whenever it starts from the first byte, and otherwise unless it carries on a
+        # download logged within two hours: no part of the file is served unlogged.
+        if served is not None and (served[0] == 0 or not recently.exists()):
+            record(Action.DOWNLOAD, case.lawyer_profile, case=case, clip=clip)
+        response = file_response(request, evidence, size, CONTENT_TYPES.get(extension, 'application/octet-stream'))
+    except BaseException:
+        evidence.close()
+        raise
+    response['Content-Disposition'] = content_disposition_header(True, f'clip-{clip.pk}.{extension}')
+    return response
+
+
+def hash_record_data(record_):
+    """A hash record as plain data: the fingerprints of the original and the evidence copy."""
+    def hashes(sha256, streams, hashed_at):
+        return {
+            'sha256': sha256,
+            'streams': [{'kind': {'v': 'video', 'a': 'audio'}[kind], 'sha256': digest} for kind, digest in streams],
+            # Kept only to its 4-hour block (SPEC.md §6).
+            'hashed_in_4_hour_block_from': hashed_at.isoformat(),
+        }
+    return {
+        'hash_record': str(record_.pk),
+        'clip': str(record_.clip_id),
+        'original': hashes(record_.original_sha256, record_.original_stream_hashes, record_.original_hashed_at),
+        'evidence_copy': hashes(record_.evidence_sha256, record_.evidence_stream_hashes, record_.evidence_hashed_at),
+    }
+
+
+@lawyer_required
+@require_GET
+def hash_record(request, case_id, clip_id):
+    _, clip, _ = case_and_clip(request, case_id, clip_id)
+    stored = HashRecord.objects.filter(clip=clip).first()
+    if stored is None:
+        raise Http404
+    response = HttpResponse(json.dumps(hash_record_data(stored), indent=2), content_type='application/json')
+    response['Content-Disposition'] = content_disposition_header(True, f'clip-{clip.pk}-hash-record.json')
+    response['X-Content-Type-Options'] = 'nosniff'
+    response['Cache-Control'] = 'no-store, private'
+    return response

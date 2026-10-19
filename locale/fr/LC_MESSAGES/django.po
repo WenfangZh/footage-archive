@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-19 17:04+0200\n"
+"POT-Creation-Date: 2026-10-19 17:09+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -879,16 +879,36 @@ msgstr "Correspondance centrale pour ce dossier de recherche."
 #: cases/templates/cases/clip.html:8
 msgid "Margin match for this case: just outside its time window or area."
 msgstr ""
-"Correspondance de marge pour ce dossier de recherche : juste en dehors de sa"
-" plage horaire ou de son périmètre."
+"Correspondance de marge pour ce dossier de recherche : juste en dehors de sa "
+"plage horaire ou de son périmètre."
 
 #: cases/templates/cases/clip.html:13
 msgid "A low-resolution preview. Watching it is recorded in the audit log."
 msgstr ""
-"Une version de prévisualisation en basse résolution. La regarder est inscrit"
-" au journal d'audit."
+"Une version de prévisualisation en basse résolution. La regarder est inscrit "
+"au journal d'audit."
+
+#: cases/templates/cases/clip.html:16
+msgid "Download the evidence copy"
+msgstr "Télécharger la copie de preuve"
 
 #: cases/templates/cases/clip.html:17
+msgid "Download its hash record"
+msgstr "Télécharger les empreintes numériques (hash)"
+
+#: cases/templates/cases/clip.html:18
+msgid ""
+"The evidence copy holds the clip's video and audio streams unchanged, never "
+"re-encoded, in a new container without the file's own metadata; its hash "
+"record shows that the frames were not altered. Each download is recorded in "
+"the audit log."
+msgstr ""
+"La copie de preuve contient les flux vidéo et audio du clip inchangés, "
+"jamais réencodés, dans un nouveau conteneur sans les métadonnées du fichier "
+"; ses empreintes numériques (hash) montrent que les images n'ont pas été "
+"modifiées. Chaque téléchargement est inscrit au journal d'audit."
+
+#: cases/templates/cases/clip.html:21
 #, python-format
 msgid "The stated time is %(minutes)s minute away from the metadata time."
 msgid_plural ""
@@ -898,81 +918,81 @@ msgstr[0] ""
 msgstr[1] ""
 "L'heure indiquée est à %(minutes)s minutes de l'heure des métadonnées."
 
-#: cases/templates/cases/clip.html:20 clips/templates/clips/clip.html:34
+#: cases/templates/cases/clip.html:24 clips/templates/clips/clip.html:34
 #: clips/templates/clips/confirm.html:15
 msgid "Time"
 msgstr "Heure"
 
-#: cases/templates/cases/clip.html:22 clips/models.py:180
+#: cases/templates/cases/clip.html:26 clips/models.py:180
 msgid "Stated time"
 msgstr "Heure indiquée"
 
-#: cases/templates/cases/clip.html:23
+#: cases/templates/cases/clip.html:27
 msgid "Metadata time"
 msgstr "Heure des métadonnées"
 
-#: cases/templates/cases/clip.html:23 cases/templates/cases/clip.html:24
-#: cases/templates/cases/clip.html:39 cases/templates/cases/place.html:1
+#: cases/templates/cases/clip.html:27 cases/templates/cases/clip.html:28
+#: cases/templates/cases/clip.html:43 cases/templates/cases/place.html:1
 msgid "not given"
 msgstr "non renseigné"
 
-#: cases/templates/cases/clip.html:24
+#: cases/templates/cases/clip.html:28
 msgid "Stated time as uploaded"
 msgstr "Heure indiquée telle qu'uploadée"
 
-#: cases/templates/cases/clip.html:25
+#: cases/templates/cases/clip.html:29
 msgid "Duration"
 msgstr "Durée"
 
-#: cases/templates/cases/clip.html:25 cases/templates/cases/matches.html:5
+#: cases/templates/cases/clip.html:29 cases/templates/cases/matches.html:5
 #, python-format
 msgid "%(seconds)s s"
 msgstr "%(seconds)s s"
 
-#: cases/templates/cases/clip.html:28 clips/templates/clips/clip.html:39
+#: cases/templates/cases/clip.html:32 clips/templates/clips/clip.html:39
 #: clips/templates/clips/confirm.html:25
 msgid "Place"
 msgstr "Lieu"
 
-#: cases/templates/cases/clip.html:30 clips/models.py:181
+#: cases/templates/cases/clip.html:34 clips/models.py:181
 msgid "Stated location"
 msgstr "Lieu indiqué"
 
-#: cases/templates/cases/clip.html:31 clips/models.py:185
+#: cases/templates/cases/clip.html:35 clips/models.py:185
 msgid "Metadata location"
 msgstr "Lieu des métadonnées"
 
-#: cases/templates/cases/clip.html:32
+#: cases/templates/cases/clip.html:36
 msgid "Stated location as uploaded"
 msgstr "Lieu indiqué tel qu'uploadé"
 
-#: cases/templates/cases/clip.html:35 clips/models.py:182
+#: cases/templates/cases/clip.html:39 clips/models.py:182
 msgid "Tags"
 msgstr "Étiquettes"
 
-#: cases/templates/cases/clip.html:38
+#: cases/templates/cases/clip.html:42
 msgid "No tags."
 msgstr "Aucune étiquette."
 
-#: cases/templates/cases/clip.html:39
+#: cases/templates/cases/clip.html:43
 msgid "Tags as uploaded:"
 msgstr "Étiquettes telles qu'uploadées :"
 
-#: cases/templates/cases/clip.html:42 clips/forms.py:69 clips/models.py:183
+#: cases/templates/cases/clip.html:46 clips/forms.py:69 clips/models.py:183
 #: clips/models.py:228
 msgid "Context"
 msgstr "Contexte"
 
-#: cases/templates/cases/clip.html:46
+#: cases/templates/cases/clip.html:50
 msgid "Edits since upload"
 msgstr "Modifications depuis l'upload"
 
-#: cases/templates/cases/clip.html:48
+#: cases/templates/cases/clip.html:52
 #, python-format
 msgid "%(field)s: %(day)s, in the four hours from %(start)s"
 msgstr "%(field)s : %(day)s, dans les quatre heures à partir de %(start)s"
 
-#: cases/templates/cases/clip.html:49
+#: cases/templates/cases/clip.html:53
 msgid "None."
 msgstr "Aucun."
 
