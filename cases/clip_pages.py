@@ -155,6 +155,7 @@ def hash_record_data(record_):
 
 
 @lawyer_required
+@require_GET
 def hash_record(request, case_id, clip_id):
     _, clip, _ = case_and_clip(request, case_id, clip_id)
     stored = HashRecord.objects.filter(clip=clip).first()
@@ -163,4 +164,5 @@ def hash_record(request, case_id, clip_id):
     response = HttpResponse(json.dumps(hash_record_data(stored), indent=2), content_type='application/json')
     response['Content-Disposition'] = content_disposition_header(True, f'clip-{clip.pk}-hash-record.json')
     response['X-Content-Type-Options'] = 'nosniff'
+    response['Cache-Control'] = 'no-store, private'
     return response

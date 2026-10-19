@@ -7,12 +7,13 @@ from unittest import mock
 import pytest
 from django.test import Client
 from django.urls import reverse
+from django.utils import timezone
 
 from audit.models import Action, AuditEntry
 from cases.models import Case
 from clips import vault
 from clips.models import HashRecord
-from tests.conftest import log_in_with_second_factor
+from tests.conftest import log_in_with_second_factor, make_case
 from tests.test_clip_pages import START, make_lawyer  # noqa: F401 - fixtures below
 from tests.test_clip_pages import case, clip, lawyer, lawyer_client  # noqa: F401
 
@@ -123,3 +124,30 @@ def test_another_lawyer_cannot_download(case, evidence, name):
 def test_a_clip_without_an_evidence_copy_or_hash_record_is_not_found(case, clip, lawyer_client):
     assert lawyer_client.get(url('download', case, clip)).status_code == 404
     assert lawyer_client.get(url('hash_record', case, clip)).status_code == 404
+
+
+def test_an_old_download_does_not_cover_a_later_partial_request(case, evidence, lawyer_client):
+    earlier = timezone.now() - datetime.timedelta(hours=2, minutes=1)
+    with mock.patch('django.utils.timezone.now', return_value=earlier):
+        lawyer_client.get(url('download', case, evidence))
+    lawyer_client.get(url('download', case, evidence), HTTP_RANGE='bytes=100-')
+    assert downloads().count() == 2
+
+
+def test_a_download_in_another_case_does_not_cover_this_one(lawyer, case, evidence, lawyer_client):
+    other = make_case(lawyer, 'Other', rings=1, starts_at=START, ends_at=START + datetime.timedelta(hours=1))
+    lawyer_client.get(url('download', other, evidence))
+    lawyer_client.get(url('download', case, evidence), HTTP_RANGE='bytes=100-')
+    assert set(downloads().values_list('case', flat=True)) == {other.pk, case.pk}
+
+
+@pytest.mark.parametrize('asked', ['bytes=5-2', 'bytes=0-1,5-9', 'bytes=-', 'items=0-9'])
+def test_a_range_that_cannot_be_read_serves_the_whole_file_and_is_logged(case, evidence, lawyer_client, asked):
+    response = lawyer_client.get(url('download', case, evidence), HTTP_RANGE=asked)
+    assert response.status_code == 200 and b''.join(response.streaming_content) == EVIDENCE_BYTES
+    assert downloads().count() == 1
+
+
+@pytest.mark.parametrize('method', ['head', 'post'])
+def test_the_hash_record_is_only_a_get_and_never_cached(case, evidence, lawyer_client, method):
+    assert getattr(lawyer_client, method)(url('hash_record', case, evidence)).status_code == 405
