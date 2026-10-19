@@ -83,6 +83,9 @@ def test_a_clip_beyond_the_margin_ring_does_not_match(case):
     (-30, 31 * 60, 'core'), # starts before the window, runs into it
     (59, None, 'core'),     # no known duration: its stated time alone
     (60, 0, 'core'),        # at the window's last moment
+    (70, 0, 'margin'),      # at the margin's last moment
+    (-11, 60, 'margin'),    # ends at the margin's first moment
+    (-1, 60, 'core'),       # ends as the window starts
 ])
 def test_any_part_of_the_clip_counts_by_its_stated_time_and_duration(case, minutes, seconds, expected):
     clip = make_clip(minutes=minutes, seconds=seconds)
@@ -130,7 +133,18 @@ def test_the_metadata_time_and_place_are_never_used(case):
 
 def test_matches_are_in_order_of_stated_time(case):
     later, earlier = make_clip(minutes=40), make_clip(minutes=20)
-    assert find(case).core == [earlier, later]
+    margin_later, margin_earlier = make_clip(minutes=68), make_clip(minutes=-3)
+    assert find(case) == ([earlier, later], [margin_earlier, margin_later])
+
+
+def test_a_clip_finer_than_a_coarser_grid_s_case_still_matches(lawyer, settings):
+    # A case made after the grid was made coarser (ADR 0003), and a clip from before.
+    settings.GRID_H3_RESOLUTION = 10
+    case = make_case(lawyer, cells={grid.coarsen(CENTRE, 10)}, margin_rings=1, margin_minutes=0, **WINDOW)
+    inside, neighbour = make_clip(cell=CENTRE), make_clip(cell=ring_cell(30))
+    margin_clip = make_clip(cell=h3.cell_to_center_child(h3.grid_ring(grid.coarsen(CENTRE, 10), 1)[0], 11))
+    assert find(case) == ([inside], [margin_clip])
+    assert match_of(case, neighbour) is None
 
 
 # The search page.
@@ -141,7 +155,12 @@ def lawyer_client(lawyer):
 
 
 def search(client, case):
-    return client.get(reverse('lawyer:search', kwargs={'case_id': case.pk}))
+    return client.post(reverse('lawyer:search', kwargs={'case_id': case.pk}))
+
+
+def test_a_search_is_never_run_by_a_link(case, lawyer_client):
+    assert lawyer_client.get(reverse('lawyer:search', kwargs={'case_id': case.pk})).status_code == 405
+    assert not AuditEntry.objects.filter(action=Action.SEARCH).exists()
 
 
 def test_a_search_shows_the_matches_and_logs_their_numbers(case, lawyer_client):
@@ -153,10 +172,26 @@ def test_a_search_shows_the_matches_and_logs_their_numbers(case, lawyer_client):
     assert (entry.case, entry.lawyer_profile, entry.core_count, entry.margin_count) == (case, case.lawyer_profile, 2, 1)
 
 
-def test_each_search_is_logged(case, lawyer_client):
+def test_each_search_is_logged_even_when_it_finds_nothing(case, lawyer_client):
     search(lawyer_client, case)
     search(lawyer_client, case)
-    assert AuditEntry.objects.filter(action=Action.SEARCH).count() == 2
+    entries = AuditEntry.objects.filter(action=Action.SEARCH)
+    assert list(entries.values_list('core_count', 'margin_count')) == [(0, 0), (0, 0)]
+
+
+def test_an_approved_larger_case_can_search(lawyer, lawyer_client):
+    admin = User.objects.create_superuser('admin@example.org')
+    larger = make_case(lawyer, starts_at=START, ends_at=START + datetime.timedelta(hours=3), approval_reason='Two charges.')
+    larger.approval.decide(True, admin)
+    make_clip(minutes=150)
+    response = search(lawyer_client, larger)
+    assert response.status_code == 200 and len(response.context['core']) == 1
+
+
+def test_the_results_show_only_time_duration_and_precision(case, lawyer_client):
+    clip = make_clip(metadata_time=START, metadata_cell=CENTRE)
+    page = search(lawyer_client, case).content.decode()
+    assert str(clip.pk) not in page and clip.code_hash not in page
 
 
 def test_a_closed_case_allows_no_search(case, lawyer_client):

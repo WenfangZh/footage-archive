@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-19 16:26+0200\n"
+"POT-Creation-Date: 2026-10-19 16:54+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -273,7 +273,7 @@ msgstr "Envoyer l'invitation"
 
 #: accounts/templates/accounts/lawyer_home.html:4
 #: accounts/templates/accounts/lawyer_home.html:7
-#: cases/templates/cases/case.html:32
+#: cases/templates/cases/case.html:37
 #: cases/templates/cases/closed_cases.html:15
 msgid "Your cases"
 msgstr "Vos dossiers de recherche"
@@ -802,25 +802,25 @@ msgid_plural "%(rings)s rings of cells"
 msgstr[0] "%(rings)s anneau de mailles"
 msgstr[1] "%(rings)s anneaux de mailles"
 
-#: cases/templates/cases/case.html:26
+#: cases/templates/cases/case.html:29
 msgid "Search for clips"
 msgstr "Rechercher des clips"
 
-#: cases/templates/cases/case.html:27 cases/templates/cases/close_case.html:4
+#: cases/templates/cases/case.html:32 cases/templates/cases/close_case.html:4
 #: cases/templates/cases/close_case.html:7
 msgid "Close this case"
 msgstr "Clore ce dossier de recherche"
 
-#: cases/templates/cases/case.html:28
+#: cases/templates/cases/case.html:33
 msgid "Case log"
 msgstr "Journal du dossier de recherche"
 
-#: cases/templates/cases/case.html:30
+#: cases/templates/cases/case.html:35
 #, python-format
 msgid "clip %(clip)s"
 msgstr "clip %(clip)s"
 
-#: cases/templates/cases/case.html:30
+#: cases/templates/cases/case.html:35
 #, python-format
 msgid "core matches: %(core)s, margin matches: %(margin)s"
 msgstr ""
@@ -912,8 +912,8 @@ msgid "%(seconds)s s"
 msgstr "%(seconds)s s"
 
 #: cases/templates/cases/matches.html:9
-msgid "None."
-msgstr "Aucun."
+msgid "No matches."
+msgstr "Aucune correspondance."
 
 #: cases/templates/cases/new_case.html:8
 msgid ""
@@ -948,8 +948,8 @@ msgstr "Correspondances centrales"
 #: cases/templates/cases/search.html:11
 msgid "Clips in the case's time window and area themselves."
 msgstr ""
-"Clips dans la plage horaire et le périmètre du dossier de recherche "
-"eux-mêmes."
+"Clips dans la plage horaire et le périmètre du dossier de recherche eux-"
+"mêmes."
 
 #: cases/templates/cases/search.html:14
 msgid "Margin matches"
@@ -962,11 +962,11 @@ msgstr ""
 "Clips trouvés seulement dans la marge, juste en dehors de la plage horaire "
 "ou du périmètre."
 
-#: cases/views.py:76
+#: cases/views.py:77
 msgid "Your new cases will start with this margin."
 msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
 
-#: cases/views.py:87
+#: cases/views.py:88
 msgid "The case is closed."
 msgstr "Le dossier de recherche est clos."
 
@@ -1493,6 +1493,9 @@ msgstr ""
 #: templates/home.html:9
 msgid "Defence lawyers: log in"
 msgstr "Avocat·es de la défense : se connecter"
+
+#~ msgid "None."
+#~ msgstr "Aucun."
 
 #~ msgid "Invitation sent"
 #~ msgstr "Invitation envoyée"
