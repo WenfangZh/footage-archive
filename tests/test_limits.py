@@ -1,11 +1,11 @@
 from unittest import mock
 
 import pytest
-from django.db import OperationalError
+from django.db import OperationalError, connection
 from django.test import Client
 
 from audit import limits
-from audit.models import Action, AuditEntry, record
+from audit.models import LIMIT_SETTINGS, Action, AuditEntry, record
 from clips import tasks
 
 pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures('limits_check')]
@@ -69,8 +69,8 @@ def test_a_failed_check_answers_no_request_and_is_tried_again(monkeypatch):
     monkeypatch.setattr(limits, '_record_if_changed', mock.Mock(side_effect=RuntimeError('database down')))
     with pytest.raises(RuntimeError):
         client.get('/')
+    # Back to the real check: undo() also undoes the fixtures, whose originals are the real one.
     monkeypatch.undo()
-    monkeypatch.setattr(limits, 'record_if_changed', limits.record_if_changed)
     assert client.get('/').status_code == 200
     assert len(changes()) == 1
 
@@ -92,6 +92,7 @@ def test_the_background_worker_checks_when_it_starts():
 @pytest.mark.parametrize('limits_given', [
     {'before': None, 'after': {'CASE_AREA_CAP_METRES': 'two thousand'}},
     {'before': None, 'after': {'a client name': 1}},
+    {'before': None, 'after': {'DUPONT_JEAN': 1}},
     {'before': None, 'after': {'CASE_AREA_CAP_METRES': True}},
     {'before': 'text', 'after': {}},
     {'after': {}},
@@ -102,3 +103,33 @@ def test_a_change_of_limits_holds_only_setting_names_and_whole_numbers(limits_gi
     with pytest.raises(ValueError):
         record(Action.LIMITS_CHANGE, None, limits=limits_given)
     assert not AuditEntry.objects.exists()
+
+
+def test_a_database_that_stays_locked_is_given_up_on(monkeypatch):
+    attempts = mock.Mock(side_effect=OperationalError('database is locked'))
+    monkeypatch.setattr(limits, '_record_if_changed', attempts)
+    monkeypatch.setattr(limits.time, 'sleep', lambda seconds: None)
+    with pytest.raises(OperationalError):
+        limits.record_if_changed()
+    assert attempts.call_count == limits.ATTEMPTS
+
+
+def test_other_database_errors_are_not_tried_again(monkeypatch):
+    attempts = mock.Mock(side_effect=OperationalError('no such table: audit_auditentry'))
+    monkeypatch.setattr(limits, '_record_if_changed', attempts)
+    with pytest.raises(OperationalError):
+        limits.record_if_changed()
+    assert attempts.call_count == 1
+
+
+def test_a_malformed_earlier_row_does_not_stop_the_check():
+    entry = record(Action.LIMITS_CHANGE, None, limits={'before': None, 'after': {}})
+    # As if written past the model, with raw SQL.
+    with connection.cursor() as cursor:
+        cursor.execute('UPDATE audit_auditentry SET limits = %s WHERE id = %s', ['[1]', entry.pk])
+    limits.record_if_changed()
+    assert changes()[-1] == {'before': None, 'after': DEFAULTS}
+
+
+def test_every_tracked_setting_exists_and_is_a_whole_number(settings):
+    assert all(type(getattr(settings, name)) is int for name in LIMIT_SETTINGS)

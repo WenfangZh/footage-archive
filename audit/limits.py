@@ -5,7 +5,8 @@ server can change; the ceilings are in the code. Each process, before answering 
 first request, and the background worker, when it starts, compare them with the numbers
 in the latest change of limits in the audit log, and record the change if they differ.
 Until the check succeeds, a web process answers no request: none is ever answered under
-limits that were not recorded.
+limits that were not recorded. The worker only logs a failed check (huey catches it) and
+goes on; it reads only the queue's alert limits.
 """
 
 import threading
@@ -14,15 +15,7 @@ import time
 from django.conf import settings
 from django.db import OperationalError, transaction
 
-from .models import Action, AuditEntry, record
-
-# Setting names only: their values are whole numbers.
-LIMIT_SETTINGS = [
-    # Size caps on cases, and the ceilings above them.
-    'CASE_WINDOW_CEILING_MINUTES', 'CASE_AREA_CEILING_METRES', 'CASE_WINDOW_CAP_MINUTES', 'CASE_AREA_CAP_METRES',
-    # Alert limits.
-    'ALERT_FAILED_LOGINS', 'QUEUE_ALERT_CLIPS', 'QUEUE_ALERT_HOURS',
-]
+from .models import LIMIT_SETTINGS, Action, AuditEntry, record
 # Processes starting together may each try to write; on SQLite one then fails at once
 # with "database is locked" instead of waiting, so it tries again.
 ATTEMPTS = 5
@@ -37,8 +30,8 @@ def record_if_changed():
     for attempt in range(ATTEMPTS):
         try:
             return _record_if_changed()
-        except OperationalError:
-            if attempt == ATTEMPTS - 1:
+        except OperationalError as error:
+            if 'locked' not in str(error) or attempt == ATTEMPTS - 1:
                 raise
             time.sleep(0.1 * (attempt + 1))
 
@@ -47,7 +40,9 @@ def _record_if_changed():
     current = current_limits()
     with transaction.atomic():
         last = AuditEntry.objects.filter(action=Action.LIMITS_CHANGE).order_by('-pk').first()
-        before = last.limits['after'] if last else None
+        # A row not written by record(), say by hand, reads as no earlier numbers, rather
+        # than stopping every request.
+        before = last.limits.get('after') if last and isinstance(last.limits, dict) else None
         if before != current:
             record(Action.LIMITS_CHANGE, None, limits={'before': before, 'after': current})
 

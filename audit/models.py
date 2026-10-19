@@ -61,6 +61,14 @@ CLIP_ACTIONS = [Action.PREVIEW, Action.DOWNLOAD]
 COUNT_ACTIONS = [Action.SEARCH]
 # Entries about the archive itself, which name no applicant or lawyer.
 ARCHIVE_ACTIONS = [Action.LIMITS_CHANGE]
+# The settings a change of limits records (audit.limits): each new size cap or alert limit
+# is added here.
+LIMIT_SETTINGS = [
+    # Size caps on cases, and the ceilings above them.
+    'CASE_WINDOW_CEILING_MINUTES', 'CASE_AREA_CEILING_METRES', 'CASE_WINDOW_CAP_MINUTES', 'CASE_AREA_CAP_METRES',
+    # Alert limits.
+    'ALERT_FAILED_LOGINS', 'QUEUE_ALERT_CLIPS', 'QUEUE_ALERT_HOURS',
+]
 
 
 class AppendOnly(Exception):
@@ -187,9 +195,8 @@ class AuditEntry(models.Model):
 def _only_numbers_of_settings(limits):
     """Whether `limits` is {"before": numbers or None, "after": numbers}: never text from anyone."""
     def numbers(values):
-        return isinstance(values, dict) and all(
-            isinstance(name, str) and name.isupper() and name.isidentifier()
-            and type(number) is int for name, number in values.items()
+        return isinstance(values, dict) and set(values) <= set(LIMIT_SETTINGS) and all(
+            type(number) is int for number in values.values()
         )
     return (
         isinstance(limits, dict) and set(limits) == {'before', 'after'}

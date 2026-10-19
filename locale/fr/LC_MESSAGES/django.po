@@ -577,7 +577,7 @@ msgstr "Refus d'un dépassement des plafonds d'un dossier de recherche"
 #: audit/models.py:45
 msgctxt "audit log action"
 msgid "Change of the size caps and alert limits"
-msgstr "Changement des plafonds ou des seuils d'alerte"
+msgstr "Changement des plafonds et des seuils d'alerte"
 
 #: cases/forms.py:20
 msgid "Margin around the time window, in minutes"
