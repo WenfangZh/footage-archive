@@ -242,7 +242,7 @@ _French_: plage horaire
 _Avoid_: Period, time range, timeframe
 
 **Area**:
-The place a case covers: a set of the grid's finest cells, made from the place in the police report and a radius, or (from M4.5) picked cell by cell on a map. Fixed when the case is created; the coordinates typed to make it are not kept. Its size is how far across it is: between its two farthest points, edge to edge.
+The place a case covers: a set of the grid's finest cells, made from the place in the police report and a radius, or picked on a map. Fixed when the case is created; the coordinates typed to make it are not kept. Its size is how far across it is: between its two farthest points, edge to edge.
 _French_: périmètre
 _Avoid_: Zone, perimeter, region, radius (the radius is only one way to make the area)
 _Avoid in French_: zone (the interface already uses it for a grid cell)
