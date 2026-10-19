@@ -1,16 +1,39 @@
+import datetime
+
 import pytest
 from django_otp import DEVICE_ID_SESSION_KEY
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django.conf import settings
 from django.core.cache import cache
+from django.utils import timezone
+
+from audit import limits
+from cases.models import Case
+from clips import grid
 
 from tests.media import H264, TEST_PICTURE, TEST_SOUND, run_ffmpeg
+
+RECORD_IF_CHANGED = limits.record_if_changed
+
+# A public place (Place de la Bastille, Paris), not anyone's position.
+BASTILLE = 48.8532, 2.3692
 
 
 @pytest.fixture(autouse=True)
 def empty_cache():
     """Every test starts with no rate-limit counts: they all come from one address."""
     cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def no_limits_check(monkeypatch):
+    """Each test client checks the limits on its first request: off, but in tests/test_limits.py."""
+    monkeypatch.setattr(limits, 'record_if_changed', lambda: None)
+
+
+@pytest.fixture
+def limits_check(monkeypatch):
+    monkeypatch.setattr(limits, 'record_if_changed', RECORD_IF_CHANGED)
 
 
 @pytest.fixture(autouse=True)
@@ -54,3 +77,15 @@ def log_in_with_second_factor(client, user):
     session[DEVICE_ID_SESSION_KEY] = device.persistent_id
     session.save()
     return client
+
+
+def make_case(lawyer_profile, label='A case', rings=2, **fields):
+    """A small case for `lawyer_profile`: one hour around a public place, with the default margin."""
+    starts_at = timezone.now() - datetime.timedelta(days=30)
+    values = {
+        'starts_at': starts_at, 'ends_at': starts_at + datetime.timedelta(hours=1),
+        'margin_minutes': 10, 'margin_rings': 1,
+    }
+    if 'cells' not in fields:
+        values['cells'] = grid.widen([grid.cell_for_point(*BASTILLE, 11)], rings)
+    return Case.objects.create_with_area(lawyer_profile, label, **{**values, **fields})

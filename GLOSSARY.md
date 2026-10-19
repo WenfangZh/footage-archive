@@ -236,6 +236,26 @@ Short text a lawyer chooses to recognise a case. Never a client's name.
 _French_: libellé du dossier de recherche
 _Avoid_: Label (alone), case name, reference
 
+**Time window**:
+The stretch of time a case covers, from its start to its end, taken from the police report. Fixed when the case is created.
+_French_: plage horaire
+_Avoid_: Period, time range, timeframe
+
+**Area**:
+The place a case covers: a set of the grid's finest cells, made from the place in the police report and a radius, or picked on a map. Fixed when the case is created; the coordinates typed to make it are not kept. Its size is how far across it is: between its two farthest points, edge to edge.
+_French_: périmètre
+_Avoid_: Zone, perimeter, region, radius (the radius is only one way to make the area)
+_Avoid in French_: zone (the interface already uses it for a grid cell)
+
+**Radius**:
+How far around the police report's place a lawyer wants the area to reach, typed when creating a case. The area is made to contain that whole circle; neither the place nor the radius is kept.
+_French_: rayon
+
+**Ring**:
+One layer of the grid's cells around a cell or a set of cells. A case's margin around its area is counted in rings.
+_French_: anneau (de mailles)
+_Avoid_: Band, buffer
+
 **Closed case**:
 A case that can no longer be used to search, preview or download, closed by its lawyer, by revocation, or after a long period without use. It remains in the audit log.
 _French_: dossier de recherche clos
@@ -243,9 +263,44 @@ _Avoid_: Archived case, deleted case
 _Avoid in French_: classé (a case dropped by the prosecutor)
 
 **Match**:
-A clip matches a case when any part of the clip, by its stated time, falls inside the case's time window, and its stated location overlaps the case's area.
+A clip matches a case when any part of the clip, by its stated time, falls inside the case's time window, and its stated location overlaps the case's area, each widened by the case's margin. A match is either a core match or a margin match.
 _French_: correspondance (a clip correspond à un dossier de recherche)
 _Avoid_: Hit, result
+
+**Core match**:
+A match inside the case's time window and area themselves, without the margin.
+_French_: correspondance centrale
+_Avoid_: Priority 1 result, primary match
+
+**Margin match**:
+A match found only in the case's margin: just outside its time window or its area.
+_French_: correspondance de marge
+_Avoid_: Priority 2 result, secondary match
+
+**Size caps**:
+The largest time window and area a case may have without the admin's approval (by default 2 hours and 2 km across, margin included).
+_French_: plafonds
+_Avoid_: Limits (alone), quota
+
+**Case approval**:
+The admin's decision on a case over the size caps: approved, the case can be used; refused, it is closed. Until then the case waits and cannot be used. A case within the size caps needs none.
+_French_: validation du dossier de recherche
+_Avoid_: Authorisation, permission, sign-off
+
+**Lawyer's reason**:
+What a lawyer writes to explain why a case must be over the size caps. The admin reads it to decide; it is deleted once they have, or once the case is closed. Never a client's name.
+_French_: justification de la demande
+_Avoid_: Context (a clip's own), justification (alone)
+
+**Ceiling**:
+The size no case may exceed, even with the admin's approval: 24 hours and 10 km across, margin included. It is fixed in the code, so raising it takes a public change; the size caps can be set no higher than it. Not to be confused with the size caps (plafonds), which approval can exceed.
+_French_: limite absolue
+_Avoid_: Maximum, hard cap
+
+**Margin**:
+The band a case adds around its time window and its area, fixed when the case is created (by default 10 minutes, and one ring of the grid's finest cells); each lawyer sets their own default. The time window and area, margin included, must fit the size caps.
+_French_: marge
+_Avoid_: Padding, buffer, tolerance
 
 **Message**:
 A note between a lawyer and the code holder of a clip, carried by the archive. The code holder sees the sender as a verified defence lawyer, named only if the lawyer chooses.
@@ -278,8 +333,14 @@ A notice to the admin of something needing attention: a lawyer's activity looks 
 _French_: alerte
 _Avoid_: Flag, warning
 
+**Alert limits**:
+The numbers past which an alert is raised, such as how many failed logins for one account, how many clips waiting for ingest, or how many downloads or new cases by one lawyer in a short time. Set by the server's configuration, and a change is recorded in the audit log when the archive starts; the admin can raise one lawyer's limit for a few days, which is logged too.
+_French_: seuils d'alerte
+_Avoid_: Thresholds (alone), triggers
+_Avoid in French_: seuil alone (also the gap between the metadata time and stated time that is highlighted)
+
 **Audit log**:
-The permanent record of every action a lawyer takes in the archive, and of the admin's actions on applicants' and lawyers' accounts. It can only be added to.
+The permanent record of every action a lawyer takes in the archive, of the admin's actions on applicants' and lawyers' accounts, decisions on larger cases and raises of a lawyer's alert limit, and of changes to the size caps and alert limits. It can only be added to.
 _French_: journal d'audit
 _Avoid_: Access log, history
 

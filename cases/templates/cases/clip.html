@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Clip" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Clip" %}</h1>
+  <p>{% if match == 'core' %}{% translate "Core match for this case." %}{% else %}{% translate "Margin match for this case: just outside its time window or area." %}{% endif %}
+    <a href="{% url 'lawyer:case' case_id=case.pk %}">{{ case.label }}</a></p>
+
+  {% if has_proxy %}
+    <video controls preload="none" src="{% url 'lawyer:preview' case_id=case.pk clip_id=clip.pk %}"></video>
+    <p>{% translate "A low-resolution preview. Watching it is recorded in the audit log." %}</p>
+  {% endif %}
+
+  <p><a href="{% url 'lawyer:download' case_id=case.pk clip_id=clip.pk %}">{% translate "Download the evidence copy" %}</a>
+    · <a href="{% url 'lawyer:hash_record' case_id=case.pk clip_id=clip.pk %}">{% translate "Download its hash record" %}</a></p>
+  <p>{% translate "The evidence copy holds the clip's video and audio streams unchanged, never re-encoded, in a new container without the file's own metadata; its hash record shows that the frames were not altered. Each download is recorded in the audit log." %}</p>
+
+  {% if mismatch %}
+    <p role="note"><strong>{% blocktranslate count minutes=mismatch %}The stated time is {{ minutes }} minute away from the metadata time.{% plural %}The stated time is {{ minutes }} minutes away from the metadata time.{% endblocktranslate %}</strong></p>
+  {% endif %}
+
+  <h2>{% translate "Time" %}</h2>
+  <dl>
+    <dt>{% translate "Stated time" %}</dt><dd>{{ clip.stated_time|date:"j F Y H:i:s" }}</dd>
+    <dt>{% translate "Metadata time" %}</dt><dd>{{ clip.metadata_time|date:"j F Y H:i:s"|default:_("not given") }}</dd>
+    <dt>{% translate "Stated time as uploaded" %}</dt><dd>{{ clip.as_uploaded_stated_time|date:"j F Y H:i:s"|default:_("not given") }}</dd>
+    {% if clip.duration %}<dt>{% translate "Duration" %}</dt><dd>{% blocktranslate with seconds=clip.duration.total_seconds|floatformat:"0" %}{{ seconds }} s{% endblocktranslate %}</dd>{% endif %}
+  </dl>
+
+  <h2>{% translate "Place" %}</h2>
+  <dl>
+    <dt>{% translate "Stated location" %}</dt><dd>{% include "cases/place.html" with place=stated_place %}</dd>
+    <dt>{% translate "Metadata location" %}</dt><dd>{% include "cases/place.html" with place=metadata_place %}</dd>
+    <dt>{% translate "Stated location as uploaded" %}</dt><dd>{% include "cases/place.html" with place=uploaded_place %}</dd>
+  </dl>
+
+  <h2>{% translate "Tags" %}</h2>
+  {% if tags %}
+    <ul>{% for name, source in tags %}<li>{{ name }} <small>({{ source }})</small></li>{% endfor %}</ul>
+  {% else %}<p>{% translate "No tags." %}</p>{% endif %}
+  <p>{% translate "Tags as uploaded:" %} {{ uploaded_tags|join:", "|default:_("not given") }}</p>
+
+  {% if context %}
+    <h2>{% translate "Context" %}</h2>
+    <p>{{ context|linebreaksbr }}</p>
+  {% endif %}
+
+  {% if contact_details %}
+    <h2>{% translate "Contact details" %}</h2>
+    <p>{{ contact_details|linebreaksbr }}</p>
+    <p>{% translate "The code holder chose to leave these, knowing they could be used against them. Use them only for this case, and keep them out of anything you share." %}</p>
+  {% endif %}
+
+  <h2>{% translate "Edits since upload" %}</h2>
+  {% if edits %}
+    <ul>{% for edit in edits %}<li>{% blocktranslate with field=edit.get_field_display day=edit.edited_at|date:"j F Y" start=edit.edited_at|date:"H:i" %}{{ field }}: {{ day }}, in the four hours from {{ start }}{% endblocktranslate %}</li>{% endfor %}</ul>
+  {% else %}<p>{% translate "None." %}</p>{% endif %}
+{% endblock %}

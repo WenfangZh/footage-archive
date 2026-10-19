@@ -46,10 +46,10 @@ def test_the_upload_form_in_both_languages(client, headers, expected):
 @pytest.mark.parametrize('headers, expected', [
     (FRENCH, ['Quand la vidéo a-t-elle été filmée ?', 'Endroit exact', 'Quartier', 'Interpellation', 'Nasse',
               'Avec quelle précision pouvons-nous garder la position GPS trouvée dans la vidéo ?',
-              'Laisser un moyen de contact (facultatif)', "Confirmer et obtenir mon code d'upload"]),
+              'Laisser un moyen de contact (facultatif)', 'verront ce moyen de contact, pour vous joindre', "Confirmer et obtenir mon code d'upload"]),
     (ENGLISH, ['When was it filmed?', 'Exact spot', 'Neighbourhood', 'Arrest', 'Kettling',
                'How precisely may we keep the GPS position found in the video?',
-               'Leave contact details (optional)', 'Confirm and get my upload code']),
+               'Leave contact details (optional)', 'will see these details, to contact you', 'Confirm and get my upload code']),
 ])
 def test_the_confirm_form_in_both_languages(client, video, headers, expected):
     html = page(client, start_upload(client, video), headers)

@@ -17,6 +17,8 @@ class Alert(models.Model):
     class Kind(models.TextChoices):
         QUEUE_BACKED_UP = 'queue_backed_up', _('The ingest queue is backed up')
         FAILED_LOGINS = 'failed_logins', _('Many failed logins for one account')
+        MANY_DOWNLOADS = 'many_downloads', _('Many downloads by one lawyer in a short time')
+        MANY_CASES = 'many_cases', _('Many cases created by one lawyer in a short time')
 
     kind = models.CharField(max_length=30, choices=Kind.choices)
     account = models.ForeignKey(
@@ -24,3 +26,32 @@ class Alert(models.Model):
     )
     raised_at = models.DateTimeField(default=timezone.now)
     seen_at = models.DateTimeField(null=True, blank=True)
+
+
+class AlertLimitRaise(models.Model):
+    """The admin raising one lawyer's limit for an activity alert, for a few days (SPEC.md §7).
+
+    Such as for a lawyer working a large case. It is written once and never changed: a new
+    raise replaces it while both last, and the highest limit still in force applies.
+    """
+
+    class Activity(models.TextChoices):
+        DOWNLOADS = 'downloads', _('Downloads')
+        CASES = 'cases', _('Cases created')
+
+    lawyer_profile = models.ForeignKey('accounts.LawyerProfile', on_delete=models.PROTECT, related_name='+')
+    activity = models.CharField(max_length=20, choices=Activity.choices)
+    limit = models.PositiveIntegerField()
+    raised_at = models.DateTimeField(default=timezone.now)
+    until = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=models.Q(activity__in=['downloads', 'cases']), name='known_activity'),
+            models.CheckConstraint(condition=models.Q(until__gt=models.F('raised_at')), name='ends_after_it_starts'),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValueError('A raise of an alert limit is never changed.')
+        super().save(*args, **kwargs)

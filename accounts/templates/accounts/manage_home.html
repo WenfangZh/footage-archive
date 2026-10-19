@@ -20,6 +20,7 @@
   </ul>
   {% endif %}
   <p><a href="{% url 'manage:invite' %}">{% translate "Send an invitation" %}</a></p>
+  <p><a href="{% url 'manage:case_requests' %}">{% translate "Requests for larger cases" %}</a></p>
 
   <h2>{% translate "Applicants" %}</h2>
   {% if applicants %}
@@ -59,6 +60,7 @@
           </form>
           {% endif %}
           <a href="{% url 'manage:revoke' profile.pk %}">{% translate "Revoke access" %}</a>
+          {% if profile.status == 'lawyer' %}<a href="{% url 'manage:raise_limit' profile.pk %}">{% translate "Raise an alert limit" %}</a>{% endif %}
         </li>
       {% endfor %}
     </ul>

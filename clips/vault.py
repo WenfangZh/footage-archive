@@ -17,6 +17,7 @@ import datetime
 import logging
 import re
 import uuid
+from pathlib import PurePath
 
 from django.core.files import File
 from django.db import transaction
@@ -120,6 +121,11 @@ def delete_unrecorded_files(names):
 
 def has_file(clip, kind):
     return VaultFile.objects.filter(clip=clip, kind=kind).exists()
+
+
+def extension(clip, kind):
+    """The file extension of the clip's evidence copy or proxy, such as 'mp4'."""
+    return PurePath(VaultFile.objects.get(clip=clip, kind=kind).file.name).suffix.lstrip('.').lower()
 
 
 def open_file(clip, kind):

@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-18 00:05+0200\n"
+"POT-Creation-Date: 2026-10-19 18:57+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -273,12 +273,35 @@ msgstr "Envoyer l'invitation"
 
 #: accounts/templates/accounts/lawyer_home.html:4
 #: accounts/templates/accounts/lawyer_home.html:7
+#: cases/templates/cases/case.html:37
+#: cases/templates/cases/closed_cases.html:15
 msgid "Your cases"
 msgstr "Vos dossiers de recherche"
+
+#: accounts/templates/accounts/lawyer_home.html:10
+msgid "waiting for approval"
+msgstr "en attente de validation"
 
 #: accounts/templates/accounts/lawyer_home.html:13
 msgid "You have no cases yet."
 msgstr "Vous n'avez pas encore de dossier de recherche."
+
+#: accounts/templates/accounts/lawyer_home.html:15
+#: cases/templates/cases/new_case.html:4 cases/templates/cases/new_case.html:7
+msgid "New case"
+msgstr "Nouveau dossier de recherche"
+
+#: accounts/templates/accounts/lawyer_home.html:16
+#: cases/templates/cases/closed_cases.html:4
+#: cases/templates/cases/closed_cases.html:7
+msgid "Closed cases"
+msgstr "Dossiers de recherche clos"
+
+#: accounts/templates/accounts/lawyer_home.html:17
+#: cases/templates/cases/default_margin.html:4
+#: cases/templates/cases/default_margin.html:7
+msgid "Default margin"
+msgstr "Marge par défaut"
 
 #: accounts/templates/accounts/login.html:4
 #: accounts/templates/accounts/login.html:7
@@ -305,6 +328,8 @@ msgstr "Il y a eu trop de tentatives de connexion. Réessayez dans une heure."
 
 #: accounts/templates/accounts/manage_home.html:4
 #: accounts/templates/accounts/manage_home.html:7
+#: alerts/templates/alerts/raise_limit.html:18
+#: cases/templates/cases/case_requests.html:17
 msgid "Administration"
 msgstr "Administration"
 
@@ -316,37 +341,49 @@ msgstr "Alertes"
 msgid "Mark as seen"
 msgstr "Marquer comme vue"
 
-#: accounts/templates/accounts/manage_home.html:24
+#: accounts/templates/accounts/manage_home.html:23
+#: cases/templates/cases/case_requests.html:4
+#: cases/templates/cases/case_requests.html:7
+msgid "Requests for larger cases"
+msgstr "Demandes de dépassement des plafonds"
+
+#: accounts/templates/accounts/manage_home.html:25
 msgid "Applicants"
 msgstr "Candidat·es"
 
-#: accounts/templates/accounts/manage_home.html:33
+#: accounts/templates/accounts/manage_home.html:34
 msgid "Send a new invitation link"
 msgstr "Envoyer un nouveau lien d'invitation"
 
-#: accounts/templates/accounts/manage_home.html:40
+#: accounts/templates/accounts/manage_home.html:41
 msgid "No applicants."
 msgstr "Aucun·e candidat·e."
 
-#: accounts/templates/accounts/manage_home.html:43
+#: accounts/templates/accounts/manage_home.html:44
 msgid "Lawyers' access"
 msgstr "Accès des avocat·es"
 
-#: accounts/templates/accounts/manage_home.html:53
+#: accounts/templates/accounts/manage_home.html:54
 msgid "Suspend access"
 msgstr "Suspendre l'accès"
 
-#: accounts/templates/accounts/manage_home.html:58
+#: accounts/templates/accounts/manage_home.html:59
 msgid "Reinstate access"
 msgstr "Rétablir l'accès"
 
-#: accounts/templates/accounts/manage_home.html:61
+#: accounts/templates/accounts/manage_home.html:62
 #: accounts/templates/accounts/revoke.html:4
 #: accounts/templates/accounts/revoke.html:7
 msgid "Revoke access"
 msgstr "Révoquer l'accès"
 
-#: accounts/templates/accounts/manage_home.html:66
+#: accounts/templates/accounts/manage_home.html:63
+#: alerts/templates/alerts/raise_limit.html:4
+#: alerts/templates/alerts/raise_limit.html:7
+msgid "Raise an alert limit"
+msgstr "Relever un seuil d'alerte"
+
+#: accounts/templates/accounts/manage_home.html:68
 msgid "No lawyers yet."
 msgstr "Aucun·e avocat·e pour l'instant."
 
@@ -498,41 +535,674 @@ msgstr "La file de préparation est engorgée"
 msgid "Many failed logins for one account"
 msgstr "Nombreuses connexions échouées pour un même compte"
 
-#: audit/models.py:23
+#: alerts/models.py:20
+msgid "Many downloads by one lawyer in a short time"
+msgstr "Beaucoup de téléchargements par un·e avocat·e en peu de temps"
+
+#: alerts/models.py:21
+msgid "Many cases created by one lawyer in a short time"
+msgstr ""
+"Beaucoup de dossiers de recherche créés par un·e avocat·e en peu de temps"
+
+#: alerts/models.py:39
+msgid "Downloads"
+msgstr "Téléchargements"
+
+#: alerts/models.py:40
+msgid "Cases created"
+msgstr "Dossiers de recherche créés"
+
+#: alerts/templates/alerts/raise_limit.html:8
+#, python-format
+msgid ""
+"For %(name)s, for a few days, such as while they work on a large case. "
+"Usually you are alerted at %(downloads)s downloads or %(cases)s cases "
+"created in a short time. The raise is recorded in the audit log."
+msgstr ""
+"Pour %(name)s, pendant quelques jours, par exemple pendant un dossier "
+"important. D'habitude, vous êtes alerté·e à %(downloads)s téléchargements ou "
+"%(cases)s dossiers de recherche créés en peu de temps. Le relèvement est "
+"inscrit au journal d'audit."
+
+#: alerts/templates/alerts/raise_limit.html:10
+msgid "Raises in force"
+msgstr "Relèvements en cours"
+
+#: alerts/templates/alerts/raise_limit.html:11
+#, python-format
+msgid "%(activity)s: %(limit)s, until %(until)s"
+msgstr "%(activity)s : %(limit)s, jusqu'au %(until)s"
+
+#: alerts/templates/alerts/raise_limit.html:16
+msgid "Raise the limit"
+msgstr "Relever le seuil d'alerte"
+
+#: alerts/views.py:31
+msgid "Alert"
+msgstr "Alerte"
+
+#: alerts/views.py:32
+msgid "New limit"
+msgstr "Nouveau seuil d'alerte"
+
+#: alerts/views.py:33
+msgid "For how many days"
+msgstr "Pendant combien de jours"
+
+#: alerts/views.py:40
+#, python-format
+msgid "At most %(days)s."
+msgstr "Au plus %(days)s."
+
+#: alerts/views.py:49
+#, python-format
+msgid "A raise must be higher than the limit now: %(limit)s."
+msgstr ""
+"Le nouveau seuil d'alerte doit dépasser le seuil d'alerte actuel : %(limit)s."
+
+#: alerts/views.py:51
+#, python-format
+msgid "At most ten times the usual limit: %(limit)s."
+msgstr "Au plus dix fois le seuil d'alerte habituel : %(limit)s."
+
+#: alerts/views.py:78
+msgid "The alert limit is raised."
+msgstr "Le seuil d'alerte est relevé."
+
+#: audit/models.py:30
 msgid "Invitation"
 msgstr "Invitation"
 
-#: audit/models.py:24
+#: audit/models.py:31
 msgid "Declining"
 msgstr "Candidature non retenue"
 
-#: audit/models.py:25
+#: audit/models.py:32
 msgid "Admission"
 msgstr "Admission"
 
-#: audit/models.py:26
+#: audit/models.py:33
 msgid "Suspension"
 msgstr "Suspension de l'accès"
 
-#: audit/models.py:27
+#: audit/models.py:34
 msgid "Reinstatement"
 msgstr "Rétablissement de l'accès"
 
-#: audit/models.py:28
+#: audit/models.py:35
 msgid "Revocation"
 msgstr "Révocation de l'accès"
 
-#: cases/models.py:37
+#: audit/models.py:38
+msgctxt "audit log action"
+msgid "Case creation"
+msgstr "Création d'un dossier de recherche"
+
+#: audit/models.py:39
+msgctxt "audit log action"
+msgid "Case closing"
+msgstr "Clôture d'un dossier de recherche"
+
+#: audit/models.py:40
+msgctxt "audit log action"
+msgid "Request for a larger case"
+msgstr "Demande de dépassement des plafonds d'un dossier de recherche"
+
+#: audit/models.py:41
+msgctxt "audit log action"
+msgid "Search"
+msgstr "Recherche"
+
+#: audit/models.py:42
+msgctxt "audit log action"
+msgid "Preview"
+msgstr "Prévisualisation"
+
+#: audit/models.py:43
+msgctxt "audit log action"
+msgid "Download"
+msgstr "Téléchargement"
+
+#: audit/models.py:44
+msgctxt "audit log action"
+msgid "Viewing a clip's page"
+msgstr "Consultation de la page d'un clip"
+
+#: audit/models.py:45
+msgctxt "audit log action"
+msgid "Approval of a larger case"
+msgstr "Validation d'un dépassement des plafonds d'un dossier de recherche"
+
+#: audit/models.py:46
+msgctxt "audit log action"
+msgid "Refusal of a larger case"
+msgstr "Refus d'un dépassement des plafonds d'un dossier de recherche"
+
+#: audit/models.py:47
+msgctxt "audit log action"
+msgid "Change of the size caps and alert limits"
+msgstr "Changement des plafonds et des seuils d'alerte"
+
+#: audit/models.py:48
+msgctxt "audit log action"
+msgid "Temporary raise of a lawyer's alert limit"
+msgstr "Relèvement temporaire d'un seuil d'alerte pour un·e avocat·e"
+
+#: cases/approval.py:39
+msgid "The case is approved."
+msgstr "Le dossier de recherche est validé."
+
+#: cases/approval.py:39
+msgid "The case is refused and closed."
+msgstr "Le dossier de recherche est refusé et clos."
+
+#: cases/forms.py:23
+msgid "Margin around the time window, in minutes"
+msgstr "Marge autour de la plage horaire, en minutes"
+
+#: cases/forms.py:27
+msgid "Margin around the area, in rings of cells about 50 m wide"
+msgstr "Marge autour du périmètre, en anneaux de mailles d'environ 50 m"
+
+#: cases/forms.py:50
+msgid "Enter the time without a time zone: it is read as French time."
+msgstr ""
+"Saisissez l'heure sans fuseau horaire : elle est lue en heure française."
+
+#: cases/forms.py:58
+#, python-format
+msgid "Enter a date between %(first)s and next year."
+msgstr "Saisissez une date entre %(first)s et l'an prochain."
+
+#: cases/forms.py:76
+msgid "Case label"
+msgstr "Libellé du dossier de recherche"
+
+#: cases/forms.py:77
+msgid "Something to recognise the case by. Never a client's name."
+msgstr ""
+"De quoi reconnaître le dossier de recherche. Jamais le nom d'un·e client·e."
+
+#: cases/forms.py:80
+msgid "Start of the time window"
+msgstr "Début de la plage horaire"
+
+#: cases/forms.py:80
+msgid "French time, as in the police report."
+msgstr "Heure française, comme dans le procès-verbal."
+
+#: cases/forms.py:82
+msgid "End of the time window"
+msgstr "Fin de la plage horaire"
+
+#: cases/forms.py:84 clips/forms.py:49
+msgid "Latitude"
+msgstr "Latitude"
+
+#: cases/forms.py:87 clips/forms.py:53
+msgid "Longitude"
+msgstr "Longitude"
+
+#: cases/forms.py:88
+msgid ""
+"The place in the police report. Only the grid cells around it are kept, not "
+"the place itself."
+msgstr ""
+"Le lieu indiqué dans le procès-verbal. Seules les mailles de la grille "
+"autour de ce lieu sont gardées, pas le lieu lui-même."
+
+#: cases/forms.py:91
+msgid "Radius around that place, in metres"
+msgstr "Rayon autour de ce lieu, en mètres"
+
+#: cases/forms.py:96
+msgid "Why this case needs to be larger than the size caps"
+msgstr "Pourquoi ce dossier de recherche doit dépasser les plafonds"
+
+#: cases/forms.py:99
+msgid ""
+"Only for a case over the size caps: the admin reads your reason to decide, "
+"then it is deleted; for a case within them, it is not kept. Never a client's "
+"name."
+msgstr ""
+"Seulement pour un dossier de recherche au-delà des plafonds : "
+"l'administrateur·rice lit votre justification pour décider, puis elle est "
+"supprimée ; pour un dossier dans les plafonds, elle n'est pas gardée. Jamais "
+"le nom d'un·e client·e."
+
+#: cases/forms.py:109
+msgid "The time window must end after it starts."
+msgstr "La plage horaire doit se terminer après son début."
+
+#: cases/forms.py:130
+#, python-format
+msgid ""
+"With its margin, this case lasts %(minutes)s minutes and is about %(metres)s "
+"m across. No case can last more than %(ceiling_minutes)s minutes or be more "
+"than %(ceiling_metres)s m across."
+msgstr ""
+"Avec sa marge, ce dossier de recherche couvre %(minutes)s minutes et environ "
+"%(metres)s m de large. Aucun dossier de recherche ne peut dépasser "
+"%(ceiling_minutes)s minutes ni %(ceiling_metres)s m de large."
+
+#: cases/forms.py:137
+#, python-format
+msgid ""
+"With its margin, this case lasts %(minutes)s minutes and is about %(metres)s "
+"m across. Without the admin's approval, a case lasts at most %(cap_minutes)s "
+"minutes and is at most %(cap_metres)s m across. To ask for it, give your "
+"reason in the field \"Why this case needs to be larger than the size caps\"."
+msgstr ""
+"Avec sa marge, ce dossier de recherche couvre %(minutes)s minutes et environ "
+"%(metres)s m de large. Sans validation par l'administrateur·rice, un dossier "
+"de recherche couvre au plus %(cap_minutes)s minutes et %(cap_metres)s m de "
+"large. Pour demander cette validation, donnez votre justification dans le "
+"champ « Pourquoi ce dossier de recherche doit dépasser les plafonds »."
+
+#: cases/forms.py:157
+msgid "Decision"
+msgstr "Décision"
+
+#: cases/forms.py:158
+msgid "Approve the case"
+msgstr "Valider le dossier de recherche"
+
+#: cases/forms.py:158
+msgid "Refuse the case: it is closed"
+msgstr "Refuser le dossier de recherche : il est clos"
+
+#: cases/forms.py:161
+msgid "Your note to the lawyer (optional)"
+msgstr "Votre note à l'avocat·e (facultatif)"
+
+#: cases/forms.py:162
+msgid "Kept with the case, which its lawyer can see. Never a client's name."
+msgstr ""
+"Gardée avec le dossier de recherche, et visible par son avocat·e. Jamais le "
+"nom d'un·e client·e."
+
+#: cases/models.py:118
 msgid "Closed by its lawyer"
 msgstr "Clos par son avocat·e"
 
-#: cases/models.py:38
+#: cases/models.py:119
 msgid "Closed when its lawyer's access was revoked"
 msgstr "Clos à la révocation de l'accès de son avocat·e"
 
-#: cases/models.py:39
+#: cases/models.py:120
 msgid "Closed after a long time without use"
 msgstr "Clos après une longue période sans usage"
+
+#: cases/models.py:121
+msgid "Closed when the admin refused it"
+msgstr "Clos au refus de l'administrateur·rice"
+
+#: cases/templates/cases/case.html:8
+#, python-format
+msgid "%(because)s, on %(closed_at)s."
+msgstr "%(because)s, le %(closed_at)s."
+
+#: cases/templates/cases/case.html:11
+msgid ""
+"Larger than the size caps: waiting for the admin's approval. It cannot be "
+"used until then."
+msgstr ""
+"Au-delà des plafonds : en attente de validation par l'administrateur·rice. "
+"Il ne peut pas être utilisé d'ici là."
+
+#: cases/templates/cases/case.html:13
+msgid "Larger than the size caps, and approved by the admin."
+msgstr "Au-delà des plafonds, et validé par l'administrateur·rice."
+
+#: cases/templates/cases/case.html:15
+msgid "The admin's note:"
+msgstr "Note de l'administrateur·rice :"
+
+#: cases/templates/cases/case.html:18
+#: cases/templates/cases/case_request.html:10
+msgid "Time window"
+msgstr "Plage horaire"
+
+#: cases/templates/cases/case.html:20
+#: cases/templates/cases/case_request.html:12
+msgid "Area"
+msgstr "Périmètre"
+
+#: cases/templates/cases/case.html:21
+#, python-format
+msgid "%(cells)s cell, about %(metres)s m across"
+msgid_plural "%(cells)s cells, about %(metres)s m across"
+msgstr[0] "%(cells)s maille, environ %(metres)s m de large"
+msgstr[1] "%(cells)s mailles, environ %(metres)s m de large"
+
+#: cases/templates/cases/case.html:22
+msgid "Margin"
+msgstr "Marge"
+
+#: cases/templates/cases/case.html:23
+#, python-format
+msgid "%(minutes)s minute"
+msgid_plural "%(minutes)s minutes"
+msgstr[0] "%(minutes)s minute"
+msgstr[1] "%(minutes)s minutes"
+
+#: cases/templates/cases/case.html:24
+#, python-format
+msgid "%(rings)s ring of cells"
+msgid_plural "%(rings)s rings of cells"
+msgstr[0] "%(rings)s anneau de mailles"
+msgstr[1] "%(rings)s anneaux de mailles"
+
+#: cases/templates/cases/case.html:29
+msgid "Search for clips"
+msgstr "Rechercher des clips"
+
+#: cases/templates/cases/case.html:32 cases/templates/cases/close_case.html:4
+#: cases/templates/cases/close_case.html:7
+msgid "Close this case"
+msgstr "Clore ce dossier de recherche"
+
+#: cases/templates/cases/case.html:33
+msgid "Case log"
+msgstr "Journal du dossier de recherche"
+
+#: cases/templates/cases/case.html:35
+#, python-format
+msgid "clip %(clip)s"
+msgstr "clip %(clip)s"
+
+#: cases/templates/cases/case.html:35
+#, python-format
+msgid "core matches: %(core)s, margin matches: %(margin)s"
+msgstr ""
+"correspondances centrales : %(core)s, correspondances de marge : %(margin)s"
+
+#: cases/templates/cases/case_request.html:4
+#: cases/templates/cases/case_request.html:7
+msgid "Request for a larger case"
+msgstr "Demande de dépassement des plafonds"
+
+#: cases/templates/cases/case_request.html:8
+#, python-format
+msgid "From %(name)s, on %(requested_at)s."
+msgstr "De %(name)s, le %(requested_at)s."
+
+#: cases/templates/cases/case_request.html:13
+#, python-format
+msgid "%(cells)s cell, around %(latitude)s, %(longitude)s"
+msgid_plural "%(cells)s cells, around %(latitude)s, %(longitude)s"
+msgstr[0] "%(cells)s maille, autour de %(latitude)s, %(longitude)s"
+msgstr[1] "%(cells)s mailles, autour de %(latitude)s, %(longitude)s"
+
+#: cases/templates/cases/case_request.html:14
+msgid "With the margin"
+msgstr "Avec la marge"
+
+#: cases/templates/cases/case_request.html:15
+#, python-format
+msgid "%(minutes)s minutes, about %(metres)s m across"
+msgstr "%(minutes)s minutes, environ %(metres)s m de large"
+
+#: cases/templates/cases/case_request.html:16
+msgid "The lawyer's reason"
+msgstr "Justification de la demande"
+
+#: cases/templates/cases/case_request.html:19
+msgid "The reason is deleted once you decide."
+msgstr "La justification est supprimée dès que vous décidez."
+
+#: cases/templates/cases/case_request.html:23
+msgid "Decide"
+msgstr "Décider"
+
+#: cases/templates/cases/case_requests.html:15
+msgid "No requests are waiting."
+msgstr "Aucune demande en attente."
+
+#: cases/templates/cases/clip.html:4 cases/templates/cases/clip.html:7
+msgid "Clip"
+msgstr "Clip"
+
+#: cases/templates/cases/clip.html:8
+msgid "Core match for this case."
+msgstr "Correspondance centrale pour ce dossier de recherche."
+
+#: cases/templates/cases/clip.html:8
+msgid "Margin match for this case: just outside its time window or area."
+msgstr ""
+"Correspondance de marge pour ce dossier de recherche : juste en dehors de sa "
+"plage horaire ou de son périmètre."
+
+#: cases/templates/cases/clip.html:13
+msgid "A low-resolution preview. Watching it is recorded in the audit log."
+msgstr ""
+"Une version de prévisualisation en basse résolution. La regarder est inscrit "
+"au journal d'audit."
+
+#: cases/templates/cases/clip.html:16
+msgid "Download the evidence copy"
+msgstr "Télécharger la copie de preuve"
+
+#: cases/templates/cases/clip.html:17
+msgid "Download its hash record"
+msgstr "Télécharger les empreintes numériques (hash)"
+
+#: cases/templates/cases/clip.html:18
+msgid ""
+"The evidence copy holds the clip's video and audio streams unchanged, never "
+"re-encoded, in a new container without the file's own metadata; its hash "
+"record shows that the frames were not altered. Each download is recorded in "
+"the audit log."
+msgstr ""
+"La copie de preuve contient les flux vidéo et audio du clip inchangés, "
+"jamais réencodés, dans un nouveau conteneur sans les métadonnées du "
+"fichier ; ses empreintes numériques (hash) montrent que les images n'ont pas "
+"été modifiées. Chaque téléchargement est inscrit au journal d'audit."
+
+#: cases/templates/cases/clip.html:21
+#, python-format
+msgid "The stated time is %(minutes)s minute away from the metadata time."
+msgid_plural ""
+"The stated time is %(minutes)s minutes away from the metadata time."
+msgstr[0] ""
+"L'heure indiquée est à %(minutes)s minute de l'heure des métadonnées."
+msgstr[1] ""
+"L'heure indiquée est à %(minutes)s minutes de l'heure des métadonnées."
+
+#: cases/templates/cases/clip.html:24 clips/templates/clips/clip.html:34
+#: clips/templates/clips/confirm.html:15
+msgid "Time"
+msgstr "Heure"
+
+#: cases/templates/cases/clip.html:26 clips/models.py:180
+msgid "Stated time"
+msgstr "Heure indiquée"
+
+#: cases/templates/cases/clip.html:27
+msgid "Metadata time"
+msgstr "Heure des métadonnées"
+
+#: cases/templates/cases/clip.html:27 cases/templates/cases/clip.html:28
+#: cases/templates/cases/clip.html:43 cases/templates/cases/place.html:1
+msgid "not given"
+msgstr "non renseigné"
+
+#: cases/templates/cases/clip.html:28
+msgid "Stated time as uploaded"
+msgstr "Heure indiquée telle qu'uploadée"
+
+#: cases/templates/cases/clip.html:29
+msgid "Duration"
+msgstr "Durée"
+
+#: cases/templates/cases/clip.html:29 cases/templates/cases/matches.html:5
+#, python-format
+msgid "%(seconds)s s"
+msgstr "%(seconds)s s"
+
+#: cases/templates/cases/clip.html:32 clips/templates/clips/clip.html:39
+#: clips/templates/clips/confirm.html:25
+msgid "Place"
+msgstr "Lieu"
+
+#: cases/templates/cases/clip.html:34 clips/models.py:181
+msgid "Stated location"
+msgstr "Lieu indiqué"
+
+#: cases/templates/cases/clip.html:35 clips/models.py:185
+msgid "Metadata location"
+msgstr "Lieu des métadonnées"
+
+#: cases/templates/cases/clip.html:36
+msgid "Stated location as uploaded"
+msgstr "Lieu indiqué tel qu'uploadé"
+
+#: cases/templates/cases/clip.html:39 clips/models.py:182
+msgid "Tags"
+msgstr "Étiquettes"
+
+#: cases/templates/cases/clip.html:42
+msgid "No tags."
+msgstr "Aucune étiquette."
+
+#: cases/templates/cases/clip.html:43
+msgid "Tags as uploaded:"
+msgstr "Étiquettes telles qu'uploadées :"
+
+#: cases/templates/cases/clip.html:46 clips/forms.py:69 clips/models.py:183
+#: clips/models.py:228
+msgid "Context"
+msgstr "Contexte"
+
+#: cases/templates/cases/clip.html:51 clips/models.py:184 clips/models.py:229
+msgid "Contact details"
+msgstr "Moyen de contact"
+
+#: cases/templates/cases/clip.html:53
+msgid ""
+"The code holder chose to leave these, knowing they could be used against "
+"them. Use them only for this case, and keep them out of anything you share."
+msgstr ""
+"La personne qui détient le code a choisi de le laisser, en sachant qu'il "
+"pourrait être utilisé contre elle. Ne l'utilisez que pour ce dossier de "
+"recherche, et ne le faites figurer dans rien de ce que vous partagez."
+
+#: cases/templates/cases/clip.html:56
+msgid "Edits since upload"
+msgstr "Modifications depuis l'upload"
+
+#: cases/templates/cases/clip.html:58
+#, python-format
+msgid "%(field)s: %(day)s, in the four hours from %(start)s"
+msgstr "%(field)s : %(day)s, dans les quatre heures à partir de %(start)s"
+
+#: cases/templates/cases/clip.html:59
+msgid "None."
+msgstr "Aucun."
+
+#: cases/templates/cases/close_case.html:8
+#, python-format
+msgid ""
+"Once \"%(label)s\" is closed, it allows no searches, previews or downloads, "
+"and it cannot be reopened. It stays in your cases and in the audit log."
+msgstr ""
+"Une fois « %(label)s » clos, il ne permet plus ni recherche, ni "
+"prévisualisation, ni téléchargement, et il ne peut pas être rouvert. Il "
+"reste parmi vos dossiers de recherche et dans le journal d'audit."
+
+#: cases/templates/cases/close_case.html:11
+msgid "Close the case"
+msgstr "Clore le dossier de recherche"
+
+#: cases/templates/cases/close_case.html:13
+msgid "Keep it open"
+msgstr "Le garder ouvert"
+
+#: cases/templates/cases/closed_cases.html:13
+msgid "You have no closed cases."
+msgstr "Vous n'avez aucun dossier de recherche clos."
+
+#: cases/templates/cases/default_margin.html:8
+msgid ""
+"The margin widens a case's time window and area, to find clips just outside "
+"them; they are shown apart, as margin matches. Each new case starts with "
+"this margin, and you can change it there. Cases you already have keep theirs."
+msgstr ""
+"La marge élargit la plage horaire et le périmètre d'un dossier de recherche, "
+"pour trouver les clips juste à côté : ils sont présentés à part, comme "
+"correspondances de marge. Chaque nouveau dossier de recherche commence avec "
+"cette marge, que vous pouvez modifier en le créant. Vos dossiers de "
+"recherche existants gardent la leur."
+
+#: cases/templates/cases/default_margin.html:12
+msgid "Save"
+msgstr "Enregistrer"
+
+#: cases/templates/cases/matches.html:9
+msgid "No matches."
+msgstr "Aucune correspondance."
+
+#: cases/templates/cases/new_case.html:8
+msgid ""
+"Take the time window and place from the police report. Once the case is "
+"created, they cannot be changed: for a different window or area, create a "
+"new case."
+msgstr ""
+"Reprenez la plage horaire et le lieu du procès-verbal. Une fois le dossier "
+"de recherche créé, ils ne peuvent plus être modifiés : pour une autre plage "
+"horaire ou un autre périmètre, créez un nouveau dossier de recherche."
+
+#: cases/templates/cases/new_case.html:12
+msgid "Create the case"
+msgstr "Créer le dossier de recherche"
+
+#: cases/templates/cases/place.html:1
+#, python-format
+msgid "the cell around %(latitude)s, %(longitude)s, about %(width)s m across"
+msgstr ""
+"la maille autour de %(latitude)s, %(longitude)s, d'environ %(width)s m de "
+"large"
+
+#: cases/templates/cases/search.html:4 cases/templates/cases/search.html:7
+#, python-format
+msgid "Search: %(label)s"
+msgstr "Recherche : %(label)s"
+
+#: cases/templates/cases/search.html:8
+msgid ""
+"This search is recorded in the audit log, with the number of clips found."
+msgstr ""
+"Cette recherche est inscrite au journal d'audit, avec le nombre de clips "
+"trouvés."
+
+#: cases/templates/cases/search.html:10
+msgid "Core matches"
+msgstr "Correspondances centrales"
+
+#: cases/templates/cases/search.html:11
+msgid "Clips in the case's time window and area themselves."
+msgstr ""
+"Clips dans la plage horaire et le périmètre du dossier de recherche eux-"
+"mêmes."
+
+#: cases/templates/cases/search.html:14
+msgid "Margin matches"
+msgstr "Correspondances de marge"
+
+#: cases/templates/cases/search.html:15
+msgid ""
+"Clips found only in the margin, just outside the time window or the area."
+msgstr ""
+"Clips trouvés seulement dans la marge, juste en dehors de la plage horaire "
+"ou du périmètre."
+
+#: cases/views.py:80
+msgid "Your new cases will start with this margin."
+msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
+
+#: cases/views.py:91
+msgid "The case is closed."
+msgstr "Le dossier de recherche est clos."
 
 #: clips/forms.py:14
 msgid "About 50 m"
@@ -554,14 +1224,6 @@ msgstr "Vidéo"
 msgid "When was it filmed?"
 msgstr "Quand la vidéo a-t-elle été filmée ?"
 
-#: clips/forms.py:49
-msgid "Latitude"
-msgstr "Latitude"
-
-#: clips/forms.py:53
-msgid "Longitude"
-msgstr "Longitude"
-
 #: clips/forms.py:57
 msgid "How precise is this place?"
 msgstr "Quelle est la précision de ce lieu ?"
@@ -573,10 +1235,6 @@ msgstr "Que voit-on dans la vidéo ?"
 #: clips/forms.py:65
 msgid "Other tags, separated by commas"
 msgstr "Autres étiquettes, séparées par des virgules"
-
-#: clips/forms.py:69 clips/models.py:183 clips/models.py:228
-msgid "Context"
-msgstr "Contexte"
 
 #: clips/forms.py:71
 msgid ""
@@ -655,31 +1313,11 @@ msgstr "personne qui détient le code"
 msgid "lawyer"
 msgstr "avocat·e"
 
-#: clips/models.py:180
-msgid "Stated time"
-msgstr "Heure indiquée"
-
-#: clips/models.py:181
-msgid "Stated location"
-msgstr "Lieu indiqué"
-
-#: clips/models.py:182
-msgid "Tags"
-msgstr "Étiquettes"
-
-#: clips/models.py:184 clips/models.py:229
-msgid "Contact details"
-msgstr "Moyen de contact"
-
-#: clips/models.py:185
-msgid "Metadata location"
-msgstr "Lieu des métadonnées"
-
-#: clips/models.py:254
+#: clips/models.py:267
 msgid "Evidence copy"
 msgstr "Copie de preuve"
 
-#: clips/models.py:255
+#: clips/models.py:268
 msgid "Proxy"
 msgstr "Version de prévisualisation"
 
@@ -792,14 +1430,6 @@ msgstr "aucune"
 msgid "It is kept as found, and nobody can change it."
 msgstr "Elle est gardée telle quelle, et personne ne peut la modifier."
 
-#: clips/templates/clips/clip.html:34 clips/templates/clips/confirm.html:15
-msgid "Time"
-msgstr "Heure"
-
-#: clips/templates/clips/clip.html:39 clips/templates/clips/confirm.html:25
-msgid "Place"
-msgstr "Lieu"
-
 #: clips/templates/clips/clip.html:41
 msgid ""
 "The position shown is the centre of the area we keep, not the exact spot you "
@@ -825,11 +1455,14 @@ msgstr "Moyen de contact (facultatif)"
 
 #: clips/templates/clips/clip.html:61 clips/templates/clips/confirm.html:45
 msgid ""
-"Anyone who obtains these details could use them against you. Leave them only "
-"if you accept that risk."
+"Defence lawyers whose case finds this clip will see these details, to "
+"contact you. Anyone else who obtains them could use them against you. Leave "
+"them only if you accept that risk."
 msgstr ""
-"Toute personne qui obtiendrait ces informations pourrait s'en servir contre "
-"vous. Ne les indiquez que si vous acceptez ce risque."
+"Les avocat·es de la défense dont le dossier de recherche trouve ce clip "
+"verront ce moyen de contact, pour vous joindre. Toute autre personne qui "
+"l'obtiendrait pourrait s'en servir contre vous. Ne le laissez que si vous "
+"acceptez ce risque."
 
 #: clips/templates/clips/clip.html:65
 msgid ""
@@ -1040,11 +1673,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:322
+#: config/settings.py:349
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:323
+#: config/settings.py:350
 msgid "English"
 msgstr "Anglais"
 

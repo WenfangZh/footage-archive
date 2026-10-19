@@ -14,3 +14,7 @@ A clip's stated location is stored as the one H3 cell that contains the given po
 - The point may sit near the edge of its cell, so a cell is not centred on where the clip was filmed; the matching padding (SPEC §7) absorbs this.
 - No cell is ever finer than the grid's limit (ADR 0003), whatever the precision.
 - Before real use, the legal review (SPEC §13) should check the pre-selected finest precision against GDPR's data protection by default (article 25(2)).
+
+## Addendum (2026-10-18): padding is now the margin
+
+The matching padding named under Consequences is now each case's margin (SPEC §7, GLOSSARY). A clip whose cell lies only in the margin still matches, as a margin match, listed after the core matches.

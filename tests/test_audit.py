@@ -7,7 +7,12 @@ from django.db import IntegrityError, models, transaction
 from django.db.models import ProtectedError
 
 from accounts.models import LawyerProfile
-from audit.models import ADMIN_ACTIONS, Action, AppendOnly, AuditEntry, record
+from audit.models import (
+    ADMIN_ACTIONS, ADMIN_CASE_ACTIONS, CASE_ACTIONS, CLIP_ACTIONS, Action, AppendOnly, AuditEntry, record,
+)
+from clips.editing import delete_clip
+from clips.models import Clip
+from tests.conftest import make_case
 
 pytestmark = pytest.mark.django_db
 
@@ -58,7 +63,9 @@ def test_the_time_cannot_be_backdated(admin, applicant):
     assert AuditEntry.objects.get(pk=entry.pk).at.year != 2000
 
 
-@pytest.mark.parametrize('action', ADMIN_ACTIONS)
+@pytest.mark.parametrize('action', [
+    action for action in ADMIN_ACTIONS if action not in ADMIN_CASE_ACTIONS and action != Action.ALERT_LIMIT_RAISE
+])
 def test_the_admin_actions_name_the_admin(action, applicant):
     with pytest.raises(IntegrityError), transaction.atomic():
         record(action, applicant)
@@ -167,3 +174,170 @@ def test_the_admin_can_be_given_as_django_gives_the_logged_in_account(admin, app
     from django.utils.functional import SimpleLazyObject
     entry = record(Action.INVITATION, applicant, admin=SimpleLazyObject(lambda: admin))
     assert AuditEntry.objects.get(pk=entry.pk).admin == admin
+
+
+@pytest.fixture
+def case(applicant):
+    applicant.verified_via, applicant.vouched_by = 'The bar directory', 'A defence organisation'
+    applicant.save()
+    applicant.change_status(LawyerProfile.Status.LAWYER)
+    return make_case(applicant, 'A case')
+
+
+@pytest.fixture
+def clip():
+    return Clip.objects.create(code_hash='0' * 64)
+
+
+def test_a_lawyers_action_records_the_case_and_the_clip(case, clip):
+    entry = record(Action.PREVIEW, case.lawyer_profile, case=case, clip=clip)
+    stored = AuditEntry.objects.get(pk=entry.pk)
+    assert (stored.action, stored.lawyer_profile, stored.admin) == (Action.PREVIEW, case.lawyer_profile, None)
+    assert (stored.case, stored.clip_id, stored.core_count) == (case, clip.pk, None)
+    assert list(case.audit_entries.all()) == [stored]
+
+
+def test_a_search_records_the_numbers_of_clips_found(case):
+    entry = record(Action.SEARCH, case.lawyer_profile, case=case, core_count=3, margin_count=0)
+    stored = AuditEntry.objects.get(pk=entry.pk)
+    assert (stored.core_count, stored.margin_count, stored.clip_id) == (3, 0, None)
+
+
+def test_deleting_a_clip_leaves_its_entries_as_they_were(case, clip):
+    entry = record(Action.DOWNLOAD, case.lawyer_profile, case=case, clip=clip)
+    clip_id = clip.pk
+    delete_clip(clip)
+    assert AuditEntry.objects.get(pk=entry.pk).clip_id == clip_id
+
+
+def fields_taken_by(action, clip):
+    """The fields other than the case that `action` takes, so that only the case is missing."""
+    if action in CLIP_ACTIONS:
+        return {'clip': clip}
+    if action == Action.SEARCH:
+        return {'core_count': 1, 'margin_count': 1}
+    return {}
+
+
+@pytest.mark.parametrize('action', CASE_ACTIONS)
+def test_actions_on_a_case_name_it(action, case, clip):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(action, case.lawyer_profile, **fields_taken_by(action, clip))
+    record(action, case.lawyer_profile, case=case, **fields_taken_by(action, clip))
+
+
+@pytest.mark.parametrize('action', CLIP_ACTIONS)
+def test_previews_and_downloads_name_the_clip(action, case):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(action, case.lawyer_profile, case=case)
+
+
+def test_a_search_records_both_numbers(case):
+    for counts in [{}, {'core_count': 1}, {'margin_count': 1}]:
+        with pytest.raises(IntegrityError), transaction.atomic():
+            record(Action.SEARCH, case.lawyer_profile, case=case, **counts)
+
+
+@pytest.mark.parametrize('extra', ['case', 'clip', 'count'])
+def test_the_admins_account_actions_name_no_case_clip_or_count(extra, admin, case, clip):
+    given = {'case': {'case': case}, 'clip': {'clip': clip}, 'count': {'core_count': 1, 'margin_count': 1}}[extra]
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.SUSPENSION, case.lawyer_profile, admin=admin, **given)
+
+
+def test_a_search_names_no_clip(case, clip):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.SEARCH, case.lawyer_profile, case=case, clip=clip, core_count=1, margin_count=1)
+
+
+@pytest.mark.parametrize('counts', [{'core_count': 1}, {'margin_count': 1}])
+def test_a_preview_names_no_count(counts, case, clip):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.PREVIEW, case.lawyer_profile, case=case, clip=clip, **counts)
+
+
+@pytest.mark.parametrize('extra', ['clip', 'count'])
+def test_a_case_creation_names_no_clip_or_count(extra, case, clip):
+    given = {'clip': {'clip': clip}, 'count': {'core_count': 1, 'margin_count': 1}}[extra]
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.CASE_CREATION, case.lawyer_profile, case=case, **given)
+
+
+def test_an_entry_about_a_case_names_the_cases_own_lawyer(case):
+    other = LawyerProfile.objects.create(user=User.objects.create_user('other@example.org'), bar='Lyon')
+    with pytest.raises(ValueError):
+        record(Action.CASE_CREATION, other, case=case)
+    assert not AuditEntry.objects.exists()
+
+
+@pytest.mark.parametrize('action', ADMIN_CASE_ACTIONS)
+def test_the_admins_decision_on_a_case_names_the_admin_the_case_and_its_lawyer(action, admin, case):
+    entry = record(action, case.lawyer_profile, admin=admin, case=case)
+    stored = AuditEntry.objects.get(pk=entry.pk)
+    assert (stored.action, stored.admin, stored.case, stored.lawyer_profile) == (action, admin, case, case.lawyer_profile)
+    for missing in [{'case': case}, {'admin': admin}]:
+        with pytest.raises(IntegrityError), transaction.atomic():
+            record(action, case.lawyer_profile, **missing)
+
+
+LIMITS = {'before': None, 'after': {'CASE_AREA_CAP_METRES': 2000}}
+
+
+def test_a_change_of_limits_names_nobody_and_records_the_numbers():
+    entry = record(Action.LIMITS_CHANGE, None, limits=LIMITS)
+    stored = AuditEntry.objects.get(pk=entry.pk)
+    assert (stored.limits, stored.lawyer_profile, stored.admin, stored.case) == (LIMITS, None, None, None)
+    with pytest.raises(ValueError):
+        record(Action.LIMITS_CHANGE, None)
+
+
+def test_a_change_of_limits_names_no_person(admin, applicant):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.LIMITS_CHANGE, applicant, limits=LIMITS)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.LIMITS_CHANGE, None, admin=admin, limits=LIMITS)
+
+
+def test_every_other_entry_names_a_person_and_no_limits(admin, applicant, case):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.INVITATION, None, admin=admin)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.INVITATION, applicant, admin=admin, limits=LIMITS)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.CASE_CREATION, case.lawyer_profile, case=case, limits=LIMITS)
+
+
+RAISED = {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_DOWNLOADS': 60}, 'days': 2}
+
+
+@pytest.mark.parametrize('limits_given', [
+    {'before': None, 'after': {'ALERT_DOWNLOADS': 60}, 'days': 2},
+    {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_DOWNLOADS': 60}},
+    {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_DOWNLOADS': 10}, 'days': 2},
+    {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_CASES': 60}, 'days': 2},
+    {'before': {'CASE_AREA_CAP_METRES': 2000}, 'after': {'CASE_AREA_CAP_METRES': 3000}, 'days': 2},
+    {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_DOWNLOADS': 60}, 'days': 0},
+    {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_DOWNLOADS': 60}, 'days': 'two'},
+    {'before': {}, 'after': {}, 'days': 2},
+])
+def test_a_raise_records_one_higher_limit_and_its_days(admin, case, limits_given):
+    with pytest.raises(ValueError):
+        record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, admin=admin, limits=limits_given)
+
+
+def test_a_raise_names_no_case(admin, case):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, admin=admin, case=case, limits=RAISED)
+
+
+def test_a_raise_of_an_alert_limit_names_the_admin_and_lawyer_and_records_the_numbers(admin, case):
+    raised = RAISED
+    entry = record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, admin=admin, limits=raised)
+    stored = AuditEntry.objects.get(pk=entry.pk)
+    assert (stored.admin, stored.lawyer_profile, stored.limits, stored.case) == (admin, case.lawyer_profile, raised, None)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, limits=raised)
+    with pytest.raises(ValueError):
+        record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, admin=admin)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.ALERT_LIMIT_RAISE, None, admin=admin, limits=raised)

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% blocktranslate with label=case.label %}Search: {{ label }}{% endblocktranslate %}{% endblock %}
+
+{% block content %}
+  <h1>{% blocktranslate with label=case.label %}Search: {{ label }}{% endblocktranslate %}</h1>
+  <p>{% translate "This search is recorded in the audit log, with the number of clips found." %}</p>
+
+  <h2>{% translate "Core matches" %}</h2>
+  <p>{% translate "Clips in the case's time window and area themselves." %}</p>
+  {% include "cases/matches.html" with clips=core %}
+
+  <h2>{% translate "Margin matches" %}</h2>
+  <p>{% translate "Clips found only in the margin, just outside the time window or the area." %}</p>
+  {% include "cases/matches.html" with clips=margin %}
+
+  <p><a href="{% url 'lawyer:case' case_id=case.pk %}">{{ case.label }}</a></p>
+{% endblock %}

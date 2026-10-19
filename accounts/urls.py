@@ -2,6 +2,9 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from alerts import views as alert_views
+from cases import approval as case_approval
+from cases import clip_pages
+from cases import views as case_views
 
 from . import access, admission, invitations, two_factor, views
 
@@ -12,6 +15,16 @@ app_name = 'accounts'
 # tests/test_roles.py checks.
 lawyer_patterns = [
     path('', views.lawyer_home, name='home'),
+    path('cases/new/', case_views.new_case, name='new_case'),
+    path('cases/closed/', case_views.closed_cases, name='closed_cases'),
+    path('cases/<int:case_id>/', case_views.case, name='case'),
+    path('cases/<int:case_id>/close/', case_views.close_case, name='close_case'),
+    path('cases/<int:case_id>/search/', case_views.search, name='search'),
+    path('cases/<int:case_id>/clips/<uuid:clip_id>/', clip_pages.clip_page, name='clip'),
+    path('cases/<int:case_id>/clips/<uuid:clip_id>/preview/', clip_pages.preview, name='preview'),
+    path('cases/<int:case_id>/clips/<uuid:clip_id>/download/', clip_pages.download, name='download'),
+    path('cases/<int:case_id>/clips/<uuid:clip_id>/hash-record/', clip_pages.hash_record, name='hash_record'),
+    path('margin/', case_views.default_margin, name='default_margin'),
 ]
 manage_patterns = [
     path('', views.manage_home, name='home'),
@@ -23,6 +36,9 @@ manage_patterns = [
     path('lawyers/<int:profile_id>/reinstate/', access.reinstate, name='reinstate'),
     path('lawyers/<int:profile_id>/revoke/', access.revoke, name='revoke'),
     path('alerts/<int:alert_id>/seen/', alert_views.mark_seen, name='alert_seen'),
+    path('lawyers/<int:profile_id>/alert-limit/', alert_views.raise_limit, name='raise_limit'),
+    path('cases/', case_approval.case_requests, name='case_requests'),
+    path('cases/<int:case_id>/', case_approval.case_request, name='case_request'),
 ]
 
 urlpatterns = [

@@ -104,6 +104,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Records a change of the size caps or alert limits when the archive starts (SPEC.md §7).
+    'audit.limits.LimitsCheckMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     # Before CsrfViewMiddleware, which reads the whole upload (clips.rate_limits).
@@ -150,6 +152,15 @@ DATABASES = {
             # linger there (SPEC.md §5). Copies the file system or disk may keep are
             # outside its reach.
             'init_command': 'PRAGMA secure_delete = ON;',
+            # Every transaction takes the write lock when it begins. By default it waits for
+            # its first write, and one that read first then finds another connection has
+            # written fails at once with "database is locked" instead of waiting. Only one
+            # transaction runs at a time this way, which is nothing at this archive's scale.
+            'transaction_mode': 'IMMEDIATE',
+            # How long a writer waits for the lock before failing: longer than the slowest
+            # transaction, which may send an invitation email (EMAIL_TIMEOUT, 10 seconds by
+            # default; raise this too if that is raised).
+            'timeout': 20,
         },
     }
 }
@@ -212,6 +223,15 @@ RATE_LIMIT_FAILED_LOGINS_FOR_ACCOUNT = env_int('RATE_LIMIT_FAILED_LOGINS_FOR_ACC
 # Failed logins or wrong second-factor codes for one account, from any connection, that
 # alert the admin within one window: nobody is locked out by them.
 ALERT_FAILED_LOGINS = env_int('ALERT_FAILED_LOGINS', default=30, minimum=1)
+# Unusual lawyer activity (SPEC.md §7): this many downloads by one lawyer within
+# ALERT_DOWNLOADS_MINUTES, or this many cases created within ALERT_CASES_HOURS, alert the
+# admin. The admin can raise one lawyer's limit for at most ALERT_RAISE_MAX_DAYS days.
+# The maximums only stop values that could not mean anything.
+ALERT_DOWNLOADS = env_int('ALERT_DOWNLOADS', default=20, minimum=1, maximum=100_000)
+ALERT_DOWNLOADS_MINUTES = env_int('ALERT_DOWNLOADS_MINUTES', default=60, minimum=1, maximum=7 * 24 * 60)
+ALERT_CASES = env_int('ALERT_CASES', default=5, minimum=1, maximum=100_000)
+ALERT_CASES_HOURS = env_int('ALERT_CASES_HOURS', default=24, minimum=1, maximum=365 * 24)
+ALERT_RAISE_MAX_DAYS = env_int('ALERT_RAISE_MAX_DAYS', default=3, minimum=1, maximum=30)
 
 # In this process's memory: enough for one development server. Several server
 # processes would each count separately, and this cache drops entries once it holds 300,
@@ -252,6 +272,22 @@ HUEY = {
 # 11 gives cells about 50 m across; lower numbers are coarser. Finer is refused here
 # rather than in a system check, because system checks do not run in production.
 GRID_H3_RESOLUTION = env_int('GRID_H3_RESOLUTION', default=11, minimum=0, maximum=11)
+
+# A case's size caps (SPEC.md §7), margin included: a case over them needs the admin's
+# approval. The ceilings are fixed here in the public code and no approval goes past them;
+# the caps can be lowered, never raised beyond them.
+CASE_WINDOW_CEILING_MINUTES = 24 * 60
+CASE_AREA_CEILING_METRES = 10_000
+CASE_WINDOW_CAP_MINUTES = env_int(
+    'CASE_WINDOW_CAP_MINUTES', default=2 * 60, minimum=1, maximum=CASE_WINDOW_CEILING_MINUTES,
+)
+CASE_AREA_CAP_METRES = env_int('CASE_AREA_CAP_METRES', default=2_000, minimum=1, maximum=CASE_AREA_CEILING_METRES)
+# A case not used for this long (no search, preview or download since its creation or
+# its last use) closes on its own (SPEC.md §7).
+CASE_INACTIVITY_DAYS = env_int('CASE_INACTIVITY_DAYS', default=365, minimum=1, maximum=36_500)
+# A stated time more than this many minutes from the metadata time is highlighted to
+# lawyers (SPEC.md §7).
+TIME_MISMATCH_MINUTES = env_int('TIME_MISMATCH_MINUTES', default=15, minimum=1)
 
 
 # Accounts log in with an email address (accounts.models).

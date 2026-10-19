@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Closed cases" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Closed cases" %}</h1>
+  {% if cases %}
+    <ul>
+      {% for case in cases %}<li><a href="{% url 'lawyer:case' case_id=case.pk %}">{{ case.label }}</a>: {{ case.get_closed_because_display }}, {{ case.closed_at|date:"j F Y" }}</li>{% endfor %}
+    </ul>
+  {% else %}
+    <p>{% translate "You have no closed cases." %}</p>
+  {% endif %}
+  <p><a href="{% url 'lawyer:home' %}">{% translate "Your cases" %}</a></p>
+{% endblock %}

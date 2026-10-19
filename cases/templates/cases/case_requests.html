@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Requests for larger cases" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Requests for larger cases" %}</h1>
+  {% if waiting %}
+    <ul>
+      {% for approval in waiting %}
+        <li><a href="{% url 'manage:case_request' approval.pk %}">{{ approval.case.lawyer_profile.user.get_full_name }}, {{ approval.requested_at|date:"j F Y H:i" }}</a></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>{% translate "No requests are waiting." %}</p>
+  {% endif %}
+  <p><a href="{% url 'manage:home' %}">{% translate "Administration" %}</a></p>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Raise an alert limit" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Raise an alert limit" %}</h1>
+  <p>{% blocktranslate with name=profile.user.get_full_name downloads=usual.downloads cases=usual.cases %}For {{ name }}, for a few days, such as while they work on a large case. Usually you are alerted at {{ downloads }} downloads or {{ cases }} cases created in a short time. The raise is recorded in the audit log.{% endblocktranslate %}</p>
+  {% if raises %}
+    <h2>{% translate "Raises in force" %}</h2>
+    <ul>{% for raise in raises %}<li>{% blocktranslate with activity=raise.get_activity_display limit=raise.limit until=raise.until|date:"j F Y H:i" %}{{ activity }}: {{ limit }}, until {{ until }}{% endblocktranslate %}</li>{% endfor %}</ul>
+  {% endif %}
+  <form method="post" action="{% url 'manage:raise_limit' profile.pk %}">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <button type="submit">{% translate "Raise the limit" %}</button>
+  </form>
+  <p><a href="{% url 'manage:home' %}">{% translate "Administration" %}</a></p>
+{% endblock %}

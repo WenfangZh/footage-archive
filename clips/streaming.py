@@ -1,0 +1,84 @@
+"""Serving a file with HTTP byte ranges, so that browsers can play and seek a video.
+
+Django's FileResponse ignores the Range header, and Safari will not play a video
+without it. This works on any seekable binary file object, however the caller opened
+it (the vault returns one; M5 makes it a decrypting one).
+"""
+
+import re
+
+from django.http import HttpResponse, StreamingHttpResponse
+
+CHUNK_SIZE = 64 * 1024
+# One range only: a multi-range request does not match, and gets the whole file, which
+# the HTTP spec allows. So does a number too long to be a file size.
+RANGE = re.compile(r'bytes=(\d{0,15})-(\d{0,15})', re.IGNORECASE)
+
+
+class _Slice:
+    """Iterates over `length` bytes of the open file from its current position."""
+
+    def __init__(self, file, length):
+        self.file = file
+        self.remaining = length
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        chunk = self.file.read(min(CHUNK_SIZE, self.remaining)) if self.remaining > 0 else b''
+        if not chunk:
+            raise StopIteration
+        self.remaining -= len(chunk)
+        return chunk
+
+    def close(self):
+        # The response calls this when it is closed, even if it was never iterated.
+        self.file.close()
+
+
+def requested_range(request, size):
+    """The bytes (start, end) a request asks of a file of `size` bytes, whether it asks for a
+    part, and None if what it asks for cannot be served."""
+    match = RANGE.fullmatch(request.headers.get('Range', ''))
+    first, last = match.groups() if match else ('', '')
+    # A range that asks for nothing, or ends before it starts, is invalid: it is ignored.
+    if not (first or last) or (first and last and int(last) < int(first)):
+        return (0, size - 1), False
+    if first:
+        start, end = int(first), min(int(last or size - 1), size - 1)
+    else:  # A suffix range: the last `last` bytes.
+        start, end = max(size - int(last), 0), size - 1
+    if start >= size or start > end:
+        return None, True
+    return (start, end), True
+
+
+def file_response(request, file, size, content_type):
+    """Serve the open binary `file` of `size` bytes, or the byte range the request asks for.
+
+    The response closes `file` when it is closed.
+    """
+    served, partial = requested_range(request, size)
+    if served is None:
+        file.close()
+        response = HttpResponse(status=416)
+        response['Content-Range'] = f'bytes */{size}'
+        return _with_headers(response)
+    start, end = served
+    status = 206 if partial else 200
+
+    file.seek(start)
+    length = end - start + 1
+    response = StreamingHttpResponse(_Slice(file, length), status=status, content_type=content_type)
+    response['Content-Length'] = length
+    if status == 206:
+        response['Content-Range'] = f'bytes {start}-{end}/{size}'
+    return _with_headers(response)
+
+
+def _with_headers(response):
+    response['Accept-Ranges'] = 'bytes'
+    response['X-Content-Type-Options'] = 'nosniff'
+    response['Cache-Control'] = 'no-store, private'
+    return response

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ case.label }}{% endblock %}
+
+{% block content %}
+  <h1>{{ case.label }}</h1>
+  {% if case.closed_at %}<p>{% blocktranslate with closed_at=case.closed_at|date:"j F Y H:i" because=case.get_closed_because_display %}{{ because }}, on {{ closed_at }}.{% endblocktranslate %}</p>{% endif %}
+  {% if approval %}
+    {% if approval.decided_at is None %}
+      {% if not case.closed_at %}<p>{% translate "Larger than the size caps: waiting for the admin's approval. It cannot be used until then." %}</p>{% endif %}
+    {% elif approval.approved %}
+      <p>{% translate "Larger than the size caps, and approved by the admin." %}</p>
+    {% endif %}
+    {% if approval.admin_note %}<p>{% translate "The admin's note:" %} {{ approval.admin_note|linebreaksbr }}</p>{% endif %}
+  {% endif %}
+  <dl>
+    <dt>{% translate "Time window" %}</dt>
+    <dd>{{ case.starts_at|date:"j F Y H:i" }} – {{ case.ends_at|date:"j F Y H:i" }}</dd>
+    <dt>{% translate "Area" %}</dt>
+    <dd>{% blocktranslate count cells=cells with metres=area_metres %}{{ cells }} cell, about {{ metres }} m across{% plural %}{{ cells }} cells, about {{ metres }} m across{% endblocktranslate %}</dd>
+    <dt>{% translate "Margin" %}</dt>
+    <dd>{% blocktranslate count minutes=case.margin_minutes %}{{ minutes }} minute{% plural %}{{ minutes }} minutes{% endblocktranslate %},
+      {% blocktranslate count rings=case.margin_rings %}{{ rings }} ring of cells{% plural %}{{ rings }} rings of cells{% endblocktranslate %}</dd>
+  </dl>
+  {% if usable %}
+    <form method="post" action="{% url 'lawyer:search' case_id=case.pk %}">
+      {% csrf_token %}
+      <button type="submit">{% translate "Search for clips" %}</button>
+    </form>
+  {% endif %}
+  {% if not case.closed_at %}<p><a href="{% url 'lawyer:close_case' case_id=case.pk %}">{% translate "Close this case" %}</a></p>{% endif %}
+  <h2>{% translate "Case log" %}</h2>
+  <ul>
+    {% for entry in entries %}<li>{{ entry.at|date:"j F Y H:i" }}: {{ entry.get_action_display }}{% if entry.clip_id %} ({% blocktranslate with clip=entry.clip_id %}clip {{ clip }}{% endblocktranslate %}){% endif %}{% if entry.core_count is not None %} ({% blocktranslate with core=entry.core_count margin=entry.margin_count %}core matches: {{ core }}, margin matches: {{ margin }}{% endblocktranslate %}){% endif %}</li>{% endfor %}
+  </ul>
+  <p><a href="{% url 'lawyer:home' %}">{% translate "Your cases" %}</a></p>
+{% endblock %}
