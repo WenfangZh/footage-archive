@@ -23,6 +23,7 @@
     <dd>{% blocktranslate count minutes=case.margin_minutes %}{{ minutes }} minute{% plural %}{{ minutes }} minutes{% endblocktranslate %},
       {% blocktranslate count rings=case.margin_rings %}{{ rings }} ring of cells{% plural %}{{ rings }} rings of cells{% endblocktranslate %}</dd>
   </dl>
+  {% if usable %}<p><a href="{% url 'lawyer:search' case_id=case.pk %}">{% translate "Search for clips" %}</a></p>{% endif %}
   {% if not case.closed_at %}<p><a href="{% url 'lawyer:close_case' case_id=case.pk %}">{% translate "Close this case" %}</a></p>{% endif %}
   <h2>{% translate "Case log" %}</h2>
   <ul>

@@ -1,0 +1,10 @@
+{% load i18n %}
+{% if clips %}
+  <ul>
+    {% for clip in clips %}
+      <li>{{ clip.stated_time|date:"j F Y H:i" }}{% if clip.duration %}, {% blocktranslate with seconds=clip.duration.total_seconds|floatformat:"0" %}{{ seconds }} s{% endblocktranslate %}{% endif %}, {{ clip.get_stated_precision_display }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>{% translate "None." %}</p>
+{% endif %}

@@ -11,6 +11,7 @@ from accounts.roles import lawyer_required
 from audit.models import Action, record
 
 from . import size
+from .search import find
 from .forms import CaseForm, DefaultMarginForm, too_large_message
 from .models import Case, CaseApproval
 
@@ -62,6 +63,7 @@ def case(request, case_id):
         'approval': CaseApproval.objects.filter(case=own_case).first(),
         # The case's own audit entries: its lawyer may read their own (SPEC.md §7).
         'entries': own_case.audit_entries.order_by('at', 'pk'),
+        'usable': Case.objects.usable().filter(pk=own_case.pk).exists(),
     })
 
 
@@ -91,3 +93,16 @@ def close_case(request, case_id):
 def closed_cases(request):
     cases = Case.objects.filter(lawyer_profile__user=request.user, closed_at__isnull=False).order_by('-closed_at')
     return render(request, 'cases/closed_cases.html', {'cases': cases})
+
+
+@lawyer_required
+def search(request, case_id):
+    """Run the case's search: every search is logged with how many clips it found (SPEC.md §7)."""
+    own_case = get_object_or_404(Case.objects.usable(), pk=case_id, lawyer_profile__user=request.user)
+    with transaction.atomic():
+        found = find(own_case)
+        record(
+            Action.SEARCH, own_case.lawyer_profile, case=own_case,
+            core_count=len(found.core), margin_count=len(found.margin),
+        )
+    return render(request, 'cases/search.html', {'case': own_case, 'core': found.core, 'margin': found.margin})
