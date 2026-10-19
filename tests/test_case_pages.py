@@ -343,3 +343,72 @@ def test_a_case_cannot_be_closed_by_saving_it(waiting_case):
     with pytest.raises(ValueError, match='close'):
         case.save()
     assert Case.objects.get().closed_at is None and Case.objects.get().approval.reason == REASON
+
+
+# The area picked on the map (M4.5): the form field the map fills holds H3 ids, in hexadecimal.
+
+def ids(cells):
+    return ' '.join(f'{cell:x}' for cell in cells)
+
+
+BASTILLE_CELL = grid.cell_for_point(*BASTILLE, 11)
+PICKED = grid.widen([BASTILLE_CELL], 3)
+NO_PLACE = {'latitude': '', 'longitude': '', 'radius_metres': ''}
+
+
+def test_a_lawyer_creates_a_case_from_cells_picked_on_the_map(lawyer, lawyer_client):
+    response = create(lawyer_client, cells=ids(PICKED), **NO_PLACE)
+    case = Case.objects.get()
+    assert response.status_code == 302 and case.area() == PICKED and len(PICKED) == 37
+    assert AuditEntry.objects.get().action == Action.CASE_CREATION
+
+
+@pytest.mark.parametrize('cells', [
+    '',
+    'not-a-cell',
+    '8b1fb4644934fff 8b1fb4644934',
+    f'{BASTILLE_CELL:x} {BASTILLE_CELL:X}',
+    f'{grid.coarsen(BASTILLE_CELL, 10):x}',
+    f'{BASTILLE_CELL:x} {2**64:x}',
+])
+def test_cells_that_are_empty_malformed_repeated_or_not_the_finest_are_refused(lawyer_client, cells):
+    response = create(lawyer_client, cells=cells, **NO_PLACE)
+    assert response.status_code == 400 and not Case.objects.exists()
+
+
+def test_an_area_beyond_the_ceiling_is_refused_even_with_a_reason(lawyer_client):
+    far = grid.cell_for_point(BASTILLE[0], BASTILLE[1] + 0.15, 11)  # About 11 km east.
+    response = create(lawyer_client, cells=ids({BASTILLE_CELL, far}), reason=REASON, **NO_PLACE)
+    assert response.status_code == 400 and not Case.objects.exists()
+
+
+def test_more_cells_than_any_case_holds_are_refused_before_they_are_measured(lawyer_client, monkeypatch):
+    monkeypatch.setattr('cases.forms.max_cells', lambda: 36)
+    monkeypatch.setattr('cases.size.check', mock.Mock(side_effect=AssertionError('measured')))
+    assert create(lawyer_client, cells=ids(PICKED), **NO_PLACE).status_code == 400
+
+
+def test_an_area_from_the_map_over_the_caps_needs_approval(lawyer_client):
+    wide = {BASTILLE_CELL, grid.cell_for_point(BASTILLE[0], BASTILLE[1] + 0.04, 11)}  # About 3 km.
+    assert create(lawyer_client, cells=ids(wide), **NO_PLACE).status_code == 400
+    assert create(lawyer_client, cells=ids(wide), reason=REASON, **NO_PLACE).status_code == 302
+    case = Case.objects.get()
+    assert case.area() == wide and CaseApproval.objects.get(case=case).decided_at is None
+
+
+def test_a_place_and_cells_together_are_refused(lawyer_client):
+    assert create(lawyer_client, cells=ids(PICKED)).status_code == 400 and not Case.objects.exists()
+
+
+def test_a_place_needs_its_radius(lawyer_client):
+    response = create(lawyer_client, radius_metres='')
+    assert response.status_code == 400 and 'radius_metres' in response.context['form'].errors
+
+
+def test_no_coordinates_or_map_view_are_kept_with_a_case_from_the_map(lawyer_client):
+    # Whatever else a browser sends, such as where the map was looking, is not kept.
+    view = {'centre': '48.85417,2.36923', 'zoom': '16.123457'}
+    create(lawyer_client, cells=ids(PICKED), **NO_PLACE, **view)
+    assert Case.objects.exists()
+    database = '\n'.join(connection.connection.iterdump())
+    assert '85417' not in database and '36923' not in database and '123457' not in database

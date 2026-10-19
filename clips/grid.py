@@ -131,6 +131,11 @@ def cells_around(latitude, longitude, radius_metres):
         cells |= reached
 
 
+def average_area_square_metres():
+    """The average area of a cell at the grid's finest resolution."""
+    return h3.average_hexagon_area(finest_resolution(), 'm^2')
+
+
 def width_metres(cell):
     """About how wide a cell is: twice its centre-to-corner distance."""
     return 2 * _corner_metres(cell)
