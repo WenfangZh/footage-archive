@@ -39,6 +39,10 @@ def lawyer_client(lawyer):
     return log_in_with_second_factor(Client(), lawyer.user)
 
 
+def ago(**delta):
+    return timezone.now() - datetime.timedelta(**delta)
+
+
 def closing_entries():
     return list(AuditEntry.objects.filter(action=Action.CASE_CLOSING).values_list('case', 'lawyer_profile', 'admin'))
 
@@ -112,22 +116,56 @@ def test_viewing_the_case_page_does_not_count_as_use(lawyer, lawyer_client, sett
     assert close_unused_cases(now=timezone.now() + datetime.timedelta(days=366)) == 1
 
 
-def test_the_case_page_shows_the_case_log(lawyer, lawyer_client, settings):
+def test_the_case_page_shows_the_case_log_and_only_its_own(lawyer, lawyer_client, settings):
     settings.LANGUAGE_CODE = 'en'
     case = make_case(lawyer)
     record(Action.CASE_CREATION, lawyer, case=case)
     record(Action.SEARCH, lawyer, case=case, core_count=3, margin_count=1)
     other = make_case(lawyer, 'Other')
-    record(Action.CASE_CREATION, lawyer, case=other)
+    record(Action.SEARCH, lawyer, case=other, core_count=9, margin_count=8)
     Case.objects.filter(pk=other.pk).close(Case.ClosedBecause.LAWYER)
     page = lawyer_client.get(reverse('lawyer:case', kwargs={'case_id': case.pk})).content.decode()
     assert 'Case creation' in page and 'core matches: 3, margin matches: 1' in page
-    assert 'Case closing' not in page
+    assert 'Case closing' not in page and 'core matches: 9' not in page
+
+
+def test_the_log_of_a_refused_case_names_no_admin(lawyer, lawyer_client, settings):
+    settings.LANGUAGE_CODE = 'en'
+    admin = User.objects.create_superuser('admin@example.org', first_name='Dominique', last_name='Admin')
+    case = make_case(lawyer, starts_at=ago(days=2), ends_at=ago(days=2) + datetime.timedelta(hours=3), approval_reason='Two charges.')
+    case.approval.decide(False, admin)
+    page = lawyer_client.get(reverse('lawyer:case', kwargs={'case_id': case.pk})).content.decode()
+    assert page.index('Refusal of a larger case') < page.index('Case closing')
+    assert 'Dominique' not in page and 'admin@example.org' not in page
+    assert 'Close this case' not in page
+
+
+def test_closing_twice_closes_and_logs_once(lawyer):
+    case = make_case(lawyer)
+    assert Case.objects.filter(pk=case.pk).close(Case.ClosedBecause.LAWYER) == 1
+    assert Case.objects.filter(pk=case.pk).close(Case.ClosedBecause.REVOCATION) == 0
+    assert Case.objects.get().closed_because == Case.ClosedBecause.LAWYER and len(closing_entries()) == 1
+
+
+def test_closing_for_no_use_deletes_a_waiting_request_s_reason(lawyer, settings):
+    settings.CASE_INACTIVITY_DAYS = 365
+    case = make_case(lawyer, starts_at=ago(days=2), ends_at=ago(days=2) + datetime.timedelta(hours=3), approval_reason='Two charges.')
+    assert close_unused_cases(now=timezone.now() + datetime.timedelta(days=366)) == 1
+    case.refresh_from_db()
+    assert case.closed_because == Case.ClosedBecause.INACTIVITY and case.approval.reason == ''
+
+
+def test_the_nightly_closing_is_a_task_of_the_background_worker():
+    from huey.api import PeriodicTask
+
+    from cases import tasks
+    assert isinstance(tasks.close_unused_cases_daily.task_class(), PeriodicTask)
 
 
 def test_closed_cases_are_listed_apart(lawyer, lawyer_client):
-    open_case, closed = make_case(lawyer, 'Still open'), make_case(lawyer, 'Done')
+    open_case, closed, revoked = make_case(lawyer, 'Still open'), make_case(lawyer, 'Done'), make_case(lawyer, 'Revoked')
     Case.objects.filter(pk=closed.pk).close(Case.ClosedBecause.LAWYER)
+    Case.objects.filter(pk=revoked.pk).close(Case.ClosedBecause.REVOCATION)
     make_case(make_lawyer('other@example.org'), 'Not mine')
     page = lawyer_client.get(reverse('lawyer:closed_cases')).content.decode()
-    assert 'Done' in page and 'Still open' not in page and 'Not mine' not in page
+    assert 'Done' in page and 'Revoked' in page and 'Still open' not in page and 'Not mine' not in page

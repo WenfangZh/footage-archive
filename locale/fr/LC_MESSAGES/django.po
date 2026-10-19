@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-19 16:18+0200\n"
+"POT-Creation-Date: 2026-10-19 16:24+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -730,19 +730,19 @@ msgstr ""
 "Gardée avec le dossier de recherche, et visible par son avocat·e. Jamais le "
 "nom d'un·e client·e."
 
-#: cases/models.py:120
+#: cases/models.py:118
 msgid "Closed by its lawyer"
 msgstr "Clos par son avocat·e"
 
-#: cases/models.py:121
+#: cases/models.py:119
 msgid "Closed when its lawyer's access was revoked"
 msgstr "Clos à la révocation de l'accès de son avocat·e"
 
-#: cases/models.py:122
+#: cases/models.py:120
 msgid "Closed after a long time without use"
 msgstr "Clos après une longue période sans usage"
 
-#: cases/models.py:123
+#: cases/models.py:121
 msgid "Closed when the admin refused it"
 msgstr "Clos au refus de l'administrateur·rice"
 
@@ -810,6 +810,11 @@ msgstr "Clore ce dossier de recherche"
 #: cases/templates/cases/case.html:27
 msgid "Case log"
 msgstr "Journal du dossier de recherche"
+
+#: cases/templates/cases/case.html:29
+#, python-format
+msgid "clip %(clip)s"
+msgstr "clip %(clip)s"
 
 #: cases/templates/cases/case.html:29
 #, python-format

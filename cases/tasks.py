@@ -1,6 +1,7 @@
 """Closing cases left unused (SPEC.md §7), once a day in the background worker."""
 
 import datetime
+import logging
 
 from django.conf import settings
 from django.utils import timezone
@@ -8,6 +9,8 @@ from huey import crontab
 from huey.contrib.djhuey import db_periodic_task
 
 from .models import Case
+
+logger = logging.getLogger(__name__)
 
 
 def close_unused_cases(now=None):
@@ -18,6 +21,10 @@ def close_unused_cases(now=None):
     )
 
 
+# Each night (the worker's clock is UTC).
 @db_periodic_task(crontab(hour='3', minute='17'))
 def close_unused_cases_daily():
-    close_unused_cases()
+    closed = close_unused_cases()
+    if closed:
+        # How many only: never which cases.
+        logger.info('Closed %s cases left unused.', closed)

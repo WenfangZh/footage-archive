@@ -26,7 +26,7 @@
   {% if not case.closed_at %}<p><a href="{% url 'lawyer:close_case' case_id=case.pk %}">{% translate "Close this case" %}</a></p>{% endif %}
   <h2>{% translate "Case log" %}</h2>
   <ul>
-    {% for entry in entries %}<li>{{ entry.at|date:"j F Y H:i" }}: {{ entry.get_action_display }}{% if entry.clip_id %} ({{ entry.clip_id }}){% endif %}{% if entry.core_count is not None %} ({% blocktranslate with core=entry.core_count margin=entry.margin_count %}core matches: {{ core }}, margin matches: {{ margin }}{% endblocktranslate %}){% endif %}</li>{% endfor %}
+    {% for entry in entries %}<li>{{ entry.at|date:"j F Y H:i" }}: {{ entry.get_action_display }}{% if entry.clip_id %} ({% blocktranslate with clip=entry.clip_id %}clip {{ clip }}{% endblocktranslate %}){% endif %}{% if entry.core_count is not None %} ({% blocktranslate with core=entry.core_count margin=entry.margin_count %}core matches: {{ core }}, margin matches: {{ margin }}{% endblocktranslate %}){% endif %}</li>{% endfor %}
   </ul>
   <p><a href="{% url 'lawyer:home' %}">{% translate "Your cases" %}</a></p>
 {% endblock %}

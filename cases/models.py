@@ -38,19 +38,17 @@ class CaseQuerySet(models.QuerySet):
         The entry names the case's lawyer, whoever closed it: why is the case's own reason.
         """
         now = now or timezone.now()
+        closed = 0
         with transaction.atomic():
-            closing = list(self.open().values_list('pk', flat=True))
-            CaseApproval.objects.filter(case__in=closing, decided_at__isnull=True)._delete_reasons()
-            super(CaseQuerySet, self.filter(pk__in=closing, closed_at__isnull=True)).update(
-                closed_at=now, closed_because=because,
-            )
-            # Only those closed here: another request may have closed one in between.
-            closed = list(Case.objects.filter(pk__in=closing, closed_at=now, closed_because=because).select_related(
-                'lawyer_profile',
-            ))
-            for case in closed:
-                record(Action.CASE_CLOSING, case.lawyer_profile, case=case)
-            return len(closed)
+            for case in self.open().select_related('lawyer_profile'):
+                # One at a time, so that a case another request closed in between is left alone.
+                if super(CaseQuerySet, Case.objects.filter(pk=case.pk, closed_at__isnull=True)).update(
+                    closed_at=now, closed_because=because,
+                ):
+                    CaseApproval.objects.filter(case=case, decided_at__isnull=True)._delete_reasons()
+                    record(Action.CASE_CLOSING, case.lawyer_profile, case=case)
+                    closed += 1
+        return closed
 
     def unused_since(self, cutoff):
         """Open cases not used since `cutoff`: no search, preview or download, and not created, since then."""
@@ -257,10 +255,10 @@ class CaseApproval(models.Model):
             if updated != 1:
                 raise NotWaiting('This request has already been decided, or its case closed.')
             case = Case.objects.get(pk=self.pk)
-            if not approved:
-                Case.objects.filter(pk=case.pk).close(Case.ClosedBecause.REFUSAL)
             action = Action.CASE_APPROVAL if approved else Action.CASE_REFUSAL
             record(action, case.lawyer_profile, admin=admin, case=case)
+            if not approved:
+                Case.objects.filter(pk=case.pk).close(Case.ClosedBecause.REFUSAL)
         self.refresh_from_db()
 
 
