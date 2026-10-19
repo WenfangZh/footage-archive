@@ -188,10 +188,11 @@ def test_an_approved_larger_case_can_search(lawyer, lawyer_client):
     assert response.status_code == 200 and len(response.context['core']) == 1
 
 
-def test_the_results_show_only_time_duration_and_precision(case, lawyer_client):
-    clip = make_clip(metadata_time=START, metadata_cell=CENTRE)
+def test_the_results_show_only_time_duration_precision_and_a_link(case, lawyer_client):
+    clip = make_clip(metadata_time=START - datetime.timedelta(hours=5), metadata_cell=CENTRE)
     page = search(lawyer_client, case).content.decode()
-    assert str(clip.pk) not in page and clip.code_hash not in page
+    assert clip.code_hash not in page and '13:00' not in page
+    assert reverse('lawyer:clip', kwargs={'case_id': case.pk, 'clip_id': clip.pk}) in page
 
 
 def test_a_closed_case_allows_no_search(case, lawyer_client):

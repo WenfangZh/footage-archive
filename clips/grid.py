@@ -126,6 +126,11 @@ def cells_around(latitude, longitude, radius_metres):
         cells |= reached
 
 
+def width_metres(cell):
+    """About how wide a cell is: twice its centre-to-corner distance."""
+    return 2 * _corner_metres(cell)
+
+
 def _corner_metres(cell):
     """How far a cell reaches from its centre: to its farthest corner."""
     middle = h3.cell_to_latlng(cell)

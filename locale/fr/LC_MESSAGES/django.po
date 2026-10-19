@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-19 16:54+0200\n"
+"POT-Creation-Date: 2026-10-19 17:04+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -868,6 +868,114 @@ msgstr "Décider"
 msgid "No requests are waiting."
 msgstr "Aucune demande en attente."
 
+#: cases/templates/cases/clip.html:4 cases/templates/cases/clip.html:7
+msgid "Clip"
+msgstr "Clip"
+
+#: cases/templates/cases/clip.html:8
+msgid "Core match for this case."
+msgstr "Correspondance centrale pour ce dossier de recherche."
+
+#: cases/templates/cases/clip.html:8
+msgid "Margin match for this case: just outside its time window or area."
+msgstr ""
+"Correspondance de marge pour ce dossier de recherche : juste en dehors de sa"
+" plage horaire ou de son périmètre."
+
+#: cases/templates/cases/clip.html:13
+msgid "A low-resolution preview. Watching it is recorded in the audit log."
+msgstr ""
+"Une version de prévisualisation en basse résolution. La regarder est inscrit"
+" au journal d'audit."
+
+#: cases/templates/cases/clip.html:17
+#, python-format
+msgid "The stated time is %(minutes)s minute away from the metadata time."
+msgid_plural ""
+"The stated time is %(minutes)s minutes away from the metadata time."
+msgstr[0] ""
+"L'heure indiquée est à %(minutes)s minute de l'heure des métadonnées."
+msgstr[1] ""
+"L'heure indiquée est à %(minutes)s minutes de l'heure des métadonnées."
+
+#: cases/templates/cases/clip.html:20 clips/templates/clips/clip.html:34
+#: clips/templates/clips/confirm.html:15
+msgid "Time"
+msgstr "Heure"
+
+#: cases/templates/cases/clip.html:22 clips/models.py:180
+msgid "Stated time"
+msgstr "Heure indiquée"
+
+#: cases/templates/cases/clip.html:23
+msgid "Metadata time"
+msgstr "Heure des métadonnées"
+
+#: cases/templates/cases/clip.html:23 cases/templates/cases/clip.html:24
+#: cases/templates/cases/clip.html:39 cases/templates/cases/place.html:1
+msgid "not given"
+msgstr "non renseigné"
+
+#: cases/templates/cases/clip.html:24
+msgid "Stated time as uploaded"
+msgstr "Heure indiquée telle qu'uploadée"
+
+#: cases/templates/cases/clip.html:25
+msgid "Duration"
+msgstr "Durée"
+
+#: cases/templates/cases/clip.html:25 cases/templates/cases/matches.html:5
+#, python-format
+msgid "%(seconds)s s"
+msgstr "%(seconds)s s"
+
+#: cases/templates/cases/clip.html:28 clips/templates/clips/clip.html:39
+#: clips/templates/clips/confirm.html:25
+msgid "Place"
+msgstr "Lieu"
+
+#: cases/templates/cases/clip.html:30 clips/models.py:181
+msgid "Stated location"
+msgstr "Lieu indiqué"
+
+#: cases/templates/cases/clip.html:31 clips/models.py:185
+msgid "Metadata location"
+msgstr "Lieu des métadonnées"
+
+#: cases/templates/cases/clip.html:32
+msgid "Stated location as uploaded"
+msgstr "Lieu indiqué tel qu'uploadé"
+
+#: cases/templates/cases/clip.html:35 clips/models.py:182
+msgid "Tags"
+msgstr "Étiquettes"
+
+#: cases/templates/cases/clip.html:38
+msgid "No tags."
+msgstr "Aucune étiquette."
+
+#: cases/templates/cases/clip.html:39
+msgid "Tags as uploaded:"
+msgstr "Étiquettes telles qu'uploadées :"
+
+#: cases/templates/cases/clip.html:42 clips/forms.py:69 clips/models.py:183
+#: clips/models.py:228
+msgid "Context"
+msgstr "Contexte"
+
+#: cases/templates/cases/clip.html:46
+msgid "Edits since upload"
+msgstr "Modifications depuis l'upload"
+
+#: cases/templates/cases/clip.html:48
+#, python-format
+msgid "%(field)s: %(day)s, in the four hours from %(start)s"
+msgstr "%(field)s : %(day)s, dans les quatre heures à partir de %(start)s"
+
+#: cases/templates/cases/clip.html:49
+msgid "None."
+msgstr "Aucun."
+
 #: cases/templates/cases/close_case.html:8
 #, python-format
 msgid ""
@@ -906,11 +1014,6 @@ msgstr ""
 msgid "Save"
 msgstr "Enregistrer"
 
-#: cases/templates/cases/matches.html:5
-#, python-format
-msgid "%(seconds)s s"
-msgstr "%(seconds)s s"
-
 #: cases/templates/cases/matches.html:9
 msgid "No matches."
 msgstr "Aucune correspondance."
@@ -928,6 +1031,13 @@ msgstr ""
 #: cases/templates/cases/new_case.html:12
 msgid "Create the case"
 msgstr "Créer le dossier de recherche"
+
+#: cases/templates/cases/place.html:1
+#, python-format
+msgid "the cell around %(latitude)s, %(longitude)s, about %(width)s m across"
+msgstr ""
+"la maille autour de %(latitude)s, %(longitude)s, d'environ %(width)s m de "
+"large"
 
 #: cases/templates/cases/search.html:4 cases/templates/cases/search.html:7
 #, python-format
@@ -1001,10 +1111,6 @@ msgstr "Que voit-on dans la vidéo ?"
 #: clips/forms.py:65
 msgid "Other tags, separated by commas"
 msgstr "Autres étiquettes, séparées par des virgules"
-
-#: clips/forms.py:69 clips/models.py:183 clips/models.py:228
-msgid "Context"
-msgstr "Contexte"
 
 #: clips/forms.py:71
 msgid ""
@@ -1083,25 +1189,9 @@ msgstr "personne qui détient le code"
 msgid "lawyer"
 msgstr "avocat·e"
 
-#: clips/models.py:180
-msgid "Stated time"
-msgstr "Heure indiquée"
-
-#: clips/models.py:181
-msgid "Stated location"
-msgstr "Lieu indiqué"
-
-#: clips/models.py:182
-msgid "Tags"
-msgstr "Étiquettes"
-
 #: clips/models.py:184 clips/models.py:229
 msgid "Contact details"
 msgstr "Moyen de contact"
-
-#: clips/models.py:185
-msgid "Metadata location"
-msgstr "Lieu des métadonnées"
 
 #: clips/models.py:267
 msgid "Evidence copy"
@@ -1219,14 +1309,6 @@ msgstr "aucune"
 #: clips/templates/clips/clip.html:25 clips/templates/clips/confirm.html:20
 msgid "It is kept as found, and nobody can change it."
 msgstr "Elle est gardée telle quelle, et personne ne peut la modifier."
-
-#: clips/templates/clips/clip.html:34 clips/templates/clips/confirm.html:15
-msgid "Time"
-msgstr "Heure"
-
-#: clips/templates/clips/clip.html:39 clips/templates/clips/confirm.html:25
-msgid "Place"
-msgstr "Lieu"
 
 #: clips/templates/clips/clip.html:41
 msgid ""
@@ -1468,11 +1550,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:337
+#: config/settings.py:340
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:338
+#: config/settings.py:341
 msgid "English"
 msgstr "Anglais"
 
@@ -1493,9 +1575,6 @@ msgstr ""
 #: templates/home.html:9
 msgid "Defence lawyers: log in"
 msgstr "Avocat·es de la défense : se connecter"
-
-#~ msgid "None."
-#~ msgstr "Aucun."
 
 #~ msgid "Invitation sent"
 #~ msgstr "Invitation envoyée"
