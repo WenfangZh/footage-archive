@@ -8,9 +8,9 @@ from django.db.models import ProtectedError
 
 from accounts.models import LawyerProfile
 from audit.models import ADMIN_ACTIONS, CASE_ACTIONS, CLIP_ACTIONS, Action, AppendOnly, AuditEntry, record
-from cases.models import Case
 from clips.editing import delete_clip
 from clips.models import Clip
+from tests.conftest import make_case
 
 pytestmark = pytest.mark.django_db
 
@@ -177,7 +177,7 @@ def case(applicant):
     applicant.verified_via, applicant.vouched_by = 'The bar directory', 'A defence organisation'
     applicant.save()
     applicant.change_status(LawyerProfile.Status.LAWYER)
-    return Case.objects.create(lawyer_profile=applicant, label='A case')
+    return make_case(applicant, 'A case')
 
 
 @pytest.fixture

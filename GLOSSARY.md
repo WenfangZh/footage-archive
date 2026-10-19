@@ -236,6 +236,17 @@ Short text a lawyer chooses to recognise a case. Never a client's name.
 _French_: libellé du dossier de recherche
 _Avoid_: Label (alone), case name, reference
 
+**Time window**:
+The stretch of time a case covers, from its start to its end, taken from the police report. Fixed when the case is created.
+_French_: plage horaire
+_Avoid_: Period, time range, timeframe
+
+**Area**:
+The place a case covers: a set of the grid's finest cells, made from the place in the police report and a radius. Fixed when the case is created; the coordinates typed to make it are not kept. Its size is how far across it is: between its two farthest points, edge to edge.
+_French_: périmètre
+_Avoid_: Zone, perimeter, region, radius (the radius is only how the area is made)
+_Avoid in French_: zone (the interface already uses it for a grid cell)
+
 **Closed case**:
 A case that can no longer be used to search, preview or download, closed by its lawyer, by revocation, or after a long period without use. It remains in the audit log.
 _French_: dossier de recherche clos
@@ -261,6 +272,11 @@ _Avoid_: Priority 2 result, secondary match
 The largest time window and area a case may have without the admin's approval (by default 2 hours and 2 km across, margin included).
 _French_: plafonds
 _Avoid_: Limits (alone), quota
+
+**Ceiling**:
+The size no case may exceed, even with the admin's approval: 24 hours and 10 km across, margin included. It is fixed in the code, so raising it takes a public change; the size caps can be set no higher than it. Not to be confused with the size caps (plafonds), which approval can exceed.
+_French_: limite absolue
+_Avoid_: Maximum, hard cap
 
 **Margin**:
 The band a case adds around its time window and its area, fixed when the case is created (by default 10 minutes, and one ring of the grid's finest cells); each lawyer sets their own default. The time window and area, margin included, must fit the size caps.

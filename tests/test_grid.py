@@ -62,3 +62,50 @@ def test_positions_off_the_earth_are_refused(latitude, longitude):
 @pytest.mark.parametrize('value', [12345, -1, '8b1fb4644934fff', None])
 def test_is_cell_rejects_other_values(value):
     assert not grid.is_cell(value)
+
+
+def test_widening_adds_rings_around_every_cell():
+    cell = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
+    assert grid.widen([cell], 0) == {cell}
+    assert len(grid.widen([cell], 1)) == 7 and len(grid.widen([cell], 2)) == 19
+    far = grid.cell_for_point(LATITUDE + 1, LONGITUDE, 11)
+    assert grid.widen([cell, far], 1) == grid.widen([cell], 1) | grid.widen([far], 1)
+
+
+def corner_to_corner(cells):
+    """The true width of a set of cells: its two farthest corners, found the slow way."""
+    corners = [corner for cell in cells for corner in h3.cell_to_boundary(cell)]
+    return max(h3.great_circle_distance(a, b, 'm') for a in corners for b in corners)
+
+
+@pytest.mark.parametrize('shape', ['blob', 'ring', 'two clusters', 'line'])
+def test_a_span_is_never_less_than_the_true_width_and_only_a_little_more(shape):
+    cell = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
+    far = grid.cell_for_point(LATITUDE + 0.005, LONGITUDE + 0.004, 11)
+    cells = {
+        'blob': grid.widen([cell], 4) | grid.widen([h3.grid_disk(cell, 5)[-1]], 2),
+        'ring': set(h3.grid_ring(cell, 6)),
+        'two clusters': grid.widen([cell, far], 2),
+        'line': set(h3.grid_path_cells(cell, far)),
+    }[shape]
+    true_width = corner_to_corner(cells)
+    assert true_width <= grid.span_metres(cells) <= true_width + 10
+    widened = grid.widen(cells, 2)
+    assert corner_to_corner(widened) <= grid.span_metres(cells, rings=2) <= corner_to_corner(widened) + 20
+
+
+def test_a_span_is_measured_from_edge_to_edge():
+    cell = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
+    assert 50 < grid.span_metres([cell]) < 65
+    # Each ring adds about one cell spacing (about 50 m) on each side.
+    assert 1_900 < grid.span_metres(grid.widen([cell], 19)) < 2_000
+    two_apart = grid.cell_for_point(LATITUDE + 0.01, LONGITUDE, 11)
+    assert 1_100 < grid.span_metres([cell, two_apart]) < 1_200
+
+
+def test_a_span_is_measured_over_cells_of_one_resolution():
+    cell = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
+    with pytest.raises(ValueError, match='one resolution'):
+        grid.span_metres([cell, grid.coarsen(cell, 9)])
+    with pytest.raises(ValueError, match='empty'):
+        grid.span_metres([])

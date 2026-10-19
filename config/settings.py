@@ -253,6 +253,16 @@ HUEY = {
 # rather than in a system check, because system checks do not run in production.
 GRID_H3_RESOLUTION = env_int('GRID_H3_RESOLUTION', default=11, minimum=0, maximum=11)
 
+# A case's size caps (SPEC.md §7), margin included: a case over them needs the admin's
+# approval. The ceilings are fixed here in the public code and no approval goes past them;
+# the caps can be lowered, never raised beyond them.
+CASE_WINDOW_CEILING_MINUTES = 24 * 60
+CASE_AREA_CEILING_METRES = 10_000
+CASE_WINDOW_CAP_MINUTES = env_int(
+    'CASE_WINDOW_CAP_MINUTES', default=2 * 60, minimum=1, maximum=CASE_WINDOW_CEILING_MINUTES,
+)
+CASE_AREA_CAP_METRES = env_int('CASE_AREA_CAP_METRES', default=2_000, minimum=1, maximum=CASE_AREA_CEILING_METRES)
+
 
 # Accounts log in with an email address (accounts.models).
 AUTH_USER_MODEL = 'accounts.User'
