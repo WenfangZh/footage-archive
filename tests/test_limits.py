@@ -1,15 +1,27 @@
+from unittest import mock
+
 import pytest
+from django.db import OperationalError
 from django.test import Client
 
 from audit import limits
-from audit.models import Action, AuditEntry
+from audit.models import Action, AuditEntry, record
+from clips import tasks
 
 pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures('limits_check')]
 
 DEFAULTS = {
     'CASE_WINDOW_CEILING_MINUTES': 1440, 'CASE_AREA_CEILING_METRES': 10_000,
     'CASE_WINDOW_CAP_MINUTES': 120, 'CASE_AREA_CAP_METRES': 2_000,
+    'ALERT_FAILED_LOGINS': 30, 'QUEUE_ALERT_CLIPS': 20, 'QUEUE_ALERT_HOURS': 2,
 }
+
+
+@pytest.fixture(autouse=True)
+def default_limits(settings):
+    """The defaults, whatever a development .env sets."""
+    for name, number in DEFAULTS.items():
+        setattr(settings, name, number)
 
 
 def changes():
@@ -50,3 +62,43 @@ def test_each_process_checks_once_before_its_first_request(settings):
     assert len(changes()) == 1
     Client().get('/')
     assert changes()[-1]['after']['CASE_WINDOW_CAP_MINUTES'] == 60
+
+
+def test_a_failed_check_answers_no_request_and_is_tried_again(monkeypatch):
+    client = Client()
+    monkeypatch.setattr(limits, '_record_if_changed', mock.Mock(side_effect=RuntimeError('database down')))
+    with pytest.raises(RuntimeError):
+        client.get('/')
+    monkeypatch.undo()
+    monkeypatch.setattr(limits, 'record_if_changed', limits.record_if_changed)
+    assert client.get('/').status_code == 200
+    assert len(changes()) == 1
+
+
+def test_a_locked_database_is_tried_again(monkeypatch):
+    real = limits._record_if_changed
+    attempts = mock.Mock(side_effect=[OperationalError('database is locked'), None])
+    monkeypatch.setattr(limits, '_record_if_changed', lambda: attempts() or real())
+    monkeypatch.setattr(limits.time, 'sleep', lambda seconds: None)
+    limits.record_if_changed()
+    assert attempts.call_count == 2 and len(changes()) == 1
+
+
+def test_the_background_worker_checks_when_it_starts():
+    tasks.record_changed_limits()
+    assert changes() == [{'before': None, 'after': DEFAULTS}]
+
+
+@pytest.mark.parametrize('limits_given', [
+    {'before': None, 'after': {'CASE_AREA_CAP_METRES': 'two thousand'}},
+    {'before': None, 'after': {'a client name': 1}},
+    {'before': None, 'after': {'CASE_AREA_CAP_METRES': True}},
+    {'before': 'text', 'after': {}},
+    {'after': {}},
+    {'before': None, 'after': {}, 'note': 'text'},
+    'text',
+])
+def test_a_change_of_limits_holds_only_setting_names_and_whole_numbers(limits_given):
+    with pytest.raises(ValueError):
+        record(Action.LIMITS_CHANGE, None, limits=limits_given)
+    assert not AuditEntry.objects.exists()

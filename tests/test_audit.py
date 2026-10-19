@@ -269,7 +269,7 @@ def test_an_entry_about_a_case_names_the_cases_own_lawyer(case):
 
 
 @pytest.mark.parametrize('action', ADMIN_CASE_ACTIONS)
-def test_the_admin_s_decision_on_a_case_names_the_admin_the_case_and_its_lawyer(action, admin, case):
+def test_the_admins_decision_on_a_case_names_the_admin_the_case_and_its_lawyer(action, admin, case):
     entry = record(action, case.lawyer_profile, admin=admin, case=case)
     stored = AuditEntry.objects.get(pk=entry.pk)
     assert (stored.action, stored.admin, stored.case, stored.lawyer_profile) == (action, admin, case, case.lawyer_profile)
@@ -285,7 +285,7 @@ def test_a_change_of_limits_names_nobody_and_records_the_numbers():
     entry = record(Action.LIMITS_CHANGE, None, limits=LIMITS)
     stored = AuditEntry.objects.get(pk=entry.pk)
     assert (stored.limits, stored.lawyer_profile, stored.admin, stored.case) == (LIMITS, None, None, None)
-    with pytest.raises(IntegrityError), transaction.atomic():
+    with pytest.raises(ValueError):
         record(Action.LIMITS_CHANGE, None)
 
 

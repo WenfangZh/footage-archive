@@ -42,10 +42,10 @@ class Action(models.TextChoices):
     DOWNLOAD = 'download', pgettext_lazy('audit log action', 'Download')
     CASE_APPROVAL = 'case_approval', pgettext_lazy('audit log action', 'Approval of a larger case')
     CASE_REFUSAL = 'case_refusal', pgettext_lazy('audit log action', 'Refusal of a larger case')
-    LIMITS_CHANGE = 'limits_change', pgettext_lazy('audit log action', 'Change of the limits')
+    LIMITS_CHANGE = 'limits_change', pgettext_lazy('audit log action', 'Change of the size caps and alert limits')
 
 
-# Actions the admin takes; every other action is a lawyer's own.
+# Actions the admin takes; every other action is a lawyer's own, or about the archive.
 ADMIN_ACTIONS = [
     Action.INVITATION, Action.DECLINING, Action.ADMISSION, Action.SUSPENSION,
     Action.REINSTATEMENT, Action.REVOCATION, Action.CASE_APPROVAL, Action.CASE_REFUSAL,
@@ -94,7 +94,7 @@ class AuditEntry(models.Model):
     lawyer_profile = models.ForeignKey(
         LawyerProfile, null=True, blank=True, on_delete=models.PROTECT, related_name='+',
     )
-    # The admin's account, on the admin's actions; empty on a lawyer's own.
+    # The admin's account, on the admin's actions; empty on all others.
     admin = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name='+',
     )
@@ -170,6 +170,8 @@ class AuditEntry(models.Model):
             pk=self.case_id, lawyer_profile_id=self.lawyer_profile_id,
         ).exists():
             raise ValueError("An audit entry about a case names the case's lawyer.")
+        if self.action in ARCHIVE_ACTIONS and not _only_numbers_of_settings(self.limits):
+            raise ValueError('A change of limits records setting names and whole numbers, nothing else.')
         # Always a new row: an entry given an existing id fails instead of replacing it.
         kwargs['force_insert'] = True
         super().save(*args, **kwargs)
@@ -180,6 +182,19 @@ class AuditEntry(models.Model):
 
     def delete(self, *args, **kwargs):
         raise AppendOnly('Audit entries cannot be deleted.')
+
+
+def _only_numbers_of_settings(limits):
+    """Whether `limits` is {"before": numbers or None, "after": numbers}: never text from anyone."""
+    def numbers(values):
+        return isinstance(values, dict) and all(
+            isinstance(name, str) and name.isupper() and name.isidentifier()
+            and type(number) is int for name, number in values.items()
+        )
+    return (
+        isinstance(limits, dict) and set(limits) == {'before', 'after'}
+        and (limits['before'] is None or numbers(limits['before'])) and numbers(limits['after'])
+    )
 
 
 def record(
