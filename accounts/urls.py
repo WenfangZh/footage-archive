@@ -22,6 +22,8 @@ lawyer_patterns = [
     path('cases/<int:case_id>/search/', case_views.search, name='search'),
     path('cases/<int:case_id>/clips/<uuid:clip_id>/', clip_pages.clip_page, name='clip'),
     path('cases/<int:case_id>/clips/<uuid:clip_id>/preview/', clip_pages.preview, name='preview'),
+    path('cases/<int:case_id>/clips/<uuid:clip_id>/download/', clip_pages.download, name='download'),
+    path('cases/<int:case_id>/clips/<uuid:clip_id>/hash-record/', clip_pages.hash_record, name='hash_record'),
     path('margin/', case_views.default_margin, name='default_margin'),
 ]
 manage_patterns = [

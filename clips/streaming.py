@@ -37,27 +37,36 @@ class _Slice:
         self.file.close()
 
 
+def requested_range(request, size):
+    """The bytes (start, end) a request asks of a file of `size` bytes, whether it asks for a
+    part, and None if what it asks for cannot be served."""
+    match = RANGE.fullmatch(request.headers.get('Range', ''))
+    first, last = match.groups() if match else ('', '')
+    # A range that asks for nothing, or ends before it starts, is invalid: it is ignored.
+    if not (first or last) or (first and last and int(last) < int(first)):
+        return (0, size - 1), False
+    if first:
+        start, end = int(first), min(int(last or size - 1), size - 1)
+    else:  # A suffix range: the last `last` bytes.
+        start, end = max(size - int(last), 0), size - 1
+    if start >= size or start > end:
+        return None, True
+    return (start, end), True
+
+
 def file_response(request, file, size, content_type):
     """Serve the open binary `file` of `size` bytes, or the byte range the request asks for.
 
     The response closes `file` when it is closed.
     """
-    match = RANGE.fullmatch(request.headers.get('Range', ''))
-    first, last = match.groups() if match else ('', '')
-    start, end = 0, size - 1
-    status = 200
-    # A range that asks for nothing, or ends before it starts, is invalid: it is ignored.
-    if (first or last) and not (first and last and int(last) < int(first)):
-        if first:
-            start, end = int(first), min(int(last or size - 1), size - 1)
-        else:  # A suffix range: the last `last` bytes.
-            start = max(size - int(last), 0)
-        if start >= size or start > end:
-            file.close()
-            response = HttpResponse(status=416)
-            response['Content-Range'] = f'bytes */{size}'
-            return _with_headers(response)
-        status = 206
+    served, partial = requested_range(request, size)
+    if served is None:
+        file.close()
+        response = HttpResponse(status=416)
+        response['Content-Range'] = f'bytes */{size}'
+        return _with_headers(response)
+    start, end = served
+    status = 206 if partial else 200
 
     file.seek(start)
     length = end - start + 1

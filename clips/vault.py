@@ -122,6 +122,11 @@ def has_file(clip, kind):
     return VaultFile.objects.filter(clip=clip, kind=kind).exists()
 
 
+def extension(clip, kind):
+    """The file extension of the clip's evidence copy or proxy, such as 'mp4'."""
+    return VaultFile.objects.get(clip=clip, kind=kind).file.name.rsplit('.', 1)[-1].lower()
+
+
 def open_file(clip, kind):
     """The clip's evidence copy or proxy, opened for reading in binary; the caller closes it."""
     return VaultFile.objects.get(clip=clip, kind=kind).file.open('rb')

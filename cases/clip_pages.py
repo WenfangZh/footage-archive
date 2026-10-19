@@ -6,14 +6,17 @@ and metadata values, as uploaded, edits, tags, context) and plays its proxy. Eac
 is logged, but a lawyer watching the same clip in the same case again within two hours is
 not logged again: a video player asks for many pieces of one file. Two first requests at
 once may both be logged, which only ever logs too much. Opening the page is not a preview.
+The evidence copy is downloaded as it is, and every download is logged; its hash record
+comes as a JSON file.
 """
 
 import datetime
+import json
 import os
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET
@@ -21,8 +24,8 @@ from django.views.decorators.http import require_GET
 from accounts.roles import lawyer_required
 from audit.models import Action, AuditEntry, record
 from clips import grid, vault
-from clips.models import Clip
-from clips.streaming import file_response
+from clips.models import Clip, HashRecord
+from clips.streaming import file_response, requested_range
 from clips.tags import DEFAULT_TAGS
 
 from .models import Case
@@ -100,3 +103,53 @@ def preview(request, case_id, clip_id):
     except BaseException:
         proxy.close()
         raise
+
+
+# The evidence copy keeps the original's container (clips.evidence).
+CONTENT_TYPES = {'mp4': 'video/mp4', 'mov': 'video/quicktime', 'mkv': 'video/x-matroska'}
+
+
+@lawyer_required
+def download(request, case_id, clip_id):
+    case, clip, _ = case_and_clip(request, case_id, clip_id)
+    if not vault.has_file(clip, vault.EVIDENCE_COPY):
+        raise Http404
+    extension = vault.extension(clip, vault.EVIDENCE_COPY)
+    evidence = vault.open_file(clip, vault.EVIDENCE_COPY)
+    served, _ = requested_range(request, evidence.size)
+    # Every download asks for the first byte at some point; a download resumed later
+    # asks only for the rest, and is the same download.
+    if served is not None and served[0] == 0:
+        record(Action.DOWNLOAD, case.lawyer_profile, case=case, clip=clip)
+    response = file_response(request, evidence, evidence.size, CONTENT_TYPES.get(extension, 'application/octet-stream'))
+    response['Content-Disposition'] = f'attachment; filename="clip-{clip.pk}.{extension}"'
+    return response
+
+
+def hash_record_data(record_):
+    """A hash record as plain data: the fingerprints of the original and the evidence copy."""
+    def hashes(sha256, streams, hashed_at):
+        return {
+            'sha256': sha256,
+            'streams': [{'kind': {'v': 'video', 'a': 'audio'}[kind], 'sha256': digest} for kind, digest in streams],
+            # Kept only to its 4-hour block (SPEC.md §6).
+            'hashed_in_4_hour_block_from': hashed_at.isoformat(),
+        }
+    return {
+        'hash_record': str(record_.pk),
+        'clip': str(record_.clip_id),
+        'original': hashes(record_.original_sha256, record_.original_stream_hashes, record_.original_hashed_at),
+        'evidence_copy': hashes(record_.evidence_sha256, record_.evidence_stream_hashes, record_.evidence_hashed_at),
+    }
+
+
+@lawyer_required
+def hash_record(request, case_id, clip_id):
+    _, clip, _ = case_and_clip(request, case_id, clip_id)
+    stored = HashRecord.objects.filter(clip=clip).first()
+    if stored is None:
+        raise Http404
+    response = HttpResponse(json.dumps(hash_record_data(stored), indent=2), content_type='application/json')
+    response['Content-Disposition'] = f'attachment; filename="clip-{clip.pk}-hash-record.json"'
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response

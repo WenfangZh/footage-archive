@@ -13,6 +13,10 @@
     <p>{% translate "A low-resolution preview. Watching it is recorded in the audit log." %}</p>
   {% endif %}
 
+  <p><a href="{% url 'lawyer:download' case_id=case.pk clip_id=clip.pk %}">{% translate "Download the evidence copy" %}</a>
+    · <a href="{% url 'lawyer:hash_record' case_id=case.pk clip_id=clip.pk %}">{% translate "Download its hash record" %}</a></p>
+  <p>{% translate "The evidence copy holds the clip's video and audio streams unchanged, never re-encoded, in a new container without the file's own metadata; its hash record shows that the frames were not altered. Each download is recorded in the audit log." %}</p>
+
   {% if mismatch %}
     <p role="note"><strong>{% blocktranslate count minutes=mismatch %}The stated time is {{ minutes }} minute away from the metadata time.{% plural %}The stated time is {{ minutes }} minutes away from the metadata time.{% endblocktranslate %}</strong></p>
   {% endif %}
