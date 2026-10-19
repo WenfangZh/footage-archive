@@ -2,7 +2,7 @@
 
 Only through one of the lawyer's own usable cases, and only while the clip matches it:
 there is no other way to a clip. The page shows what the clip says about itself (stated
-and metadata values, as uploaded, edits, tags, context) and plays its proxy. Each preview
+and metadata values, as uploaded, edits, tags, context, contact details) and plays its proxy. Each preview
 is logged, but a lawyer watching the same clip in the same case again within two hours is
 not logged again: a video player asks for many pieces of one file. Two first requests at
 once may both be logged, which only ever logs too much. Opening the page is not a preview.
@@ -78,6 +78,8 @@ def clip_page(request, case_id, clip_id):
         'uploaded_tags': tag_names(uploaded.get('default', []), uploaded.get('custom', [])),
         'edits': clip.edits.order_by('edited_at', 'pk'),
         'context': vault.get_text(clip, vault.CONTEXT),
+        # Left by the code holder on purpose, despite the risk, so that a lawyer can reach them.
+        'contact_details': vault.get_text(clip, vault.CONTACT_DETAILS),
         'has_proxy': vault.has_file(clip, vault.PROXY),
     })
 
