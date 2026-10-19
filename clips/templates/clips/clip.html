@@ -58,7 +58,7 @@
 
     <details{% if form.contact_details.value %} open{% endif %}>
       <summary>{% translate "Contact details (optional)" %}</summary>
-      <p><strong>{% translate "Anyone who obtains these details could use them against you. Leave them only if you accept that risk." %}</strong></p>
+      <p><strong>{% translate "Defence lawyers whose case finds this clip will see these details, to contact you. Anyone else who obtains them could use them against you. Leave them only if you accept that risk." %}</strong></p>
       {{ form.contact_details.as_field_group }}
     </details>
 

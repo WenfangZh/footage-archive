@@ -219,3 +219,4 @@ def test_contact_details_left_by_the_code_holder_are_shown_escaped(case, clip, l
     vault.put_text(clip, vault.CONTACT_DETAILS, '@filmer_example <b>')
     page = lawyer_client.get(url('clip', case, clip)).content.decode()
     assert 'Contact details' in page and '@filmer_example &lt;b&gt;' in page
+    assert 'Use them only for this case' in page
