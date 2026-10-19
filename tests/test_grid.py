@@ -147,3 +147,11 @@ def test_the_middle_cell_is_the_one_nearest_the_average_centre():
     centre = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
     assert grid.middle_cell(grid.widen([centre], 3)) == centre
     assert grid.middle_cell([centre]) == centre
+
+
+@pytest.mark.parametrize('rings', [0, 1, 3, 7])
+def test_widening_ring_by_ring_gives_every_cell_within_the_rings(rings):
+    centre = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
+    far = grid.cell_for_point(LATITUDE + 0.003, LONGITUDE, 11)
+    cells = set(h3.grid_ring(centre, 4)) | {far}
+    assert grid.widen(cells, rings) == set().union(*(h3.grid_disk(cell, rings) for cell in cells))

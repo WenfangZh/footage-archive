@@ -18,6 +18,7 @@ lawyer_patterns = [
     path('cases/closed/', case_views.closed_cases, name='closed_cases'),
     path('cases/<int:case_id>/', case_views.case, name='case'),
     path('cases/<int:case_id>/close/', case_views.close_case, name='close_case'),
+    path('cases/<int:case_id>/search/', case_views.search, name='search'),
     path('margin/', case_views.default_margin, name='default_margin'),
 ]
 manage_patterns = [

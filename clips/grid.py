@@ -46,10 +46,16 @@ def is_cell(value):
 
 
 def widen(cells, rings):
-    """The cells within `rings` steps of any of `cells`, those included."""
-    widened = set()
-    for cell in cells:
-        widened.update(h3.grid_disk(cell, rings))
+    """The cells within `rings` steps of any of `cells`, those included.
+
+    Grown one ring at a time from the newest cells only, so a wide area with a wide margin
+    costs about its outline times the rings, not its size times the rings squared.
+    """
+    widened = set(cells)
+    newest = set(widened)
+    for _ in range(rings):
+        newest = {near for cell in newest for near in h3.grid_disk(cell, 1)} - widened
+        widened |= newest
     return widened
 
 

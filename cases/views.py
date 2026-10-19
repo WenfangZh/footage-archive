@@ -5,6 +5,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
+from django.views.decorators.http import require_POST
 
 from accounts.models import LawyerProfile
 from accounts.roles import lawyer_required
@@ -13,6 +14,7 @@ from audit.models import Action, record
 from . import size
 from .forms import CaseForm, DefaultMarginForm, too_large_message
 from .models import Case, CaseApproval
+from .search import find
 
 
 def own_profile(request):
@@ -62,6 +64,7 @@ def case(request, case_id):
         'approval': CaseApproval.objects.filter(case=own_case).first(),
         # The case's own audit entries: its lawyer may read their own (SPEC.md §7).
         'entries': own_case.audit_entries.order_by('at', 'pk'),
+        'usable': Case.objects.usable().filter(pk=own_case.pk).exists(),
     })
 
 
@@ -91,3 +94,20 @@ def close_case(request, case_id):
 def closed_cases(request):
     cases = Case.objects.filter(lawyer_profile__user=request.user, closed_at__isnull=False).order_by('-closed_at')
     return render(request, 'cases/closed_cases.html', {'cases': cases})
+
+
+@lawyer_required
+@require_POST
+def search(request, case_id):
+    """Run the case's search: every search is logged with how many clips it found (SPEC.md §7).
+
+    Only on POST, from the case page's button: a link, a reload or a prefetch never logs a
+    search the lawyer did not ask for. The results are this response, not a page to go back to.
+    """
+    own_case = get_object_or_404(Case.objects.usable(), pk=case_id, lawyer_profile__user=request.user)
+    found = find(own_case)
+    record(
+        Action.SEARCH, own_case.lawyer_profile, case=own_case,
+        core_count=len(found.core), margin_count=len(found.margin),
+    )
+    return render(request, 'cases/search.html', {'case': own_case, 'core': found.core, 'margin': found.margin})
