@@ -213,7 +213,7 @@ def make_clip_for(lawyer, tmp_path):
     return case, clip
 
 
-def test_contact_details_left_by_the_code_holder_are_shown_escaped(case, clip, lawyer_client, settings):
+def test_contact_details_left_by_the_code_holder_are_shown_escaped_with_a_reminder(case, clip, lawyer_client, settings):
     settings.LANGUAGE_CODE = 'en'
     assert 'Contact details' not in lawyer_client.get(url('clip', case, clip)).content.decode()
     vault.put_text(clip, vault.CONTACT_DETAILS, '@filmer_example <b>')
