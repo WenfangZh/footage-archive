@@ -90,6 +90,16 @@ def test_an_inactivity_period_past_a_century_stops_startup():
     assert 'CASE_INACTIVITY_DAYS must be at most 36500' in result.stderr
 
 
+@pytest.mark.parametrize('name, value, most', [
+    ('ALERT_RAISE_MAX_DAYS', '31', 30), ('ALERT_DOWNLOADS_MINUTES', '10081', 10080),
+    ('ALERT_CASES_HOURS', '8761', 8760), ('ALERT_DOWNLOADS', '100001', 100000),
+])
+def test_absurd_alert_limits_stop_startup(name, value, most):
+    result = load_settings(**{name: value})
+    assert result.returncode != 0
+    assert f'{name} must be at most {most}' in result.stderr
+
+
 def test_upload_defaults():
     assert settings.UPLOAD_MAX_BYTES == 2_000_000_000
     assert settings.UNCONFIRMED_ORIGINAL_MINUTES == 120

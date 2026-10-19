@@ -334,13 +334,13 @@ _French_: alerte
 _Avoid_: Flag, warning
 
 **Alert limits**:
-The numbers past which an alert is raised, such as how many failed logins for one account or how many clips waiting for ingest. Set by the server's configuration; a change is recorded in the audit log when the archive starts.
+The numbers past which an alert is raised, such as how many failed logins for one account, how many clips waiting for ingest, or how many downloads or new cases by one lawyer in a short time. Set by the server's configuration, and a change is recorded in the audit log when the archive starts; the admin can raise one lawyer's limit for a few days, which is logged too.
 _French_: seuils d'alerte
 _Avoid_: Thresholds (alone), triggers
 _Avoid in French_: seuil alone (also the gap between the metadata time and stated time that is highlighted)
 
 **Audit log**:
-The permanent record of every action a lawyer takes in the archive, of the admin's actions on applicants' and lawyers' accounts and decisions on larger cases, and of changes to the size caps and alert limits. It can only be added to.
+The permanent record of every action a lawyer takes in the archive, of the admin's actions on applicants' and lawyers' accounts, decisions on larger cases and raises of a lawyer's alert limit, and of changes to the size caps and alert limits. It can only be added to.
 _French_: journal d'audit
 _Avoid_: Access log, history
 

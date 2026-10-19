@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-19 17:09+0200\n"
+"POT-Creation-Date: 2026-10-19 17:11+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -528,74 +528,79 @@ msgstr "La file de préparation est engorgée"
 msgid "Many failed logins for one account"
 msgstr "Nombreuses connexions échouées pour un même compte"
 
-#: audit/models.py:29
+#: audit/models.py:30
 msgid "Invitation"
 msgstr "Invitation"
 
-#: audit/models.py:30
+#: audit/models.py:31
 msgid "Declining"
 msgstr "Candidature non retenue"
 
-#: audit/models.py:31
+#: audit/models.py:32
 msgid "Admission"
 msgstr "Admission"
 
-#: audit/models.py:32
+#: audit/models.py:33
 msgid "Suspension"
 msgstr "Suspension de l'accès"
 
-#: audit/models.py:33
+#: audit/models.py:34
 msgid "Reinstatement"
 msgstr "Rétablissement de l'accès"
 
-#: audit/models.py:34
+#: audit/models.py:35
 msgid "Revocation"
 msgstr "Révocation de l'accès"
 
-#: audit/models.py:37
+#: audit/models.py:38
 msgctxt "audit log action"
 msgid "Case creation"
 msgstr "Création d'un dossier de recherche"
 
-#: audit/models.py:38
+#: audit/models.py:39
 msgctxt "audit log action"
 msgid "Case closing"
 msgstr "Clôture d'un dossier de recherche"
 
-#: audit/models.py:39
+#: audit/models.py:40
 msgctxt "audit log action"
 msgid "Request for a larger case"
 msgstr "Demande de dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:40
+#: audit/models.py:41
 msgctxt "audit log action"
 msgid "Search"
 msgstr "Recherche"
 
-#: audit/models.py:41
+#: audit/models.py:42
 msgctxt "audit log action"
 msgid "Preview"
 msgstr "Prévisualisation"
 
-#: audit/models.py:42
+#: audit/models.py:43
 msgctxt "audit log action"
 msgid "Download"
 msgstr "Téléchargement"
 
-#: audit/models.py:43
+#: audit/models.py:44
 msgctxt "audit log action"
 msgid "Approval of a larger case"
 msgstr "Validation d'un dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:44
+#: audit/models.py:45
 msgctxt "audit log action"
 msgid "Refusal of a larger case"
 msgstr "Refus d'un dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:45
+#: audit/models.py:46
 msgctxt "audit log action"
 msgid "Change of the size caps and alert limits"
 msgstr "Changement des plafonds et des seuils d'alerte"
+
+#: audit/models.py:47
+msgctxt "audit log action"
+msgid "Temporary raise of a lawyer's alert limit"
+msgstr "Relèvement temporaire d'un seuil d'alerte pour un·e avocat·e"
 
 #: cases/approval.py:39
 msgid "The case is approved."
@@ -904,9 +909,9 @@ msgid ""
 "the audit log."
 msgstr ""
 "La copie de preuve contient les flux vidéo et audio du clip inchangés, "
-"jamais réencodés, dans un nouveau conteneur sans les métadonnées du fichier "
-"; ses empreintes numériques (hash) montrent que les images n'ont pas été "
-"modifiées. Chaque téléchargement est inscrit au journal d'audit."
+"jamais réencodés, dans un nouveau conteneur sans les métadonnées du "
+"fichier ; ses empreintes numériques (hash) montrent que les images n'ont pas "
+"été modifiées. Chaque téléchargement est inscrit au journal d'audit."
 
 #: cases/templates/cases/clip.html:21
 #, python-format
@@ -1570,11 +1575,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:340
+#: config/settings.py:348
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:341
+#: config/settings.py:349
 msgid "English"
 msgstr "Anglais"
 
