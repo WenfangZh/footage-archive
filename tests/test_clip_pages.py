@@ -211,3 +211,11 @@ def make_clip_for(lawyer, tmp_path):
         source.write_bytes(PROXY_BYTES)
         vault.record_file(clip, kind, vault.store_file(source, 'mp4'))
     return case, clip
+
+
+def test_contact_details_left_by_the_code_holder_are_shown_escaped(case, clip, lawyer_client, settings):
+    settings.LANGUAGE_CODE = 'en'
+    assert 'Contact details' not in lawyer_client.get(url('clip', case, clip)).content.decode()
+    vault.put_text(clip, vault.CONTACT_DETAILS, '@filmer_example <b>')
+    page = lawyer_client.get(url('clip', case, clip)).content.decode()
+    assert 'Contact details' in page and '@filmer_example &lt;b&gt;' in page

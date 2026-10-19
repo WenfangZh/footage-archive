@@ -47,6 +47,12 @@
     <p>{{ context|linebreaksbr }}</p>
   {% endif %}
 
+  {% if contact_details %}
+    <h2>{% translate "Contact details" %}</h2>
+    <p>{{ contact_details|linebreaksbr }}</p>
+    <p>{% translate "The code holder chose to leave these, knowing they could be used against them. Use them only for this case, and keep them out of anything you share." %}</p>
+  {% endif %}
+
   <h2>{% translate "Edits since upload" %}</h2>
   {% if edits %}
     <ul>{% for edit in edits %}<li>{% blocktranslate with field=edit.get_field_display day=edit.edited_at|date:"j F Y" start=edit.edited_at|date:"H:i" %}{{ field }}: {{ day }}, in the four hours from {{ start }}{% endblocktranslate %}</li>{% endfor %}</ul>
