@@ -11,7 +11,8 @@ A lawyer's own actions also name their case and, where there is one, the clip: a
 id, so that deleting a clip never deletes or changes an entry. A search records how many
 clips it found instead (SPEC.md §7). The admin's decision on a larger case names the case.
 One entry names nobody: a change of the size caps or alert limits found when the archive
-starts, with the numbers before and after (audit.limits).
+starts, with the numbers before and after (audit.limits). The admin's temporary raise of
+one lawyer's alert limit records the limit before and after too.
 """
 
 from django.apps import apps
@@ -43,12 +44,13 @@ class Action(models.TextChoices):
     CASE_APPROVAL = 'case_approval', pgettext_lazy('audit log action', 'Approval of a larger case')
     CASE_REFUSAL = 'case_refusal', pgettext_lazy('audit log action', 'Refusal of a larger case')
     LIMITS_CHANGE = 'limits_change', pgettext_lazy('audit log action', 'Change of the size caps and alert limits')
+    ALERT_LIMIT_RAISE = 'alert_limit_raise', pgettext_lazy('audit log action', "Temporary raise of a lawyer's alert limit")
 
 
 # Actions the admin takes; every other action is a lawyer's own, or about the archive.
 ADMIN_ACTIONS = [
     Action.INVITATION, Action.DECLINING, Action.ADMISSION, Action.SUSPENSION,
-    Action.REINSTATEMENT, Action.REVOCATION, Action.CASE_APPROVAL, Action.CASE_REFUSAL,
+    Action.REINSTATEMENT, Action.REVOCATION, Action.CASE_APPROVAL, Action.CASE_REFUSAL, Action.ALERT_LIMIT_RAISE,
 ]
 # The admin's decisions on a lawyer's case.
 ADMIN_CASE_ACTIONS = [Action.CASE_APPROVAL, Action.CASE_REFUSAL]
@@ -61,6 +63,8 @@ CLIP_ACTIONS = [Action.PREVIEW, Action.DOWNLOAD]
 COUNT_ACTIONS = [Action.SEARCH]
 # Entries about the archive itself, which name no applicant or lawyer.
 ARCHIVE_ACTIONS = [Action.LIMITS_CHANGE]
+# Entries that record limits, before and after.
+LIMIT_ACTIONS = [Action.LIMITS_CHANGE, Action.ALERT_LIMIT_RAISE]
 # The settings a change of limits records (audit.limits): each new size cap or alert limit
 # is added here.
 LIMIT_SETTINGS = [
@@ -68,6 +72,7 @@ LIMIT_SETTINGS = [
     'CASE_WINDOW_CEILING_MINUTES', 'CASE_AREA_CEILING_METRES', 'CASE_WINDOW_CAP_MINUTES', 'CASE_AREA_CAP_METRES',
     # Alert limits.
     'ALERT_FAILED_LOGINS', 'QUEUE_ALERT_CLIPS', 'QUEUE_ALERT_HOURS',
+    'ALERT_DOWNLOADS', 'ALERT_DOWNLOADS_MINUTES', 'ALERT_CASES', 'ALERT_CASES_HOURS', 'ALERT_RAISE_MAX_DAYS',
 ]
 
 
@@ -117,8 +122,9 @@ class AuditEntry(models.Model):
     # margin matches (found only in the margin around them).
     core_count = models.PositiveIntegerField(null=True, blank=True)
     margin_count = models.PositiveIntegerField(null=True, blank=True)
-    # A change of limits: {"before": {setting: number}, "after": {setting: number}}, with
-    # "before" null the first time. Setting names and numbers only.
+    # A change of limits, or the admin raising one lawyer's alert limit for a while:
+    # {"before": {setting: number}, "after": {setting: number}}, with "before" null the
+    # first time. Setting names and numbers only.
     limits = models.JSONField(null=True, blank=True)
     # The time of writing, never one passed in. Precise: alerts look for many actions in a
     # short time (SPEC.md §7).
@@ -157,9 +163,9 @@ class AuditEntry(models.Model):
                 name='counts_on_searches_only',
             ),
             models.CheckConstraint(
-                condition=Q(action__in=ARCHIVE_ACTIONS, limits__isnull=False)
-                | (~Q(action__in=ARCHIVE_ACTIONS) & Q(limits__isnull=True)),
-                name='limits_on_limits_changes_only',
+                condition=Q(action__in=LIMIT_ACTIONS, limits__isnull=False)
+                | (~Q(action__in=LIMIT_ACTIONS) & Q(limits__isnull=True)),
+                name='limits_on_limit_actions_only',
             ),
         ]
 
@@ -178,7 +184,7 @@ class AuditEntry(models.Model):
             pk=self.case_id, lawyer_profile_id=self.lawyer_profile_id,
         ).exists():
             raise ValueError("An audit entry about a case names the case's lawyer.")
-        if self.action in ARCHIVE_ACTIONS and not _only_numbers_of_settings(self.limits):
+        if self.action in LIMIT_ACTIONS and not _only_numbers_of_settings(self.limits):
             raise ValueError('A change of limits records setting names and whole numbers, nothing else.')
         # Always a new row: an entry given an existing id fails instead of replacing it.
         kwargs['force_insert'] = True

@@ -63,7 +63,9 @@ def test_the_time_cannot_be_backdated(admin, applicant):
     assert AuditEntry.objects.get(pk=entry.pk).at.year != 2000
 
 
-@pytest.mark.parametrize('action', [action for action in ADMIN_ACTIONS if action not in ADMIN_CASE_ACTIONS])
+@pytest.mark.parametrize('action', [
+    action for action in ADMIN_ACTIONS if action not in ADMIN_CASE_ACTIONS and action != Action.ALERT_LIMIT_RAISE
+])
 def test_the_admin_actions_name_the_admin(action, applicant):
     with pytest.raises(IntegrityError), transaction.atomic():
         record(action, applicant)
@@ -303,3 +305,16 @@ def test_every_other_entry_names_a_person_and_no_limits(admin, applicant, case):
         record(Action.INVITATION, applicant, admin=admin, limits=LIMITS)
     with pytest.raises(IntegrityError), transaction.atomic():
         record(Action.CASE_CREATION, case.lawyer_profile, case=case, limits=LIMITS)
+
+
+def test_a_raise_of_an_alert_limit_names_the_admin_and_lawyer_and_records_the_numbers(admin, case):
+    raised = {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_DOWNLOADS': 60}}
+    entry = record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, admin=admin, limits=raised)
+    stored = AuditEntry.objects.get(pk=entry.pk)
+    assert (stored.admin, stored.lawyer_profile, stored.limits, stored.case) == (admin, case.lawyer_profile, raised, None)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, limits=raised)
+    with pytest.raises(ValueError):
+        record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, admin=admin)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.ALERT_LIMIT_RAISE, None, admin=admin, limits=raised)
