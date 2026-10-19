@@ -87,6 +87,12 @@ def span_metres(cells, rings=0):
     return farthest + 2 * half_width + 2 * rings * spacing
 
 
+def reach_metres(cells):
+    """How far the centres of a set of cells reach from one of them: never more than its span."""
+    centres = [h3.cell_to_latlng(cell) for cell in cells]
+    return max(_metres(centres[0], centre) for centre in centres)
+
+
 def middle_cell(cells):
     """The cell of a set nearest the average of their centres: where to say the set is."""
     centres = {cell: h3.cell_to_latlng(cell) for cell in cells}

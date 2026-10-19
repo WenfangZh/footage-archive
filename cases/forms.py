@@ -81,7 +81,7 @@ def max_cells():
     circle's area in cells of average size leaves room for cells smaller than average.
     """
     radius = settings.CASE_AREA_CEILING_METRES / math.sqrt(3)
-    return int(2 * math.pi * radius**2 / grid.average_area_square_metres())
+    return max(1, int(2 * math.pi * radius**2 / grid.average_area_square_metres()))
 
 
 class CellsField(forms.Field):
@@ -173,7 +173,7 @@ class CaseForm(forms.Form):
                 cleaned['needs_approval'] = True
         return cleaned
 
-    @method_decorator(sensitive_variables('cleaned', 'place'))
+    @method_decorator(sensitive_variables('cleaned', 'place', 'value'))
     def _clean_area(self, cleaned):
         """Put the area's cells in `cleaned`, from the map or from the typed place and radius."""
         picked = cleaned.pop('cells', None)
@@ -183,13 +183,13 @@ class CaseForm(forms.Form):
             self.add_error(None, _('Give the area either as a place and a radius or on the map, not both.'))
         elif picked:
             cleaned['cells'] = picked
-        elif typed:
+        elif typed and 'cells' not in self.errors:
             for name, value in zip(PLACE_FIELDS, place):
                 if value is None and name not in self.errors:
                     self.add_error(name, self.fields[name].error_messages['required'])
             if None not in place:
                 cleaned['cells'] = grid.cells_around(*place)
-        elif 'cells' not in self.errors:
+        elif not typed and 'cells' not in self.errors:
             self.add_error(None, _('Give the place and radius from the police report, or pick the area on the map.'))
 
 
