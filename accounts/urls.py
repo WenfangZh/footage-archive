@@ -3,6 +3,7 @@ from django.urls import path
 
 from alerts import views as alert_views
 from cases import approval as case_approval
+from cases import clip_pages
 from cases import views as case_views
 
 from . import access, admission, invitations, two_factor, views
@@ -19,6 +20,8 @@ lawyer_patterns = [
     path('cases/<int:case_id>/', case_views.case, name='case'),
     path('cases/<int:case_id>/close/', case_views.close_case, name='close_case'),
     path('cases/<int:case_id>/search/', case_views.search, name='search'),
+    path('cases/<int:case_id>/clips/<uuid:clip_id>/', clip_pages.clip_page, name='clip'),
+    path('cases/<int:case_id>/clips/<uuid:clip_id>/preview/', clip_pages.preview, name='preview'),
     path('margin/', case_views.default_margin, name='default_margin'),
 ]
 manage_patterns = [

@@ -31,6 +31,11 @@ def coarsen(cell, resolution):
     return h3.cell_to_parent(cell, resolution)
 
 
+def children(cell, resolution):
+    """The cells of a finer `resolution` that together make up `cell`: just it at its own."""
+    return set(h3.cell_to_children(cell, resolution))
+
+
 def resolution(cell):
     return h3.get_resolution(cell)
 
@@ -124,6 +129,11 @@ def cells_around(latitude, longitude, radius_metres):
         if not reached:
             return cells
         cells |= reached
+
+
+def width_metres(cell):
+    """About how wide a cell is: twice its centre-to-corner distance."""
+    return 2 * _corner_metres(cell)
 
 
 def _corner_metres(cell):

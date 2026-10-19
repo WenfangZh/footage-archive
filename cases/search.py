@@ -71,7 +71,32 @@ def find(case, clips=None):
     return matches
 
 
+# Past this many resolutions finer, a coarse cell holds too many area-sized cells to list.
+_MAX_STEPS_FINER = 3
+
+
 def match_of(case, clip):
-    """'core', 'margin' or None: how `clip` matches `case`, for pages that show one clip."""
-    found = find(case, Clip.objects.filter(pk=clip.pk))
-    return 'core' if found.core else 'margin' if found.margin else None
+    """'core', 'margin' or None: how `clip` matches `case`, for pages that show one clip.
+
+    The same rule as find(), checked from the clip's side: the area cells its cell could
+    overlap are listed and looked up, rather than the whole area read, since a video
+    player asks for the preview in many pieces and each one checks again.
+    """
+    candidate = _candidates(case, Clip.objects.filter(pk=clip.pk)).first()
+    if candidate is None:
+        return None
+    area_resolution = grid.resolution(case.cells.values_list('cell', flat=True).first())
+    cell = candidate.stated_cell
+    if grid.resolution(cell) > area_resolution:
+        cell = grid.coarsen(cell, area_resolution)
+    steps_finer = area_resolution - grid.resolution(cell)
+    if steps_finer > _MAX_STEPS_FINER:
+        found = find(case, Clip.objects.filter(pk=clip.pk))
+        return 'core' if found.core else 'margin' if found.margin else None
+    inside = grid.children(cell, area_resolution)
+    in_window = candidate.stated_time <= case.ends_at and candidate.stated_end >= case.starts_at
+    if case.cells.filter(cell__in=inside).exists():
+        return 'core' if in_window else 'margin'
+    if case.cells.filter(cell__in=grid.widen(inside, case.margin_rings)).exists():
+        return 'margin'
+    return None
