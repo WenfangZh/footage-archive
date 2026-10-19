@@ -135,3 +135,10 @@ def test_a_malformed_earlier_row_does_not_stop_the_check():
 
 def test_every_tracked_setting_exists_and_is_a_whole_number(settings):
     assert all(type(getattr(settings, name)) is int for name in LIMIT_SETTINGS)
+
+
+def test_a_setting_added_since_the_last_start_is_recorded_as_a_change():
+    older = {name: number for name, number in DEFAULTS.items() if not name.startswith('ALERT_')}
+    record(Action.LIMITS_CHANGE, None, limits={'before': None, 'after': older})
+    limits.record_if_changed()
+    assert changes()[-1] == {'before': older, 'after': DEFAULTS}

@@ -307,8 +307,31 @@ def test_every_other_entry_names_a_person_and_no_limits(admin, applicant, case):
         record(Action.CASE_CREATION, case.lawyer_profile, case=case, limits=LIMITS)
 
 
+RAISED = {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_DOWNLOADS': 60}, 'days': 2}
+
+
+@pytest.mark.parametrize('limits_given', [
+    {'before': None, 'after': {'ALERT_DOWNLOADS': 60}, 'days': 2},
+    {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_DOWNLOADS': 60}},
+    {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_DOWNLOADS': 10}, 'days': 2},
+    {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_CASES': 60}, 'days': 2},
+    {'before': {'CASE_AREA_CAP_METRES': 2000}, 'after': {'CASE_AREA_CAP_METRES': 3000}, 'days': 2},
+    {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_DOWNLOADS': 60}, 'days': 0},
+    {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_DOWNLOADS': 60}, 'days': 'two'},
+    {'before': {}, 'after': {}, 'days': 2},
+])
+def test_a_raise_records_one_higher_limit_and_its_days(admin, case, limits_given):
+    with pytest.raises(ValueError):
+        record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, admin=admin, limits=limits_given)
+
+
+def test_a_raise_names_no_case(admin, case):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, admin=admin, case=case, limits=RAISED)
+
+
 def test_a_raise_of_an_alert_limit_names_the_admin_and_lawyer_and_records_the_numbers(admin, case):
-    raised = {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_DOWNLOADS': 60}}
+    raised = RAISED
     entry = record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, admin=admin, limits=raised)
     stored = AuditEntry.objects.get(pk=entry.pk)
     assert (stored.admin, stored.lawyer_profile, stored.limits, stored.case) == (admin, case.lawyer_profile, raised, None)

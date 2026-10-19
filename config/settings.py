@@ -226,11 +226,12 @@ ALERT_FAILED_LOGINS = env_int('ALERT_FAILED_LOGINS', default=30, minimum=1)
 # Unusual lawyer activity (SPEC.md §7): this many downloads by one lawyer within
 # ALERT_DOWNLOADS_MINUTES, or this many cases created within ALERT_CASES_HOURS, alert the
 # admin. The admin can raise one lawyer's limit for at most ALERT_RAISE_MAX_DAYS days.
-ALERT_DOWNLOADS = env_int('ALERT_DOWNLOADS', default=20, minimum=1)
-ALERT_DOWNLOADS_MINUTES = env_int('ALERT_DOWNLOADS_MINUTES', default=60, minimum=1)
-ALERT_CASES = env_int('ALERT_CASES', default=5, minimum=1)
-ALERT_CASES_HOURS = env_int('ALERT_CASES_HOURS', default=24, minimum=1)
-ALERT_RAISE_MAX_DAYS = env_int('ALERT_RAISE_MAX_DAYS', default=3, minimum=1)
+# The maximums only stop values that could not mean anything.
+ALERT_DOWNLOADS = env_int('ALERT_DOWNLOADS', default=20, minimum=1, maximum=100_000)
+ALERT_DOWNLOADS_MINUTES = env_int('ALERT_DOWNLOADS_MINUTES', default=60, minimum=1, maximum=7 * 24 * 60)
+ALERT_CASES = env_int('ALERT_CASES', default=5, minimum=1, maximum=100_000)
+ALERT_CASES_HOURS = env_int('ALERT_CASES_HOURS', default=24, minimum=1, maximum=365 * 24)
+ALERT_RAISE_MAX_DAYS = env_int('ALERT_RAISE_MAX_DAYS', default=3, minimum=1, maximum=30)
 
 # In this process's memory: enough for one development server. Several server
 # processes would each count separately, and this cache drops entries once it holds 300,

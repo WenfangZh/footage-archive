@@ -122,9 +122,9 @@ class AuditEntry(models.Model):
     # margin matches (found only in the margin around them).
     core_count = models.PositiveIntegerField(null=True, blank=True)
     margin_count = models.PositiveIntegerField(null=True, blank=True)
-    # A change of limits, or the admin raising one lawyer's alert limit for a while:
-    # {"before": {setting: number}, "after": {setting: number}}, with "before" null the
-    # first time. Setting names and numbers only.
+    # A change of limits: {"before": {setting: number}, "after": {setting: number}}, with
+    # "before" null the first time. The admin raising one lawyer's alert limit: the limit
+    # before and after, and "days": for how long. Setting names and numbers only.
     limits = models.JSONField(null=True, blank=True)
     # The time of writing, never one passed in. Precise: alerts look for many actions in a
     # short time (SPEC.md §7).
@@ -184,8 +184,10 @@ class AuditEntry(models.Model):
             pk=self.case_id, lawyer_profile_id=self.lawyer_profile_id,
         ).exists():
             raise ValueError("An audit entry about a case names the case's lawyer.")
-        if self.action in LIMIT_ACTIONS and not _only_numbers_of_settings(self.limits):
+        if self.action == Action.LIMITS_CHANGE and not _only_numbers_of_settings(self.limits):
             raise ValueError('A change of limits records setting names and whole numbers, nothing else.')
+        if self.action == Action.ALERT_LIMIT_RAISE and not _a_raise(self.limits):
+            raise ValueError('A raise records one activity limit before and after, higher, and for how many days.')
         # Always a new row: an entry given an existing id fails instead of replacing it.
         kwargs['force_insert'] = True
         super().save(*args, **kwargs)
@@ -207,6 +209,23 @@ def _only_numbers_of_settings(limits):
     return (
         isinstance(limits, dict) and set(limits) == {'before', 'after'}
         and (limits['before'] is None or numbers(limits['before'])) and numbers(limits['after'])
+    )
+
+
+# The alert limits the admin can raise for one lawyer (alerts.models.AlertLimitRaise).
+RAISABLE_LIMITS = {'ALERT_DOWNLOADS', 'ALERT_CASES'}
+
+
+def _a_raise(limits):
+    """Whether `limits` is {"before": {limit: n}, "after": {limit: higher n}, "days": d}."""
+    if not (isinstance(limits, dict) and set(limits) == {'before', 'after', 'days'}):
+        return False
+    before, after, days = limits['before'], limits['after'], limits['days']
+    return (
+        isinstance(before, dict) and isinstance(after, dict) and len(after) == 1
+        and set(before) == set(after) <= RAISABLE_LIMITS
+        and all(type(n) is int for n in [*before.values(), *after.values(), days])
+        and all(after[name] > before[name] for name in after) and days >= 1
     )
 
 
