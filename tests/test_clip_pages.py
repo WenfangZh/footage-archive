@@ -64,6 +64,10 @@ def clip(tmp_path):
     return clip
 
 
+def access_entries():
+    return AuditEntry.objects.filter(action__in=[Action.PREVIEW, Action.CLIP_VIEW])
+
+
 def url(name, case, clip):
     return reverse(f'lawyer:{name}', kwargs={'case_id': case.pk, 'clip_id': clip.pk})
 
@@ -107,9 +111,23 @@ def test_viewing_the_page_is_logged_once_in_two_hours_and_is_not_a_preview(case,
     assert not AuditEntry.objects.filter(action=Action.PREVIEW).exists()
 
 
-def test_the_page_is_only_a_get(case, clip, lawyer_client):
-    assert lawyer_client.post(url('clip', case, clip)).status_code == 405
+@pytest.mark.parametrize('method', ['head', 'post'])
+def test_the_page_is_only_a_get(case, clip, lawyer_client, method):
+    assert getattr(lawyer_client, method)(url('clip', case, clip)).status_code == 405
     assert not AuditEntry.objects.exists()
+
+
+def test_a_visit_logs_both_the_view_and_the_preview(case, clip, lawyer_client):
+    lawyer_client.get(url('clip', case, clip))
+    lawyer_client.get(url('preview', case, clip), HTTP_RANGE='bytes=0-10')
+    assert sorted(AuditEntry.objects.values_list('action', flat=True)) == sorted([Action.CLIP_VIEW, Action.PREVIEW])
+
+
+def test_a_view_in_another_case_is_logged_for_that_case(lawyer, case, clip, lawyer_client):
+    other = make_case(lawyer, 'Other', rings=1, starts_at=START, ends_at=START + datetime.timedelta(hours=1))
+    lawyer_client.get(url('clip', case, clip))
+    lawyer_client.get(url('clip', other, clip))
+    assert set(AuditEntry.objects.filter(action=Action.CLIP_VIEW).values_list('case', flat=True)) == {case.pk, other.pk}
 
 
 def test_a_time_mismatch_is_highlighted(case, clip, lawyer_client, settings):
@@ -168,13 +186,14 @@ def test_a_clip_that_does_not_match_the_case_is_not_found(lawyer, clip, lawyer_c
 def test_another_lawyer_s_case_is_not_found(case, clip, name):
     other = log_in_with_second_factor(Client(), make_lawyer('other@example.org').user)
     assert other.get(url(name, case, clip)).status_code == 404
+    assert not access_entries().exists()
 
 
 @pytest.mark.parametrize('name', ['clip', 'preview'])
 def test_a_closed_case_allows_no_preview(case, clip, lawyer_client, name):
     Case.objects.filter(pk=case.pk).close(Case.ClosedBecause.LAWYER)
     assert lawyer_client.get(url(name, case, clip)).status_code == 404
-    assert not AuditEntry.objects.filter(action=Action.PREVIEW).exists()
+    assert not access_entries().exists()
 
 
 @pytest.mark.parametrize('method', ['head', 'post'])
@@ -198,6 +217,7 @@ def test_a_case_waiting_for_approval_or_refused_allows_no_preview(lawyer, clip, 
     refused.approval.decide(False, admin)
     for case in (waiting, refused):
         assert lawyer_client.get(url(name, case, clip)).status_code == 404
+    assert not access_entries().exists()
 
 
 @pytest.mark.parametrize('name', ['clip', 'preview'])
