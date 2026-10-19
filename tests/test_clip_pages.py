@@ -197,3 +197,17 @@ def test_a_clip_not_ready_is_not_found(case, clip, lawyer_client, name):
 def test_search_results_link_to_the_clip_page(case, clip, lawyer_client):
     page = lawyer_client.post(reverse('lawyer:search', kwargs={'case_id': case.pk})).content.decode()
     assert url('clip', case, clip) in page
+
+
+def make_clip_for(lawyer, tmp_path):
+    """A case for `lawyer` and a ready clip it matches, with a proxy and an evidence copy."""
+    case = make_case(lawyer, rings=2, starts_at=START, ends_at=START + datetime.timedelta(hours=1))
+    clip = Clip.objects.create(
+        code_hash='2' * 64, status=Clip.Status.READY, stated_time=START + datetime.timedelta(minutes=10),
+        stated_cell=CENTRE, stated_precision=Precision.EXACT_SPOT,
+    )
+    for kind, name in ((vault.PROXY, 'proxy.mp4'), (vault.EVIDENCE_COPY, 'evidence.mp4')):
+        source = tmp_path / name
+        source.write_bytes(PROXY_BYTES)
+        vault.record_file(clip, kind, vault.store_file(source, 'mp4'))
+    return case, clip

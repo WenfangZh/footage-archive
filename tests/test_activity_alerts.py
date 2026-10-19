@@ -176,3 +176,52 @@ def test_a_raise_is_never_changed(lawyer):
 def test_only_a_current_lawyer_s_limit_can_be_raised(admin_client):
     applicant = LawyerProfile.objects.create(user=User.objects.create_user('applicant@example.org'), bar='Lyon')
     assert raise_limit(admin_client, applicant).status_code == 404
+
+
+def test_one_alert_per_span_even_once_the_admin_has_seen_it(lawyer, case):
+    for _ in range(3):
+        download(case)
+    check_activity(lawyer, DOWNLOADS)
+    Alert.objects.update(seen_at=timezone.now())
+    download(case)
+    check_activity(lawyer, DOWNLOADS)
+    assert len(alerts()) == 1
+    later = timezone.now() + datetime.timedelta(minutes=61)
+    for _ in range(3):
+        download(case, at=later)
+    check_activity(lawyer, DOWNLOADS, now=later)
+    assert len(alerts()) == 2
+
+
+def test_the_highest_raise_in_force_applies(lawyer):
+    until = timezone.now() + datetime.timedelta(days=1)
+    for limit in (8, 12, 10):
+        AlertLimitRaise.objects.create(lawyer_profile=lawyer, activity=DOWNLOADS, limit=limit, until=until)
+    assert activity_limit(lawyer, DOWNLOADS) == 12
+
+
+def test_downloads_through_the_page_are_checked_and_resumes_are_not_counted(lawyer, settings, tmp_path):
+    from tests.test_clip_pages import make_clip_for
+
+    settings.ALERT_DOWNLOADS = 2
+    case, clip = make_clip_for(lawyer, tmp_path)
+    client = log_in_with_second_factor(Client(), lawyer.user)
+    url = reverse('lawyer:download', kwargs={'case_id': case.pk, 'clip_id': clip.pk})
+    client.get(url, HTTP_RANGE='bytes=0-9')
+    client.get(url, HTTP_RANGE='bytes=10-')
+    assert alerts() == [] and AuditEntry.objects.filter(action=Action.DOWNLOAD).count() == 1
+    client.get(url)
+    assert alerts() == [lawyer.user.pk]
+
+
+def test_a_failed_check_leaves_no_case_behind(lawyer, monkeypatch):
+    from cases.models import Case
+    monkeypatch.setattr('cases.views.check_activity', mock.Mock(side_effect=RuntimeError))
+    client = log_in_with_second_factor(Client(), lawyer.user)
+    with pytest.raises(RuntimeError):
+        client.post(reverse('lawyer:new_case'), {
+            'label': 'A case', 'starts_at': '2026-06-15T18:00', 'ends_at': '2026-06-15T19:00',
+            'latitude': '48.8532', 'longitude': '2.3692', 'radius_metres': '50', 'margin_minutes': '10',
+            'margin_rings': '1',
+        })
+    assert not Case.objects.exists() and not AuditEntry.objects.exists()

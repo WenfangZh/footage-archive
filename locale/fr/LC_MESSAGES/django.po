@@ -575,7 +575,7 @@ msgstr "%(activity)s : %(limit)s, jusqu'au %(until)s"
 
 #: alerts/templates/alerts/raise_limit.html:16
 msgid "Raise the limit"
-msgstr "Relever le seuil"
+msgstr "Relever le seuil d'alerte"
 
 #: alerts/views.py:31
 msgid "Alert"
@@ -583,7 +583,7 @@ msgstr "Alerte"
 
 #: alerts/views.py:32
 msgid "New limit"
-msgstr "Nouveau seuil"
+msgstr "Nouveau seuil d'alerte"
 
 #: alerts/views.py:33
 msgid "For how many days"
@@ -597,12 +597,12 @@ msgstr "Au plus %(days)s."
 #: alerts/views.py:49
 #, python-format
 msgid "A raise must be higher than the limit now: %(limit)s."
-msgstr "Le nouveau seuil doit dépasser le seuil actuel : %(limit)s."
+msgstr "Le nouveau seuil d'alerte doit dépasser le seuil d'alerte actuel : %(limit)s."
 
 #: alerts/views.py:51
 #, python-format
 msgid "At most ten times the usual limit: %(limit)s."
-msgstr "Au plus dix fois le seuil habituel : %(limit)s."
+msgstr "Au plus dix fois le seuil d'alerte habituel : %(limit)s."
 
 #: alerts/views.py:75
 msgid "The alert limit is raised."
