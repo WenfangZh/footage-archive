@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext_lazy as _
-from django.views.decorators.debug import sensitive_post_parameters
+from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 
 from accounts.models import LawyerProfile
 from accounts.roles import lawyer_required
@@ -23,6 +23,8 @@ def own_profile(request):
 # Left out of Django's error reports: the typed place is never kept.
 # The reason is deleted after the admin's decision, so it stays out of them too.
 @sensitive_post_parameters('latitude', 'longitude', 'reason')
+# And out of the variables a traceback shows: the form and its cleaned data hold them too.
+@sensitive_variables('form', 'fields')
 def new_case(request):
     profile = own_profile(request)
     if request.method == 'POST':

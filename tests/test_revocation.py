@@ -209,3 +209,11 @@ def test_the_database_checks_how_a_case_is_closed(lawyer, fields):
         window = {'starts_at': timezone.now() - datetime.timedelta(hours=1), 'ends_at': timezone.now()}
         # Past create_with_area's own checks, to reach the database's.
         Case(lawyer_profile=lawyer, label='A case', margin_minutes=0, margin_rings=0, **window, **fields).save(_checked=True)
+
+
+def test_revocation_deletes_the_reason_of_a_waiting_request(admin_client, lawyer):
+    starts_at = timezone.now() - datetime.timedelta(days=1)
+    case = make_case(lawyer, starts_at=starts_at, ends_at=starts_at + datetime.timedelta(hours=3), approval_reason='Two charges.')
+    revoke(admin_client, lawyer)
+    case.refresh_from_db()
+    assert case.closed_because == Case.ClosedBecause.REVOCATION and case.approval.reason == ''

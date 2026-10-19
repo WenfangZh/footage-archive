@@ -11,6 +11,8 @@ closed. A case within the caps has no CaseApproval.
 """
 
 from django.db import models, transaction
+from django.utils.decorators import method_decorator
+from django.views.decorators.debug import sensitive_variables
 from django.db.models import F, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -37,10 +39,11 @@ class CaseQuerySet(models.QuerySet):
         with transaction.atomic():
             closing = list(self.open().values_list('pk', flat=True))
             CaseApproval.objects.filter(case__in=closing, decided_at__isnull=True)._delete_reasons()
-            return super(CaseQuerySet, self.filter(pk__in=closing)).update(
+            return super(CaseQuerySet, self.filter(pk__in=closing, closed_at__isnull=True)).update(
                 closed_at=now or timezone.now(), closed_because=because,
             )
 
+    @method_decorator(sensitive_variables('approval_reason'))
     def create_with_area(
         self, lawyer_profile, label, starts_at, ends_at, cells, margin_minutes, margin_rings, approval_reason='',
     ):
@@ -133,7 +136,10 @@ class Case(models.Model):
             models.CheckConstraint(condition=Q(ends_at__gt=F('starts_at')), name='window_ends_after_it_starts'),
         ]
 
-    FIXED_FIELDS = ('lawyer_profile_id', 'starts_at', 'ends_at', 'margin_minutes', 'margin_rings')
+    # Closing too is never a save: close() also deletes a waiting request's reason.
+    FIXED_FIELDS = (
+        'lawyer_profile_id', 'starts_at', 'ends_at', 'margin_minutes', 'margin_rings', 'closed_at', 'closed_because',
+    )
 
     def save(self, *args, _checked=False, **kwargs):
         if self._state.adding:
@@ -150,7 +156,7 @@ class Case(models.Model):
             if stored['closed_at'] is not None:
                 raise ValueError('A closed case never changes again.')
             if any(stored[field] != getattr(self, field) for field in self.FIXED_FIELDS):
-                raise ValueError("A case's lawyer, time window and margin never change.")
+                raise ValueError("A case's lawyer, time window and margin never change, and it is closed only by close().")
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -160,7 +166,11 @@ class Case(models.Model):
         return set(self.cells.values_list('cell', flat=True))
 
     def waiting_for_approval(self):
-        return CaseApproval.objects.filter(case=self, decided_at__isnull=True).exists()
+        return CaseApproval.objects.waiting().filter(case=self).exists()
+
+
+class NotWaiting(ValueError):
+    """The request was already decided, or its case closed."""
 
 
 REASON_MAX_LENGTH = 2000
@@ -229,7 +239,7 @@ class CaseApproval(models.Model):
                 decided_at=timezone.now(), approved=approved, admin_note=note.strip(), reason='',
             )
             if updated != 1:
-                raise ValueError('This request has already been decided, or its case closed.')
+                raise NotWaiting('This request has already been decided, or its case closed.')
             case = Case.objects.get(pk=self.pk)
             if not approved:
                 Case.objects.filter(pk=case.pk).close(Case.ClosedBecause.REFUSAL)

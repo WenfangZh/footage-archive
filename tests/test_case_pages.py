@@ -5,12 +5,13 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.db import connection
 from django.test import Client
-from django.views.debug import SafeExceptionReporterFilter
+from django.views.debug import ExceptionReporter, SafeExceptionReporterFilter
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
-from cases.models import Case
+from cases.models import Case, CaseApproval
 from clips import grid
 from tests.conftest import BASTILLE, log_in_with_second_factor, make_case
 
@@ -238,18 +239,18 @@ def test_a_case_over_the_caps_with_a_reason_waits_for_approval(lawyer, lawyer_cl
         Action.CASE_CREATION, Action.LARGER_CASE_REQUEST,
     ]
     page = lawyer_client.get(reverse('lawyer:case', kwargs={'case_id': case.pk})).content.decode()
-    assert 'waiting' in page.lower() or 'attente' in page
+    assert "en attente de validation par l'administrateur·rice" in page
 
 
 def test_a_reason_for_a_case_within_the_caps_is_not_kept(lawyer_client):
     create(lawyer_client, reason=REASON)
     case = Case.objects.get()
-    assert not hasattr(case, 'approval') or case.approval is None
+    assert not CaseApproval.objects.exists()
     assert Case.objects.usable().get() == case
     assert list(AuditEntry.objects.values_list('action', flat=True)) == [Action.CASE_CREATION]
 
 
-def test_no_reason_lets_a_case_beyond_the_ceiling_through(lawyer_client):
+def test_a_reason_does_not_let_a_case_beyond_the_ceiling_through(lawyer_client):
     response = create(lawyer_client, reason=REASON, starts_at='2026-06-14T18:00', ends_at='2026-06-15T19:00')
     assert response.status_code == 400 and not Case.objects.exists()
 
@@ -311,3 +312,32 @@ def test_closing_a_waiting_case_deletes_its_reason_and_withdraws_the_request(adm
     assert reverse('manage:case_request', kwargs={'case_id': waiting_case.pk}) not in (
         admin_client.get(reverse('manage:case_requests')).content.decode()
     )
+
+
+def test_the_reason_never_reaches_the_audit_log_or_the_logs(lawyer_client, admin_client, caplog):
+    create(lawyer_client, reason=REASON, **LARGER)
+    create(lawyer_client, label='', reason=REASON, **LARGER)
+    decide(admin_client, Case.objects.get(), True)
+    database = '\n'.join(connection.connection.iterdump())
+    assert 'Two charges' not in database and 'Two charges' not in caplog.text
+
+
+def test_the_reason_and_place_are_hidden_in_a_traceback(lawyer_client, monkeypatch):
+    monkeypatch.setattr('cases.views.record', mock.Mock(side_effect=RuntimeError))
+    with pytest.raises(RuntimeError) as failure:
+        create(lawyer_client, reason=REASON, **LARGER)
+    frames = ExceptionReporter(None, RuntimeError, failure.value, failure.tb).get_traceback_frames()
+    view = next(frame for frame in frames if frame['function'] == 'new_case')
+    shown = dict(view['vars'])
+    assert shown['fields'] == shown['form'] == SafeExceptionReporterFilter.cleansed_substitute
+    # The archive's own frames; the test client's hold what it sent.
+    ours = repr([frame['vars'] for frame in frames if '/cases/' in frame['filename']])
+    assert 'Two charges' not in ours and '48.8532' not in ours
+
+
+def test_a_case_cannot_be_closed_by_saving_it(waiting_case):
+    case = Case.objects.get(pk=waiting_case.pk)
+    case.closed_at, case.closed_because = timezone.now(), Case.ClosedBecause.LAWYER
+    with pytest.raises(ValueError, match='close'):
+        case.save()
+    assert Case.objects.get().closed_at is None and Case.objects.get().approval.reason == REASON

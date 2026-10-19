@@ -15,7 +15,7 @@ from clips import grid
 
 from . import size
 from .forms import DecisionForm
-from .models import CaseApproval
+from .models import CaseApproval, NotWaiting
 
 
 @admin_required
@@ -33,7 +33,7 @@ def case_request(request, case_id):
     if request.method == 'POST' and form.is_valid():
         try:
             approval.decide(form.cleaned_data['approved'], request.user, form.cleaned_data['note'])
-        except ValueError:
+        except NotWaiting:
             # Decided by another request, or closed by its lawyer, in the meantime.
             raise Http404 from None
         messages.success(request, _('The case is approved.') if approval.approved else _('The case is refused and closed.'))
