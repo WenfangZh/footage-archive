@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-19 01:55+0200\n"
+"POT-Creation-Date: 2026-10-19 02:06+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -572,41 +572,46 @@ msgstr "Marge autour de la plage horaire, en minutes"
 msgid "Margin around the area, in rings of cells about 50 m wide"
 msgstr "Marge autour du périmètre, en anneaux de mailles d'environ 50 m"
 
-#: cases/forms.py:52
+#: cases/forms.py:47
+msgid "Enter the time without a time zone: it is read as French time."
+msgstr ""
+"Saisissez l'heure sans fuseau horaire : elle est lue en heure française."
+
+#: cases/forms.py:55
 #, python-format
 msgid "Enter a date between %(first)s and next year."
 msgstr "Saisissez une date entre %(first)s et l'an prochain."
 
-#: cases/forms.py:70
+#: cases/forms.py:73
 msgid "Case label"
 msgstr "Libellé du dossier de recherche"
 
-#: cases/forms.py:71
+#: cases/forms.py:74
 msgid "Something to recognise the case by. Never a client's name."
 msgstr ""
 "De quoi reconnaître le dossier de recherche. Jamais le nom d'un·e client·e."
 
-#: cases/forms.py:73
+#: cases/forms.py:77
 msgid "Start of the time window"
 msgstr "Début de la plage horaire"
 
-#: cases/forms.py:75
-msgid "End of the time window"
-msgstr "Fin de la plage horaire"
-
-#: cases/forms.py:75
+#: cases/forms.py:77
 msgid "French time, as in the police report."
 msgstr "Heure française, comme dans le procès-verbal."
 
-#: cases/forms.py:78 clips/forms.py:49
+#: cases/forms.py:79
+msgid "End of the time window"
+msgstr "Fin de la plage horaire"
+
+#: cases/forms.py:81 clips/forms.py:49
 msgid "Latitude"
 msgstr "Latitude"
 
-#: cases/forms.py:81 clips/forms.py:53
+#: cases/forms.py:84 clips/forms.py:53
 msgid "Longitude"
 msgstr "Longitude"
 
-#: cases/forms.py:82
+#: cases/forms.py:85
 msgid ""
 "The place in the police report. Only the grid cells around it are kept, not "
 "the place itself."
@@ -614,15 +619,15 @@ msgstr ""
 "Le lieu indiqué dans le procès-verbal. Seules les mailles de la grille "
 "autour de ce lieu sont gardées, pas le lieu lui-même."
 
-#: cases/forms.py:85
+#: cases/forms.py:88
 msgid "Radius around that place, in metres"
 msgstr "Rayon autour de ce lieu, en mètres"
 
-#: cases/forms.py:94
+#: cases/forms.py:97
 msgid "The time window must end after it starts."
 msgstr "La plage horaire doit se terminer après son début."
 
-#: cases/forms.py:111
+#: cases/forms.py:114
 #, python-format
 msgid ""
 "With its margin, this case lasts %(minutes)s minutes and is about %(metres)s "
@@ -633,7 +638,7 @@ msgstr ""
 "%(metres)s m de large. Aucun dossier de recherche ne peut dépasser "
 "%(ceiling_minutes)s minutes ni %(ceiling_metres)s m de large."
 
-#: cases/forms.py:118
+#: cases/forms.py:121
 #, python-format
 msgid ""
 "With its margin, this case lasts %(minutes)s minutes and is about %(metres)s "

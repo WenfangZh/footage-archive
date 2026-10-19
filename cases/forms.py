@@ -42,6 +42,9 @@ class ParisDateTimeField(forms.DateTimeField):
     widget = forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M')
 
     def to_python(self, value):
+        if isinstance(value, str) and (value.strip().upper().endswith('Z') or '+' in value or value.count('-') > 2):
+            # An offset would be dropped below: refused rather than misread.
+            raise forms.ValidationError(_('Enter the time without a time zone: it is read as French time.'))
         # Django's own refuses those hours: read the time as UTC, then put French time on it.
         with timezone.override(datetime.UTC):
             parsed = super().to_python(value)
@@ -70,10 +73,10 @@ class CaseForm(forms.Form):
         label=_('Case label'), max_length=LABEL_MAX_LENGTH,
         help_text=_("Something to recognise the case by. Never a client's name."),
     )
-    starts_at = ParisDateTimeField(label=_('Start of the time window'))
-    ends_at = ParisDateTimeField(
-        label=_('End of the time window'), help_text=_('French time, as in the police report.'),
+    starts_at = ParisDateTimeField(
+        label=_('Start of the time window'), help_text=_('French time, as in the police report.'),
     )
+    ends_at = ParisDateTimeField(label=_('End of the time window'))
     latitude = forms.FloatField(
         label=_('Latitude'), min_value=-90, max_value=90, widget=ForgottenNumberInput(attrs={'step': 'any'}),
     )

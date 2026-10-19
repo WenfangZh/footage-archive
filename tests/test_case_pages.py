@@ -65,7 +65,7 @@ def test_a_lawyer_creates_a_case_from_a_place_and_a_radius(lawyer, lawyer_client
     paris = datetime.timezone(datetime.timedelta(hours=2))
     assert case.starts_at == datetime.datetime(2026, 6, 15, 18, tzinfo=paris)
     assert case.ends_at - case.starts_at == datetime.timedelta(hours=1)
-    assert case.area() == grid.cells_around(*BASTILLE, 200) and len(case.area()) == 111
+    assert case.area() == grid.cells_around(*BASTILLE, 200) and len(case.area()) == 113
 
 
 def test_creating_a_case_writes_an_audit_entry(lawyer, lawyer_client):
@@ -120,22 +120,30 @@ def test_a_case_and_its_audit_entry_are_made_together(lawyer_client, monkeypatch
     assert not Case.objects.exists()
 
 
-@pytest.mark.parametrize('starts_at, ends_at, offset', [
-    ('2026-01-15T18:00', '2026-01-15T19:00', 1),
+@pytest.mark.parametrize('starts_at, ends_at, offset, hours', [
+    ('2026-01-15T18:00', '2026-01-15T19:00', 1, 1),
     # Clocks go back at 03:00 on 25 October 2026: the first 02:30 is meant.
-    ('2026-10-25T02:30', '2026-10-25T03:30', 2),
+    ('2026-10-25T02:30', '2026-10-25T03:30', 2, 2),
+    # Clocks go forward at 02:00 on 29 March 2026: 02:30 is read with the winter offset.
+    ('2026-03-29T02:30', '2026-03-29T04:00', 1, 0.5),
 ])
-def test_times_are_french_time_in_winter_and_in_the_repeated_hour(lawyer_client, starts_at, ends_at, offset):
+def test_times_are_french_time_whatever_the_clocks_do(lawyer_client, starts_at, ends_at, offset, hours):
     assert create(lawyer_client, starts_at=starts_at, ends_at=ends_at).status_code == 302
     case = Case.objects.get()
     local = datetime.timezone(datetime.timedelta(hours=offset))
     assert case.starts_at == datetime.datetime.fromisoformat(starts_at).replace(tzinfo=local)
-    assert case.ends_at - case.starts_at == datetime.timedelta(hours=2 if offset == 2 else 1)
+    assert case.ends_at - case.starts_at == datetime.timedelta(hours=hours)
 
 
-@pytest.mark.parametrize('starts_at', ['0001-01-01T00:00', '1999-12-31T23:00'])
+@pytest.mark.parametrize('starts_at', ['0001-01-01T00:00', '1999-12-31T23:00', '9999-12-31T22:00', '2099-01-01T00:00'])
 def test_dates_far_off_are_refused(lawyer_client, starts_at):
-    response = create(lawyer_client, starts_at=starts_at)
+    response = create(lawyer_client, starts_at=starts_at, ends_at='9999-12-31T23:00')
+    assert response.status_code == 400 and 'starts_at' in response.context['form'].errors
+
+
+@pytest.mark.parametrize('typed', ['2026-06-15T18:00Z', '2026-06-15T18:00+05:00', '2026-06-15T18:00-03:00'])
+def test_a_time_with_an_offset_is_refused_not_misread(lawyer_client, typed):
+    response = create(lawyer_client, starts_at=typed)
     assert response.status_code == 400 and 'starts_at' in response.context['form'].errors
 
 

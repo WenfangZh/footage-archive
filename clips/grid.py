@@ -95,10 +95,11 @@ def cells_around(latitude, longitude, radius_metres):
     if radius_metres <= 0:
         return {centre}
     middle = h3.cell_to_latlng(centre)
-    reach = radius_metres + _corner_metres(centre)
+    # Distances here are on a sphere, which is off by up to about 0.3% on the real Earth.
+    reach = (radius_metres + _corner_metres(centre)) * 1.005
 
     def within_reach(cell):
-        return _metres(middle, h3.cell_to_latlng(cell)) - _corner_metres(cell) < reach
+        return _metres(middle, h3.cell_to_latlng(cell)) - _corner_metres(cell) <= reach
 
     cells, rings = {centre}, 0
     # Grow ring by ring until a whole ring is out of reach: every farther ring is too.
