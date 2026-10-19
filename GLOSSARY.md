@@ -282,6 +282,16 @@ The largest time window and area a case may have without the admin's approval (b
 _French_: plafonds
 _Avoid_: Limits (alone), quota
 
+**Case approval**:
+The admin's decision on a case over the size caps: approved, the case can be used; refused, it is closed. Until then the case waits and cannot be used. A case within the size caps needs none.
+_French_: validation du dossier de recherche
+_Avoid_: Authorisation, permission, sign-off
+
+**Lawyer's reason**:
+What a lawyer writes to explain why a case must be over the size caps. The admin reads it to decide; it is deleted once they have, or once the case is closed. Never a client's name.
+_French_: justification de la demande
+_Avoid_: Context (a clip's own), justification (alone)
+
 **Ceiling**:
 The size no case may exceed, even with the admin's approval: 24 hours and 10 km across, margin included. It is fixed in the code, so raising it takes a public change; the size caps can be set no higher than it. Not to be confused with the size caps (plafonds), which approval can exceed.
 _French_: limite absolue

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load i18n l10n %}
+
+{% block title %}{% translate "Request for a larger case" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Request for a larger case" %}</h1>
+  <p>{% blocktranslate with name=case.lawyer_profile.user.get_full_name requested_at=approval.requested_at|date:"j F Y H:i" %}From {{ name }}, on {{ requested_at }}.{% endblocktranslate %}</p>
+  <dl>
+    <dt>{% translate "Time window" %}</dt>
+    <dd>{{ case.starts_at|date:"j F Y H:i" }} – {{ case.ends_at|date:"j F Y H:i" }}</dd>
+    <dt>{% translate "Area" %}</dt>
+    <dd>{% blocktranslate count cells=cells with latitude=centre.0|floatformat:"3u" longitude=centre.1|floatformat:"3u" %}{{ cells }} cell, around {{ latitude }}, {{ longitude }}{% plural %}{{ cells }} cells, around {{ latitude }}, {{ longitude }}{% endblocktranslate %}</dd>
+    <dt>{% translate "With the margin" %}</dt>
+    <dd>{% blocktranslate with minutes=window_minutes metres=area_metres %}{{ minutes }} minutes, about {{ metres }} m across{% endblocktranslate %}</dd>
+    <dt>{% translate "The lawyer's reason" %}</dt>
+    <dd>{{ approval.reason|linebreaksbr }}</dd>
+  </dl>
+  <p>{% translate "The reason is deleted once you decide." %}</p>
+  <form method="post" action="{% url 'manage:case_request' approval.pk %}">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <button type="submit">{% translate "Decide" %}</button>
+  </form>
+{% endblock %}

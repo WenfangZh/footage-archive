@@ -7,7 +7,7 @@
   <h1>{% translate "Your cases" %}</h1>
   {% if cases %}
     <ul>
-      {% for case in cases %}<li><a href="{% url 'lawyer:case' case_id=case.pk %}">{{ case.label }}</a></li>{% endfor %}
+      {% for case in cases %}<li><a href="{% url 'lawyer:case' case_id=case.pk %}">{{ case.label }}</a>{% if case.waiting_for_approval %} ({% translate "waiting for approval" %}){% endif %}</li>{% endfor %}
     </ul>
   {% else %}
     <p>{% translate "You have no cases yet." %}</p>

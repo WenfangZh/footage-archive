@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 
 from accounts.models import LawyerProfile
-from cases.models import Case, CaseCell, CaseCellQuerySet
+from cases.models import Case, CaseApproval, CaseApprovalQuerySet, CaseCell, CaseCellQuerySet
 from cases.size import CaseTooLarge
 from clips import grid
 from tests.conftest import BASTILLE, make_case
@@ -212,3 +212,27 @@ def test_a_case_s_area_never_changes(lawyer):
     with pytest.raises(ValueError, match='only with the case'):
         CaseCell.objects.bulk_create([CaseCell(case=case, cell=far)], _checked=True)
     assert case.area() == grid.widen([CENTRE], 2)
+
+
+def test_a_case_over_the_caps_is_made_only_with_a_reason(lawyer):
+    with pytest.raises(CaseTooLarge):
+        make_case(lawyer, **window(150), approval_reason='  ')
+    case = make_case(lawyer, **window(150), approval_reason=' Two charges. ')
+    assert case.approval.reason == 'Two charges.' and case.waiting_for_approval()
+
+
+def test_a_request_and_its_decision_change_only_through_decide(lawyer):
+    case = make_case(lawyer, **window(150), approval_reason='Two charges.')
+    approval = CaseApproval.objects.get(pk=case.pk)
+    approval.reason = 'Changed'
+    with pytest.raises(ValueError):
+        approval.save()
+    with pytest.raises(ValueError):
+        CaseApproval.objects.filter(pk=case.pk).update(approved=True)
+    with pytest.raises(ValueError):
+        approval.delete()
+    with pytest.raises(ValueError):
+        CaseApproval.objects.all().delete()
+    with pytest.raises(IntegrityError), transaction.atomic():
+        super(CaseApprovalQuerySet, CaseApproval.objects.filter(pk=case.pk)).update(approved=True)
+    assert CaseApproval.objects.get(pk=case.pk).reason == 'Two charges.'

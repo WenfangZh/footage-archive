@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext_lazy as _
-from django.views.decorators.debug import sensitive_post_parameters
+from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 
 from accounts.models import LawyerProfile
 from accounts.roles import lawyer_required
@@ -12,7 +12,7 @@ from audit.models import Action, record
 
 from . import size
 from .forms import CaseForm, DefaultMarginForm, too_large_message
-from .models import Case
+from .models import Case, CaseApproval
 
 
 def own_profile(request):
@@ -21,7 +21,10 @@ def own_profile(request):
 
 @lawyer_required
 # Left out of Django's error reports: the typed place is never kept.
-@sensitive_post_parameters('latitude', 'longitude')
+# The reason is deleted after the admin's decision, so it stays out of them too.
+@sensitive_post_parameters('latitude', 'longitude', 'reason')
+# And out of the variables a traceback shows: the form and its cleaned data hold them too.
+@sensitive_variables('form', 'fields')
 def new_case(request):
     profile = own_profile(request)
     if request.method == 'POST':
@@ -33,8 +36,11 @@ def new_case(request):
                     case = Case.objects.create_with_area(
                         profile, fields['label'], fields['starts_at'], fields['ends_at'], fields['cells'],
                         fields['margin_minutes'], fields['margin_rings'],
+                        approval_reason=fields['reason'] if fields['needs_approval'] else '',
                     )
                     record(Action.CASE_CREATION, profile, case=case)
+                    if fields['needs_approval']:
+                        record(Action.LARGER_CASE_REQUEST, profile, case=case)
             except size.CaseTooLarge as too_large:
                 # Only if the caps were lowered since the form was checked.
                 form.add_error(None, too_large_message(too_large))
@@ -53,6 +59,7 @@ def case(request, case_id):
     area = own_case.area()
     return render(request, 'cases/case.html', {
         'case': own_case, 'cells': len(area), 'area_metres': round(size.area_metres(area, 0)),
+        'approval': CaseApproval.objects.filter(case=own_case).first(),
     })
 
 

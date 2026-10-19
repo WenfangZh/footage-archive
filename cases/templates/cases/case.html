@@ -5,7 +5,15 @@
 
 {% block content %}
   <h1>{{ case.label }}</h1>
-  {% if case.closed_at %}<p>{% blocktranslate with closed_at=case.closed_at|date:"j F Y H:i" %}Closed on {{ closed_at }}.{% endblocktranslate %}</p>{% endif %}
+  {% if case.closed_at %}<p>{% blocktranslate with closed_at=case.closed_at|date:"j F Y H:i" because=case.get_closed_because_display %}{{ because }}, on {{ closed_at }}.{% endblocktranslate %}</p>{% endif %}
+  {% if approval %}
+    {% if approval.decided_at is None %}
+      {% if not case.closed_at %}<p>{% translate "Larger than the size caps: waiting for the admin's approval. It cannot be used until then." %}</p>{% endif %}
+    {% elif approval.approved %}
+      <p>{% translate "Larger than the size caps, and approved by the admin." %}</p>
+    {% endif %}
+    {% if approval.admin_note %}<p>{% translate "The admin's note:" %} {{ approval.admin_note|linebreaksbr }}</p>{% endif %}
+  {% endif %}
   <dl>
     <dt>{% translate "Time window" %}</dt>
     <dd>{{ case.starts_at|date:"j F Y H:i" }} – {{ case.ends_at|date:"j F Y H:i" }}</dd>

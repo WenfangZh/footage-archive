@@ -4,12 +4,15 @@ import zoneinfo
 from django import forms
 from django.conf import settings
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.debug import sensitive_variables
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import LawyerProfile
 from clips import grid
 
 from . import size
+from .models import ADMIN_NOTE_MAX_LENGTH, REASON_MAX_LENGTH
 
 LABEL_MAX_LENGTH = 100
 
@@ -91,7 +94,16 @@ class CaseForm(forms.Form):
         max_value=settings.CASE_AREA_CEILING_METRES // 2,
     )
     margin_minutes, margin_rings = margin_fields()
+    reason = forms.CharField(
+        label=_('Why this case needs to be larger than the size caps'), required=False,
+        max_length=REASON_MAX_LENGTH, widget=forms.Textarea,
+        help_text=_(
+            "Only for a case over the size caps: the admin reads your reason to decide, then it is deleted; "
+            "for a case within them, it is not kept. Never a client's name."
+        ),
+    )
 
+    @method_decorator(sensitive_variables('cleaned', 'place'))
     def clean(self):
         cleaned = super().clean()
         starts_at, ends_at = cleaned.get('starts_at'), cleaned.get('ends_at')
@@ -102,10 +114,14 @@ class CaseForm(forms.Form):
             cleaned['cells'] = grid.cells_around(*place, cleaned.pop('radius_metres'))
         if self.errors:
             return cleaned
+        cleaned['needs_approval'] = False
         try:
             size.check(starts_at, ends_at, cleaned['cells'], cleaned['margin_minutes'], cleaned['margin_rings'])
         except size.CaseTooLarge as too_large:
-            self.add_error(None, too_large_message(too_large))
+            if too_large.beyond_ceiling or not cleaned['reason'].strip():
+                self.add_error(None, too_large_message(too_large))
+            else:
+                cleaned['needs_approval'] = True
         return cleaned
 
 
@@ -121,7 +137,8 @@ def too_large_message(too_large):
         }
     return _(
         'With its margin, this case lasts %(minutes)s minutes and is about %(metres)s m across. Without the '
-        "admin's approval, a case lasts at most %(cap_minutes)s minutes and is at most %(cap_metres)s m across."
+        "admin's approval, a case lasts at most %(cap_minutes)s minutes and is at most %(cap_metres)s m across. "
+        'To ask for it, give your reason in the field "Why this case needs to be larger than the size caps".'
     ) % {**measured, 'cap_minutes': settings.CASE_WINDOW_CAP_MINUTES, 'cap_metres': settings.CASE_AREA_CAP_METRES}
 
 
@@ -133,3 +150,16 @@ class DefaultMarginForm(forms.ModelForm):
     class Meta:
         model = LawyerProfile
         fields = ['default_margin_minutes', 'default_margin_rings']
+
+
+class DecisionForm(forms.Form):
+    """The admin's decision on a larger case, with an optional note of their own."""
+
+    approved = forms.TypedChoiceField(
+        label=_('Decision'), widget=forms.RadioSelect, coerce=lambda value: value == 'yes',
+        choices=[('yes', _('Approve the case')), ('no', _('Refuse the case: it is closed'))],
+    )
+    note = forms.CharField(
+        label=_('Your note to the lawyer (optional)'), required=False, max_length=ADMIN_NOTE_MAX_LENGTH,
+        widget=forms.Textarea, help_text=_("Kept with the case, which its lawyer can see. Never a client's name."),
+    )

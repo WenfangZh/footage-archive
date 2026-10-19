@@ -141,3 +141,9 @@ def test_cells_around_a_point_are_about_as_wide_as_the_circle():
     assert grid.cells_around(LATITUDE, LONGITUDE, 0) == {grid.cell_for_point(LATITUDE, LONGITUDE, 11)}
     for radius in (200, 900):
         assert 2 * radius < grid.span_metres(grid.cells_around(LATITUDE, LONGITUDE, radius)) < 2 * radius + 200
+
+
+def test_the_middle_cell_is_the_one_nearest_the_average_centre():
+    centre = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
+    assert grid.middle_cell(grid.widen([centre], 3)) == centre
+    assert grid.middle_cell([centre]) == centre
