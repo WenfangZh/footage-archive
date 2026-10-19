@@ -155,6 +155,10 @@ DATABASES = {
             # written fails at once with "database is locked" instead of waiting. Only one
             # transaction runs at a time this way, which is nothing at this archive's scale.
             'transaction_mode': 'IMMEDIATE',
+            # How long a writer waits for the lock before failing: longer than the slowest
+            # transaction, which may send an invitation email (EMAIL_TIMEOUT, 10 seconds by
+            # default; raise this too if that is raised).
+            'timeout': 20,
         },
     }
 }
