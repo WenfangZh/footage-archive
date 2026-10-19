@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ case.label }}{% endblock %}
+
+{% block content %}
+  <h1>{{ case.label }}</h1>
+  {% if case.closed_at %}<p>{% blocktranslate with closed_at=case.closed_at|date:"j F Y H:i" %}Closed on {{ closed_at }}.{% endblocktranslate %}</p>{% endif %}
+  <dl>
+    <dt>{% translate "Time window" %}</dt>
+    <dd>{{ case.starts_at|date:"j F Y H:i" }} – {{ case.ends_at|date:"j F Y H:i" }}</dd>
+    <dt>{% translate "Area" %}</dt>
+    <dd>{% blocktranslate count cells=cells with metres=area_metres %}{{ cells }} cell, about {{ metres }} m across{% plural %}{{ cells }} cells, about {{ metres }} m across{% endblocktranslate %}</dd>
+    <dt>{% translate "Margin" %}</dt>
+    <dd>{% blocktranslate count minutes=case.margin_minutes %}{{ minutes }} minute{% plural %}{{ minutes }} minutes{% endblocktranslate %},
+      {% blocktranslate count rings=case.margin_rings %}{{ rings }} ring of cells{% plural %}{{ rings }} rings of cells{% endblocktranslate %}</dd>
+  </dl>
+  <p><a href="{% url 'lawyer:home' %}">{% translate "Your cases" %}</a></p>
+{% endblock %}

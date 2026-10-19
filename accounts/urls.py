@@ -2,6 +2,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from alerts import views as alert_views
+from cases import views as case_views
 
 from . import access, admission, invitations, two_factor, views
 
@@ -12,6 +13,9 @@ app_name = 'accounts'
 # tests/test_roles.py checks.
 lawyer_patterns = [
     path('', views.lawyer_home, name='home'),
+    path('cases/new/', case_views.new_case, name='new_case'),
+    path('cases/<int:case_id>/', case_views.case, name='case'),
+    path('margin/', case_views.default_margin, name='default_margin'),
 ]
 manage_patterns = [
     path('', views.manage_home, name='home'),

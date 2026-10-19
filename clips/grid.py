@@ -72,8 +72,50 @@ def span_metres(cells, rings=0):
     hull = _convex_hull(centres)
     farthest = max((_metres(centres[a], centres[b]) for a, b in combinations(hull, 2)), default=0)
     half_width = max(_metres(centres[cell], corner) for cell in hull for corner in h3.cell_to_boundary(cell))
-    spacing = max(_metres(centres[cell], h3.cell_to_latlng(near)) for cell in hull for near in h3.grid_ring(cell, 1))
+    spacing = max(spacing_metres(cell) for cell in hull)
     return farthest + 2 * half_width + 2 * rings * spacing
+
+
+def spacing_metres(cell):
+    """The largest distance from a cell's centre to a neighbour's: how far one ring reaches."""
+    centre = h3.cell_to_latlng(cell)
+    return max(_metres(centre, h3.cell_to_latlng(near)) for near in h3.grid_ring(cell, 1))
+
+
+def cells_around(latitude, longitude, radius_metres):
+    """The cells containing the circle of `radius_metres` around a point, and no others that it
+    could not reach.
+
+    The point is used only to find its grid cell, then dropped: the cells depend on that
+    cell alone, so they tell no more about the point than it does. Wherever the point lies
+    in its cell, it is at most a centre-to-corner distance from the centre, so the cells
+    kept are those that come within the radius plus that distance of the centre.
+    """
+    centre = cell_for_point(latitude, longitude, finest_resolution())
+    if radius_metres <= 0:
+        return {centre}
+    middle = h3.cell_to_latlng(centre)
+    # Distances here are on a sphere, which is off by up to about 0.6% on the real Earth
+    # (north to south near the equator).
+    reach = (radius_metres + _corner_metres(centre)) * 1.01
+
+    def within_reach(cell):
+        return _metres(middle, h3.cell_to_latlng(cell)) - _corner_metres(cell) <= reach
+
+    cells, rings = {centre}, 0
+    # Grow ring by ring until a whole ring is out of reach: every farther ring is too.
+    while True:
+        rings += 1
+        reached = {cell for cell in h3.grid_ring(centre, rings) if within_reach(cell)}
+        if not reached:
+            return cells
+        cells |= reached
+
+
+def _corner_metres(cell):
+    """How far a cell reaches from its centre: to its farthest corner."""
+    middle = h3.cell_to_latlng(cell)
+    return max(_metres(middle, corner) for corner in h3.cell_to_boundary(cell))
 
 
 def _metres(a, b):

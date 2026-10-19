@@ -62,6 +62,15 @@ def test_a_time_window_has_time_zones(lawyer):
         make_case(lawyer, starts_at=naive, ends_at=naive + datetime.timedelta(hours=1))
 
 
+@pytest.mark.parametrize('starts_at, ends_at', [
+    (datetime.datetime(1, 1, 1, tzinfo=datetime.UTC), datetime.datetime(1, 1, 1, 1, tzinfo=datetime.UTC)),
+    (datetime.datetime(9999, 12, 31, 20, tzinfo=datetime.UTC), datetime.datetime(9999, 12, 31, 21, tzinfo=datetime.UTC)),
+])
+def test_a_time_window_is_in_years_a_database_can_store(lawyer, starts_at, ends_at):
+    with pytest.raises(ValueError, match='years'):
+        make_case(lawyer, starts_at=starts_at, ends_at=ends_at)
+
+
 @pytest.mark.parametrize('margin', [{'margin_minutes': -1}, {'margin_rings': -1}, {'margin_minutes': 1.5}, {'margin_rings': True}])
 def test_a_margin_is_a_whole_number_zero_or_more(lawyer, margin):
     with pytest.raises(ValueError, match='whole number'):

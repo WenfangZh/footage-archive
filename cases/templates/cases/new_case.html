@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "New case" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "New case" %}</h1>
+  <p>{% translate "Take the time window and place from the police report. Once the case is created, they cannot be changed: for a different window or area, create a new case." %}</p>
+  <form method="post" action="{% url 'lawyer:new_case' %}">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <button type="submit">{% translate "Create the case" %}</button>
+  </form>
+{% endblock %}

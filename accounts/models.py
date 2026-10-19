@@ -146,6 +146,10 @@ class LawyerProfile(models.Model):
     # Steps 1 and 2 of admission (SPEC.md §5), as the admin records them.
     verified_via = models.CharField(max_length=200, blank=True)
     vouched_by = models.CharField(max_length=200, blank=True)
+    # The margin each new case starts with (SPEC.md §7): minutes before and after its time
+    # window, and rings of the grid's finest cells around its area.
+    default_margin_minutes = models.PositiveSmallIntegerField(default=10)
+    default_margin_rings = models.PositiveSmallIntegerField(default=1)
 
     objects = LawyerProfileQuerySet.as_manager()
 
