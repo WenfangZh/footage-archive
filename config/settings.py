@@ -276,7 +276,7 @@ CASE_AREA_CAP_METRES = env_int('CASE_AREA_CAP_METRES', default=2_000, minimum=1,
 # A case not used for this long (no search, preview or download since its creation or
 # its last use) closes on its own (SPEC.md §7).
 CASE_INACTIVITY_DAYS = env_int('CASE_INACTIVITY_DAYS', default=365, minimum=1, maximum=36_500)
-# A stated time this many minutes or more from the metadata time is highlighted to
+# A stated time more than this many minutes from the metadata time is highlighted to
 # lawyers (SPEC.md §7).
 TIME_MISMATCH_MINUTES = env_int('TIME_MISMATCH_MINUTES', default=15, minimum=1)
 

@@ -4,15 +4,19 @@ Only through one of the lawyer's own usable cases, and only while the clip match
 there is no other way to a clip. The page shows what the clip says about itself (stated
 and metadata values, as uploaded, edits, tags, context) and plays its proxy. Each preview
 is logged, but a lawyer watching the same clip in the same case again within two hours is
-not logged again: a video player asks for many pieces of one file.
+not logged again: a video player asks for many pieces of one file. Two first requests at
+once may both be logged, which only ever logs too much. Opening the page is not a preview.
 """
 
 import datetime
+import os
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
+from django.views.decorators.http import require_GET
 
 from accounts.roles import lawyer_required
 from audit.models import Action, AuditEntry, record
@@ -55,7 +59,7 @@ def clip_page(request, case_id, clip_id):
     mismatch = None
     if clip.stated_time and clip.metadata_time:
         gap = abs(clip.stated_time - clip.metadata_time)
-        if gap >= datetime.timedelta(minutes=settings.TIME_MISMATCH_MINUTES):
+        if gap > datetime.timedelta(minutes=settings.TIME_MISMATCH_MINUTES):
             mismatch = round(gap.total_seconds() / 60)
     tags = clip.tags.order_by('source', 'key', 'custom_name')
     uploaded = clip.as_uploaded_tags or {}
@@ -72,15 +76,27 @@ def clip_page(request, case_id, clip_id):
     })
 
 
+def open_or_404(clip, kind):
+    """The clip's vault file, opened, and its size read from that same open file."""
+    try:
+        opened = vault.open_file(clip, kind)
+    except (FileNotFoundError, ObjectDoesNotExist):
+        raise Http404 from None
+    return opened, os.fstat(opened.fileno()).st_size
+
+
 @lawyer_required
+@require_GET
 def preview(request, case_id, clip_id):
     case, clip, _ = case_and_clip(request, case_id, clip_id)
-    if not vault.has_file(clip, vault.PROXY):
-        raise Http404
-    recently = AuditEntry.objects.filter(
-        action=Action.PREVIEW, case=case, clip_id=clip.pk, at__gte=timezone.now() - PREVIEW_REPEAT,
-    )
-    if not recently.exists():
-        record(Action.PREVIEW, case.lawyer_profile, case=case, clip=clip)
-    proxy = vault.open_file(clip, vault.PROXY)
-    return file_response(request, proxy, proxy.size, 'video/mp4')
+    proxy, size = open_or_404(clip, vault.PROXY)
+    try:
+        recently = AuditEntry.objects.filter(
+            action=Action.PREVIEW, case=case, clip_id=clip.pk, at__gte=timezone.now() - PREVIEW_REPEAT,
+        )
+        if not recently.exists():
+            record(Action.PREVIEW, case.lawyer_profile, case=case, clip=clip)
+        return file_response(request, proxy, size, 'video/mp4')
+    except BaseException:
+        proxy.close()
+        raise

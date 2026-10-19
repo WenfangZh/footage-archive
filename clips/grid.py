@@ -31,6 +31,11 @@ def coarsen(cell, resolution):
     return h3.cell_to_parent(cell, resolution)
 
 
+def children(cell, resolution):
+    """The cells of a finer `resolution` that together make up `cell`: just it at its own."""
+    return set(h3.cell_to_children(cell, resolution))
+
+
 def resolution(cell):
     return h3.get_resolution(cell)
 

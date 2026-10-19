@@ -210,3 +210,20 @@ def test_a_lawyer_cannot_search_another_lawyer_s_case(case):
     other = log_in_with_second_factor(Client(), make_lawyer('other@example.org').user)
     assert search(other, case).status_code == 404
     assert not AuditEntry.objects.filter(action=Action.SEARCH).exists()
+
+
+def test_one_clip_s_match_is_the_same_as_the_search_s(lawyer):
+    """match_of() checks a clip from its own side: it must agree with find() everywhere."""
+    import random
+    rng = random.Random(7)
+    case = make_case(lawyer, rings=3, margin_rings=2, margin_minutes=10, **WINDOW)
+    clips = []
+    for _ in range(150):
+        cell = rng.choice(list(h3.grid_disk(CENTRE, 8)))
+        precision, resolution = rng.choice([(Precision.EXACT_SPOT, 11), (Precision.STREET, 10), (Precision.NEIGHBOURHOOD, 9)])
+        clips.append(make_clip(minutes=rng.randint(-40, 100), seconds=rng.choice([None, 0, 30, 900]),
+                               cell=grid.coarsen(cell, resolution), precision=precision))
+    found = find(case)
+    expected = {clip.pk: 'core' for clip in found.core} | {clip.pk: 'margin' for clip in found.margin}
+    assert {clip.pk: match_of(case, clip) for clip in clips} == {clip.pk: expected.get(clip.pk) for clip in clips}
+    assert found.core and found.margin and len(expected) < len(clips)

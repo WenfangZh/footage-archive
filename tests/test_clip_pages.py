@@ -76,10 +76,23 @@ def test_a_lawyer_sees_a_matching_clip_with_its_values(case, clip, lawyer_client
     response = lawyer_client.get(url('clip', case, clip))
     assert response.status_code == 200 and response.context['match'] == 'core'
     page = response.content.decode()
-    for shown in ('Use of force', 'code holder', 'Arrest', 'Rue de la Roquette', 'Filmed from the corner',
-                  'Stated time: ', '42 s', 'Exact spot', 'about 60 m across'):
-        assert shown in page or shown.rstrip(': ') in page, shown
+    for shown in (
+        'Use of force <small>(code holder)</small>', 'Tags as uploaded: Arrest, Rue de la Roquette',
+        'Filmed from the corner', 'Stated time: ', 'in the four hours from', '42 s', 'Exact spot',
+        'about 60 m across',
+        # Stated, metadata and as-uploaded times, in Paris time.
+        '15 June 2026 18:10:00', '15 June 2026 18:10:30', '15 June 2026 18:00:00',
+    ):
+        assert shown in page, shown
     assert url('preview', case, clip) in page
+
+
+def test_uploader_text_is_escaped(case, clip, lawyer_client):
+    ClipTag.objects.create(clip=clip, custom_name='<script>x</script>', source=ClipTag.Source.CODE_HOLDER)
+    vault.put_text(clip, vault.CONTEXT, 'Seen from "there" & <b>here</b>')
+    page = lawyer_client.get(url('clip', case, clip)).content.decode()
+    assert '<script>x' not in page and '&lt;script&gt;x&lt;/script&gt;' in page
+    assert '<b>here' not in page and '&amp; &lt;b&gt;here' in page
 
 
 def test_viewing_the_page_is_not_a_preview(case, clip, lawyer_client):
@@ -93,7 +106,8 @@ def test_a_time_mismatch_is_highlighted(case, clip, lawyer_client, settings):
     Clip.objects.filter(pk=clip.pk).update(metadata_time=clip.stated_time + datetime.timedelta(minutes=20))
     page = lawyer_client.get(url('clip', case, clip)).content.decode()
     assert 'The stated time is 20 minutes away from the metadata time.' in page
-    settings.TIME_MISMATCH_MINUTES = 30
+    # Highlighted only past the threshold, not at it.
+    settings.TIME_MISMATCH_MINUTES = 20
     assert lawyer_client.get(url('clip', case, clip)).context['mismatch'] is None
 
 
@@ -107,6 +121,8 @@ def test_the_preview_plays_in_byte_ranges_and_is_logged(case, clip, lawyer_clien
     response = lawyer_client.get(url('preview', case, clip), HTTP_RANGE='bytes=100-199')
     assert response.status_code == 206 and b''.join(response.streaming_content) == PROXY_BYTES[100:200]
     assert response['Content-Type'] == 'video/mp4' and 'no-store' in response['Cache-Control']
+    assert response['X-Content-Type-Options'] == 'nosniff' and response['Accept-Ranges'] == 'bytes'
+    assert response['Content-Range'] == f'bytes 100-199/{len(PROXY_BYTES)}'
     entry = AuditEntry.objects.get(action=Action.PREVIEW)
     assert (entry.case, entry.clip_id, entry.lawyer_profile) == (case, clip.pk, case.lawyer_profile)
 
@@ -147,6 +163,29 @@ def test_a_closed_case_allows_no_preview(case, clip, lawyer_client, name):
     Case.objects.filter(pk=case.pk).close(Case.ClosedBecause.LAWYER)
     assert lawyer_client.get(url(name, case, clip)).status_code == 404
     assert not AuditEntry.objects.filter(action=Action.PREVIEW).exists()
+
+
+@pytest.mark.parametrize('method', ['head', 'post'])
+def test_a_preview_is_only_a_get(case, clip, lawyer_client, method):
+    assert getattr(lawyer_client, method)(url('preview', case, clip)).status_code == 405
+    assert not AuditEntry.objects.exists()
+
+
+def test_a_proxy_missing_from_disk_is_not_found_and_not_logged(case, clip, lawyer_client):
+    vault.vault_storage().delete(vault.VaultFile.objects.get(clip=clip, kind=vault.PROXY).file.name)
+    assert lawyer_client.get(url('preview', case, clip)).status_code == 404
+    assert not AuditEntry.objects.exists()
+
+
+@pytest.mark.parametrize('name', ['clip', 'preview'])
+def test_a_case_waiting_for_approval_or_refused_allows_no_preview(lawyer, clip, lawyer_client, name):
+    admin = User.objects.create_superuser('admin@example.org')
+    window = {'starts_at': START, 'ends_at': START + datetime.timedelta(hours=3)}
+    waiting = make_case(lawyer, 'Waiting', approval_reason='Two charges.', **window)
+    refused = make_case(lawyer, 'Refused', approval_reason='Two charges.', **window)
+    refused.approval.decide(False, admin)
+    for case in (waiting, refused):
+        assert lawyer_client.get(url(name, case, clip)).status_code == 404
 
 
 @pytest.mark.parametrize('name', ['clip', 'preview'])
