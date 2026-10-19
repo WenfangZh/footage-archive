@@ -273,6 +273,9 @@ CASE_WINDOW_CAP_MINUTES = env_int(
     'CASE_WINDOW_CAP_MINUTES', default=2 * 60, minimum=1, maximum=CASE_WINDOW_CEILING_MINUTES,
 )
 CASE_AREA_CAP_METRES = env_int('CASE_AREA_CAP_METRES', default=2_000, minimum=1, maximum=CASE_AREA_CEILING_METRES)
+# A case not used for this long (no search, preview or download since its creation or
+# its last use) closes on its own (SPEC.md §7).
+CASE_INACTIVITY_DAYS = env_int('CASE_INACTIVITY_DAYS', default=365, minimum=1, maximum=36_500)
 
 
 # Accounts log in with an email address (accounts.models).

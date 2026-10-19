@@ -60,6 +60,8 @@ def case(request, case_id):
     return render(request, 'cases/case.html', {
         'case': own_case, 'cells': len(area), 'area_metres': round(size.area_metres(area, 0)),
         'approval': CaseApproval.objects.filter(case=own_case).first(),
+        # The case's own audit entries: its lawyer may read their own (SPEC.md §7).
+        'entries': own_case.audit_entries.order_by('at', 'pk'),
     })
 
 
@@ -72,3 +74,20 @@ def default_margin(request):
         messages.success(request, _('Your new cases will start with this margin.'))
         return redirect('lawyer:home')
     return render(request, 'cases/default_margin.html', {'form': form}, status=400 if form.errors else 200)
+
+
+@lawyer_required
+def close_case(request, case_id):
+    """Closing a case, after a confirmation: it can never be reopened."""
+    own_case = get_object_or_404(Case.objects.open(), pk=case_id, lawyer_profile__user=request.user)
+    if request.method == 'POST':
+        Case.objects.filter(pk=own_case.pk).close(Case.ClosedBecause.LAWYER)
+        messages.success(request, _('The case is closed.'))
+        return redirect('lawyer:case', case_id=own_case.pk)
+    return render(request, 'cases/close_case.html', {'case': own_case})
+
+
+@lawyer_required
+def closed_cases(request):
+    cases = Case.objects.filter(lawyer_profile__user=request.user, closed_at__isnull=False).order_by('-closed_at')
+    return render(request, 'cases/closed_cases.html', {'cases': cases})

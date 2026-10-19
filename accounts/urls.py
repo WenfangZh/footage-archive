@@ -15,7 +15,9 @@ app_name = 'accounts'
 lawyer_patterns = [
     path('', views.lawyer_home, name='home'),
     path('cases/new/', case_views.new_case, name='new_case'),
+    path('cases/closed/', case_views.closed_cases, name='closed_cases'),
     path('cases/<int:case_id>/', case_views.case, name='case'),
+    path('cases/<int:case_id>/close/', case_views.close_case, name='close_case'),
     path('margin/', case_views.default_margin, name='default_margin'),
 ]
 manage_patterns = [

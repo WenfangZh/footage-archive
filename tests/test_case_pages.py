@@ -295,7 +295,9 @@ def test_refusing_closes_the_case_and_deletes_the_reason(admin_client, waiting_c
     case = Case.objects.get()
     assert case.closed_because == Case.ClosedBecause.REFUSAL and case.approval.reason == ''
     assert case.approval.approved is False
-    assert AuditEntry.objects.latest('pk').action == Action.CASE_REFUSAL
+    assert list(AuditEntry.objects.order_by('pk').values_list('action', flat=True))[-2:] == [
+        Action.CASE_REFUSAL, Action.CASE_CLOSING,
+    ]
 
 
 def test_a_request_is_decided_once(admin_client, waiting_case):

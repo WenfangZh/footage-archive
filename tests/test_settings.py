@@ -84,6 +84,12 @@ def test_case_caps_default_to_2_hours_and_2_km_under_a_ceiling_of_24_hours_and_1
     assert (settings.CASE_WINDOW_CEILING_MINUTES, settings.CASE_AREA_CEILING_METRES) == (1_440, 10_000)
 
 
+def test_an_inactivity_period_past_a_century_stops_startup():
+    result = load_settings(CASE_INACTIVITY_DAYS='36501')
+    assert result.returncode != 0
+    assert 'CASE_INACTIVITY_DAYS must be at most 36500' in result.stderr
+
+
 def test_upload_defaults():
     assert settings.UPLOAD_MAX_BYTES == 2_000_000_000
     assert settings.UNCONFIRMED_ORIGINAL_MINUTES == 120
