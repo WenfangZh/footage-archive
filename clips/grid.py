@@ -95,8 +95,9 @@ def cells_around(latitude, longitude, radius_metres):
     if radius_metres <= 0:
         return {centre}
     middle = h3.cell_to_latlng(centre)
-    # Distances here are on a sphere, which is off by up to about 0.3% on the real Earth.
-    reach = (radius_metres + _corner_metres(centre)) * 1.005
+    # Distances here are on a sphere, which is off by up to about 0.6% on the real Earth
+    # (north to south near the equator).
+    reach = (radius_metres + _corner_metres(centre)) * 1.01
 
     def within_reach(cell):
         return _metres(middle, h3.cell_to_latlng(cell)) - _corner_metres(cell) <= reach

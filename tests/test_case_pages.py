@@ -141,7 +141,9 @@ def test_dates_far_off_are_refused(lawyer_client, starts_at):
     assert response.status_code == 400 and 'starts_at' in response.context['form'].errors
 
 
-@pytest.mark.parametrize('typed', ['2026-06-15T18:00Z', '2026-06-15T18:00+05:00', '2026-06-15T18:00-03:00'])
+@pytest.mark.parametrize('typed', [
+    '2026-06-15T18:00Z', '2026-06-15T18:00+05:00', '2026-06-15T18:00-03:00', '20260615T1800-0500', '20260615T1800-0000',
+])
 def test_a_time_with_an_offset_is_refused_not_misread(lawyer_client, typed):
     response = create(lawyer_client, starts_at=typed)
     assert response.status_code == 400 and 'starts_at' in response.context['form'].errors

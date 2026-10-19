@@ -29,6 +29,7 @@ def margin_fields():
 
 # Footage in the archive is recent; anything outside these years is a typing mistake.
 EARLIEST_YEAR = 2000
+UTC_ZONE = zoneinfo.ZoneInfo('UTC')
 
 
 class ParisDateTimeField(forms.DateTimeField):
@@ -42,12 +43,13 @@ class ParisDateTimeField(forms.DateTimeField):
     widget = forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M')
 
     def to_python(self, value):
-        if isinstance(value, str) and (value.strip().upper().endswith('Z') or '+' in value or value.count('-') > 2):
-            # An offset would be dropped below: refused rather than misread.
-            raise forms.ValidationError(_('Enter the time without a time zone: it is read as French time.'))
         # Django's own refuses those hours: read the time as UTC, then put French time on it.
-        with timezone.override(datetime.UTC):
+        # A time typed with its own offset comes back with another time zone, and is refused
+        # rather than misread.
+        with timezone.override(UTC_ZONE):
             parsed = super().to_python(value)
+        if parsed is not None and parsed.tzinfo is not UTC_ZONE:
+            raise forms.ValidationError(_('Enter the time without a time zone: it is read as French time.'))
         if parsed is None:
             return None
         local = parsed.replace(tzinfo=zoneinfo.ZoneInfo(settings.TIME_ZONE), fold=0)
