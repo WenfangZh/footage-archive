@@ -32,7 +32,7 @@ Two principles shape everything:
 
 Known limit outside our control: once a lawyer files a clip in a case, every party to that case can see it.
 
-Known residual risk: cases (time window and area) and the audit log must be server-readable for matching and alerts, so a breach or seizure of the server reveals which lawyer looked into which incident and which clips they downloaded, in effect part of the defence's strategy. From M4.5, if the map's tile requests are logged, a breach or seizure of the server also reveals roughly where a lawyer was looking (not which case). M5 looks at how much of this can be encrypted.
+Known residual risk: cases (time window and area) and the audit log must be server-readable for matching and alerts, so a breach or seizure of the server reveals which lawyer looked into which incident and which clips they downloaded, in effect part of the defence's strategy. The case-area map's requests for map data show the server roughly where a lawyer is looking (not for which case), so the archive never logs them (ADR 0006). M5 looks at how much of this can be encrypted.
 
 ## 4. Non-goals
 
@@ -150,7 +150,7 @@ The queue counts as backed up when more than 20 clips are waiting, or when a cli
 
 ## 11. Stack
 
-- Python 3.12 in a pyenv virtualenv (`footage-archive`, selected via `.python-version`), Django, server-rendered templates, minimal JavaScript. The case-area map (M4.5) needs more JavaScript than the rest; the typed place and radius keep working without it. Function over looks.
+- Python 3.12 in a pyenv virtualenv (`footage-archive`, selected via `.python-version`), Django, server-rendered templates, minimal JavaScript. The case-area map (M4.5) needs more JavaScript than the rest: MapLibre GL JS, pmtiles and h3-js, copied into the repository with no package manager or build step. The typed place and radius keep working without it. Function over looks.
 - Django's built-in translation framework (its tools need GNU gettext, from apt): French by default, English available. Every user-facing string is translatable from day one.
 - SQLite in development, Postgres later.
 - ffmpeg and ffprobe from apt. Whether package installs (apt and pip) are done by hand or by the agent is set per machine, in that machine's Claude Code instructions (`~/.claude/CLAUDE.machine.md`).
@@ -179,7 +179,7 @@ Each milestone: plan first, then small steps, with tests green before moving on.
 **M4: Case-scoped search.** Cases in full, building on M3's minimal case: time window and area, size caps, admin approval of larger cases, closing by the lawyer and automatic closing; matching; proxy previews with metadata vs stated values, as-uploaded values, edits and the time-mismatch highlight; downloads with hash record; audit logging of lawyer actions; unusual-activity alerts.
 *Done when* tests show that a lawyer only ever sees clips that match their own open cases, that a case over the caps cannot be created without approval, and that every lawyer action writes an audit entry.
 
-**M4.5: Map for case areas.** A map on which a lawyer sets a case's area, as an alternative to typing a place and a radius, which stays. The map shows no clips. Everything it loads comes from the archive itself, and the tiles and other map data only to lawyers. Only cell ids reach the server, which checks them and applies the same size caps, ceiling and approval rule as for a typed area. Left for M4.5's plan: the map library, the tile format and source (with its licence and attribution), the coverage, how the cells are picked, whether tile requests may appear in any log, and whether the cells must form one connected area.
+**M4.5: Map for case areas.** A map on which a lawyer sets a case's area, as an alternative to typing a place and a radius, which stays. The map shows no clips. Everything it loads comes from the archive itself, and the tiles and other map data only to lawyers. Only cell ids reach the server, which checks them and applies the same size caps, ceiling and approval rule as for a typed area. Decided for it (ADR 0006): MapLibre GL JS draws a vector map from an extract of the Protomaps basemap (OpenStreetMap data, ODbL, with "© OpenStreetMap contributors" always shown) in one PMTiles file covering Île-de-France, downloaded by a management command and kept out of git; place names are in French. A click adds or removes one cell, and Shift-drag paints cells; the map shows the area's size as it changes, against the size caps. The cells need not form one connected area. Requests for map data are never logged.
 *Done when* tests show:
 - that a case can be created from a set of cell ids submitted through the form field the map fills, and that the typed place and radius still work;
 - that the server refuses an empty set, malformed or duplicate ids, ids not at the grid's finest resolution, and a set beyond the ceiling;
