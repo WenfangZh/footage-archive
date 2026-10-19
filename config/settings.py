@@ -100,6 +100,7 @@ INSTALLED_APPS = [
     'cases',
     'alerts',
     'clips',
+    'maps',
 ]
 
 MIDDLEWARE = [
@@ -179,6 +180,8 @@ FILE_UPLOAD_TEMP_DIR = QUARANTINE_DIR / 'incoming'
 # The vault's files: evidence copies and proxies (SPEC.md §6, clips.vault). Never
 # served directly: lawyers will reach them only through views that check access (M4).
 VAULT_DIR = DATA_DIR / 'vault'
+# The map's data (maps.data), downloaded by `python manage.py fetch_map_data`.
+MAP_DIR = DATA_DIR / 'map'
 
 for directory in (QUARANTINE_DIR, FILE_UPLOAD_TEMP_DIR, VAULT_DIR):
     directory.mkdir(mode=0o700, exist_ok=True)
