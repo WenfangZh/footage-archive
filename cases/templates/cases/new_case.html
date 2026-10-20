@@ -1,14 +1,41 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n l10n static %}
 
 {% block title %}{% translate "New case" %}{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{% static 'maps/vendor/maplibre-gl.css' %}">
+  <link rel="stylesheet" href="{% static 'maps/area_map.css' %}">
+  <script src="{% static 'maps/vendor/pmtiles.js' %}" defer></script>
+  <script src="{% static 'maps/vendor/h3-js.umd.js' %}" defer></script>
+  <script src="{% static 'maps/area_map.js' %}" type="module"></script>
+{% endblock %}
 
 {% block content %}
   <h1>{% translate "New case" %}</h1>
   <p>{% translate "Take the time window and place from the police report. Once the case is created, they cannot be changed: for a different window or area, create a new case." %}</p>
   <form method="post" action="{% url 'lawyer:new_case' %}">
     {% csrf_token %}
-    {{ form.as_div }}
+    {{ form.non_field_errors }}
+    {{ form.cells }}
+    {% for field in form.visible_fields %}
+      <div>{{ field.as_field_group }}</div>
+      {% if field.name == 'radius_metres' %}
+        <div id="area-map" class="area-map" hidden
+          data-style-url="{% url 'lawyer:map_style' %}" data-resolution="{{ grid_resolution|unlocalize }}"
+          data-cap-metres="{{ cap_metres|unlocalize }}" data-ceiling-metres="{{ ceiling_metres|unlocalize }}">
+          <p>{% translate "Or, instead of a place and a radius, pick the area on the map: a click adds or removes one cell, and dragging with Shift held down adds every cell you cross." %}</p>
+          <div class="area-map-canvas"></div>
+          <p class="area-map-attribution">© OpenStreetMap contributors</p>
+        </div>
+        <p id="area-map-size" aria-live="polite" hidden
+          data-none="{% translate 'No cells picked on the map.' %}"
+          data-size="{% blocktranslate %}Cells picked: {cells}, about {metres} m across with the margin.{% endblocktranslate %}"
+          data-over-caps="{% blocktranslate with cap=cap_metres %}That is over the size caps ({{ cap }} m): the case will need the admin's approval, with your reason.{% endblocktranslate %}"
+          data-beyond-ceiling="{% blocktranslate with ceiling=ceiling_metres %}That is beyond the ceiling ({{ ceiling }} m): no case can be this large.{% endblocktranslate %}"></p>
+        {{ form.cells.errors }}
+      {% endif %}
+    {% endfor %}
     <button type="submit">{% translate "Create the case" %}</button>
   </form>
 {% endblock %}
