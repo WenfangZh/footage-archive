@@ -4,7 +4,7 @@ The tiles are an extract of the Protomaps basemap (OpenStreetMap data, ODbL) for
 Île-de-France, made by the `pmtiles` command-line tool (README) from one of Protomaps'
 daily builds; the fonts are Noto Sans glyphs (SIL Open Font Licence) from a fixed commit of
 Protomaps' basemaps-assets. Whatever is already there is kept, unless --replace-tiles asks
-for newer tiles; a run cut short leaves only a temporary file, which the next run replaces.
+for newer tiles; what a run cut short leaves behind, the next run deletes or replaces.
 """
 
 import hashlib
@@ -34,7 +34,8 @@ FONTS_URL = f'https://github.com/protomaps/basemaps-assets/archive/{FONTS_COMMIT
 FONTS_SHA256 = 'e942a417d94a12596842a20b53d6b785cbf6d47f2545e458538191ba6d74b305'
 # Protomaps' build index refuses Python's default User-Agent.
 HEADERS = {'User-Agent': 'footage-archive fetch_map_data'}
-GLYPHS = re.compile(r'[^/]+/fonts/(?P<font>[^/]+)/(?P<range>\d{1,5}-\d{1,5})\.pbf')
+GLYPHS = re.compile(r'[^/]+/fonts/(?P<font>[^/]+)/(?P<range>[0-9]{1,5}-[0-9]{1,5})\.pbf')
+BUILD = re.compile(r'[0-9]{8}')
 
 
 class Command(BaseCommand):
@@ -46,6 +47,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, build=None, replace_tiles=False, **options):
         settings.MAP_DIR.mkdir(mode=0o700, exist_ok=True)
+        # What a run cut short left behind.
+        for partial in settings.MAP_DIR.glob('fonts.*'):
+            shutil.rmtree(partial, ignore_errors=True)
+        if build is not None and not BUILD.fullmatch(build):
+            raise CommandError('Give the build as YYYYMMDD.')
         if data.fonts_dir().exists():
             self.stdout.write('Fonts: already there.')
         else:
@@ -92,9 +98,10 @@ class Command(BaseCommand):
         partial = data.tiles_file().with_suffix('.partial')
         partial.unlink(missing_ok=True)
         self.stdout.write(f'Tiles: extracting Île-de-France up to zoom {MAX_ZOOM} from {source}')
-        subprocess.run(
-            [tool, 'extract', source, str(partial), f'--bbox={BOUNDS}', f'--maxzoom={MAX_ZOOM}'], check=True,
-        )
+        try:
+            subprocess.run([tool, 'extract', source, str(partial), f'--bbox={BOUNDS}', f'--maxzoom={MAX_ZOOM}'], check=True)
+        except subprocess.CalledProcessError:
+            raise CommandError(f'pmtiles could not extract the tiles from {source}: the old tiles, if any, are kept.') from None
         os.replace(partial, data.tiles_file())
         self.stdout.write(self.style.SUCCESS(f'Tiles: {data.tiles_file().stat().st_size // 1_000_000} MB.'))
 
@@ -102,4 +109,5 @@ class Command(BaseCommand):
 def latest_build():
     with urllib.request.urlopen(urllib.request.Request(BUILDS_URL, headers=HEADERS), timeout=60) as response:
         builds = json.load(response)
-    return max(build['key'] for build in builds).removesuffix('.pmtiles')
+    keys = [build['key'].removesuffix('.pmtiles') for build in builds]
+    return max(key for key in keys if BUILD.fullmatch(key))

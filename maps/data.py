@@ -9,6 +9,8 @@ from pathlib import Path
 from django.conf import settings
 
 STYLE_FILE = Path(__file__).with_name('style.json')
+# Where every route for the map's data starts (accounts.urls), as maps.apps drops their log records.
+URL_PREFIX = '/lawyer/map/'
 # The fonts the style names: no other is downloaded or served.
 FONTS = ('Noto Sans Regular', 'Noto Sans Medium', 'Noto Sans Italic')
 

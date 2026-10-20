@@ -1,7 +1,8 @@
 import logging
 
 from django.apps import AppConfig
-from django.urls import reverse
+
+from .data import URL_PREFIX
 
 
 class MapsConfig(AppConfig):
@@ -17,5 +18,4 @@ class MapsConfig(AppConfig):
 
 def skip_map_data(record):
     """False for a log record about a request for map data, which drops it."""
-    prefix = reverse('lawyer:map_style').rsplit('/', 1)[0] + '/'
-    return prefix not in record.getMessage()
+    return URL_PREFIX not in record.getMessage()

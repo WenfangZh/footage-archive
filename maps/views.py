@@ -16,16 +16,17 @@ from clips.streaming import file_response
 
 from . import data
 
-GLYPH_RANGE = re.compile(r'\d{1,5}-\d{1,5}')
+GLYPH_RANGE = re.compile(r'[0-9]{1,5}-[0-9]{1,5}')
 
 
 @lawyer_required
 def style(request):
     """The map's style, pointing to the tiles and fonts on this archive's own origin."""
-    style = json.loads(data.STYLE_FILE.read_text())
-    style['sources']['protomaps']['url'] = 'pmtiles://' + request.build_absolute_uri(reverse('lawyer:map_tiles'))
+    style = json.loads(data.STYLE_FILE.read_text(encoding='utf-8'))
+    origin = request.build_absolute_uri('/').removesuffix('/')
+    style['sources']['protomaps']['url'] = f"pmtiles://{origin}{reverse('lawyer:map_tiles')}"
     glyphs = reverse('lawyer:map_glyphs', kwargs={'fontstack': 'FONTSTACK', 'glyph_range': 'RANGE'})
-    style['glyphs'] = request.build_absolute_uri(glyphs).replace('FONTSTACK', '{fontstack}').replace('RANGE', '{range}')
+    style['glyphs'] = origin + glyphs.replace('FONTSTACK', '{fontstack}').replace('RANGE', '{range}')
     return JsonResponse(style)
 
 

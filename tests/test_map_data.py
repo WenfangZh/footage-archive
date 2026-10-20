@@ -72,8 +72,10 @@ def test_requests_for_map_data_are_never_logged(map_dir, lawyer_client, caplog):
     # As the development server logs each request it answers.
     logging.getLogger('django.server').info('"%s" %s %s', 'GET /lawyer/map/tiles.pmtiles HTTP/1.1', 206, 128)
     assert '/lawyer/map/' not in caplog.text and not AuditEntry.objects.exists()
+    # Other requests are still logged as before.
     logging.getLogger('django.server').info('"%s" %s %s', 'GET /lawyer/ HTTP/1.1', 200, 128)
-    assert 'GET /lawyer/ ' in caplog.text
+    lawyer_client.get(reverse('lawyer:case', kwargs={'case_id': 999}))
+    assert 'GET /lawyer/ ' in caplog.text and 'Not Found: /lawyer/cases/999/' in caplog.text
 
 
 def test_without_map_data_the_map_finds_nothing(settings, tmp_path, lawyer_client):
