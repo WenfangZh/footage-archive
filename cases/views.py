@@ -17,7 +17,7 @@ from clips import grid
 from maps.policy import map_page
 
 from . import size
-from .forms import CaseForm, DefaultMarginForm, too_large_message
+from .forms import CaseForm, DefaultMarginForm, max_cells, too_large_message
 from .models import Case, CaseApproval
 from .search import find
 
@@ -27,9 +27,9 @@ def own_profile(request):
 
 
 @lawyer_required
-# Left out of Django's error reports: the typed place is never kept.
+# Left out of Django's error reports: the typed place is never kept, and the cells are as precise.
 # The reason is deleted after the admin's decision, so it stays out of them too.
-@sensitive_post_parameters('latitude', 'longitude', 'reason')
+@sensitive_post_parameters('latitude', 'longitude', 'cells', 'reason')
 # And out of the variables a traceback shows: the form and its cleaned data hold them too.
 @sensitive_variables('form', 'fields')
 @map_page
@@ -62,6 +62,7 @@ def new_case(request):
     return render(request, 'cases/new_case.html', {
         'form': form, 'grid_resolution': grid.finest_resolution(),
         'cap_metres': settings.CASE_AREA_CAP_METRES, 'ceiling_metres': settings.CASE_AREA_CEILING_METRES,
+        'max_cells': max_cells(),
     }, status=400 if form.errors else 200)
 
 

@@ -18,7 +18,8 @@ from tests.test_case_pages import make_lawyer
 
 pytestmark = pytest.mark.django_db
 
-URL = re.compile(r"""[a-z][a-z0-9+.-]*://[^\s"'`()<>\\]+""")
+# With a scheme, or protocol-relative (//host/...), which also reaches another origin.
+URL = re.compile(r"""[a-z][a-z0-9+.-]*://[^\s"'`()<>\\]+|(?<![\w:/])//[\w-]+\.[\w.-]*[a-z]/[^\s"'`()<>\\]*""")
 OWN_ORIGIN = 'http://testserver/'
 MAP_FILES = Path(finders.find('maps/area_map.js')).parent
 

@@ -6,29 +6,52 @@
 
 import * as maplibregl from './vendor/maplibre-gl.mjs';
 
+// Below this zoom a cell is a few pixels wide: too small to pick on purpose.
+const PICKING_ZOOM = 14;
+// A drag that jumps farther than this many cells between two mouse events is not filled in.
+const LONGEST_FILL = 200;
+
 const box = document.getElementById('area-map');
 const field = document.querySelector('form input[name=cells]');
 const rings = field && field.form.elements.margin_rings;
 const readout = document.getElementById('area-map-size');
 const resolution = box && Number(box.dataset.resolution);
+const maxCells = box && Number(box.dataset.maxCells);
 
 // The area picked: the only state. Restored from the field after a refused form.
-const picked = new Set(field ? field.value.split(/[\s,]+/).filter((cell) => h3.isValidCell(cell)) : []);
+const picked = new Set(
+  field ? field.value.split(/[\s,]+/).filter((cell) => h3.isValidCell(cell) && h3.getResolution(cell) === resolution) : [],
+);
 let map;
+let redrawing = false;
 
+// The field follows each change at once; the drawing and the size, once per frame.
 function cellsChanged() {
   field.value = [...picked].join(' ');
-  map.getSource('picked')?.setData({
-    type: 'FeatureCollection',
-    features: [...picked].map((cell) => ({
-      type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [h3.cellToBoundary(cell, true)] },
-    })),
+  if (redrawing) return;
+  redrawing = true;
+  requestAnimationFrame(() => {
+    redrawing = false;
+    map.getSource('picked')?.setData({
+      type: 'FeatureCollection',
+      features: [...picked].map((cell) => ({
+        type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [h3.cellToBoundary(cell, true)] },
+      })),
+    });
+    showSize();
   });
-  showSize();
 }
 
 function cellAt(lngLat) {
   return h3.latLngToCell(lngLat.lat, lngLat.lng, resolution);
+}
+
+function canPick() {
+  return map.getZoom() >= PICKING_ZOOM;
+}
+
+function add(cell) {
+  if (picked.size < maxCells) picked.add(cell);
 }
 
 function metres(a, b) {
@@ -73,20 +96,16 @@ function convexHull(centres) {
 }
 
 function showSize() {
+  let text = canPick() ? '' : `${readout.dataset.zoomIn} `;
   if (picked.size === 0) {
-    readout.textContent = readout.dataset.none;
+    readout.textContent = text + readout.dataset.none;
     return;
   }
   const across = Math.round(spanMetres([...picked], Math.max(0, Number(rings.value) || 0)));
-  let text = readout.dataset.size.replace('{cells}', picked.size).replace('{metres}', across);
+  text += readout.dataset.size.replace('{cells}', picked.size).replace('{metres}', across);
   if (across > Number(box.dataset.ceilingMetres)) text += ` ${readout.dataset.beyondCeiling}`;
   else if (across > Number(box.dataset.capMetres)) text += ` ${readout.dataset.overCaps}`;
   readout.textContent = text;
-}
-
-function toggle(cell) {
-  if (!picked.delete(cell)) picked.add(cell);
-  cellsChanged();
 }
 
 function start() {
@@ -104,6 +123,11 @@ function start() {
     touchPitch: false,
     // Its own control links to MapLibre's site: the credit below the map is plain text.
     attributionControl: false,
+    locale: {
+      'Map.Title': box.dataset.mapTitle,
+      'NavigationControl.ZoomIn': box.dataset.zoomInLabel,
+      'NavigationControl.ZoomOut': box.dataset.zoomOutLabel,
+    },
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }));
   if (picked.size) {
@@ -119,41 +143,57 @@ function start() {
     map.addLayer({ id: 'picked-outline', type: 'line', source: 'picked', paint: { 'line-color': '#d9480f', 'line-width': 1 } });
     cellsChanged();
   });
+  map.on('zoomend', showSize);
 
   map.on('click', (event) => {
-    if (!event.originalEvent.shiftKey) toggle(cellAt(event.lngLat));
+    if (event.originalEvent.shiftKey || !canPick()) return;
+    const cell = cellAt(event.lngLat);
+    if (!picked.delete(cell)) add(cell);
+    cellsChanged();
   });
 
-  // While Shift is held, dragging paints instead of moving the map.
+  // While Shift is held, dragging paints instead of moving the map. Keys pressed or let go
+  // while the page had no focus are missed, so leaving the page ends any painting too.
   let lastCell = null;
-  const setShift = (event) => {
-    if (event.key === 'Shift') map.dragPan[event.type === 'keydown' ? 'disable' : 'enable']();
+  const stopPainting = () => {
+    lastCell = null;
+    map.dragPan.enable();
   };
-  window.addEventListener('keydown', setShift);
-  window.addEventListener('keyup', setShift);
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Shift') map.dragPan.disable();
+  });
+  window.addEventListener('keyup', (event) => {
+    if (event.key === 'Shift') stopPainting();
+  });
+  window.addEventListener('blur', stopPainting);
+  window.addEventListener('mouseup', () => {
+    lastCell = null;
+  });
   map.on('mousedown', (event) => {
-    if (!event.originalEvent.shiftKey) return;
+    if (!event.originalEvent.shiftKey || !canPick()) return;
+    map.dragPan.disable();
     lastCell = cellAt(event.lngLat);
-    picked.add(lastCell);
+    add(lastCell);
     cellsChanged();
   });
   map.on('mousemove', (event) => {
     if (lastCell === null) return;
+    if (event.originalEvent.buttons === 0) {
+      lastCell = null;
+      return;
+    }
     const cell = cellAt(event.lngLat);
     if (cell === lastCell) return;
     // A fast drag skips cells between two events: fill in the line between them.
-    let path;
+    let path = [cell];
     try {
-      path = h3.gridPathCells(lastCell, cell);
+      if (h3.gridDistance(lastCell, cell) <= LONGEST_FILL) path = h3.gridPathCells(lastCell, cell);
     } catch {
-      path = [cell];
+      // No path across a pentagon: just the cell under the mouse.
     }
-    path.forEach((step) => picked.add(step));
+    path.forEach(add);
     lastCell = cell;
     cellsChanged();
-  });
-  window.addEventListener('mouseup', () => {
-    lastCell = null;
   });
   rings.addEventListener('input', showSize);
 }
