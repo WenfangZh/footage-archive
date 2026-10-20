@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 01:21+0200\n"
+"POT-Creation-Date: 2026-10-20 10:07+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -287,7 +287,7 @@ msgid "You have no cases yet."
 msgstr "Vous n'avez pas encore de dossier de recherche."
 
 #: accounts/templates/accounts/lawyer_home.html:15
-#: cases/templates/cases/new_case.html:4 cases/templates/cases/new_case.html:7
+#: cases/templates/cases/new_case.html:4 cases/templates/cases/new_case.html:15
 msgid "New case"
 msgstr "Nouveau dossier de recherche"
 
@@ -716,7 +716,8 @@ msgstr "Saisissez une date entre %(first)s et l'an prochain."
 
 #: cases/forms.py:96
 msgid "The area picked on the map could not be read. Pick it again."
-msgstr "Le périmètre choisi sur la carte n'a pas pu être lu. Choisissez-le à nouveau."
+msgstr ""
+"Le périmètre choisi sur la carte n'a pas pu être lu. Choisissez-le à nouveau."
 
 #: cases/forms.py:97
 msgid "The area picked on the map has more cells than any case can hold."
@@ -1166,7 +1167,7 @@ msgstr "Enregistrer"
 msgid "No matches."
 msgstr "Aucune correspondance."
 
-#: cases/templates/cases/new_case.html:8
+#: cases/templates/cases/new_case.html:16
 msgid ""
 "Take the time window and place from the police report. Once the case is "
 "created, they cannot be changed: for a different window or area, create a "
@@ -1176,7 +1177,55 @@ msgstr ""
 "de recherche créé, ils ne peuvent plus être modifiés : pour une autre plage "
 "horaire ou un autre périmètre, créez un nouveau dossier de recherche."
 
-#: cases/templates/cases/new_case.html:12
+#: cases/templates/cases/new_case.html:22
+msgid "No cells picked on the map."
+msgstr "Aucune maille choisie sur la carte."
+
+#: cases/templates/cases/new_case.html:23
+msgid "Zoom in to pick cells."
+msgstr "Zoomez pour choisir des mailles."
+
+#: cases/templates/cases/new_case.html:24
+#, python-brace-format
+msgid "Cells picked: {cells}, about {metres} m across with the margin."
+msgstr "Mailles choisies : {cells}, environ {metres} m de large avec la marge."
+
+#: cases/templates/cases/new_case.html:25
+#, python-format
+msgid ""
+"That is over the size caps (%(cap)s m): the case will need the admin's "
+"approval, with your reason."
+msgstr ""
+"C'est au-delà des plafonds (%(cap)s m) : le dossier de recherche attendra sa "
+"validation par l'administrateur·rice, avec votre justification."
+
+#: cases/templates/cases/new_case.html:26
+#, python-format
+msgid "That is beyond the ceiling (%(ceiling)s m): no case can be this large."
+msgstr ""
+"C'est au-delà de la limite absolue (%(ceiling)s m) : aucun dossier de "
+"recherche ne peut être aussi grand."
+
+#: cases/templates/cases/new_case.html:27
+msgid "Map for picking the area"
+msgstr "Carte pour choisir le périmètre"
+
+#: cases/templates/cases/new_case.html:28
+msgid "Zoom in"
+msgstr "Zoomer"
+
+#: cases/templates/cases/new_case.html:29
+msgid "Zoom out"
+msgstr "Dézoomer"
+
+#: cases/templates/cases/new_case.html:38
+msgid ""
+"Or, instead of a place and a radius, pick the area on the map: a click adds "
+"or removes one cell, and dragging with Shift held down adds every cell you "
+"cross."
+msgstr "Ou bien, au lieu de donner un lieu et un rayon, choisissez le périmètre sur la carte : un clic ajoute ou retire une maille, et la souris glissée avec la touche Maj enfoncée ajoute toutes les mailles traversées."
+
+#: cases/templates/cases/new_case.html:47
 msgid "Create the case"
 msgstr "Créer le dossier de recherche"
 
@@ -1220,11 +1269,11 @@ msgstr ""
 "Clips trouvés seulement dans la marge, juste en dehors de la plage horaire "
 "ou du périmètre."
 
-#: cases/views.py:80
+#: cases/views.py:88
 msgid "Your new cases will start with this margin."
 msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
 
-#: cases/views.py:91
+#: cases/views.py:99
 msgid "The case is closed."
 msgstr "Le dossier de recherche est clos."
 
@@ -1697,11 +1746,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:358
+#: config/settings.py:361
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:359
+#: config/settings.py:362
 msgid "English"
 msgstr "Anglais"
 
@@ -1709,7 +1758,7 @@ msgstr "Anglais"
 msgid "Footage archive"
 msgstr "Archive de vidéos"
 
-#: templates/base.html:28
+#: templates/base.html:29
 msgid "Log out"
 msgstr "Se déconnecter"
 
