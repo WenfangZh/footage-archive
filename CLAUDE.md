@@ -86,4 +86,5 @@ Fill these in as they're created:
 - Compile translations: `python manage.py compilemessages` (the `.mo` files are gitignored; a test fails if they are missing or stale)
 - Background worker (ingest, and scheduled deletion of unconfirmed originals): `python manage.py run_huey`
 - Delete unconfirmed originals by hand: `python manage.py delete_unconfirmed_originals`
+- Map data (tiles and fonts into `var/map/`, needs the `pmtiles` tool on `PATH`): `python manage.py fetch_map_data`
 - Open a pull request: `gh pr create --base master` (CI: `.github/workflows/tests.yml`)
