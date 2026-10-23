@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{% translate "Your personal key" %}{% endblock %}
+
+{% block head %}
+  <script src="{% static 'core/vendor/libsodium/libsodium-sumo.js' %}" defer></script>
+  <script src="{% static 'core/vendor/libsodium/libsodium-wrappers.js' %}" defer></script>
+  <script src="{% static 'keys/keys.js' %}" defer></script>
+  <script src="{% static 'keys/key.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Your personal key" %}</h1>
+  <div id="key-page" data-login-id="{{ login_id }}" data-encrypted-key-url="{% url 'accounts:encrypted_key' %}">
+    <noscript><p>{% translate "Unlocking your key needs JavaScript." %}</p></noscript>
+
+    <form id="unlock" hidden>
+      <p><label for="unlock-passphrase">{% translate "Key passphrase:" %}</label>
+        <input id="unlock-passphrase" type="password" autocomplete="off" required></p>
+      <button type="submit">{% translate "Unlock" %}</button>
+      <p id="wrong-passphrase" role="alert" hidden>{% translate "That key passphrase does not unlock your key." %}</p>
+      <p id="key-mismatch" role="alert" hidden>{% translate "Your key does not match the one the archive shows for you. Do not go on: tell the admin, by phone." %}</p>
+      <p id="unlock-failed" role="alert" hidden>{% translate "Your key could not be fetched. Please reload the page." %}</p>
+    </form>
+
+    <div id="unlocked" hidden>
+      <p>{% translate "Your key is unlocked in this browser tab until you log out or close it." %}</p>
+      <p>{% translate "Your safety number:" %} <output id="safety-number"></output></p>
+      {% if not key.admin_confirmed_at %}
+        <p>{% translate "The admin will compare it with you before admitting you. Read it to them when they contact you, and only then." %}</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

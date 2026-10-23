@@ -11,6 +11,7 @@ from alerts.checks import failed_login
 from alerts.models import Alert
 from cases.models import Case
 from clips import rate_limits
+from keys.models import LawyerKey
 
 from .models import LawyerProfile, User
 from . import two_factor
@@ -59,6 +60,16 @@ class LoginView(auth_views.LoginView):
         return super().form_valid(form)
 
 
+class LogoutView(auth_views.LogoutView):
+    """Django's, which only accepts POST, and which also tells the browser to forget what
+    this site stored in it: keys unlocked in a tab live there (docs/m5-encryption-design.md §4)."""
+
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        response['Clear-Site-Data'] = '"storage"'
+        return response
+
+
 def typed_account(request):
     # The address as the login will look it up, so that its case makes no difference.
     # Anything longer than an address can be is not normalised (as Django's login form).
@@ -80,7 +91,8 @@ def account_home(request):
     if current == Role.LAWYER:
         return redirect('lawyer:home')
     if current == Role.APPLICANT:
-        return render(request, 'accounts/applicant.html')
+        has_key = LawyerKey.objects.current().filter(lawyer_profile__user=request.user).exists()
+        return render(request, 'accounts/applicant.html', {'has_key': has_key})
     return no_access(request)
 
 

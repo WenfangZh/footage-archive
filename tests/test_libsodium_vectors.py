@@ -17,6 +17,8 @@ from nacl.encoding import RawEncoder
 from nacl.hash import blake2b
 from nacl.public import PrivateKey, SealedBox
 
+from keys.models import safety_number
+
 VECTORS = Path(__file__).parent / 'vectors'
 
 
@@ -30,7 +32,8 @@ def load(name):
             return [unhex(item) for item in value]
         return bytes.fromhex(value) if isinstance(value, str) else value
 
-    return {key: unhex(value) for key, value in data.items() if key not in {'made_by', 'checked_pynacl_sha256'}}
+    skipped = {'made_by', 'checked_pynacl_sha256', 'safety_number'}
+    return {key: unhex(value) for key, value in data.items() if key not in skipped}
 
 
 @pytest.fixture(params=['libsodium_js.json', 'pynacl.json'])
@@ -106,6 +109,12 @@ def test_blake2b_with_a_label(v):
 def test_keyed_blake2b(v):
     keyed = v['blake2b_keyed']
     assert blake2b(keyed['label'], digest_size=32, key=keyed['key'], encoder=RawEncoder) == keyed['digest']
+
+
+def test_the_browser_and_the_server_compute_the_same_safety_number():
+    # Only libsodium.js's file has it: keys/static/keys/keys.js computed it.
+    vector = json.loads((VECTORS / 'libsodium_js.json').read_text())['safety_number']
+    assert safety_number(bytes.fromhex(vector['public_key'])) == vector['number']
 
 
 def test_padding(v):

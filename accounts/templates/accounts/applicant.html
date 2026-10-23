@@ -6,4 +6,9 @@
 {% block content %}
   <h1>{% translate "Waiting for admission" %}</h1>
   <p>{% translate "Your account is ready, but the admin has not admitted you yet. Until then, the archive shows you nothing." %}</p>
+  {% if has_key %}
+    <p><a href="{% url 'accounts:key' %}">{% translate "Your personal key and its safety number" %}</a></p>
+  {% else %}
+    <p>{% translate "Before you can be admitted, set up your personal key." %} <a href="{% url 'accounts:key_setup' %}">{% translate "Set up your personal key" %}</a></p>
+  {% endif %}
 {% endblock %}

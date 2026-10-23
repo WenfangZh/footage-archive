@@ -8,6 +8,8 @@ pages added later are checked too.
 import pytest
 from django.urls import reverse
 
+from accounts.models import LawyerProfile
+from tests.conftest import log_in_with_second_factor
 from tests.test_roles import ADMIN_AREA, LAWYER_AREA, area_urls, client_for  # noqa: F401 (a fixture)
 
 pytestmark = pytest.mark.django_db
@@ -53,6 +55,18 @@ def test_no_other_page_may_run_webassembly(client_for, client, kind):
         policy = directives(client.get(url), url)
         assert_strict(policy, url)
         assert WASM not in policy.get('script-src', []), url
+
+
+def test_the_pages_where_an_applicant_sets_up_or_unlocks_a_key_may_run_webassembly(client, django_user_model):
+    user = django_user_model.objects.create_user('applicant@example.org', 'a long test passphrase')
+    LawyerProfile.objects.create(user=user, bar='Paris')
+    log_in_with_second_factor(client, user)
+    for name in ['accounts:key_setup', 'accounts:key']:
+        url = reverse(name)
+        response = client.get(url, follow=True)  # The key page sends someone without a key to set one up.
+        policy = directives(response, url)
+        assert_strict(policy, url)
+        assert policy['script-src'] == ["'self'", WASM], url
 
 
 def test_a_lawyer_url_seen_by_someone_else_gets_the_policy_too(client):

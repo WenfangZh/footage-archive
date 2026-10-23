@@ -53,14 +53,14 @@ def no_access(request):
     return render(request, 'accounts/no_access.html', status=403)
 
 
-def _required(needed):
+def _required(*allowed):
     def decorator(view):
         @wraps(view)
         def wrapped(request, *args, **kwargs):
             current = role(request.user)
             if current == Role.ANONYMOUS:
                 response = redirect_to_login(request.get_full_path())
-            elif current != needed:
+            elif current not in allowed:
                 response = no_access(request)
             elif not request.user.is_verified():
                 response = two_factor.required_step(request)
@@ -78,3 +78,6 @@ def _required(needed):
 
 lawyer_required = _required(Role.LAWYER)
 admin_required = _required(Role.ADMIN)
+# An applicant sets up their personal key before admission, and a lawyer unlocks it
+# (docs/m5-encryption-design.md §5.1, §4).
+key_holder_required = _required(Role.APPLICANT, Role.LAWYER)
