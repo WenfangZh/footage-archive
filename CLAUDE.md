@@ -52,7 +52,7 @@ Taken from the principles of pstack's poteto-mode, without its process (no deleg
 ## Hard rules
 
 - This repository is public. Treat every commit as permanent: no secrets, and no personal data about real people (names, emails, phone numbers, locations) in code, fixtures or commit messages.
-- Never write custom cryptography, password hashing or authentication. Use Django's auth (Argon2 hasher) and PyNaCl.
+- Never write custom cryptography, password hashing or authentication. Use Django's auth (Argon2 hasher), and libsodium: PyNaCl on the server, libsodium.js in the browser.
 - The evidence copy is never re-encoded. Only proxies are.
 - Uploaded files are untrusted: only video is accepted, validated with ffprobe, never executed, never served from quarantine.
 - No public views of footage, ever. Footage access is lawyer-only, case-scoped and logged.
