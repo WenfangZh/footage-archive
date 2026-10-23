@@ -47,6 +47,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, build=None, replace_tiles=False, **options):
         settings.MAP_DIR.mkdir(mode=0o700, exist_ok=True)
+        # mkdir's mode only applies to a new folder: an existing one is made private too, as for the vault.
+        settings.MAP_DIR.chmod(0o700)
         # What a run cut short left behind.
         for partial in settings.MAP_DIR.glob('fonts.*'):
             shutil.rmtree(partial, ignore_errors=True)
