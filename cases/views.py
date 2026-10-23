@@ -14,7 +14,6 @@ from alerts.checks import check_activity
 from alerts.models import AlertLimitRaise
 from audit.models import Action, record
 from clips import grid
-from maps.policy import map_page
 
 from . import size
 from .forms import CaseForm, DefaultMarginForm, max_cells, too_large_message
@@ -32,7 +31,6 @@ def own_profile(request):
 @sensitive_post_parameters('latitude', 'longitude', 'cells', 'reason')
 # And out of the variables a traceback shows: the form and its cleaned data hold them too.
 @sensitive_variables('form', 'fields')
-@map_page
 def new_case(request):
     profile = own_profile(request)
     if request.method == 'POST':

@@ -105,6 +105,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Outermost but one, so that every response carries it, refusals included (ADR 0006, ADR 0007).
+    'core.content_security.ContentSecurityPolicyMiddleware',
     # Records a change of the size caps or alert limits when the archive starts (SPEC.md §7).
     'audit.limits.LimitsCheckMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
