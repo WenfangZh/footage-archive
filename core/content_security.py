@@ -28,6 +28,7 @@ class ContentSecurityPolicyMiddleware:
         response = self.get_response(request)
         # Set once the URL is resolved; a request that matched no page has none.
         match = getattr(request, 'resolver_match', None)
-        lawyer_page = match is not None and match.namespace == 'lawyer'
+        # The outermost namespace, so that pages in a namespace nested under it count too.
+        lawyer_page = match is not None and match.namespaces[:1] == ['lawyer']
         response['Content-Security-Policy'] = LAWYER_POLICY if lawyer_page else POLICY
         return response
