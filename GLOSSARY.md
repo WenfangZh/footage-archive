@@ -401,17 +401,17 @@ _French_: remise de la clé commune
 _Avoid_: Invitation (to the archive), share, access (alone)
 
 **Rotation**:
-Replacing the group key, after a revocation or a suspected exposure of a lawyer's key, and resealing every data key to the new one, done in the rotator's browser; the old key goes once two checkers have checked the new one.
+Replacing the group key, after a revocation or a suspected exposure of a lawyer's key, and resealing every data key to the new one, done in the rotator's browser; the old key goes once two checkers have each passed a check of the new one.
 _French_: renouvellement de la clé commune
 _Avoid_: Re-encryption (the files themselves are not re-encrypted), reset
 
 **Rotator**:
-The lawyer whose browser carries out a rotation: the first to unlock their key once it is due.
-_French_: personne qui renouvelle la clé
+The lawyer whose browser carries out a rotation, drawn at random among lawyers who recently unlocked their key.
+_French_: personne qui renouvelle la clé commune
 _Avoid_: Admin (who never rotates), rekeyer
 
 **Checker**:
-A lawyer drawn at random, never the rotator, whose browser checks a rotation's work without them doing anything. Two must pass before the old group key goes.
+A lawyer drawn at random, never the rotator, whose browser checks a rotation's work without them doing anything. Two must pass before the old group key goes; a third, the confirmer, is drawn when one reports a failure.
 _French_: personne qui vérifie le renouvellement
 _Avoid_: Reviewer, verifier, approver
 _Avoid in French_: contrôleur (a legal office), vérificateur
