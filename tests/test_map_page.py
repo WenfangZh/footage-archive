@@ -1,7 +1,9 @@
 """The case-area map's page (SPEC.md §12 M4.5, ADR 0006): it loads nothing from another origin.
 
 The page and every file it loads are searched for URLs. Our own files may hold none to
-another origin; the libraries may hold only the ones listed below, which nothing fetches.
+another origin but the credit's link to OpenStreetMap's copyright page, which loads nothing
+until the lawyer follows it; the libraries may hold only the ones listed below, which nothing
+fetches.
 """
 
 import re
@@ -21,6 +23,8 @@ pytestmark = pytest.mark.django_db
 # With a scheme, or protocol-relative (//host/...), which also reaches another origin.
 URL = re.compile(r"""[a-z][a-z0-9+.-]*://[^\s"'`()<>\\]+|(?<![\w:/])//[\w-]+\.[\w.-]*[a-z]/[^\s"'`()<>\\]*""")
 OWN_ORIGIN = 'http://testserver/'
+# OpenStreetMap's attribution guidelines ask for this link, for its licence and sources.
+OSM_COPYRIGHT = 'https://www.openstreetmap.org/copyright'
 MAP_FILES = Path(finders.find('maps/area_map.js')).parent
 
 # Strings in the libraries that look like URLs but are never requested. A library upgrade
@@ -44,14 +48,17 @@ NEVER_FETCHED = {
 
 
 class Loads(HTMLParser):
-    """The files a page loads: its scripts, stylesheets and images."""
+    """The files a page loads (its scripts, stylesheets and images), and its links."""
 
     def __init__(self):
         super().__init__()
         self.paths = []
+        self.links = []
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        if tag == 'a':
+            self.links.append(attrs)
         if tag in ('script', 'img') and attrs.get('src'):
             self.paths.append(attrs['src'])
         if tag == 'link' and attrs.get('href'):
@@ -72,9 +79,12 @@ def foreign(text):
 def test_the_map_page_and_what_it_loads_hold_no_url_to_another_origin(page):
     client, response = page
     html = response.content.decode()
-    assert foreign(html) == set()
     parser = Loads()
     parser.feed(html)
+    # The credit's link is the only URL to another origin, and only as a link.
+    assert foreign(html) == {OSM_COPYRIGHT} and html.count(OSM_COPYRIGHT) == 1
+    elsewhere = [link.get('href', '') for link in parser.links if not link.get('href', '').startswith(('/', '#'))]
+    assert elsewhere == [OSM_COPYRIGHT]
     loaded = {path for path in parser.paths if path.startswith('/static/maps/')}
     assert len(loaded) == len(parser.paths) == 5
     # The files these load in turn (MapLibre's module and its worker) are in the same folder.
@@ -96,6 +106,14 @@ def test_the_browser_is_told_to_load_nothing_from_another_origin(page):
     assert not any("'unsafe-inline'" in part or "'unsafe-eval'" in part or '*' in part for part in policy)
 
 
-def test_the_credit_to_openstreetmap_is_on_the_map(page):
+def test_the_credit_to_openstreetmap_links_to_its_licence(page):
     _, response = page
-    assert '© OpenStreetMap contributors' in response.content.decode()
+    parser = Loads()
+    parser.feed(response.content.decode())
+    (credit,) = [link for link in parser.links if link.get('href') == OSM_COPYRIGHT]
+    # A new tab keeps the form as it is, and OpenStreetMap is not told which page sent the lawyer.
+    assert credit['target'] == '_blank' and set(credit['rel'].split()) >= {'noopener', 'noreferrer'}
+    assert re.search(
+        r'<p class="area-map-attribution">© <a [^>]*href="' + re.escape(OSM_COPYRIGHT) + r'"[^>]*>OpenStreetMap</a> contributors</p>',
+        response.content.decode(),
+    )
