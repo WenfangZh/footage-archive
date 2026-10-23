@@ -12,7 +12,8 @@ if (page) {
       document.getElementById('unlocked').hidden = false;
     }
 
-    const stored = keys.recall(page.dataset.loginId);
+    const publicKey = keys.b64.decode(page.dataset.publicKey);
+    const stored = keys.recall(page.dataset.loginId, publicKey);
     if (stored) {
       show(stored.personal);
       return;
@@ -40,6 +41,10 @@ if (page) {
         keys.remember(page.dataset.loginId, { personal: privateKey });
         form.reset();
         show(privateKey);
+        // Only a checked unlock counts for rotation draws (design §5.5).
+        fetch(page.dataset.unlockedUrl, {
+          method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': page.dataset.csrfToken },
+        });
       } catch (error) {
         const id = error instanceof keys.KeyMismatch ? 'key-mismatch' : 'wrong-passphrase';
         document.getElementById(id).hidden = false;

@@ -10,6 +10,7 @@
   const PASSPHRASE_LENGTH = 20; // 100 bits
   const RECOVERY_KEY_LENGTH = 52; // 260 bits
   const GROUP_SIZE = 4;
+  // Also in keys/static/keys/forget.js, which the login page loads without libsodium.js.
   const STORAGE = 'footage-archive-keys';
 
   const text = (value) => sodium.from_string(value);
@@ -75,10 +76,15 @@
     } catch (error) {
       throw new WrongSecret();
     }
-    if (!sodium.memcmp(sodium.crypto_scalarmult_base(privateKey), publicKey)) {
+    if (!samePublicKey(privateKey, publicKey)) {
       throw new KeyMismatch();
     }
     return privateKey;
+  }
+
+  function samePublicKey(privateKey, publicKey) {
+    const derived = sodium.crypto_scalarmult_base(privateKey);
+    return derived.length === publicKey.length && sodium.memcmp(derived, publicKey);
   }
 
   // Six groups of five digits, as keys.models.safety_number computes them on the server.
@@ -95,27 +101,35 @@
     return groups.join(' ');
   }
 
-  // Keys unlocked in this tab, kept for this login only (design §4): a page from another
-  // login, such as another lawyer's in the same tab, discards them.
+  // Keys unlocked in this tab, kept for this login and this personal key only (design §4): a
+  // page from another login, such as another lawyer's in the same tab, or showing a newer
+  // key, discards them.
   function remember(loginId, keys) {
     sessionStorage.setItem(STORAGE, JSON.stringify({ login: loginId, personal: b64.encode(keys.personal) }));
   }
 
-  function recall(loginId) {
+  function recall(loginId, publicKey) {
     try {
       const stored = JSON.parse(sessionStorage.getItem(STORAGE));
       if (stored && stored.login === loginId) {
-        return { personal: b64.decode(stored.personal) };
+        const personal = b64.decode(stored.personal);
+        if (samePublicKey(personal, publicKey)) {
+          return { personal };
+        }
       }
     } catch (error) {
       // Nothing usable is stored.
     }
-    sessionStorage.removeItem(STORAGE);
+    forget();
     return null;
+  }
+
+  function forget() {
+    sessionStorage.removeItem(STORAGE);
   }
 
   globalThis.ArchiveKeys = {
     PASSPHRASE_LENGTH, RECOVERY_KEY_LENGTH, WrongSecret, KeyMismatch, b64, randomCode, display, normalise,
-    passphraseKey, recoveryWrappingKey, encryptPrivateKey, decryptPrivateKey, safetyNumber, remember, recall,
+    passphraseKey, recoveryWrappingKey, encryptPrivateKey, decryptPrivateKey, safetyNumber, remember, recall, forget,
   };
 }());

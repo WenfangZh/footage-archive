@@ -21,6 +21,8 @@ if (form) {
         mismatch.hidden = false;
         return;
       }
+      // A key unlocked earlier in this tab is about to be replaced.
+      keys.forget();
       const salt = sodium.randombytes_buf(16);
       const limits = [Number(form.dataset.opslimit), Number(form.dataset.memlimit)];
       const set = (name, bytes) => { form.elements[name].value = keys.b64.encode(bytes); };
