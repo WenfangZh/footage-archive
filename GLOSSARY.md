@@ -401,7 +401,7 @@ _French_: remise de la clé commune
 _Avoid_: Invitation (to the archive), share, access (alone)
 
 **Rotation**:
-Replacing the group key, after a revocation or a suspected exposure of a lawyer's key, and resealing every data key to the new one, done in the rotator's browser; the old key goes once two checkers have each passed a check of the new one.
+Replacing the group key, after a revocation or a suspected exposure of a lawyer's key, and resealing every data key to the new one, done in the rotator's browser; the old key goes once two checkers have each passed a check of the new one. A rotation may take several attempts, each with a rotator and checkers drawn afresh.
 _French_: renouvellement de la clé commune
 _Avoid_: Re-encryption (the files themselves are not re-encrypted), reset
 
@@ -415,6 +415,11 @@ A lawyer drawn at random, never the rotator, whose browser checks a rotation's w
 _French_: personne qui vérifie le renouvellement
 _Avoid_: Reviewer, verifier, approver
 _Avoid in French_: contrôleur (a legal office), vérificateur
+
+**Confirmer**:
+A further lawyer drawn at random, outside the rotator and both checkers, to recheck what one checker reported as failed. If they disagree, the attempt is given up and a new one drawn.
+_French_: personne qui confirme l'échec
+_Avoid_: Arbiter, judge, referee
 
 **Data key**:
 The random key that encrypts one item in the vault (a file, a text or a case label). It is never stored as it is, only sealed to the group key, or to a lawyer's personal key or the code holder key.
