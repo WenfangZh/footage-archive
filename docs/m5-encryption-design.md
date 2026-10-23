@@ -7,19 +7,23 @@ This document answers what SPEC.md §10 asks of M5's design: key management (a n
 
 ## 1. What encryption protects against
 
-Three kinds of attacker get different things from the server:
+Four kinds of attacker get different things from the server:
 
 1. **At rest**: someone who holds a copy of the disk or the database, by seizure, compelled disclosure, a breach of storage or a leaked backup.
 2. **Passive on the running server**: someone who can read its memory, files and logs while it runs, but does not change what it does.
-3. **Active**: someone who changes the code the server runs, or the JavaScript it sends to browsers.
+3. **Database writer**: someone who can change rows in the database (a flaw that lets them write SQL, a tampered backup restored), but not the code the server runs.
+4. **Active**: someone who changes the code the server runs, or the JavaScript it sends to browsers.
 
 What M5 promises:
 
-- Against (1), the vault holds nothing readable: no evidence copy, proxy, context, contact details, message or case label can be read without a lawyer's key or, for a code holder's own texts, the upload code.
+- Against (1), the vault holds nothing readable without a key: no evidence copy, proxy, context, contact details, message or case label opens without a lawyer's key or, for a code holder's own texts, the upload code. Each lawyer's private key is stored too, encrypted under their key passphrase, so the protection rests on those passphrases resisting offline guessing; that is why the passphrase is generated, never chosen (§5.1). Files deleted from a disk are not always erased from it (§9).
 - Against (2), only what passes through the server while it is watched: clips going through ingest, clips a lawyer opens, and texts a code holder or lawyer writes or a code holder reads. Never a private key, so nothing stored can be opened in bulk.
-- Against (3), no promise. Ingest must read each original to hash, remux and make the proxy, so a server running malicious code can copy every new upload; and it can send lawyers JavaScript that copies their keys (§11).
+- Against (3), the safety number checks stop a swapped key at a key grant (§5.3), but not everything: a database writer could replace the group public key with one of their own, so that new uploads are sealed to them (§11). They cannot read what is already stored.
+- Against (4), no promise. Ingest must read each original to hash, remux and make the proxy, so a server running malicious code can copy every new upload; and it can send lawyers JavaScript that copies their keys (§11).
 
 So the target in SPEC.md §1 ("an operator who cannot read the footage at all") holds for footage the server stores, not for footage passing through it. This PR rewords §1 and §3 to say so.
+
+Encryption keeps contents secret from the server; it does not stop the server from writing contents of its own. Ingest encrypts to a public key, so anyone holding that public key, the server included, can encrypt a forged context or file. That the evidence copy is the frames that were uploaded is shown, as before, by the hash record (SPEC.md §9), which a code holder can check against the original on their phone.
 
 Encryption protects against the server, not between lawyers. When ingest runs no case exists yet, so every lawyer's key can open every clip; case scoping stays the server's check, as today (§3.3).
 
@@ -30,14 +34,19 @@ Only libsodium, as SPEC.md §10 requires: PyNaCl 1.6.2 on the server, and libsod
 | Purpose | libsodium function | PyNaCl | libsodium.js |
 |---|---|---|---|
 | Encrypt to a public key without a sender key (**sealed box**) | `crypto_box_seal` (X25519, XSalsa20-Poly1305) | `SealedBox` | `crypto_box_seal` |
-| Encrypt a short text with a random key | `crypto_secretbox` (XSalsa20-Poly1305) | `SecretBox` | `crypto_secretbox_easy` |
-| Encrypt a file in chunks | `crypto_secretstream_xchacha20poly1305` | `nacl.bindings` | same name |
+| Encrypt a short text with a random key, bound to what it belongs to | `crypto_aead_xchacha20poly1305_ietf` | `nacl.bindings` | same name |
+| Encrypt a file in chunks, bound to what it belongs to | `crypto_secretstream_xchacha20poly1305` | `nacl.bindings` | same name |
+| Hide a text's length | `sodium_pad` | `nacl.bindings` | `pad` |
 | Key pair from a 32-byte seed | `crypto_box_seed_keypair` | `PrivateKey.from_seed` | `crypto_box_seed_keypair` |
+| Public key from a private key | `crypto_scalarmult_base` | `nacl.bindings` | same name |
 | Key from a passphrase | `crypto_pwhash` (Argon2id) | not used | `crypto_pwhash` |
-| Key from the upload code | `crypto_generichash` (BLAKE2b, with a personalisation label) | `nacl.hash.blake2b` | not used |
-| Safety number | `crypto_generichash` over a public key | `nacl.hash.blake2b` | `crypto_generichash` |
+| Upload code to seed, safety number, key check value | `crypto_generichash` (BLAKE2b, with a personalisation label of at most 16 bytes) | `nacl.hash.blake2b` | `crypto_generichash` |
 
-No construction of our own: no chunk format, no key derivation scheme beyond one BLAKE2b call, no signatures.
+Every encryption of an item carries, as additional data that the decryption checks, what the item is: the clip's id and the kind of item (`evidence_copy`, `proxy`, `context`, `contact_details`), or the case's id for a case label. A ciphertext moved to another clip or kind, or a sealed key moved with it, fails to open.
+
+The BLAKE2b uses each have their own label, so that no value can stand in for another: `fa-codeholder-v1` (code holder seed), `fa-safetynum-v1` (safety number), `fa-keycheck-v1` (key check value).
+
+No construction of our own: no chunk format, no key derivation scheme beyond single BLAKE2b calls, no signatures. The key check value (§5.5) is the one use of BLAKE2b as a keyed hash over a fixed label; the review should look at it in particular.
 
 Post-quantum: sealed boxes rest on X25519, which a large quantum computer could break, so ciphertext copied today could have its keys opened later. The contents themselves are encrypted with 256-bit symmetric keys, which such a computer does not break. libsodium 1.0.22 offers X-Wing (ML-KEM-768 with X25519), and libsodium.js 0.8.4 has it, but PyNaCl 1.6.2 does not, and ingest seals on the server. M5 stays with X25519; when PyNaCl offers X-Wing, a new group key of that kind and a rotation (§5.5) reseal every key without touching the files. Copies taken before that stay exposed to a future quantum computer (ADR 0007).
 
@@ -48,10 +57,10 @@ Post-quantum: sealed boxes rest on X25519, which a large quantum computer could 
 | Key | What it is | Held by | Stored on the server as |
 |---|---|---|---|
 | **Personal key** | One X25519 key pair per lawyer, made in their browser | the lawyer | public key; private key encrypted twice: under their key passphrase, and under their recovery key |
-| **Key passphrase** | Chosen by the lawyer, separate from their login password | the lawyer, in memory | nothing (Argon2id salt and limits only) |
-| **Recovery key** | 32 random bytes, shown once when the personal key is made | the lawyer, on paper with their 2FA recovery codes | nothing |
+| **Key passphrase** | 100 random bits, generated in the browser, typed to unlock the personal key | the lawyer: in memory, on paper or in a password manager | nothing (Argon2id salt and limits only) |
+| **Recovery key** | 256 random bits, generated in the browser, shown once | the lawyer, on paper with their 2FA recovery codes | nothing |
 | **Group key** | One X25519 key pair shared by all lawyers; a new one after each revocation | every lawyer holding a key grant | public key; private key sealed to each lawyer's personal public key (one **key grant** each) |
-| **Data key** | 32 random bytes per vault item (each file, each text) | nobody, at rest | sealed to the group key (and, for a code holder's texts, to the code holder key too) |
+| **Data key** | 32 random bytes per vault item (each file, each text, each case label) | nobody, at rest | sealed to the group key (a case label's, to its lawyer's personal key; a code holder's texts', to the code holder key as well); plus its key check value |
 | **Code holder key** | One X25519 key pair per clip, derived from its upload code | whoever presents the code | public key only |
 | **Server secrets** | The existing `SECRET_KEY` and upload-code HMAC key | the server | environment variables, unchanged |
 
@@ -61,14 +70,15 @@ The admin has no key. The admin cannot read the vault, now by construction rathe
 
 Each sealed key records which public key it was sealed to, so a reader always knows which private key opens it, and a rotation can find what is left to reseal.
 
-- `LawyerKey`: lawyer profile, public key, private key under the passphrase (with Argon2id salt and limits), private key under the recovery key, made at, retired at. At most one unretired key per lawyer (a partial unique constraint).
-- `GroupKey`: public key, made at, retired at. At most one current (unretired, newest) key; during a rotation two are unretired (§5.5).
-- `KeyGrant`: group key, lawyer key, the group private key sealed to the lawyer key, granted by (lawyer profile), granted at. One per group key and lawyer key.
-- `VaultFile` gains: group key, sealed data key, plaintext size. The file on disk is the secretstream (§6).
-- `VaultText`: its plaintext `content` becomes the secretbox ciphertext, plus the group key and the data key sealed to it, and the data key sealed to the code holder key.
+- `LawyerKey`: lawyer profile, public key, private key under the passphrase (with Argon2id salt and limits), private key under the recovery key, made at, admin confirmed at, retired at. At most one unretired key per lawyer (a partial unique constraint). Retiring a key erases both encrypted copies of its private key; the public key stays, for the audit log's sake. "Admin confirmed at" belongs to the key, so a new key starts unconfirmed by construction.
+- `GroupKey`: public key, made at, made by (lawyer key, empty for the first), and a status: `current`, `rotation_requested` (current, and a rotation is due), `checking` (the new key of a rotation, waiting for its checks), `retiring` (the old key during a rotation), `retired`, `rejected` (a new key whose checks failed). Constraints: at most one key `current` or `rotation_requested`; at most one `checking`, and only while one is `retiring`.
+- `KeyGrant`: group key, lawyer key, the group private key sealed to the lawyer key, granted by (lawyer key), granted at, checked at (when the recipient's own browser confirmed it, §4). One per group key and lawyer key.
+- `RotationCheck`: one slot of a rotation's check (two per rotation, §5.5): the new group key, the lawyer key filling it (empty while the slot waits), whether it was drawn or taken after an absent checker, drawn at, open from (the hidden time after which an emptied slot can be taken), passed at, failed at.
+- `SealedKey`: the item it belongs to (a vault file, a vault text or a case), which public key it is sealed to (a group key, a lawyer key or the code holder key), the sealed data key, and whether the checks of the rotation that made it have passed. One item can have several: during a rotation, one per group key; a code holder's texts, one more for the code holder.
+- `VaultFile` gains the data key's key check value. Its plaintext size is not stored: it follows from the stored file's size, since every chunk but the last is 64 KiB and each adds a fixed overhead (ADR 0008).
+- `VaultText`: its plaintext `content` becomes the padded, encrypted text, plus its key check value.
+- `Case.label` becomes the encrypted, padded label; its data key is sealed to the lawyer's personal key.
 - `Clip` gains the code holder public key.
-- `Case.label` becomes the label sealed to the lawyer's personal public key, plus which lawyer key.
-- `LawyerProfile` gains whether the admin confirmed the safety number at admission (§5.2), and the confirmed safety number.
 
 During the move from plaintext (§10), the new fields allow empty values; a later migration makes them required once no plaintext row is left, and fails loudly if one is.
 
@@ -78,13 +88,17 @@ Three things together: the ciphertext, the data key sealed to the group key, and
 
 ### 3.4 Safety number
 
-A short, readable code computed from a personal public key (BLAKE2b of the key, shown as 12 groups of 5 digits, as Signal does), so that two people can check by phone or in person that the key the server shows is the key the lawyer made. Each lawyer sees their own on their key page.
+A code computed from a personal public key, which two people read to each other to check that the key the server shows is the key the lawyer made: BLAKE2b-256 of the public key with the label `fa-safetynum-v1`, of which the first 30 bytes are read as six 5-byte big-endian numbers, each taken modulo 100 000 and written as 5 digits. Thirty digits in six groups, about 100 bits, as Signal does for one person's half of its safety number.
+
+A lawyer's own safety number is computed in their browser from the public key it derives from their decrypted private key, never from the public key the server stores; if the two differ, the page refuses to go on and says why. When granting, the number shown is computed from exactly the public key the grant will be sealed to.
 
 ## 4. Unlocking in the browser
 
-A lawyer logs in as today (password and second factor). Pages that show vault content load libsodium.js and a small script of our own. The first such page in a browser tab asks for the key passphrase in a field that is never submitted: the script fetches the lawyer's encrypted private key and their key grant, derives the passphrase key with Argon2id (libsodium's "moderate" limits, 256 MiB and 3 passes, so about a second), opens both, and keeps the two private keys in the tab's `sessionStorage`, so the lawyer is not asked again on every page. Logging out clears it; closing the tab clears it.
+A lawyer logs in as today (password and second factor). Pages that show vault content load libsodium.js and a small script of our own. The first such page in a browser tab asks for the key passphrase in a field that is never submitted: the script fetches the lawyer's encrypted private key and their key grants, derives the passphrase key with Argon2id (libsodium's "interactive" limits, 64 MiB and 2 passes: with a 100-bit generated passphrase, slowness adds little, and phones have little memory), opens the private key, checks that it gives the stored public key, opens each grant and checks that the group private key gives that group key's public key. The first time a grant opens correctly, the browser reports it, which sets the grant's "checked at"; a grant that fails is reported too, raising an alert to the admin and a request for a new grant.
 
-Trade-off: any script running in the page can read `sessionStorage`, so a cross-site scripting bug would expose the keys. Every lawyer page gets the strict Content Security Policy the map page already has (only the archive's own scripts, no inline script), extended with `'wasm-unsafe-eval'`, which libsodium.js needs to run compiled code. Asking for the passphrase on every page would avoid storing the keys, but in a site of separate pages it would mean typing it many times an hour.
+The script keeps the private keys in the tab's `sessionStorage`, so that the lawyer is not asked again on every page, together with the id of the login they were unlocked in (given in each page). A page whose login id differs (another lawyer in the same tab, or a new login after the old one expired) discards them. Logging out sends `Clear-Site-Data: "storage"`, which empties the browser's storage for the archive's site.
+
+`sessionStorage` is not only in memory: browsers save it to disk to restore tabs after a restart, so the keys reach the lawyer's own disk, as the clips they download do. The lawyer's device is part of what they must protect anyway. Any script running in the page can also read `sessionStorage`, so a cross-site scripting bug would expose the keys: every lawyer page gets the strict Content Security Policy the map page already has (only the archive's own scripts, no inline script), extended with `'wasm-unsafe-eval'`, which libsodium.js needs to run compiled code. Asking for the passphrase on every page would avoid storing the keys, but in a site of separate pages it would mean typing it many times an hour.
 
 Without JavaScript, or before unlocking, a lawyer can still log in, create cases and search; clip pages show the clip's index data (times, places, tags, edits) and say that the vault content needs the key.
 
@@ -92,23 +106,23 @@ Without JavaScript, or before unlocking, a lawyer can still log in, create cases
 
 ### 5.1 Setting up a personal key
 
-An applicant sets up their personal key after their password and second factor, before admission, so that the admin can check it. The browser makes the key pair, asks for a key passphrase (twice; at least 12 characters, and the page says it is not the login password and is not recoverable by anyone), makes the recovery key, shows it once with a "save this now" message, as for 2FA recovery codes, and asks the applicant to type its last group back. It then uploads the public key and the private key encrypted under each. The server never sees the passphrase, the recovery key or the private key.
+An applicant sets up their personal key after their password and second factor, before admission, so that the admin can check it. The browser makes the key pair, generates the key passphrase (100 random bits, shown as 20 characters of Crockford base32 in groups of 4, like an upload code, and forgiving case, dashes and look-alike letters in the same way) and the recovery key (256 random bits, in the same alphabet). It shows both once, with a "save this now" message as for 2FA recovery codes: the passphrase to keep where the lawyer can type it (memory, paper or a password manager), the recovery key on paper with their recovery codes; the page says neither is the login password and no one can recover them. The applicant types both back before going on. The browser then uploads the public key and the private key encrypted under each. The server never sees the passphrase, the recovery key or the private key.
 
-The recovery key is shown in Crockford base32 in groups, like an upload code, but under its own name (GLOSSARY.md: recovery key, not recovery code).
+The passphrase is generated rather than chosen because a seized database lets anyone try passphrases offline against every lawyer's encrypted key, and one weak passphrase would give the group key, and with it the whole vault.
 
 ### 5.2 Admission: the admin checks the key
 
-To the admission steps of SPEC.md §5, M5 adds one: the admin compares the applicant's safety number with them, through the bar directory's contact details (the channel already used to verify registration). The admission form records the safety number the admin confirmed; the server refuses to admit without it, and refuses if the applicant's current key no longer has that number.
+To the admission steps of SPEC.md §5, M5 adds one: the admin compares the applicant's safety number with them, through the bar directory's contact details (the channel already used to verify registration), and confirms it on the admission form, which sets the key's "admin confirmed at". The server refuses to admit an applicant whose current key is unconfirmed.
 
 ### 5.3 Key grant: a lawyer hands over the group key
 
-An admitted lawyer without a key grant can log in, create cases and search, but cannot read the vault. Lawyers holding a grant see a list of admitted colleagues waiting for one, with the vouching lawyer's name when the vouch came from a lawyer (SPEC.md §5).
+An admitted lawyer without a key grant can log in, create cases and search, but cannot read the vault. Lawyers holding a grant see a list of admitted colleagues waiting for one, with who vouched for them (SPEC.md §5).
 
-To grant, a lawyer compares the newcomer's safety number with them directly (by phone or in person; the page says not by email or message through the archive) and confirms. Their browser opens the group private key with their own personal key, seals it to the newcomer's public key, and uploads the grant. The server accepts it only if the newcomer is admitted and unsuspended, the admin's confirmed safety number matches the newcomer's current key, and the granting lawyer holds a grant on that group key. Each grant writes an audit entry naming both lawyers.
+To grant, a lawyer compares the newcomer's safety number with them directly (by phone or in person; the page says not by email or message through the archive) and confirms. Their browser opens the group private key with their own personal key, seals it to the newcomer's public key, and uploads the grant. The server accepts it only if the newcomer is admitted and unsuspended, their current key is admin-confirmed, the granting lawyer holds a grant, and the grant covers every group key not yet retired (during a rotation, the old and the new one), in one request. Each grant writes an audit entry naming both lawyers.
 
-So a grant needs both the admin and a lawyer, each comparing the safety number through their own channel. The admin's part is enforced by the server; the lawyer's part is cryptographic, since only a lawyer's browser can seal the group key. Against someone who can write to the database, the lawyer's own comparison catches a swapped key. A signing key for the admin, so that lawyers' browsers could check the admin's approval themselves, is left for later (§11).
+So a grant needs both the admin and a lawyer, each comparing the safety number through their own channel. The admin's part is enforced by the server; the lawyer's part is cryptographic, since only a lawyer's browser can seal the group key. Against a database writer, the lawyer's own comparison catches a swapped newcomer's key. A signing key for the admin, so that lawyers' browsers could check the admin's approval themselves, is left for later (§11).
 
-**The first lawyer.** While no group key exists, the first lawyer to unlock after admission makes it in their browser and grants it to themselves; the server accepts a new group key only when none exists (or during rotation, §5.5). Until a group key exists, the upload page is closed (§10), so nothing is ever stored unencrypted for want of a key.
+**The first lawyer.** While no group key exists, the first lawyer to unlock after admission makes it in their browser and grants it to themselves (an audit entry); the server accepts a new group key without a rotation only when no lawyer who is not revoked holds a grant on any group key (§5.7). Until a group key exists, the upload page is closed (§10).
 
 ### 5.4 Suspension and reinstatement
 
@@ -116,66 +130,84 @@ Nothing changes in the keys. A suspended lawyer is refused every lawyer page and
 
 ### 5.5 Revocation and rotation
 
-Revocation deletes the lawyer's key grants and retires their personal key, then asks for a rotation: a revoked lawyer may have copied the group key out of their browser, and with it could open any data key they later obtain through a breach.
+**Why.** While a lawyer works, the group private key is in their browser, and a lawyer who knows how can copy it. Revocation deletes their grants and retires their personal key, but cannot delete a copy, which opens every data key sealed to that group key, if they ever obtain the database. A rotation replaces the group key and reseals every data key to the new one, after which nothing in the current database opens with the old key. It runs after each revocation, after a suspected exposure of any lawyer's passphrase or recovery key, and for the change to post-quantum keys (§2).
 
-The server cannot rotate, since it has no key; the next lawyer to unlock does, in their browser:
+**Why in a browser.** Resealing means opening each data key with the old group private key. The server must never hold that key, so a lawyer's browser does it, and the server only stores the result.
 
-1. It makes a new group key pair and seals it to every lawyer key still holding a grant on the current group key (suspended lawyers included, so that reinstatement needs nothing new), and uploads the new key and grants in one request. From then on, ingest seals to the new key.
-2. It reseals in batches: the server sends data keys still sealed to the old group key; the browser opens each with the old private key and seals it to the new public key; the server replaces each sealed key only if it is still sealed to the old one, so two browsers resealing at once cannot undo each other.
-3. When none is left, the server retires the old group key and deletes its grants.
+**The steps.**
 
-It can be interrupted at any point and resumes at the next unlock. Until it ends, items are sealed to one key or the other, and readers use whichever their row names. Two lawyers unlocking at once cannot both start a rotation: the server accepts one new group key and the other browser joins the resealing. The start and end of a rotation each write an audit entry naming the lawyer whose browser did it.
+1. **Request.** Revoking a lawyer (or a lawyer reporting an exposure, which the admin can also do) sets the current group key to `rotation_requested`, with an audit entry.
+2. **New key.** The next lawyer to unlock (the **rotator**) makes a new group key pair, seals its private key to every lawyer key holding a grant on the current group key (suspended lawyers included, so that reinstatement needs nothing new), and uploads the key and grants in one request. The server accepts it only if the grants cover exactly the lawyer keys holding a grant at that moment, under the lock below; otherwise the browser fetches the list again and retries. The new key becomes `checking`, the old one `retiring` (an audit entry naming the rotator).
+3. **Reseal.** The rotator's browser fetches, in batches, the data keys sealed to the old key, opens each, checks it against its key check value, seals it to the new key and uploads it. The old sealed keys stay. If the tab closes, the next lawyer to unlock carries on (the new key's sealed copies record who made them).
+4. **Draw.** When nothing is left to reseal, the server draws two **checkers** at random (Python's `secrets`), from the lawyers holding a grant on the new key, not suspended, other than whoever resealed. Drawing only now means no one can time it. With fewer than two such lawyers, it draws as many as there are. A drawn checker who has not unlocked within 7 days (configurable) loses the slot, so that one absent lawyer cannot hold up the rotation: the server then draws a hidden delay between 0 and 72 hours (configurable), and the slot goes to the first lawyer to unlock after it who is eligible (holding a grant, not suspended, not a resealer, not the other checker; one lawyer never fills both slots). Since anyone unlocking often has a better chance of taking such a slot, every unlock writes an audit entry (the browser fetching the encrypted private key counts as one), and the admin is alerted when the lawyer who takes a slot unlocked more than 10 times (configurable) in the 72 hours before.
+5. **Check.** When a checker next unlocks, their browser does this without any action from them: it opens their grant on the new key, checks it against the new public key, then fetches every data key sealed to the new key by a browser (not those the server sealed itself) and checks each opens and matches its key check value. It fetches no ciphertext, so the checker sees no clip content outside their cases. It reports pass or fail.
+6. **End.** When both checks have passed, under the lock below, the server deletes every sealed key and grant on the old key, sets it `retired` and the new key `current` (an audit entry). From then on, the old key opens nothing in the database.
+7. **Failure.** If a check fails, the server sets the new key `rejected`, deletes its grants and sealed keys, raises an alert to the admin and writes an audit entry naming the lawyers who resealed and the checker; the old key returns to `rotation_requested`, and the next rotation cannot be done by those who resealed the rejected one. Nothing is lost, since the old sealed keys were kept.
 
-Limits:
+**The key check value.** When the server first seals an item's data key, it also stores BLAKE2b of nothing, keyed with the data key, under the label `fa-keycheck-v1`. It reveals nothing about the data key, but a browser that opens a sealed key can tell whether what it found is that key. This is what lets a checker detect junk without fetching content, and lets the rotator detect a corrupt sealed key before resealing it.
+
+**Uploads and edits during a rotation.** Ingest encrypts a file and holds its data key in memory until it records the file; it seals the data key at that moment, in the same transaction, to every group key in `current`, `rotation_requested`, `checking` or `retiring` (so during a rotation, to both), taking the same lock as steps 2 and 6. Texts are sealed the same way when written. Retiring a key therefore cannot overtake a file being recorded: a file encrypted for minutes before a rotation ends is still sealed to the key that becomes current. The lock is a `select_for_update` on the group key rows (SQLite already runs each transaction as `IMMEDIATE`, so writers queue).
+
+**What two random checkers protect against.** Resealing can only destroy, never reveal: junk sealed keys, once the old ones are deleted, would leave the vault unreadable. The server's operator could destroy the vault anyway by deleting files; backups are the defence against that. The checks defend against lawyers: a rotator and one accomplice can never destroy the vault, since both checkers must pass, the rotator is never one of them, and one lawyer never fills both slots; three lawyers acting together need both accomplices to be drawn (1 in 6 with five lawyers, 1 in 171 with twenty), or to take slots left by absent checkers, which the unlock alert makes visible.
+
+**Limits.**
 
 - The files are not re-encrypted (2 GB each, and the server would need each data key from a browser); only the sealing of their keys changes. The revoked lawyer still knows the data keys of clips they opened, and may hold those clips anyway.
-- Backups made before the rotation still hold the old sealed keys. Keeping backups only for a limited time belongs to deployment.
-- Until a lawyer unlocks after a revocation, new clips are still sealed to the old key.
-- The rotating browser opens every data key, not only its lawyer's cases. That gives it nothing it could not do already: any group key holder can (§1).
-- The list of lawyer keys to seal the new group key to comes from the server. Someone who can write to the database at that moment could add a key of their own; a signing key for the admin would close this (§11).
+- Until the checks pass, old sealed keys remain, for new uploads too, so the revoked lawyer together with a breach could still open them; the window lasts until two drawn lawyers have unlocked. With no lawyer other than the rotator holding a grant, it lasts until another is granted.
+- Backups made before the rotation ended still hold the old sealed keys. Keeping backups only for a limited time belongs to deployment.
+- The rotator's browser opens every data key, not only its lawyer's cases. That gives it nothing it could not do already: any group key holder can (§1).
+- The list of lawyer keys a new group key is sealed to comes from the server; a database writer could add a key of their own at that moment (§11).
 
 ### 5.6 Recovery
 
-- **Forgotten key passphrase, recovery key at hand**: the browser opens the second copy of the private key with the recovery key and asks for a new passphrase. The key, its safety number and its grants stay the same. The recovery key stays valid (it is not shown again); a lawyer who thinks it was seen can make a new personal key instead (below).
-- **Both lost**: like an admission. The admin confirms the person through the bar directory's contact details and resets their key, which retires it and deletes their grants (an audit entry). The lawyer sets up a new personal key (§5.1), the admin confirms its safety number (§5.2), and a lawyer grants the group key again (§5.3). What was sealed only to the old personal key is lost: case labels show as unreadable (and from M6, their messages).
+- **Forgotten key passphrase, recovery key at hand**: the browser opens the second copy of the private key with the recovery key, generates a new passphrase, shows it once and replaces the stored copy. The key, its safety number and its grants stay the same, and the recovery key stays valid. Copies of the database taken earlier still hold the old encrypted copy, which the old passphrase opens.
+- **A passphrase or recovery key that may have been seen**: the lawyer (or the admin) reports it, which requests a rotation (§5.5), and the lawyer makes a new personal key as below. Someone who saw it could otherwise open the private key from any copy of the database, then the grant, then the group key.
+- **Both lost**: the lawyer can still log in (password and second factor do not depend on the key) and starts a key reset from their own account, which retires their key and deletes their grants (an audit entry). They set up a new personal key (§5.1), the admin confirms its safety number through the bar directory's contact details (§5.2), and a lawyer grants the group key again (§5.3). What was sealed only to the old personal key is lost: case labels show as unreadable (and from M6, their messages). The admin alone cannot reset a lawyer's key, so cannot destroy their case labels or messages.
 - **Lost password or second factor**: SPEC.md §13 still leaves this open, and M5 does not add it. M5 changes what is at stake: whoever got into a lawyer's account, the admin included, would still lack the key passphrase, so would see no footage, context, contact details or case labels, only the case areas and time windows and audit entries, which the admin can already see.
-- **Every key lost**: if every lawyer lost both passphrase and recovery key, everything in the vault would be unreadable for good. Asking each lawyer to type back part of their recovery key at setup is the guard against this.
+
+### 5.7 No one left holding the group key
+
+If every lawyer holding a grant were revoked or reset their key, uploads would be sealed to a key no one holds. So:
+
+- Uploads are open only while at least one lawyer who is not revoked holds a grant on the newest group key; otherwise the upload page is closed, as before the first group key (§10).
+- The admin's revocation page warns, before confirming, when the lawyer is the last one holding a grant, and says that what the vault holds will become unreadable for good. Revocation is still allowed: it may be urgent.
+- Once no lawyer who is not revoked holds a grant on any group key, the next admitted lawyer to unlock makes a new group key as the first lawyer did (§5.3), with an audit entry saying the archive started over. Everything sealed to the earlier keys stays, unreadable, until its clips are deleted.
 
 ## 6. Files: evidence copies and proxies
 
 ### 6.1 Encrypting at ingest
 
-Ingest makes the evidence copy and proxy as today, then stores each through `vault.store_file`, which now draws a random data key, encrypts the file with libsodium's secretstream in 64 KiB chunks (marking the last chunk as final, so a cut-off file is detected), seals the data key to the current group public key, and returns what `record_file` stores: the file's name, the sealed data key, which group key, and the plaintext size. Ingest's temporary plaintext files are deleted as today (§9).
+Ingest makes the evidence copy and proxy as today, then stores each through `vault.store_file`, which draws a random data key, encrypts the file with libsodium's secretstream in 64 KiB chunks, each carrying the clip's id and the file's kind as additional data and the last marked final, and returns the file's name and its data key, which the worker holds in memory. `record_file` then seals the data key and stores the key check value, in its transaction (§5.5). Ingest's temporary plaintext files are deleted as today (§9).
 
-### 6.2 Byte ranges and size
+### 6.2 Reading, byte ranges and size
 
 Secretstream decrypts in order: it cannot start at chunk N. Each request for a byte range therefore decrypts from the start of the file and discards what comes before the range. Measured on the development server (2 vCPU) during research: 761 MB/s, so about 0.07 s to reach the end of a 50 MB proxy, and 2.6 s to resume a 2 GB evidence copy near its end. That is acceptable for previews and for the rare resumed download. A format that can seek would mean independent encrypted chunks, which is a construction of our own (no maintained Python library offers it), so it is ruled out by the hard rule against custom cryptography (ADR 0008).
 
-`vault.open_file(clip, kind, data_key)` returns a read-only file object that decrypts as it is read, whose `seek` restarts decryption and skips to the position, and which carries the plaintext `size` from the `VaultFile` row. `open_or_404` takes that size instead of `os.fstat(fileno())`; `file_response` is unchanged. A file whose authentication fails partway (tampered, or cut off) raises an error that ends the response, and is logged by its random name only.
+`vault.open_file(clip, kind, data_key)` returns a read-only file object that decrypts as it is read, whose `seek` restarts decryption and skips to the position, and which carries the plaintext `size`, computed from the stored file's size. It raises an error, which ends the response, when a chunk fails to authenticate, when the file ends without a final chunk, or when anything follows the final chunk: a cut-off or altered file is never served as complete. Such an error is logged by the file's random name only. `open_or_404` takes the object's `size` instead of `os.fstat(fileno())`; `file_response` is unchanged.
 
 ### 6.3 Handing the data key to the server
 
-A `<video>` element and a download link cannot add headers to their requests, and a key in a URL would end up in web server logs. So the clip page's script opens the data keys of the clip's proxy and evidence copy and posts them to a new view on the clip (case and match checked as for the preview). The server checks each key by decrypting the file's first chunk, stores nothing, and sets a cookie per file:
+A `<video>` element and a download link cannot add headers to their requests, and a key in a URL would end up in web server logs. So the clip page's script opens the data key of the clip's proxy and posts it to a new view on the clip (case and match checked as for the preview, and CSRF-protected like every form); the evidence copy's data key is posted only when the lawyer clicks to download. The server checks the key against its key check value, stores nothing, and sets a cookie per file:
 
 - `HttpOnly` (page scripts cannot read it back), `Secure`, `SameSite=Strict`;
 - `Path=/lawyer/cases/<case>/clips/<clip>/`, so it is sent only with that clip's preview and download in that case;
 - expiring after 2 hours, like the preview and download logging windows.
 
-The preview and download views read it, and refuse with 403 when it is missing or wrong. A resumed download after the cookie expired needs the clip page opened again. Research confirmed Chrome sends such a cookie with a `<video>` range request; Firefox, Safari and resumed downloads are tested in the first implementation step, and if one fails, the fallback is a short-lived server-side record keyed by a random id in the cookie (the data key held in the cache, never the database).
+The preview and download views read it, and refuse with 403 when it is missing or wrong. The cookie gives nothing on its own: each request still needs the lawyer's login and a usable case of theirs that matches the clip, so it is useless to another lawyer in the same browser and to a suspended one. A resumed download after the cookie expired needs the clip page opened again. Research confirmed Chrome sends such a cookie with a `<video>` range request; Firefox, Safari and resumed downloads are tested in the first implementation step, and if one fails, the fallback is a short-lived entry in the cache, keyed by a random id in the cookie (the data key held in the cache, never the database).
 
-Django's error reports would show cookies; nothing sends error reports today, and SPEC.md §13's open question about them now covers the data key cookies too.
+The cookie is written to the lawyer's disk like other cookies, which is within the lawyer's device (§4). Django's error reports would show cookies; nothing sends error reports today, and SPEC.md §13's open question about them now covers the data key cookies too.
 
 ## 7. Texts
 
 ### 7.1 Context and contact details
 
-Each text gets its own data key and is encrypted with secretbox; the data key is sealed twice, to the group key (for lawyers) and to the clip's code holder key (for the code holder). Editing writes a new data key and ciphertext over the old row, so old values are still never kept (SPEC.md §5).
+Each text gets its own data key; it is padded to a multiple of 256 bytes (so its length shows only roughly) and encrypted with XChaCha20-Poly1305, with the clip's id and the text's kind as additional data. The data key is sealed to the group key (for lawyers) and to the clip's code holder key (for the code holder). Editing writes a new data key and ciphertext over the old row, so old values are still never kept (SPEC.md §5).
 
-Lawyers: the clip page carries the ciphertext and the sealed data key; the script opens and shows them. Contact details and context never reach the server in plaintext after they are written.
+Lawyers: the clip page carries the ciphertext and the sealed data key; the script opens and shows them. The server decrypts a text only for a code holder, during their request (§7.2).
 
 ### 7.2 Code holders
 
-The upload code (140 random bits) is already strong enough to be key material. When the uploader confirms the form, the server derives a seed from the code with BLAKE2b under a fixed label of its own (`footage-archive code holder key`), makes the key pair from it, and stores only the public key on the clip. The upload code's lookup hash (HMAC-SHA-256 with the server secret) is unrelated to this seed, so the stored hash does not reveal the key.
+The upload code (140 random bits) is already strong enough to be key material. When the uploader confirms the form, the server derives a 32-byte seed from the code, as `clips.upload_codes.normalise` gives it, with BLAKE2b under the label `fa-codeholder-v1`, makes the key pair from it, and stores only the public key on the clip. The upload code's lookup hash (HMAC-SHA-256 with the server secret) is unrelated to this seed, so the stored hash does not reveal the key. The stored public key does let a copy of the database test a guessed code, without the server secret, which is harmless at 140 bits; `clips/upload_codes.py`, which says a copy of the database cannot test guesses, is corrected when this is built.
 
 A code holder's every visit already sends the code in a form submission. During that request the server derives the private key, opens the code holder's copies of the data keys and shows the texts; it keeps nothing. Without the code, nothing addressed to the code holder can be opened, by the server or anyone else. Nothing changes for code holders, and the code still never travels in a URL, cookie or session (SPEC.md §5).
 
@@ -185,7 +217,7 @@ M6 builds messages on the same pattern: a message from a lawyer has its data key
 
 ### 7.4 Case labels
 
-When a lawyer creates a case, the server seals its label to their personal public key and stores only that; it sees the label once, in the form submission. Pages listing cases show the label through the script. The admin never sees case labels, as today. A lawyer whose personal key was reset sees "label unreadable" on older cases.
+When a lawyer creates a case, the server encrypts its label like a text (padded, with the case's id as additional data) and seals the data key to the lawyer's personal public key; it sees the label once, in the form submission. Pages listing cases show the label through the script. The admin never sees case labels, as today. A lawyer whose personal key was reset sees "label unreadable" on older cases.
 
 ## 8. What stays readable on the server, and why
 
@@ -196,7 +228,7 @@ When a lawyer creates a case, the server seals its label to their personal publi
 | Audit log | Yes | Alerts count its entries; the admin reads all of it; views and previews are deduplicated and closing by disuse read from it; the tag history is drawn from it. |
 | Lawyer's reason | Yes | The admin must read it; it is deleted once the admin decides. |
 | Two-factor secrets | Yes | See below. |
-| Public keys, sealed keys, safety numbers confirmed | Yes | Not secret. |
+| Public keys, sealed keys, key check values, rotation checks | Yes | Not secret. |
 
 **Two-factor secrets.** django-otp has no supported way to encrypt authenticator secrets or hash recovery codes. A recovery code logs in as well as the authenticator secret, so encrypting one without the other gains nothing; hashing recovery codes means changing how django-otp checks them, which is close to writing our own authentication. With M5, getting into a lawyer's account no longer gives the vault, so what someone with a copy of the database and a cracked password gains is the index, cases and audit entries added after the copy, until the password changes; as the admin, they could also suspend, revoke or admit, though an admitted impostor still needs a lawyer's key grant. The better defence is encrypted backups at deployment (SPEC.md §12 Later). This answers SPEC.md §10's question: not in M5.
 
@@ -210,63 +242,72 @@ Quarantine is the one place the server must hold readable footage, and it holds 
 
 - From upload until the uploader confirms the form: at most 2 hours (configurable), after which an unconfirmed original is deleted (SPEC.md §8).
 - From confirmation until ingest ends: at most about 1.5 hours with all retries (SPEC.md §9), then the original is deleted.
-- While ingest runs: also the evidence copy and proxy as temporary plaintext files, until they are encrypted into the vault and deleted.
+- While ingest runs: also the evidence copy and proxy as temporary plaintext files, until they are encrypted into the vault and deleted, and the data keys in the worker's memory until they are sealed.
 - In the database during that time: the clip's index data, and the GPS position snapped to its cell once ingest reads it. The precise position is never written to the database (ADR 0002), but it is in the original file until the file is deleted.
 
-**Who can reach it.** Nothing in quarantine is served over the web (SPEC.md §8, §9). The folder is private to the archive's user on the server. ffprobe and ffmpeg read the original, so a flaw in them is the most likely way for a malicious upload to run code on the server; the archive accepts only the container formats phones record in, limiting which parts of ffmpeg ever run, but ffmpeg from Ubuntu's `universe` gets security fixes only through Ubuntu Pro (an open follow-up). Such code would run as the archive's user, could read quarantine and, while it ran, everything else the server reads (attacker type 3).
+**Deleted is not erased.** Deleting a file removes its name, not necessarily its contents: on an SSD (which moves data around to spread wear) and on ordinary file systems, the old blocks can survive until reused, and a disk image can recover them. The same holds for SQLite's freed pages and its write-ahead log. So a copy of the disk can hold originals, with their GPS, from long before the last few hours, and the plaintext the vault held before M5. Only encrypting the whole disk, or keeping quarantine in memory, prevents this; this PR makes one of them a requirement before any real use (SPEC.md §12 Later: deployment). The `encrypt_vault` command (§10) also runs SQLite's `VACUUM`, which rewrites the database without its freed pages.
+
+**Who can reach it.** Nothing in quarantine is served over the web (SPEC.md §8, §9). The folder is private to the archive's user on the server. ffprobe and ffmpeg read the original, so a flaw in them is the most likely way for a malicious upload to run code on the server; the archive accepts only the container formats phones record in, limiting which parts of ffmpeg ever run, but ffmpeg from Ubuntu's `universe` gets security fixes only through Ubuntu Pro (an open follow-up). Such code would run as the archive's user, could read quarantine and, while it ran, everything else the server reads (attacker type 4).
 
 **What each attacker gets.**
 
-- At rest, at a random moment: the originals uploaded in the last few hours, with their GPS. Everything older is encrypted.
+- At rest, at a random moment: the originals uploaded in the last few hours, with their GPS, and, without full-disk encryption, any older ones the disk has not yet overwritten.
 - Passive on the running server, for a period: every original uploaded during that period.
 - Active: the same, plus everything §1 says.
 
-**What could make it smaller** (none is in M5; each is a deployment or later decision):
+**What could make it smaller** (beyond the deployment requirement above, none is in M5):
 
-- A RAM-backed quarantine and temporary folder (tmpfs): nothing readable survives a power-off or a disk seizure. Up to 2 GB per upload in RAM limits how many uploads can wait at once; swap must be encrypted or off.
-- Full-disk encryption on the server: protects a powered-off or removed disk, not a running server.
+- A RAM-backed quarantine and temporary folder (tmpfs): nothing readable survives a power-off, and nothing is left in disk blocks. Up to 2 GB per upload in RAM limits how many uploads can wait at once; swap must be encrypted or off.
+- Full-disk encryption on the server: protects a powered-off or removed disk, and old blocks along with it, not a running server.
 - A shorter confirmation window than 2 hours.
 - Ingest on a separate machine with no web access, fed only through the queue: a flaw reached through the web front end would no longer reach quarantine, and a flaw in ffmpeg would no longer reach the web front end or the database.
 - Encrypting originals to the group key at upload, with ingest asking a lawyer's browser for the key: the server could no longer process uploads on its own, and uploads would wait for a lawyer to log in. Rejected for now.
 
 ## 10. Moving existing data, and closing uploads without a group key
 
-- **Uploads before a group key exists**: the upload page says uploads are not open yet, and the server refuses uploads, so ingest never has to store a file it cannot encrypt. In a deployment, the first lawyer is set up before uploads open.
-- **Plaintext already in the vault** (development data only): a management command, `encrypt_vault`, encrypts each plaintext file and text to the current group key, writing each file to a new name and switching the row over in one step, so a crash leaves either the old or the new state, never a half-written file in use; run again, it skips what is already encrypted. Code holder copies of existing texts cannot be made, since the server does not know the codes: the code holder's form shows them empty until the code holder enters them again, and the command says how many it left without one.
+- **Uploads without a group key**: while no group key exists, or no lawyer who is not revoked holds a grant on the newest one (§5.7), the upload page says uploads are not open, and the server refuses uploads, so ingest never has to store a file it cannot encrypt. In a deployment, the first lawyer is set up before uploads open.
+- **Plaintext already in the vault** (development data only): a management command, `encrypt_vault`, encrypts each plaintext file and text to the current group key, writing each file to a new name and switching the row over in one transaction, so a crash leaves either the old or the new state, never a half-written file in use; run again, it skips what is already encrypted, and finishes with `VACUUM`. Code holder copies of existing texts cannot be made, since the server does not know the codes: the code holder's form shows them empty until the code holder enters them again, and the command says how many it left without one. Case labels cannot be sealed to their lawyer's key without that lawyer; the command seals each to the lawyer's personal key if they have one and leaves the others, saying how many.
 
 ## 11. Known limits
 
-- **JavaScript served by the archive** (attacker type 3): the server that stores the ciphertext also sends the code that holds the keys, so a compromised server can steal lawyers' keys. Every encryption in a web page has this limit; browser extensions that check the served code (WEBCAT, Code Verify) are not usable for an ordinary site yet. A separate application holding the keys, as SecureDrop does, is the answer if this ever becomes the main threat.
+- **JavaScript served by the archive** (attacker type 4): the server that stores the ciphertext also sends the code that holds the keys, so a compromised server can steal lawyers' keys. Every encryption in a web page has this limit; browser extensions that check the served code (WEBCAT, Code Verify) are not usable for an ordinary site yet. A separate application holding the keys, as SecureDrop does, is the answer if this ever becomes the main threat.
 - **Ingest sees every upload** in plaintext (§9).
 - **No case scoping by encryption** (§1).
-- **Grants and rotations trust the server's list of lawyer keys** beyond the safety number checks (§5.3, §5.5). Next step: a signing key for the admin, who signs each confirmed key, with lawyers' browsers refusing to seal the group key to an unsigned one. It needs the admin to hold a key, with its own recovery, and lawyers' browsers to know the admin's public key from a source the server cannot swap.
+- **Nothing proves who wrote a vault item** (§1): the server, holding the group public key, can encrypt contents of its own. The hash record remains the check on the evidence copy.
+- **A database writer can swap the group public key** (attacker type 3): replacing it with a key of their own, sealed to every lawyer's key in new grants, would make new uploads readable to them, and lawyers' browsers would see a valid key. They could also add a key of their own to the list a rotation seals to (§5.5). Next step: a signing key for the admin, who signs each confirmed lawyer key and each group key, with lawyers' browsers refusing to seal to, or accept, unsigned ones. It needs the admin to hold a key, with its own recovery, and lawyers' browsers to know the admin's public key from a source the server cannot swap.
+- **Protection at rest rests on every lawyer's key passphrase** (§5.1), which is why it is generated.
 - **Post-quantum**: X25519 until PyNaCl offers X-Wing (§2).
-- **Backups made before a rotation** still open with the old group key (§5.5).
+- **Backups made before a rotation ended** still open with the old group key (§5.5).
 - **Clips already downloaded** stay with the lawyer, whatever happens to their access.
-- **Keys in `sessionStorage`** are exposed to a cross-site scripting bug (§4).
+- **Keys in `sessionStorage`** reach the lawyer's disk and are exposed to a cross-site scripting bug (§4).
+- **Deleted files survive on disk** without full-disk encryption (§9).
 
 ## 12. What M5 is done when
 
 Proposed for SPEC.md §12 (this PR adds it):
 
 - tests show that after upload and ingest, the vault's files and the database hold no plaintext of the evidence copy, proxy, context, contact details or case label;
-- that a preview and a download with the right data key serve the right bytes, byte ranges included (a range near the end, a suffix range, an unsatisfiable range), and that without it, or with a wrong one, they serve nothing;
+- that a preview and a download with the right data key serve the right bytes, byte ranges included (a range near the end, a suffix range, an unsatisfiable range), that without it, or with a wrong one, they serve nothing, and that a cut-off or altered file, or one moved to another clip or kind, is never served as complete;
+- that no data key or private key is stored in the database or the cache, or written to a log;
 - that a code holder reads their own context and contact details with the code, and nothing can be opened without it;
-- that the server refuses to admit an applicant without a confirmed safety number, refuses a key grant from someone without one, to someone not admitted or suspended, or to a key other than the confirmed one, and that grants, key resets and rotations each write an audit entry;
-- that revocation deletes the lawyer's grants and starts a rotation, that after a rotation no key is sealed to the old group key, and that ingest seals to the new key once a rotation has started;
-- that a suspended lawyer can neither hand over a data key nor fetch encrypted data;
-- that uploads are refused while no group key exists;
-- that values made by libsodium.js (sealed boxes, seeded key pairs, secretstream, Argon2id), stored in the repository as test vectors, open with PyNaCl, and the reverse;
-- and, checked by hand in Firefox and Chrome, that a lawyer can set up a key, unlock, read a clip's texts, watch its proxy and download its evidence copy, whose SHA-256 matches its hash record.
+- that the server refuses to admit an applicant whose key the admin has not confirmed, and refuses a key grant from someone without one, to someone not admitted or suspended, to a key not admin-confirmed, or not covering every group key in use; that grants, key resets, rotations and their checks each write an audit entry;
+- that revocation requests a rotation; that a file recorded while a rotation runs is sealed to both keys and stays readable whichever way the rotation ends; that old sealed keys are deleted only after two different checkers, neither of them a resealer, have passed; that an absent checker's slot passes, after the hidden delay, to the next eligible lawyer to unlock, and that taking it after many unlocks alerts the admin; that a failed check rejects the new key, keeps the old sealed keys and alerts the admin;
+- that uploads are refused while no lawyer who is not revoked holds a grant on the newest group key;
+- that every view handing over or fetching keys or encrypted data is for lawyers only, case-scoped where it concerns a clip, refused to a suspended lawyer, and that every lawyer page carries the Content Security Policy;
+- that values made by libsodium.js (sealed boxes, seeded key pairs, secretstream, authenticated encryption, Argon2id, BLAKE2b with a label), stored in the repository as test vectors, open with PyNaCl, and the reverse;
+- and, checked by hand in Firefox and Chrome, that a lawyer can set up a key, unlock, read a clip's texts, watch its proxy and download its evidence copy, whose SHA-256 matches its hash record, and that a rotation runs and is checked.
 
 ## 13. Dependencies and changes outside the vault
 
 - **PyNaCl 1.6.2** (Apache-2.0) in `requirements.txt`.
 - **libsodium.js 0.8.4, sumo build** (ISC), two files copied into the repository with their licence and checksums, as for the map's libraries.
 - **Content Security Policy** on all lawyer and key pages: the map page's policy, plus `script-src 'self' 'wasm-unsafe-eval'`.
-- **Audit log**: new actions for key grants, key resets, and rotation start and end.
-- **Accounts**: key setup for applicants, the safety number at admission, the admin's key reset, the waiting-for-a-key list.
+- **Audit log**: new actions for unlocks, key grants, key resets, rotation requests, starts, check results and ends, and starting over.
+- **Alerts**: a failed rotation check, a key grant that fails its recipient's check, and a lawyer taking a checker's slot after unlocking unusually often.
+- **Audit log volume**: each unlock is an entry, at most a few per lawyer per day.
+- **Accounts**: key setup for applicants, the confirmed safety number at admission, the lawyer's key reset, the waiting-for-a-key list, the warning before revoking the last key holder.
+- **CLAUDE.md**: the hard rule on cryptography names libsodium.js as well as PyNaCl (this PR).
 
 ## 14. Build order (to be proposed in detail once this is approved)
 
-Roughly: (1) the dependencies, test vectors and a check of the data key cookie in Firefox and Safari; (2) encrypted files and texts in the vault behind its existing functions, with the group key and data keys, and the `encrypt_vault` command; (3) personal keys, unlocking and key grants, with the admission change; (4) code holder keys; (5) case labels; (6) revocation and rotation, and recovery. Nearly every step changes encryption, accounts or the audit log, so nearly every PR is reserved to the user, each with an Opus review.
+Roughly: (1) the dependencies, test vectors and a check of the data key cookie in Firefox and Safari; (2) encrypted files and texts in the vault behind its existing functions, with the group key, data keys and key check values, and the `encrypt_vault` command; (3) personal keys, unlocking and key grants, with the admission change; (4) code holder keys; (5) case labels; (6) revocation, rotation and its checks, and recovery. Nearly every step changes encryption, accounts or the audit log, so nearly every PR is reserved to the user, each with an Opus review.
