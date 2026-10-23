@@ -9,14 +9,14 @@ import secrets
 
 from django.contrib import messages
 from django.db import transaction
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from accounts.models import LawyerProfile
-from accounts.roles import key_holder_required
+from accounts.roles import applicant_required, key_holder_required
 
 from .forms import KeySetupForm
 from .models import MEMLIMIT, OPSLIMIT, LawyerKey
@@ -32,7 +32,9 @@ def current_key(profile):
     return LawyerKey.objects.current().filter(lawyer_profile=profile).first()
 
 
-@key_holder_required
+# Applicants only: a lawyer replaces their key through a key reset, which the admin confirms
+# and the audit log records (design §5.6).
+@applicant_required
 @require_http_methods(['GET', 'POST'])
 def setup(request):
     profile = request.user.lawyer_profile
@@ -61,23 +63,22 @@ def setup(request):
 @key_holder_required
 @require_GET
 def key_page(request):
-    key = current_key(request.user.lawyer_profile)
-    if key is None:
+    profile = request.user.lawyer_profile
+    key = current_key(profile)
+    if key is None and profile.status == LawyerProfile.Status.APPLICANT:
         return redirect('accounts:key_setup')
-    return render(request, 'keys/key.html', {'key': key, 'login_id': login_id(request)})
+    return render(request, 'keys/key.html', {
+        'key': key, 'public_key': key and b64(key.public_key), 'login_id': login_id(request),
+    })
 
 
 @key_holder_required
 @require_GET
 def encrypted_key(request):
-    """The lawyer's own current key, as the browser needs it to unlock (design §4).
-
-    Each fetch counts as an unlock, recorded to the day.
-    """
+    """The person's own current key, as the browser needs it to unlock (design §4)."""
     key = current_key(request.user.lawyer_profile)
     if key is None:
         raise Http404
-    LawyerKey.objects.filter(pk=key.pk).update(last_unlocked_on=timezone.localdate())
     return JsonResponse({
         'public_key': b64(key.public_key),
         'passphrase_salt': b64(key.passphrase_salt),
@@ -85,6 +86,18 @@ def encrypted_key(request):
         'memlimit': key.memlimit,
         'private_key_under_passphrase': b64(key.private_key_under_passphrase),
     })
+
+
+@key_holder_required
+@require_POST
+def unlocked(request):
+    """The browser reports that it unlocked the key and checked it, recorded to the day:
+    rotations draw among lawyers who unlocked recently (design §5.5). A fetch alone does not
+    count, so a lawyer who has lost their passphrase stops being drawn."""
+    LawyerKey.objects.current().filter(lawyer_profile=request.user.lawyer_profile).update(
+        last_unlocked_on=timezone.localdate(),
+    )
+    return HttpResponse(status=204)
 
 
 def b64(value):

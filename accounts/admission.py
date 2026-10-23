@@ -48,6 +48,8 @@ class AdmissionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.required = True
+        # Missing when the page showed no key: then the applicant is not ready.
+        self.fields['key'].required = False
 
 
 def applicant_or_404(profile_id, lock=False):
@@ -97,7 +99,9 @@ def applicant(request, profile_id):
         except NotReady:
             form.add_error(None, _('They can be admitted once they have set their password, two-factor authentication and personal key.'))
         except KeyChanged:
-            form.add_error(None, _('They have made a new key since this page was shown. Compare its safety number with them again.'))
+            # A fresh page, showing the new key's safety number and the form for it.
+            messages.error(request, _('They have made a new key since this page was shown. Compare its safety number with them again.'))
+            return redirect('manage:applicant', profile_id=profile.pk)
         except (ValueError, IntegrityError):
             raise Http404 from None
         else:

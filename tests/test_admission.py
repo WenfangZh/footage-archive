@@ -171,9 +171,13 @@ def test_a_key_made_after_the_page_was_shown_is_not_confirmed_with_it(admin_clie
     shown = admission(applicant)
     LawyerKey.objects.get(lawyer_profile=applicant).retire()
     newer = make_key(applicant)
-    response = admin_client.post(reverse('manage:applicant', args=[applicant.pk]), shown)
-    assert response.status_code == 200
+    response = admin_client.post(reverse('manage:applicant', args=[applicant.pk]), shown, follow=True)
     applicant.refresh_from_db()
     assert applicant.status == Status.APPLICANT
     newer.refresh_from_db()
     assert newer.admin_confirmed_at is None and not AuditEntry.objects.exists()
+    # A fresh page, showing the new key's safety number, from which admission works again.
+    assert newer.safety_number() in response.content.decode()
+    admin_client.post(reverse('manage:applicant', args=[applicant.pk]), admission(applicant))
+    applicant.refresh_from_db()
+    assert applicant.status == Status.LAWYER

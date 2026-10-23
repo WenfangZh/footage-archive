@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-24 00:59+0200\n"
+"POT-Creation-Date: 2026-10-24 01:22+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -54,7 +54,7 @@ msgstr ""
 "J'ai comparé ce numéro de sécurité avec la personne, en la contactant par "
 "les coordonnées de l'annuaire du barreau."
 
-#: accounts/admission.py:98
+#: accounts/admission.py:100
 msgid ""
 "They can be admitted once they have set their password, two-factor "
 "authentication and personal key."
@@ -62,7 +62,7 @@ msgstr ""
 "La personne pourra être admise une fois son mot de passe, sa double "
 "authentification et sa clé personnelle mis en place."
 
-#: accounts/admission.py:100
+#: accounts/admission.py:103
 msgid ""
 "They have made a new key since this page was shown. Compare its safety "
 "number with them again."
@@ -70,7 +70,7 @@ msgstr ""
 "La personne a créé une nouvelle clé depuis l'affichage de cette page. "
 "Comparez à nouveau son numéro de sécurité avec elle."
 
-#: accounts/admission.py:104
+#: accounts/admission.py:108
 #, python-format
 msgid "%(name)s is admitted."
 msgstr "%(name)s est admis·e."
@@ -356,12 +356,12 @@ msgid "Your personal key"
 msgstr "Votre clé personnelle"
 
 #: accounts/templates/accounts/login.html:4
-#: accounts/templates/accounts/login.html:7
-#: accounts/templates/accounts/login.html:13
+#: accounts/templates/accounts/login.html:9
+#: accounts/templates/accounts/login.html:15
 msgid "Log in"
 msgstr "Se connecter"
 
-#: accounts/templates/accounts/login.html:8
+#: accounts/templates/accounts/login.html:10
 msgid "For defence lawyers and the admin. Uploading a video needs no account."
 msgstr ""
 "Pour les avocat·es de la défense et l'administrateur·rice. Envoyer une vidéo "
@@ -1814,22 +1814,30 @@ msgid "The key could not be read."
 msgstr "La clé n'a pas pu être lue."
 
 #: keys/templates/keys/key.html:16
+msgid ""
+"Your account has no personal key. Keys are set up before admission: ask the "
+"admin what to do."
+msgstr ""
+"Votre compte n'a pas de clé personnelle. Les clés se créent avant "
+"l'admission : demandez à l'administrateur·rice ce qu'il faut faire."
+
+#: keys/templates/keys/key.html:21
 msgid "Unlocking your key needs JavaScript."
 msgstr "Déverrouiller votre clé nécessite JavaScript."
 
-#: keys/templates/keys/key.html:19
+#: keys/templates/keys/key.html:24
 msgid "Key passphrase:"
 msgstr "Phrase secrète :"
 
-#: keys/templates/keys/key.html:21
+#: keys/templates/keys/key.html:26
 msgid "Unlock"
 msgstr "Déverrouiller"
 
-#: keys/templates/keys/key.html:22
+#: keys/templates/keys/key.html:27
 msgid "That key passphrase does not unlock your key."
 msgstr "Cette phrase secrète ne déverrouille pas votre clé."
 
-#: keys/templates/keys/key.html:23
+#: keys/templates/keys/key.html:28
 msgid ""
 "Your key does not match the one the archive shows for you. Do not go on: "
 "tell the admin, by phone."
@@ -1837,21 +1845,21 @@ msgstr ""
 "Votre clé ne correspond pas à celle que l'archive indique pour vous. N'allez "
 "pas plus loin : prévenez l'administrateur·rice par téléphone."
 
-#: keys/templates/keys/key.html:24
+#: keys/templates/keys/key.html:29
 msgid "Your key could not be fetched. Please reload the page."
 msgstr "Votre clé n'a pas pu être récupérée. Veuillez recharger la page."
 
-#: keys/templates/keys/key.html:28
-msgid "Your key is unlocked in this browser tab until you log out or close it."
+#: keys/templates/keys/key.html:33
+msgid "Your key is unlocked in this browser tab until you log out."
 msgstr ""
 "Votre clé est déverrouillée dans cet onglet du navigateur jusqu'à ce que "
-"vous vous déconnectiez ou le fermiez."
+"vous vous déconnectiez."
 
-#: keys/templates/keys/key.html:29
+#: keys/templates/keys/key.html:34
 msgid "Your safety number:"
 msgstr "Votre numéro de sécurité :"
 
-#: keys/templates/keys/key.html:31
+#: keys/templates/keys/key.html:36
 msgid ""
 "The admin will compare it with you before admitting you. Read it to them "
 "when they contact you, and only then."
@@ -1938,7 +1946,7 @@ msgstr ""
 msgid "Set up my key"
 msgstr "Créer ma clé"
 
-#: keys/views.py:51
+#: keys/views.py:53
 msgid "Your key is set up. Unlock it once to check your key passphrase."
 msgstr ""
 "Votre clé est créée. Déverrouillez-la une fois pour vérifier votre phrase "

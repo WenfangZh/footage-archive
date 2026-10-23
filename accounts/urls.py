@@ -53,10 +53,12 @@ urlpatterns = [
     path('account/', views.account_home, name='home'),
     path('account/two-factor/setup/', two_factor.setup, name='two_factor_setup'),
     path('account/two-factor/', two_factor.verify, name='two_factor_verify'),
-    # A personal key, for applicants and lawyers (keys.views).
+    # A personal key (keys.views): set up by applicants, unlocked by applicants and lawyers.
+    # tests/test_personal_keys.py checks who reaches them.
     path('account/key/', key_views.key_page, name='key'),
     path('account/key/setup/', key_views.setup, name='key_setup'),
     path('account/key/encrypted.json', key_views.encrypted_key, name='encrypted_key'),
+    path('account/key/unlocked/', key_views.unlocked, name='key_unlocked'),
     # Django's set-password page, reached from the link in an invitation.
     path('account/invitation/<uidb64>/<token>/', invitations.accept_invitation, name='accept_invitation'),
 ]

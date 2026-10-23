@@ -1,7 +1,9 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{% translate "Log in" %}{% endblock %}
+
+{% block head %}<script src="{% static 'keys/forget.js' %}" defer></script>{% endblock %}
 
 {% block content %}
   <h1>{% translate "Log in" %}</h1>

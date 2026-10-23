@@ -6,6 +6,7 @@ browser sent, and never a key passphrase or recovery key.
 import base64
 import hashlib
 import os
+import re
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -39,12 +40,12 @@ def as_form(parts):
 def person(status=Status.APPLICANT, email='camille@example.org'):
     user = User.objects.create_user(email, 'a long test passphrase')
     profile = LawyerProfile.objects.create(user=user, bar='Paris')
-    if status == Status.LAWYER:
+    if status in (Status.LAWYER, Status.SUSPENDED, Status.REVOKED):
         profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
         profile.save()
         profile.change_status(Status.LAWYER)
-    elif status == Status.DECLINED:
-        profile.change_status(Status.DECLINED)
+    if status != Status.LAWYER and status != Status.APPLICANT:
+        profile.change_status(status)
     return profile
 
 
@@ -99,7 +100,7 @@ def test_a_key_the_admin_confirmed_is_not_replaced_by_setting_up_another(applica
     assert list(LawyerKey.objects.current().filter(lawyer_profile=applicant)) == [confirmed]
 
 
-def test_unlocking_fetches_ones_own_key_and_records_the_day(applicant, applicant_client):
+def test_unlocking_fetches_ones_own_key(applicant, applicant_client):
     key = make_key(applicant)
     make_key(person(email='someone.else@example.org'))
     data = applicant_client.get(reverse('accounts:encrypted_key')).json()
@@ -108,6 +109,16 @@ def test_unlocking_fetches_ones_own_key_and_records_the_day(applicant, applicant
     assert (data['opslimit'], data['memlimit']) == (key.opslimit, key.memlimit)
     # Only what unlocking with the passphrase needs.
     assert 'private_key_under_recovery_key' not in data
+
+
+def test_only_a_reported_unlock_records_the_day(applicant, applicant_client):
+    # Rotations draw among lawyers who unlocked recently (design §5.5): fetching the key is
+    # not unlocking it, since the passphrase may be wrong.
+    key = make_key(applicant)
+    applicant_client.get(reverse('accounts:encrypted_key'))
+    key.refresh_from_db()
+    assert key.last_unlocked_on is None
+    assert applicant_client.post(reverse('accounts:key_unlocked')).status_code == 204
     key.refresh_from_db()
     assert key.last_unlocked_on == timezone.localdate()
 
@@ -116,17 +127,53 @@ def test_unlocking_without_a_key_finds_nothing(applicant_client):
     assert applicant_client.get(reverse('accounts:encrypted_key')).status_code == 404
 
 
-@pytest.mark.parametrize('kind', ['logged out', 'admin', 'declined'])
+@pytest.mark.parametrize('kind', ['logged out', 'admin', 'declined', 'suspended', 'revoked', 'neither'])
 def test_nobody_but_an_applicant_or_lawyer_reaches_the_key_pages(kind):
     client = Client()
     if kind == 'admin':
         log_in_with_second_factor(client, User.objects.create_superuser('admin@example.org'))
-    elif kind == 'declined':
-        log_in_with_second_factor(client, person(Status.DECLINED).user)
+    elif kind == 'neither':
+        log_in_with_second_factor(client, User.objects.create_user('neither@example.org', 'a long test passphrase'))
+    elif kind != 'logged out':
+        profile = person(Status(kind))
+        make_key(profile)
+        log_in_with_second_factor(client, profile.user)
     expected = 302 if kind == 'logged out' else 403  # To the login page, or refused.
     for name in ['accounts:key', 'accounts:key_setup', 'accounts:encrypted_key']:
         assert client.get(reverse(name)).status_code == expected, name
+    assert client.post(reverse('accounts:key_unlocked')).status_code == expected
+    assert client.post(reverse('accounts:key_setup'), as_form(sent_key())).status_code == expected
+    assert LawyerKey.objects.filter(last_unlocked_on__isnull=False).count() == 0
+    assert LawyerKey.objects.count() == (0 if kind in ('logged out', 'admin', 'neither') else 1)
+
+
+def test_a_lawyer_cannot_set_up_or_replace_a_key_outside_a_key_reset():
+    lawyer = person(Status.LAWYER)
+    client = log_in_with_second_factor(Client(), lawyer.user)
+    assert client.post(reverse('accounts:key_setup'), as_form(sent_key())).status_code == 403
     assert not LawyerKey.objects.exists()
+    # A lawyer admitted before keys existed is told so, and has nothing to unlock.
+    page = client.get(reverse('accounts:key'))
+    assert page.status_code == 200 and page.context['key'] is None
+    assert 'id="key-page"' not in page.content.decode()
+    assert client.get(reverse('accounts:encrypted_key')).status_code == 404
+
+
+def test_the_setup_page_sends_only_the_public_key_and_the_encrypted_copies(applicant_client):
+    # Every field with a name is sent; the passphrase and recovery key are typed in fields with
+    # none, so they never reach the server.
+    page = applicant_client.get(reverse('accounts:key_setup')).content.decode()
+    form = page[page.index('<form id="key-setup"'):page.index('</form>', page.index('<form id="key-setup"'))]
+    assert set(re.findall(r'name="([^"]+)"', form)) == {
+        'csrfmiddlewaretoken', 'public_key', 'passphrase_salt', 'private_key_under_passphrase', 'private_key_under_recovery_key',
+    }
+
+
+def test_the_unlock_form_sends_nothing(applicant, applicant_client):
+    make_key(applicant)
+    page = applicant_client.get(reverse('accounts:key')).content.decode()
+    form = page[page.index('<form id="unlock"'):page.index('</form>', page.index('<form id="unlock"'))]
+    assert 'name=' not in form and 'action=' not in form
 
 
 def test_a_lawyer_unlocks_their_key_too():
@@ -135,6 +182,7 @@ def test_a_lawyer_unlocks_their_key_too():
     client = log_in_with_second_factor(Client(), lawyer.user)
     assert client.get(reverse('accounts:key')).status_code == 200
     assert client.get(reverse('accounts:encrypted_key')).status_code == 200
+    assert client.post(reverse('accounts:key_unlocked')).status_code == 204
 
 
 def test_the_key_page_ties_unlocked_keys_to_this_login(applicant, applicant_client):
