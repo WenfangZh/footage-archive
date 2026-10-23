@@ -83,7 +83,8 @@ def test_the_map_page_and_what_it_loads_hold_no_url_to_another_origin(page):
     parser.feed(html)
     # The credit's link is the only URL to another origin, and only as a link.
     assert foreign(html) == {OSM_COPYRIGHT} and html.count(OSM_COPYRIGHT) == 1
-    assert [link.get('href', '') for link in parser.links if not link.get('href', '').startswith('/')] == [OSM_COPYRIGHT]
+    elsewhere = [link.get('href', '') for link in parser.links if not link.get('href', '').startswith(('/', '#'))]
+    assert elsewhere == [OSM_COPYRIGHT]
     loaded = {path for path in parser.paths if path.startswith('/static/maps/')}
     assert len(loaded) == len(parser.paths) == 5
     # The files these load in turn (MapLibre's module and its worker) are in the same folder.
@@ -112,4 +113,7 @@ def test_the_credit_to_openstreetmap_links_to_its_licence(page):
     (credit,) = [link for link in parser.links if link.get('href') == OSM_COPYRIGHT]
     # A new tab keeps the form as it is, and OpenStreetMap is not told which page sent the lawyer.
     assert credit['target'] == '_blank' and set(credit['rel'].split()) >= {'noopener', 'noreferrer'}
-    assert '© <a' in response.content.decode() and '>OpenStreetMap</a> contributors' in response.content.decode()
+    assert re.search(
+        r'<p class="area-map-attribution">© <a [^>]*href="' + re.escape(OSM_COPYRIGHT) + r'"[^>]*>OpenStreetMap</a> contributors</p>',
+        response.content.decode(),
+    )
