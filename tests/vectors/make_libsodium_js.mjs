@@ -5,6 +5,7 @@
 // It loads the vendored files as classic scripts, as a lawyer's browser does. The archive
 // itself never runs Node.
 
+import { createHash } from 'node:crypto';
 import { readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,8 +13,8 @@ import { runInThisContext } from 'node:vm';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const vendor = join(here, '../../core/static/core/vendor/libsodium');
-// In a browser, libsodium.js takes its random numbers from self.crypto, and it takes another
-// path when it finds Node's process object, so that is hidden while it starts.
+// In a browser, libsodium.js takes its random numbers from self.crypto. When it finds Node's
+// process object it takes its Node path, which needs require(), so that is hidden while it starts.
 const nodeProcess = globalThis.process;
 globalThis.self = globalThis;
 globalThis.process = undefined;
@@ -120,14 +121,16 @@ function make() {
   };
 }
 
-const failures = check(JSON.parse(readFileSync(join(here, 'pynacl.json'), 'utf8')));
+const pynacl = readFileSync(join(here, 'pynacl.json'));
+const failures = check(JSON.parse(pynacl.toString('utf8')));
 if (failures.length) {
   console.error(`libsodium.js could not open PyNaCl's values: ${failures.join(', ')}`);
   process.exit(1);
 }
 console.log("libsodium.js opens all of PyNaCl's values.");
 if (process.argv.includes('--write')) {
-  const made = make();
+  // So that the Python test can tell which pynacl.json this script last checked.
+  const made = { ...make(), checked_pynacl_sha256: createHash('sha256').update(pynacl).digest('hex') };
   const ownFailures = check(made);
   if (ownFailures.length) {
     console.error(`libsodium.js could not open its own values: ${ownFailures.join(', ')}`);

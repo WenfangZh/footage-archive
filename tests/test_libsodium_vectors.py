@@ -5,6 +5,7 @@ with PyNaCl. The other direction is checked by tests/vectors/make_libsodium_js.m
 needs Node.js and so does not run here; see tests/vectors/README.md.
 """
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -29,12 +30,24 @@ def load(name):
             return [unhex(item) for item in value]
         return bytes.fromhex(value) if isinstance(value, str) else value
 
-    return {key: unhex(value) for key, value in data.items() if key != 'made_by'}
+    return {key: unhex(value) for key, value in data.items() if key not in {'made_by', 'checked_pynacl_sha256'}}
 
 
 @pytest.fixture(params=['libsodium_js.json', 'pynacl.json'])
 def v(request):
     return load(request.param)
+
+
+@pytest.mark.parametrize('name, maker', [('libsodium_js.json', 'libsodium.js '), ('pynacl.json', 'PyNaCl ')])
+def test_each_file_was_made_by_its_own_library(name, maker):
+    assert json.loads((VECTORS / name).read_text())['made_by'].startswith(maker)
+
+
+def test_libsodium_js_checked_the_current_pynacl_values():
+    # The Node script records which pynacl.json it opened: PyNaCl's values rewritten since
+    # then have not been checked in a browser's library (README.md).
+    checked = json.loads((VECTORS / 'libsodium_js.json').read_text())['checked_pynacl_sha256']
+    assert checked == hashlib.sha256((VECTORS / 'pynacl.json').read_bytes()).hexdigest()
 
 
 def test_seeded_key_pair(v):
@@ -78,12 +91,15 @@ def test_secretstream_refuses_other_additional_data(v):
 
 def test_argon2id(v):
     argon = v['argon2id']
+    # The limits lawyers' browsers use (docs/m5-encryption-design.md §4).
+    assert (argon['opslimit'], argon['memlimit']) == (nacl.pwhash.argon2id.OPSLIMIT_INTERACTIVE, nacl.pwhash.argon2id.MEMLIMIT_INTERACTIVE)
     derived = nacl.pwhash.argon2id.kdf(32, argon['passphrase'], argon['salt'], opslimit=argon['opslimit'], memlimit=argon['memlimit'])
     assert derived == argon['key']
 
 
 def test_blake2b_with_a_label(v):
     hashed = v['blake2b']
+    assert len(hashed['digest']) == 32
     assert blake2b(hashed['label'] + hashed['input'], digest_size=32, encoder=RawEncoder) == hashed['digest']
 
 
@@ -94,5 +110,6 @@ def test_keyed_blake2b(v):
 
 def test_padding(v):
     pad = v['pad']
+    assert pad['block_size'] == 256
     assert b.sodium_pad(pad['message'], pad['block_size']) == pad['padded']
     assert b.sodium_unpad(pad['padded'], pad['block_size']) == pad['message']

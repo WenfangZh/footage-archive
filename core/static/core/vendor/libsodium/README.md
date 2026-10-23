@@ -17,6 +17,6 @@ a3d0b7eb2c24ba6b5401d88717e65bc6a92786d211bc8b91ed746d24226180f3  libsodium-sumo
 4e2c5442899321d7d9aea69bef71a3c24a6eab5911b74a5c1ad8bc8c733b0a15  libsodium-wrappers.js
 ```
 
-Both are classic scripts, loaded in this order: the first defines `libsodium`, the second wraps it as `sodium`, whose `ready` promise resolves once the WebAssembly module has started. Running WebAssembly needs `'wasm-unsafe-eval'` in the page's Content Security Policy; without it, libsodium.js falls back to a much slower JavaScript version.
+Both are classic scripts, loaded in this order: the first defines `libsodium`, the second wraps it as `sodium`, whose `ready` promise resolves once the WebAssembly module has started. Running WebAssembly needs `'wasm-unsafe-eval'` in the page's Content Security Policy; without it, libsodium.js falls back, silently, to a much slower JavaScript version, which would make unlocking a key slow on a phone.
 
 To upgrade, copy the new versions' files the same way, update this table and the hashes, and run both halves of the interop test vectors (`tests/vectors/README.md`).
