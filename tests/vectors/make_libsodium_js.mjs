@@ -2,8 +2,9 @@
 // --write also writes tests/vectors/libsodium_js.json, values made by libsodium.js for
 // tests/test_libsodium_vectors.py to open with PyNaCl (README.md).
 //   node tests/vectors/make_libsodium_js.mjs [--write]
-// It loads the vendored files as classic scripts, as a lawyer's browser does. The archive
-// itself never runs Node.
+// It loads the vendored files as classic scripts, as a lawyer's browser does, and then the
+// archive's own keys/static/keys/keys.js, whose safety number the server must agree with.
+// The archive itself never runs Node.
 
 import { createHash } from 'node:crypto';
 import { readFileSync, renameSync, writeFileSync } from 'node:fs';
@@ -19,8 +20,8 @@ const nodeProcess = globalThis.process;
 globalThis.self = globalThis;
 globalThis.process = undefined;
 try {
-  for (const file of ['libsodium-sumo.js', 'libsodium-wrappers.js']) {
-    runInThisContext(readFileSync(join(vendor, file), 'utf8'), { filename: file });
+  for (const file of [join(vendor, 'libsodium-sumo.js'), join(vendor, 'libsodium-wrappers.js'), join(here, '../../keys/static/keys/keys.js')]) {
+    runInThisContext(readFileSync(file, 'utf8'), { filename: file });
   }
   await globalThis.sodium.ready;
 } finally {
@@ -118,6 +119,8 @@ function make() {
     blake2b: { label: hex(label), input: hex(labelInput), digest: hex(sodium.crypto_generichash(32, new Uint8Array([...label, ...labelInput]))) },
     blake2b_keyed: { key: hex(checkKey), label: hex(checkLabel), digest: hex(sodium.crypto_generichash(32, checkLabel, checkKey)) },
     pad: { message: hex(paddedMessage), block_size: 256, padded: hex(sodium.pad(paddedMessage, 256)) },
+    // By the archive's own code, not libsodium.js alone.
+    safety_number: { public_key: hex(seeded.publicKey), number: globalThis.ArchiveKeys.safetyNumber(seeded.publicKey) },
   };
 }
 

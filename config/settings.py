@@ -101,6 +101,7 @@ INSTALLED_APPS = [
     'alerts',
     'clips',
     'maps',
+    'keys',
 ]
 
 MIDDLEWARE = [

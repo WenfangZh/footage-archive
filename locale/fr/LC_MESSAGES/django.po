@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 10:07+0200\n"
+"POT-Creation-Date: 2026-10-24 00:59+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -27,34 +27,50 @@ msgstr "L'accès de %(name)s est rétabli."
 msgid "%(name)s's access is revoked."
 msgstr "L'accès de %(name)s est révoqué."
 
-#: accounts/admission.py:30
+#: accounts/admission.py:33
 msgid "How their registration with the bar was verified"
 msgstr "Comment son inscription au barreau a été vérifiée"
 
-#: accounts/admission.py:31
+#: accounts/admission.py:34
 msgid "Who vouched for them"
 msgstr "Qui assure son parrainage"
 
-#: accounts/admission.py:34
+#: accounts/admission.py:37
 msgid ""
 "Through the bar directory's contact details, never those the person gave."
 msgstr ""
 "Par les coordonnées de l'annuaire du barreau, jamais celles données par la "
 "personne."
 
-#: accounts/admission.py:35
+#: accounts/admission.py:38
 msgid "A trusted defence organisation or an admitted lawyer."
 msgstr "Une organisation de défense de confiance, ou un·e avocat·e admis·e."
 
-#: accounts/admission.py:73
+#: accounts/admission.py:44
 msgid ""
-"They can be admitted once they have set their password and two-factor "
-"authentication."
+"I compared this safety number with them, through the bar directory's contact "
+"details."
 msgstr ""
-"La personne pourra être admise une fois son mot de passe et sa double "
-"authentification activés."
+"J'ai comparé ce numéro de sécurité avec la personne, en la contactant par "
+"les coordonnées de l'annuaire du barreau."
 
-#: accounts/admission.py:77
+#: accounts/admission.py:98
+msgid ""
+"They can be admitted once they have set their password, two-factor "
+"authentication and personal key."
+msgstr ""
+"La personne pourra être admise une fois son mot de passe, sa double "
+"authentification et sa clé personnelle mis en place."
+
+#: accounts/admission.py:100
+msgid ""
+"They have made a new key since this page was shown. Compare its safety "
+"number with them again."
+msgstr ""
+"La personne a créé une nouvelle clé depuis l'affichage de cette page. "
+"Comparez à nouveau son numéro de sécurité avec elle."
+
+#: accounts/admission.py:104
 #, python-format
 msgid "%(name)s is admitted."
 msgstr "%(name)s est admis·e."
@@ -168,6 +184,19 @@ msgstr ""
 "Votre compte est prêt, mais l'administrateur·rice ne vous a pas encore "
 "admis·e. D'ici là, l'archive ne vous montre rien."
 
+#: accounts/templates/accounts/applicant.html:10
+msgid "Your personal key and its safety number"
+msgstr "Votre clé personnelle et son numéro de sécurité"
+
+#: accounts/templates/accounts/applicant.html:12
+msgid "Before you can be admitted, set up your personal key."
+msgstr "Avant de pouvoir être admis·e, créez votre clé personnelle."
+
+#: accounts/templates/accounts/applicant.html:12
+#: keys/templates/keys/setup.html:4 keys/templates/keys/setup.html:14
+msgid "Set up your personal key"
+msgstr "Créer votre clé personnelle"
+
 #: accounts/templates/accounts/applicant_review.html:8
 msgid "Bar:"
 msgstr "Barreau :"
@@ -177,23 +206,41 @@ msgid "Email address:"
 msgstr "Adresse e-mail :"
 
 #: accounts/templates/accounts/applicant_review.html:11
-msgid "They have set their password and two-factor authentication."
+msgid ""
+"They have set their password, two-factor authentication and personal key."
 msgstr ""
-"La personne a défini son mot de passe et activé la double authentification."
+"La personne a défini son mot de passe, activé la double authentification et "
+"créé sa clé personnelle."
 
 #: accounts/templates/accounts/applicant_review.html:11
 msgid ""
-"They have not yet set their password and two-factor authentication: they "
-"cannot be admitted before then."
+"They have not yet set their password, two-factor authentication and personal "
+"key: they cannot be admitted before then."
 msgstr ""
-"La personne n'a pas encore défini son mot de passe ni activé la double "
-"authentification : elle ne peut pas être admise avant."
+"La personne n'a pas encore défini son mot de passe, activé la double "
+"authentification et créé sa clé personnelle : elle ne peut pas être admise "
+"avant."
 
 #: accounts/templates/accounts/applicant_review.html:13
+msgid "Safety number of their key:"
+msgstr "Numéro de sécurité de sa clé :"
+
+#: accounts/templates/accounts/applicant_review.html:14
+msgid ""
+"Before admitting them, contact them through the bar directory's contact "
+"details, never those they gave, and ask them to read the safety number shown "
+"on their key page. Admit them only if it is the same as this one."
+msgstr ""
+"Avant d'admettre la personne, contactez-la par les coordonnées de l'annuaire "
+"du barreau, jamais par celles qu'elle a données, et demandez-lui de lire le "
+"numéro de sécurité affiché sur sa page de clé. Ne l'admettez que s'il est "
+"identique à celui-ci."
+
+#: accounts/templates/accounts/applicant_review.html:17
 msgid "Admit"
 msgstr "Admettre"
 
-#: accounts/templates/accounts/applicant_review.html:14
+#: accounts/templates/accounts/applicant_review.html:18
 msgid ""
 "Admit them only once their registration with the bar is verified and someone "
 "has vouched for them."
@@ -201,16 +248,16 @@ msgstr ""
 "N'admettez la personne qu'une fois son inscription au barreau vérifiée et "
 "son parrainage obtenu."
 
-#: accounts/templates/accounts/applicant_review.html:18
+#: accounts/templates/accounts/applicant_review.html:22
 msgid "Admit as a lawyer"
 msgstr "Admettre comme avocat·e"
 
-#: accounts/templates/accounts/applicant_review.html:21
+#: accounts/templates/accounts/applicant_review.html:25
 #: accounts/templates/accounts/decline.html:12
 msgid "Decline"
 msgstr "Ne pas retenir"
 
-#: accounts/templates/accounts/applicant_review.html:22
+#: accounts/templates/accounts/applicant_review.html:26
 #: accounts/templates/accounts/decline.html:4
 #: accounts/templates/accounts/decline.html:7
 msgid "Decline this applicant"
@@ -302,6 +349,11 @@ msgstr "Dossiers de recherche clos"
 #: cases/templates/cases/default_margin.html:7
 msgid "Default margin"
 msgstr "Marge par défaut"
+
+#: accounts/templates/accounts/lawyer_home.html:18
+#: keys/templates/keys/key.html:4 keys/templates/keys/key.html:14
+msgid "Your personal key"
+msgstr "Votre clé personnelle"
 
 #: accounts/templates/accounts/login.html:4
 #: accounts/templates/accounts/login.html:7
@@ -519,7 +571,7 @@ msgstr "Trop de codes erronés. Attendez quelques minutes avant de réessayer."
 msgid "Six-digit code from the app, or recovery code"
 msgstr "Code à six chiffres de l'application, ou code de secours"
 
-#: accounts/views.py:24
+#: accounts/views.py:25
 msgid ""
 "Please enter a correct email address and password. The password is case-"
 "sensitive."
@@ -1223,7 +1275,10 @@ msgid ""
 "Or, instead of a place and a radius, pick the area on the map: a click adds "
 "or removes one cell, and dragging with Shift held down adds every cell you "
 "cross."
-msgstr "Ou bien, au lieu de donner un lieu et un rayon, choisissez le périmètre sur la carte : un clic ajoute ou retire une maille, et la souris glissée avec la touche Maj enfoncée ajoute toutes les mailles traversées."
+msgstr ""
+"Ou bien, au lieu de donner un lieu et un rayon, choisissez le périmètre sur "
+"la carte : un clic ajoute ou retire une maille, et la souris glissée avec la "
+"touche Maj enfoncée ajoute toutes les mailles traversées."
 
 #: cases/templates/cases/new_case.html:47
 msgid "Create the case"
@@ -1269,11 +1324,11 @@ msgstr ""
 "Clips trouvés seulement dans la marge, juste en dehors de la plage horaire "
 "ou du périmètre."
 
-#: cases/views.py:88
+#: cases/views.py:86
 msgid "Your new cases will start with this margin."
 msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
 
-#: cases/views.py:99
+#: cases/views.py:97
 msgid "The case is closed."
 msgstr "Le dossier de recherche est clos."
 
@@ -1746,13 +1801,148 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:361
+#: config/settings.py:364
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:362
+#: config/settings.py:365
 msgid "English"
 msgstr "Anglais"
+
+#: keys/forms.py:30 keys/forms.py:32
+msgid "The key could not be read."
+msgstr "La clé n'a pas pu être lue."
+
+#: keys/templates/keys/key.html:16
+msgid "Unlocking your key needs JavaScript."
+msgstr "Déverrouiller votre clé nécessite JavaScript."
+
+#: keys/templates/keys/key.html:19
+msgid "Key passphrase:"
+msgstr "Phrase secrète :"
+
+#: keys/templates/keys/key.html:21
+msgid "Unlock"
+msgstr "Déverrouiller"
+
+#: keys/templates/keys/key.html:22
+msgid "That key passphrase does not unlock your key."
+msgstr "Cette phrase secrète ne déverrouille pas votre clé."
+
+#: keys/templates/keys/key.html:23
+msgid ""
+"Your key does not match the one the archive shows for you. Do not go on: "
+"tell the admin, by phone."
+msgstr ""
+"Votre clé ne correspond pas à celle que l'archive indique pour vous. N'allez "
+"pas plus loin : prévenez l'administrateur·rice par téléphone."
+
+#: keys/templates/keys/key.html:24
+msgid "Your key could not be fetched. Please reload the page."
+msgstr "Votre clé n'a pas pu être récupérée. Veuillez recharger la page."
+
+#: keys/templates/keys/key.html:28
+msgid "Your key is unlocked in this browser tab until you log out or close it."
+msgstr ""
+"Votre clé est déverrouillée dans cet onglet du navigateur jusqu'à ce que "
+"vous vous déconnectiez ou le fermiez."
+
+#: keys/templates/keys/key.html:29
+msgid "Your safety number:"
+msgstr "Votre numéro de sécurité :"
+
+#: keys/templates/keys/key.html:31
+msgid ""
+"The admin will compare it with you before admitting you. Read it to them "
+"when they contact you, and only then."
+msgstr ""
+"L'administrateur·rice le comparera avec vous avant de vous admettre. Lisez-"
+"le-lui quand on vous contactera, et seulement à ce moment-là."
+
+#: keys/templates/keys/setup.html:15
+msgid ""
+"Your personal key will open what the archive holds for lawyers. It is made "
+"here, in your browser: the archive keeps it only locked, and cannot open it."
+msgstr ""
+"Votre clé personnelle ouvrira ce que l'archive conserve pour les avocat·es. "
+"Elle est créée ici, dans votre navigateur : l'archive ne la garde que "
+"verrouillée et ne peut pas l'ouvrir."
+
+#: keys/templates/keys/setup.html:17
+msgid ""
+"This replaces the key you set up before, which the admin has not confirmed "
+"yet."
+msgstr ""
+"Elle remplace la clé que vous avez créée auparavant, que "
+"l'administrateur·rice n'a pas encore confirmée."
+
+#: keys/templates/keys/setup.html:20
+msgid "The key could not be read. Please try again."
+msgstr "La clé n'a pas pu être lue. Veuillez réessayer."
+
+#: keys/templates/keys/setup.html:22
+msgid "Setting up a key needs JavaScript."
+msgstr "Créer une clé nécessite JavaScript."
+
+#: keys/templates/keys/setup.html:28
+msgid "Your key passphrase"
+msgstr "Votre phrase secrète"
+
+#: keys/templates/keys/setup.html:29
+msgid ""
+"You type it to unlock your key, once in each browser tab. It is not your "
+"login password. Keep it where you can type it: in your memory, on paper or "
+"in a password manager."
+msgstr ""
+"Vous la tapez pour déverrouiller votre clé, une fois dans chaque onglet du "
+"navigateur. Ce n'est pas votre mot de passe de connexion. Gardez-la là où "
+"vous pourrez la retrouver pour la taper : de mémoire, sur papier ou dans un "
+"gestionnaire de mots de passe."
+
+#: keys/templates/keys/setup.html:32
+msgid "Your recovery key"
+msgstr "Votre clé de récupération"
+
+#: keys/templates/keys/setup.html:33
+msgid ""
+"It unlocks your key if you forget your key passphrase. Write it down, and "
+"keep it with your two-factor recovery codes."
+msgstr ""
+"Elle déverrouille votre clé si vous oubliez votre phrase secrète. Notez-la "
+"et gardez-la avec vos codes de secours de double authentification."
+
+#: keys/templates/keys/setup.html:36
+msgid ""
+"Save both now. They are shown only once, and no one, not even the admin, can "
+"recover them for you."
+msgstr ""
+"Conservez-les toutes les deux dès maintenant. Elles ne s'affichent qu'une "
+"fois, et personne, pas même l'administrateur·rice, ne pourra les retrouver "
+"pour vous."
+
+#: keys/templates/keys/setup.html:38
+msgid "Type your key passphrase again:"
+msgstr "Tapez à nouveau votre phrase secrète :"
+
+#: keys/templates/keys/setup.html:40
+msgid "Type your recovery key again:"
+msgstr "Tapez à nouveau votre clé de récupération :"
+
+#: keys/templates/keys/setup.html:42
+msgid "What you typed does not match. Compare it with what is shown above."
+msgstr ""
+"Ce que vous avez tapé ne correspond pas. Comparez-le avec ce qui est affiché "
+"ci-dessus."
+
+#: keys/templates/keys/setup.html:43
+msgid "Set up my key"
+msgstr "Créer ma clé"
+
+#: keys/views.py:51
+msgid "Your key is set up. Unlock it once to check your key passphrase."
+msgstr ""
+"Votre clé est créée. Déverrouillez-la une fois pour vérifier votre phrase "
+"secrète."
 
 #: templates/base.html:7 templates/home.html:5
 msgid "Footage archive"

@@ -1,4 +1,5 @@
 import datetime
+import os
 
 import pytest
 from django_otp import DEVICE_ID_SESSION_KEY
@@ -77,6 +78,17 @@ def log_in_with_second_factor(client, user):
     session[DEVICE_ID_SESSION_KEY] = device.persistent_id
     session.save()
     return client
+
+
+def make_key(lawyer_profile):
+    """A personal key as a browser would have stored it (keys.views.setup). The server
+    cannot tell its encrypted parts from random bytes, so random bytes stand in for them."""
+    from keys.models import ENCRYPTED_PRIVATE_KEY_BYTES, PUBLIC_KEY_BYTES, SALT_BYTES, LawyerKey
+    return LawyerKey.objects.create(
+        lawyer_profile=lawyer_profile, public_key=os.urandom(PUBLIC_KEY_BYTES), passphrase_salt=os.urandom(SALT_BYTES),
+        private_key_under_passphrase=os.urandom(ENCRYPTED_PRIVATE_KEY_BYTES),
+        private_key_under_recovery_key=os.urandom(ENCRYPTED_PRIVATE_KEY_BYTES),
+    )
 
 
 def make_case(lawyer_profile, label='A case', rings=2, **fields):

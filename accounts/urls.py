@@ -1,10 +1,10 @@
-from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from alerts import views as alert_views
 from cases import approval as case_approval
 from cases import clip_pages
 from cases import views as case_views
+from keys import views as key_views
 from maps import views as map_views
 
 from . import access, admission, invitations, two_factor, views
@@ -48,11 +48,15 @@ manage_patterns = [
 
 urlpatterns = [
     path('login/', views.LoginView.as_view(), name='login'),
-    # Django's own; it only accepts POST.
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    # Django's own, which only accepts POST, telling the browser to forget what this site stored.
+    path('logout/', views.LogoutView.as_view(), name='logout'),
     path('account/', views.account_home, name='home'),
     path('account/two-factor/setup/', two_factor.setup, name='two_factor_setup'),
     path('account/two-factor/', two_factor.verify, name='two_factor_verify'),
+    # A personal key, for applicants and lawyers (keys.views).
+    path('account/key/', key_views.key_page, name='key'),
+    path('account/key/setup/', key_views.setup, name='key_setup'),
+    path('account/key/encrypted.json', key_views.encrypted_key, name='encrypted_key'),
     # Django's set-password page, reached from the link in an invitation.
     path('account/invitation/<uidb64>/<token>/', invitations.accept_invitation, name='accept_invitation'),
 ]
