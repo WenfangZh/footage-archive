@@ -309,7 +309,7 @@ Proposed for SPEC.md §12 (this PR adds it):
 
 - **PyNaCl 1.6.2** (Apache-2.0) in `requirements.txt`.
 - **libsodium.js 0.8.4, sumo build** (ISC), two files copied into the repository with their licence and checksums, as for the map's libraries.
-- **Content Security Policy** on all lawyer and key pages: the map page's policy, plus `script-src 'self' 'wasm-unsafe-eval'`.
+- **Content Security Policy**: the map page's strict policy on every page (no template has inline script or style), plus `script-src 'self' 'wasm-unsafe-eval'` on lawyer pages and on the pages where an applicant sets up their key.
 - **Audit log**: new actions for key grants, key resets, rotation requests, attempts, check results, rejections, abandons and ends, and starting over.
 - **Alerts**: a rejected rotation, a disputed check, a rotator's time running out, no lawyer eligible for a draw, and a key grant that fails its recipient's check.
 - **Accounts**: key setup for applicants, the confirmed safety number at admission, the lawyer's key reset, the waiting-for-a-key list, the warning before revoking the last key holder.
