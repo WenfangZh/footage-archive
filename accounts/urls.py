@@ -5,6 +5,7 @@ from alerts import views as alert_views
 from cases import approval as case_approval
 from cases import clip_pages
 from cases import views as case_views
+from maps import views as map_views
 
 from . import access, admission, invitations, two_factor, views
 
@@ -25,6 +26,10 @@ lawyer_patterns = [
     path('cases/<int:case_id>/clips/<uuid:clip_id>/download/', clip_pages.download, name='download'),
     path('cases/<int:case_id>/clips/<uuid:clip_id>/hash-record/', clip_pages.hash_record, name='hash_record'),
     path('margin/', case_views.default_margin, name='default_margin'),
+    # The map's data, never logged (maps.apps): keep every route of it under map/.
+    path('map/style.json', map_views.style, name='map_style'),
+    path('map/tiles.pmtiles', map_views.tiles, name='map_tiles'),
+    path('map/fonts/<str:fontstack>/<str:glyph_range>.pbf', map_views.glyphs, name='map_glyphs'),
 ]
 manage_patterns = [
     path('', views.manage_home, name='home'),

@@ -120,7 +120,19 @@ To log in as the admin, create the admin's account; it asks for an email address
 python manage.py createsuperuser
 ```
 
-### 6. Run
+### 6. Map data (optional)
+
+Lawyers can pick a case's area on a map. Its tiles (an OpenStreetMap extract for Île-de-France, about 300 MB) and fonts go in `var/map/`, out of git. The tiles are cut from a Protomaps build by the `pmtiles` tool: download `go-pmtiles_<version>_Linux_x86_64.tar.gz` from https://github.com/protomaps/go-pmtiles/releases, check its SHA-256 against the one GitHub shows, and put the `pmtiles` binary on your `PATH` (for example in `~/.local/bin`). Then:
+
+```sh
+python manage.py fetch_map_data
+```
+
+Run it again with `--replace-tiles` for newer tiles. Without map data the map stays blank, and a typed place and radius still work.
+
+The map's style, `maps/style.json`, is generated from `@protomaps/basemaps` 5.7.2 by `maps/generate_style.mjs`. Only a change of style needs it again, with Node.js and the package's npm tarball unpacked outside the repository.
+
+### 7. Run
 
 ```sh
 python manage.py runserver

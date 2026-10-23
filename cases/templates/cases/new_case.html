@@ -1,14 +1,49 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n l10n static %}
 
 {% block title %}{% translate "New case" %}{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{% static 'maps/vendor/maplibre-gl.css' %}">
+  <link rel="stylesheet" href="{% static 'maps/area_map.css' %}">
+  <script src="{% static 'maps/vendor/pmtiles.js' %}" defer></script>
+  <script src="{% static 'maps/vendor/h3-js.umd.js' %}" defer></script>
+  <script src="{% static 'maps/area_map.js' %}" type="module"></script>
+{% endblock %}
 
 {% block content %}
   <h1>{% translate "New case" %}</h1>
   <p>{% translate "Take the time window and place from the police report. Once the case is created, they cannot be changed: for a different window or area, create a new case." %}</p>
   <form method="post" action="{% url 'lawyer:new_case' %}">
     {% csrf_token %}
-    {{ form.as_div }}
+    {{ form.non_field_errors }}
+    {{ form.cells.errors }}
+    {{ form.cells }}
+    {% translate "No cells picked on the map." as none %}
+    {% translate "Zoom in to pick cells." as zoom_in %}
+    {% blocktranslate asvar size %}Cells picked: {cells}, about {metres} m across with the margin.{% endblocktranslate %}
+    {% blocktranslate with cap=cap_metres asvar over_caps %}That is over the size caps ({{ cap }} m): the case will need the admin's approval, with your reason.{% endblocktranslate %}
+    {% blocktranslate with ceiling=ceiling_metres asvar beyond_ceiling %}That is beyond the ceiling ({{ ceiling }} m): no case can be this large.{% endblocktranslate %}
+    {% translate "Map for picking the area" as map_title %}
+    {% translate "Zoom in" as zoom_in_label %}
+    {% translate "Zoom out" as zoom_out_label %}
+    {% for field in form.visible_fields %}
+      <div>{{ field.as_field_group }}</div>
+      {% if field.name == 'radius_metres' %}
+        <div id="area-map" class="area-map" hidden
+          data-style-url="{% url 'lawyer:map_style' %}" data-resolution="{{ grid_resolution|unlocalize }}"
+          data-cap-metres="{{ cap_metres|unlocalize }}" data-ceiling-metres="{{ ceiling_metres|unlocalize }}"
+          data-max-cells="{{ max_cells|unlocalize }}" data-map-title="{{ map_title|force_escape }}"
+          data-zoom-in-label="{{ zoom_in_label|force_escape }}" data-zoom-out-label="{{ zoom_out_label|force_escape }}">
+          <p>{% translate "Or, instead of a place and a radius, pick the area on the map: a click adds or removes one cell, and dragging with Shift held down adds every cell you cross." %}</p>
+          <div class="area-map-canvas"></div>
+          <p class="area-map-attribution">© OpenStreetMap contributors</p>
+        </div>
+        <p id="area-map-size" aria-live="polite" hidden
+          data-none="{{ none|force_escape }}" data-zoom-in="{{ zoom_in|force_escape }}" data-size="{{ size|force_escape }}"
+          data-over-caps="{{ over_caps|force_escape }}" data-beyond-ceiling="{{ beyond_ceiling|force_escape }}"></p>
+      {% endif %}
+    {% endfor %}
     <button type="submit">{% translate "Create the case" %}</button>
   </form>
 {% endblock %}

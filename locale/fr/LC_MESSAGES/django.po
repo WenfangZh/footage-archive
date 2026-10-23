@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-19 18:57+0200\n"
+"POT-Creation-Date: 2026-10-20 10:07+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -287,7 +287,7 @@ msgid "You have no cases yet."
 msgstr "Vous n'avez pas encore de dossier de recherche."
 
 #: accounts/templates/accounts/lawyer_home.html:15
-#: cases/templates/cases/new_case.html:4 cases/templates/cases/new_case.html:7
+#: cases/templates/cases/new_case.html:4 cases/templates/cases/new_case.html:15
 msgid "New case"
 msgstr "Nouveau dossier de recherche"
 
@@ -696,54 +696,65 @@ msgstr "Le dossier de recherche est validé."
 msgid "The case is refused and closed."
 msgstr "Le dossier de recherche est refusé et clos."
 
-#: cases/forms.py:23
+#: cases/forms.py:25
 msgid "Margin around the time window, in minutes"
 msgstr "Marge autour de la plage horaire, en minutes"
 
-#: cases/forms.py:27
+#: cases/forms.py:29
 msgid "Margin around the area, in rings of cells about 50 m wide"
 msgstr "Marge autour du périmètre, en anneaux de mailles d'environ 50 m"
 
-#: cases/forms.py:50
+#: cases/forms.py:57
 msgid "Enter the time without a time zone: it is read as French time."
 msgstr ""
 "Saisissez l'heure sans fuseau horaire : elle est lue en heure française."
 
-#: cases/forms.py:58
+#: cases/forms.py:62
 #, python-format
 msgid "Enter a date between %(first)s and next year."
 msgstr "Saisissez une date entre %(first)s et l'an prochain."
 
-#: cases/forms.py:76
+#: cases/forms.py:96
+msgid "The area picked on the map could not be read. Pick it again."
+msgstr ""
+"Le périmètre choisi sur la carte n'a pas pu être lu. Choisissez-le à nouveau."
+
+#: cases/forms.py:97
+msgid "The area picked on the map has more cells than any case can hold."
+msgstr ""
+"Le périmètre choisi sur la carte compte plus de mailles qu'aucun dossier de "
+"recherche ne peut en contenir."
+
+#: cases/forms.py:126
 msgid "Case label"
 msgstr "Libellé du dossier de recherche"
 
-#: cases/forms.py:77
+#: cases/forms.py:127
 msgid "Something to recognise the case by. Never a client's name."
 msgstr ""
 "De quoi reconnaître le dossier de recherche. Jamais le nom d'un·e client·e."
 
-#: cases/forms.py:80
+#: cases/forms.py:130
 msgid "Start of the time window"
 msgstr "Début de la plage horaire"
 
-#: cases/forms.py:80
+#: cases/forms.py:130
 msgid "French time, as in the police report."
 msgstr "Heure française, comme dans le procès-verbal."
 
-#: cases/forms.py:82
+#: cases/forms.py:132
 msgid "End of the time window"
 msgstr "Fin de la plage horaire"
 
-#: cases/forms.py:84 clips/forms.py:49
+#: cases/forms.py:134 clips/forms.py:49
 msgid "Latitude"
 msgstr "Latitude"
 
-#: cases/forms.py:87 clips/forms.py:53
+#: cases/forms.py:138 clips/forms.py:53
 msgid "Longitude"
 msgstr "Longitude"
 
-#: cases/forms.py:88
+#: cases/forms.py:140
 msgid ""
 "The place in the police report. Only the grid cells around it are kept, not "
 "the place itself."
@@ -751,15 +762,15 @@ msgstr ""
 "Le lieu indiqué dans le procès-verbal. Seules les mailles de la grille "
 "autour de ce lieu sont gardées, pas le lieu lui-même."
 
-#: cases/forms.py:91
+#: cases/forms.py:143
 msgid "Radius around that place, in metres"
 msgstr "Rayon autour de ce lieu, en mètres"
 
-#: cases/forms.py:96
+#: cases/forms.py:149
 msgid "Why this case needs to be larger than the size caps"
 msgstr "Pourquoi ce dossier de recherche doit dépasser les plafonds"
 
-#: cases/forms.py:99
+#: cases/forms.py:152
 msgid ""
 "Only for a case over the size caps: the admin reads your reason to decide, "
 "then it is deleted; for a case within them, it is not kept. Never a client's "
@@ -770,11 +781,25 @@ msgstr ""
 "supprimée ; pour un dossier dans les plafonds, elle n'est pas gardée. Jamais "
 "le nom d'un·e client·e."
 
-#: cases/forms.py:109
+#: cases/forms.py:162
 msgid "The time window must end after it starts."
 msgstr "La plage horaire doit se terminer après son début."
 
-#: cases/forms.py:130
+#: cases/forms.py:183
+msgid "Give the area either as a place and a radius or on the map, not both."
+msgstr ""
+"Donnez le périmètre soit par un lieu et un rayon, soit sur la carte, pas les "
+"deux."
+
+#: cases/forms.py:193
+msgid ""
+"Give the place and radius from the police report, or pick the area on the "
+"map."
+msgstr ""
+"Donnez le lieu et le rayon du procès-verbal, ou choisissez le périmètre sur "
+"la carte."
+
+#: cases/forms.py:200
 #, python-format
 msgid ""
 "With its margin, this case lasts %(minutes)s minutes and is about %(metres)s "
@@ -785,7 +810,7 @@ msgstr ""
 "%(metres)s m de large. Aucun dossier de recherche ne peut dépasser "
 "%(ceiling_minutes)s minutes ni %(ceiling_metres)s m de large."
 
-#: cases/forms.py:137
+#: cases/forms.py:207
 #, python-format
 msgid ""
 "With its margin, this case lasts %(minutes)s minutes and is about %(metres)s "
@@ -799,23 +824,23 @@ msgstr ""
 "large. Pour demander cette validation, donnez votre justification dans le "
 "champ « Pourquoi ce dossier de recherche doit dépasser les plafonds »."
 
-#: cases/forms.py:157
+#: cases/forms.py:227
 msgid "Decision"
 msgstr "Décision"
 
-#: cases/forms.py:158
+#: cases/forms.py:228
 msgid "Approve the case"
 msgstr "Valider le dossier de recherche"
 
-#: cases/forms.py:158
+#: cases/forms.py:228
 msgid "Refuse the case: it is closed"
 msgstr "Refuser le dossier de recherche : il est clos"
 
-#: cases/forms.py:161
+#: cases/forms.py:231
 msgid "Your note to the lawyer (optional)"
 msgstr "Votre note à l'avocat·e (facultatif)"
 
-#: cases/forms.py:162
+#: cases/forms.py:232
 msgid "Kept with the case, which its lawyer can see. Never a client's name."
 msgstr ""
 "Gardée avec le dossier de recherche, et visible par son avocat·e. Jamais le "
@@ -1142,7 +1167,7 @@ msgstr "Enregistrer"
 msgid "No matches."
 msgstr "Aucune correspondance."
 
-#: cases/templates/cases/new_case.html:8
+#: cases/templates/cases/new_case.html:16
 msgid ""
 "Take the time window and place from the police report. Once the case is "
 "created, they cannot be changed: for a different window or area, create a "
@@ -1152,7 +1177,55 @@ msgstr ""
 "de recherche créé, ils ne peuvent plus être modifiés : pour une autre plage "
 "horaire ou un autre périmètre, créez un nouveau dossier de recherche."
 
-#: cases/templates/cases/new_case.html:12
+#: cases/templates/cases/new_case.html:22
+msgid "No cells picked on the map."
+msgstr "Aucune maille choisie sur la carte."
+
+#: cases/templates/cases/new_case.html:23
+msgid "Zoom in to pick cells."
+msgstr "Zoomez pour choisir des mailles."
+
+#: cases/templates/cases/new_case.html:24
+#, python-brace-format
+msgid "Cells picked: {cells}, about {metres} m across with the margin."
+msgstr "Mailles choisies : {cells}, environ {metres} m de large avec la marge."
+
+#: cases/templates/cases/new_case.html:25
+#, python-format
+msgid ""
+"That is over the size caps (%(cap)s m): the case will need the admin's "
+"approval, with your reason."
+msgstr ""
+"C'est au-delà des plafonds (%(cap)s m) : le dossier de recherche attendra sa "
+"validation par l'administrateur·rice, avec votre justification."
+
+#: cases/templates/cases/new_case.html:26
+#, python-format
+msgid "That is beyond the ceiling (%(ceiling)s m): no case can be this large."
+msgstr ""
+"C'est au-delà de la limite absolue (%(ceiling)s m) : aucun dossier de "
+"recherche ne peut être aussi grand."
+
+#: cases/templates/cases/new_case.html:27
+msgid "Map for picking the area"
+msgstr "Carte pour choisir le périmètre"
+
+#: cases/templates/cases/new_case.html:28
+msgid "Zoom in"
+msgstr "Zoomer"
+
+#: cases/templates/cases/new_case.html:29
+msgid "Zoom out"
+msgstr "Dézoomer"
+
+#: cases/templates/cases/new_case.html:38
+msgid ""
+"Or, instead of a place and a radius, pick the area on the map: a click adds "
+"or removes one cell, and dragging with Shift held down adds every cell you "
+"cross."
+msgstr "Ou bien, au lieu de donner un lieu et un rayon, choisissez le périmètre sur la carte : un clic ajoute ou retire une maille, et la souris glissée avec la touche Maj enfoncée ajoute toutes les mailles traversées."
+
+#: cases/templates/cases/new_case.html:47
 msgid "Create the case"
 msgstr "Créer le dossier de recherche"
 
@@ -1196,11 +1269,11 @@ msgstr ""
 "Clips trouvés seulement dans la marge, juste en dehors de la plage horaire "
 "ou du périmètre."
 
-#: cases/views.py:80
+#: cases/views.py:88
 msgid "Your new cases will start with this margin."
 msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
 
-#: cases/views.py:91
+#: cases/views.py:99
 msgid "The case is closed."
 msgstr "Le dossier de recherche est clos."
 
@@ -1673,11 +1746,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:349
+#: config/settings.py:361
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:350
+#: config/settings.py:362
 msgid "English"
 msgstr "Anglais"
 
@@ -1685,7 +1758,7 @@ msgstr "Anglais"
 msgid "Footage archive"
 msgstr "Archive de vidéos"
 
-#: templates/base.html:28
+#: templates/base.html:29
 msgid "Log out"
 msgstr "Se déconnecter"
 

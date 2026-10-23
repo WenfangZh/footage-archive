@@ -1,5 +1,6 @@
 """A lawyer's own case pages (SPEC.md §7): creating a case, seeing one, and setting the default margin."""
 
+from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,9 +13,11 @@ from accounts.roles import lawyer_required
 from alerts.checks import check_activity
 from alerts.models import AlertLimitRaise
 from audit.models import Action, record
+from clips import grid
+from maps.policy import map_page
 
 from . import size
-from .forms import CaseForm, DefaultMarginForm, too_large_message
+from .forms import CaseForm, DefaultMarginForm, max_cells, too_large_message
 from .models import Case, CaseApproval
 from .search import find
 
@@ -24,11 +27,12 @@ def own_profile(request):
 
 
 @lawyer_required
-# Left out of Django's error reports: the typed place is never kept.
+# Left out of Django's error reports: the typed place is never kept, and the cells are as precise.
 # The reason is deleted after the admin's decision, so it stays out of them too.
-@sensitive_post_parameters('latitude', 'longitude', 'reason')
+@sensitive_post_parameters('latitude', 'longitude', 'cells', 'reason')
 # And out of the variables a traceback shows: the form and its cleaned data hold them too.
 @sensitive_variables('form', 'fields')
+@map_page
 def new_case(request):
     profile = own_profile(request)
     if request.method == 'POST':
@@ -55,7 +59,11 @@ def new_case(request):
         form = CaseForm(initial={
             'margin_minutes': profile.default_margin_minutes, 'margin_rings': profile.default_margin_rings,
         })
-    return render(request, 'cases/new_case.html', {'form': form}, status=400 if form.errors else 200)
+    return render(request, 'cases/new_case.html', {
+        'form': form, 'grid_resolution': grid.finest_resolution(),
+        'cap_metres': settings.CASE_AREA_CAP_METRES, 'ceiling_metres': settings.CASE_AREA_CEILING_METRES,
+        'max_cells': max_cells(),
+    }, status=400 if form.errors else 200)
 
 
 @lawyer_required
