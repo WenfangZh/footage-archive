@@ -361,6 +361,46 @@ _French_: index
 _Avoid_: Catalogue, metadata store
 
 **Vault**:
-The part of the archive holding everything sensitive, meant to become readable by lawyers only.
+The part of the archive holding everything sensitive, encrypted so that only lawyers' keys open it (and a code holder's own texts, their upload code).
 _French_: coffre
 _Avoid_: Storage, private store
+
+### Keys
+
+**Personal key**:
+A lawyer's own key, made in their browser and never readable by the server. It opens their key grant, and the case labels sealed to it.
+_French_: clé personnelle
+_Avoid_: Account key, private key (in the interface)
+
+**Key passphrase**:
+The secret a lawyer types in their browser to unlock their personal key. It is not their login password, and no one can recover it for them.
+_French_: phrase secrète
+_Avoid_: Password, PIN
+_Avoid in French_: mot de passe (the login password)
+
+**Recovery key**:
+A long secret shown once when a lawyer makes their personal key, kept on paper, that unlocks the personal key if the key passphrase is forgotten.
+_French_: clé de récupération
+_Avoid_: Recovery code (a single-use code for logging in), backup key
+_Avoid in French_: clé de secours, too close to code de secours
+
+**Safety number**:
+A short series of digits computed from a personal key, which two people compare by phone or in person to check that the key the archive shows is the one the lawyer made.
+_French_: numéro de sécurité
+_Avoid_: Fingerprint (the hash record's fingerprints), key ID
+_Avoid in French_: empreinte (the hash record)
+
+**Group key**:
+The key all lawyers share, which opens every clip's evidence copy, proxy, context and contact details. Ingest encrypts to it without being able to decrypt.
+_French_: clé commune
+_Avoid_: Master key, archive key, team key
+
+**Key grant**:
+A copy of the group key sealed to one lawyer's personal key, made in another lawyer's browser after both the admin and that lawyer have compared the newcomer's safety number with them.
+_French_: remise de la clé commune
+_Avoid_: Invitation (to the archive), share, access (alone)
+
+**Rotation**:
+Replacing the group key after a revocation, and resealing everything to the new one, done in the browser of the next lawyer who unlocks their key.
+_French_: renouvellement de la clé commune
+_Avoid_: Re-encryption (the files themselves are not re-encrypted), reset
