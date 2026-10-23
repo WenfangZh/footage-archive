@@ -256,6 +256,15 @@ One layer of the grid's cells around a cell or a set of cells. A case's margin a
 _French_: anneau (de mailles)
 _Avoid_: Band, buffer
 
+**Map**:
+Where a lawyer can pick a case's area cell by cell, instead of typing a place and a radius. It shows streets and place names from the archive's own map data, never clips.
+_French_: carte
+
+**Map data**:
+What the map is drawn from: its tiles, style and fonts, all served by the archive itself and only to lawyers.
+_French_: données cartographiques
+_Avoid_: Tiles alone (could be taken for the grid's cells), basemap
+
 **Closed case**:
 A case that can no longer be used to search, preview or download, closed by its lawyer, by revocation, or after a long period without use. It remains in the audit log.
 _French_: dossier de recherche clos
