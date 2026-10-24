@@ -17,7 +17,7 @@ from clips import grid
 
 from . import size
 from .forms import CaseForm, DefaultMarginForm, max_cells, too_large_message
-from .models import Case, CaseApproval
+from .models import Case, CaseApproval, NoPersonalKey
 from .search import find
 
 
@@ -51,6 +51,8 @@ def new_case(request):
             except size.CaseTooLarge as too_large:
                 # Only if the caps were lowered since the form was checked.
                 form.add_error(None, too_large_message(too_large))
+            except NoPersonalKey:
+                form.add_error(None, _('Your account has no personal key to lock the case label with. Ask the admin what to do.'))
             else:
                 return redirect('lawyer:case', case_id=case.pk)
     else:
@@ -101,7 +103,9 @@ def close_case(request, case_id):
 
 @lawyer_required
 def closed_cases(request):
-    cases = Case.objects.filter(lawyer_profile__user=request.user, closed_at__isnull=False).order_by('-closed_at')
+    cases = Case.objects.filter(
+        lawyer_profile__user=request.user, closed_at__isnull=False,
+    ).select_related('label_key').order_by('-closed_at')
     return render(request, 'cases/closed_cases.html', {'cases': cases})
 
 

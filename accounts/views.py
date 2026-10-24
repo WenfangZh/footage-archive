@@ -98,7 +98,8 @@ def account_home(request):
 
 @lawyer_required
 def lawyer_home(request):
-    cases = Case.objects.filter(lawyer_profile__user=request.user).open().order_by('-opened_at')
+    # With the key each label is sealed to, which the page needs for every case it lists.
+    cases = Case.objects.filter(lawyer_profile__user=request.user).open().select_related('label_key').order_by('-opened_at')
     return render(request, 'accounts/lawyer_home.html', {'cases': cases})
 
 

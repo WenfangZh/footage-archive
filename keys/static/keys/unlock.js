@@ -16,8 +16,15 @@
   }
 
   // The personal private key: from this tab if it was unlocked in this login, otherwise once
-  // the person has typed their key passphrase.
+  // the person has typed their key passphrase. One unlock per page, whichever scripts ask.
+  let unlocking = null;
+
   function personalKey() {
+    unlocking = unlocking || unlockOnce();
+    return unlocking;
+  }
+
+  function unlockOnce() {
     const publicKey = keys.b64.decode(form.dataset.publicKey);
     const stored = keys.recall(form.dataset.loginId, publicKey);
     if (stored) {

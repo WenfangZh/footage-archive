@@ -103,7 +103,7 @@ def put_text(clip, kind, text):
             raise NoGroupKey
         data_key = random(DATA_KEY_BYTES)
         vault_text = VaultText.objects.create(
-            clip=clip, kind=kind, ciphertext=_encrypt_text(text, data_key, text_additional_data(clip, kind)),
+            clip=clip, kind=kind, ciphertext=encrypt_text(text, data_key, text_additional_data(clip, kind)),
             key_check=key_check(data_key),
         )
         _seal(data_key, group_keys, vault_text=vault_text)
@@ -114,7 +114,9 @@ def put_text(clip, kind, text):
 
 
 @sensitive_variables('text', 'data_key', 'padded')
-def _encrypt_text(text, data_key, ad):
+def encrypt_text(text, data_key, ad):
+    """`text`, padded to TEXT_BLOCK and encrypted with XChaCha20-Poly1305 under `data_key`: a
+    24-byte nonce, then the ciphertext. For vault texts and case labels (design §7.1, §7.4)."""
     nonce = random(NONCE_BYTES)
     padded = sodium.sodium_pad(text.encode(), TEXT_BLOCK)
     return nonce + sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(padded, ad, nonce, data_key)
@@ -256,11 +258,12 @@ def encrypt_plaintext_files():
     data only; returns how many. Each is encrypted to a new name, then record_file switches its
     row over and deletes the plaintext once that commits: a crash leaves the old state or the
     new, and running it again skips what is already encrypted."""
-    if not grants.in_use().exists():
+    plaintext = VaultFile.objects.filter(key_check__isnull=True).select_related('clip')
+    if plaintext.exists() and not grants.in_use().exists():
         raise NoGroupKey
     storage = vault_storage()
     encrypted = 0
-    for vault_file in VaultFile.objects.filter(key_check__isnull=True).select_related('clip'):
+    for vault_file in plaintext:
         suffix = PurePath(vault_file.file.name).suffix.lstrip('.')
         name, data_key = store_file(vault_file.clip, vault_file.kind, storage.path(vault_file.file.name), suffix)
         try:
@@ -288,7 +291,7 @@ def encrypt_plaintext_texts():
             data_key = random(DATA_KEY_BYTES)
             ad = text_additional_data(vault_text.clip, vault_text.kind)
             VaultText.objects.filter(pk=vault_text.pk).update(
-                ciphertext=_encrypt_text(vault_text.content, data_key, ad), key_check=key_check(data_key), content='',
+                ciphertext=encrypt_text(vault_text.content, data_key, ad), key_check=key_check(data_key), content='',
             )
             _seal(data_key, group_keys, vault_text=vault_text)
             encrypted += 1

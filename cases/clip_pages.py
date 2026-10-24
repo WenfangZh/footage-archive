@@ -42,8 +42,8 @@ from clips.models import Clip, HashRecord
 from clips.streaming import file_response, requested_range
 from clips.tags import DEFAULT_TAGS
 from keys.forms import Base64BytesField
-from keys.grants import current_key, reads_vault
-from keys.views import b64, unlock_context
+from keys.grants import reads_vault
+from keys.views import b64
 
 from .models import Case
 from .search import match_of
@@ -131,7 +131,6 @@ def clip_page(request, case_id, clip_id):
         # attributes, which the template escapes.
         'proxy_keys': reads and sealed_keys_json(clip, vault.PROXY),
         'evidence_keys': reads and sealed_keys_json(clip, vault.EVIDENCE_COPY),
-        **unlock_context(request, current_key(case.lawyer_profile)),
     })
 
 

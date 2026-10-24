@@ -18,8 +18,9 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import LawyerProfile
+from keys import grants
 from audit.models import Action, record
-from cases import size
+from cases import labels, size
 from clips import grid
 
 
@@ -65,7 +66,8 @@ class CaseQuerySet(models.QuerySet):
 
         Raises size.CaseTooLarge for a case beyond the ceiling, or over the size caps
         without an `approval_reason`; with one, the case waits for the admin's approval.
-        A reason given for a case within the caps is not kept.
+        A reason given for a case within the caps is not kept. Raises NoPersonalKey for a
+        lawyer with no personal key to seal the label to (docs/m5-encryption-design.md §7.4).
         """
         cells = set(cells)
         if not cells or not all(grid.is_cell(cell) and grid.resolution(cell) == grid.finest_resolution() for cell in cells):
@@ -87,11 +89,19 @@ class CaseQuerySet(models.QuerySet):
                 raise
             needs_approval = True
         with transaction.atomic():
+            # The group key lock, which an exposure report resealing this lawyer's labels takes too
+            # (design §5.6), so that no case is created without its label being resealed.
+            grants.lock()
+            lawyer_key = grants.current_key(lawyer_profile)
+            if lawyer_key is None:
+                raise NoPersonalKey
             case = self.model(
-                lawyer_profile=lawyer_profile, label=label, starts_at=starts_at, ends_at=ends_at,
+                lawyer_profile=lawyer_profile, starts_at=starts_at, ends_at=ends_at,
                 margin_minutes=margin_minutes, margin_rings=margin_rings,
             )
             case.save(_checked=True)
+            # Once the case has its id, which the encryption is bound to.
+            labels.seal(case, label, lawyer_key)
             CaseCell.objects.bulk_create((CaseCell(case=case, cell=cell) for cell in cells), _checked=True)
             if needs_approval:
                 CaseApproval(case=case, reason=approval_reason.strip()).save(_checked=True)
@@ -121,8 +131,17 @@ class Case(models.Model):
         REFUSAL = 'refusal', _('Closed when the admin refused it')
 
     lawyer_profile = models.ForeignKey(LawyerProfile, on_delete=models.PROTECT, related_name='cases')
-    # Never a client's name (SPEC.md §7).
-    label = models.CharField(max_length=100)
+    # Never a client's name (SPEC.md §7). Encrypted, with its data key sealed to the lawyer's
+    # personal key (docs/m5-encryption-design.md §7.4; cases.labels): the server sees it only
+    # in the form that creates the case. `label` holds the plaintext of one made before
+    # encryption, until `encrypt_vault` encrypts it, and is empty on every case since.
+    label = models.CharField(max_length=100, blank=True)
+    # A 24-byte nonce, then the padded label encrypted with XChaCha20-Poly1305.
+    label_ciphertext = models.BinaryField(null=True, blank=True)
+    label_sealed_key = models.BinaryField(max_length=80, null=True, blank=True)
+    # The personal key it is sealed to: once that key is retired, the label is unreadable.
+    label_key = models.ForeignKey('keys.LawyerKey', null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    label_key_check = models.BinaryField(max_length=32, null=True, blank=True)
     opened_at = models.DateTimeField(default=timezone.now)
     # Taken from the police report (SPEC.md §7). The margin widens the window at both ends,
     # and the area by rings of the grid's finest cells.
@@ -148,8 +167,26 @@ class Case(models.Model):
                 name='closed_with_a_reason',
             ),
             models.CheckConstraint(condition=Q(ends_at__gt=F('starts_at')), name='window_ends_after_it_starts'),
+            # Plaintext from before encryption, or encrypted with all its parts, never both; or
+            # none, for the moment between creating a case and sealing its label, which needs its id.
+            models.CheckConstraint(
+                condition=(~Q(label='') & Q(
+                    label_ciphertext__isnull=True, label_sealed_key__isnull=True, label_key__isnull=True,
+                    label_key_check__isnull=True,
+                )) | Q(
+                    label='', label_ciphertext__isnull=False, label_sealed_key__isnull=False,
+                    label_key__isnull=False, label_key_check__isnull=False,
+                ) | Q(
+                    label='', label_ciphertext__isnull=True, label_sealed_key__isnull=True,
+                    label_key__isnull=True, label_key_check__isnull=True,
+                ),
+                name='label_plaintext_or_encrypted',
+            ),
         ]
 
+    # The label's parts, which change even on a closed case: when it is first sealed, when one
+    # from before encryption is encrypted, and when its lawyer's key is replaced (design §5.6, §10).
+    LABEL_FIELDS = {'label', 'label_ciphertext', 'label_sealed_key', 'label_key', 'label_key_check'}
     # Closing too is never a save: close() also deletes a waiting request's reason.
     FIXED_FIELDS = (
         'lawyer_profile_id', 'starts_at', 'ends_at', 'margin_minutes', 'margin_rings', 'closed_at', 'closed_because',
@@ -167,9 +204,11 @@ class Case(models.Model):
             kwargs['force_insert'] = True
         else:
             stored = Case.objects.filter(pk=self.pk).values('closed_at', *self.FIXED_FIELDS).get()
-            if stored['closed_at'] is not None:
+            # Saving only the label's parts writes nothing else, even on a closed case.
+            only_label = bool(kwargs.get('update_fields')) and set(kwargs['update_fields']) <= self.LABEL_FIELDS
+            if stored['closed_at'] is not None and not only_label:
                 raise ValueError('A closed case never changes again.')
-            if any(stored[field] != getattr(self, field) for field in self.FIXED_FIELDS):
+            if not only_label and any(stored[field] != getattr(self, field) for field in self.FIXED_FIELDS):
                 raise ValueError("A case's lawyer, time window and margin never change, and it is closed only by close().")
         super().save(*args, **kwargs)
 
@@ -181,6 +220,10 @@ class Case(models.Model):
 
     def waiting_for_approval(self):
         return CaseApproval.objects.waiting().filter(case=self).exists()
+
+
+class NoPersonalKey(Exception):
+    """A lawyer admitted before personal keys, with none to seal a label to."""
 
 
 class NotWaiting(ValueError):

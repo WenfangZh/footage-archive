@@ -1,10 +1,13 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n case_labels keys %}
 
-{% block title %}{{ case.label }}{% endblock %}
+{% block title %}{% case_title case %}{% endblock %}
+
+{% block head %}{% include "keys/scripts.html" %}{% endblock %}
 
 {% block content %}
-  <h1>{{ case.label }}</h1>
+  <h1>{% case_label case %}</h1>
+  {% unlock_form %}
   {% if case.closed_at %}<p>{% blocktranslate with closed_at=case.closed_at|date:"j F Y H:i" because=case.get_closed_because_display %}{{ because }}, on {{ closed_at }}.{% endblocktranslate %}</p>{% endif %}
   {% if approval %}
     {% if approval.decided_at is None %}

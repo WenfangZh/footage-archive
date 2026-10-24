@@ -442,10 +442,12 @@ def test_encrypt_vault_encrypts_files_stored_before_encryption_once(clip, local_
     assert vault_files_on_disk() == {path}
 
 
-def test_encrypt_vault_needs_a_group_key(clip, local_file):
+def test_encrypt_vault_needs_a_group_key_for_files_from_before_encryption(clip, local_file):
     from django.core.management import CommandError, call_command
 
     from keys.models import GroupKey
+    name = vault.vault_storage().save(f'{uuid.uuid4().hex}.mp4', BaseFile(local_file.open('rb')))
+    VaultFile.objects.create(clip=clip, kind=vault.PROXY, file=name)
     GroupKey.objects.all().delete()
     with pytest.raises(CommandError):
         call_command('encrypt_vault')

@@ -95,8 +95,8 @@ def test_a_case_closes_after_a_year_without_use(lawyer, settings):
     # A search eleven months in keeps "Used" open past the year.
     at(start + datetime.timedelta(days=330), Action.SEARCH, lawyer, used, core_count=0, margin_count=0)
     assert close_unused_cases(now=start + datetime.timedelta(days=366)) == 2
-    states = dict(Case.objects.values_list('label', 'closed_because'))
-    assert states == {'Old': 'inactivity', 'Used': '', 'Recent': '', 'Unlogged': 'inactivity'}
+    states = dict(Case.objects.values_list('pk', 'closed_because'))
+    assert states == {old.pk: 'inactivity', used.pk: '', recent.pk: '', never_logged.pk: 'inactivity'}
     assert sorted(case for case, _, admin in closing_entries() if admin is None) == sorted([old.pk, never_logged.pk])
 
 
@@ -166,6 +166,8 @@ def test_closed_cases_are_listed_apart(lawyer, lawyer_client):
     open_case, closed, revoked = make_case(lawyer, 'Still open'), make_case(lawyer, 'Done'), make_case(lawyer, 'Revoked')
     Case.objects.filter(pk=closed.pk).close(Case.ClosedBecause.LAWYER)
     Case.objects.filter(pk=revoked.pk).close(Case.ClosedBecause.REVOCATION)
-    make_case(make_lawyer('other@example.org'), 'Not mine')
+    other = make_case(make_lawyer('other@example.org'), 'Not mine')
     page = lawyer_client.get(reverse('lawyer:closed_cases')).content.decode()
-    assert 'Done' in page and 'Revoked' in page and 'Still open' not in page and 'Not mine' not in page
+    # Labels come encrypted (cases.labels): the links tell which cases are listed.
+    listed = [case for case in (open_case, closed, revoked, other) if reverse('lawyer:case', kwargs={'case_id': case.pk}) in page]
+    assert listed == [closed, revoked]

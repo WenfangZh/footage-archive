@@ -169,17 +169,17 @@ def test_cases_are_never_deleted(lawyer):
 
 
 def test_a_lawyer_sees_their_open_cases_only(lawyer):
-    make_case(lawyer, 'Bastille, 15 June')
-    make_case(lawyer, 'Closed one').__class__.objects.filter(label='Closed one').close(
-        Case.ClosedBecause.LAWYER,
-    )
+    open_case = make_case(lawyer, 'Bastille, 15 June')
+    closed = make_case(lawyer, 'Closed one')
+    Case.objects.filter(pk=closed.pk).close(Case.ClosedBecause.LAWYER)
     other = LawyerProfile.objects.create(user=User.objects.create_user('other@example.org'), bar='Lyon')
     other.verified_via, other.vouched_by = 'The bar directory', 'A defence organisation'
     other.save()
     other.change_status(Status.LAWYER)
-    make_case(other, 'Not theirs')
+    not_theirs = make_case(other, 'Not theirs')
     page = log_in_with_second_factor(Client(), lawyer.user).get(reverse('lawyer:home')).content.decode()
-    assert 'Bastille, 15 June' in page and 'Closed one' not in page and 'Not theirs' not in page
+    case_url = lambda case: reverse('lawyer:case', kwargs={'case_id': case.pk})  # noqa: E731
+    assert case_url(open_case) in page and case_url(closed) not in page and case_url(not_theirs) not in page
 
 
 def test_a_closed_case_never_reopens_or_changes(lawyer):

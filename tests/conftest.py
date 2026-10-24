@@ -99,12 +99,14 @@ def log_in_with_second_factor(client, user):
     return client
 
 
-def make_key(lawyer_profile):
+def make_key(lawyer_profile, private_key=None):
     """A personal key as a browser would have stored it (keys.views.setup). The server
-    cannot tell its encrypted parts from random bytes, so random bytes stand in for them."""
+    cannot tell its encrypted parts from random bytes, so random bytes stand in for them, and
+    for the public key too unless a test that reads what is sealed to it gives `private_key`."""
     from keys.models import ENCRYPTED_PRIVATE_KEY_BYTES, PUBLIC_KEY_BYTES, SALT_BYTES, LawyerKey
+    public_key = bytes(private_key.public_key) if private_key else os.urandom(PUBLIC_KEY_BYTES)
     return LawyerKey.objects.create(
-        lawyer_profile=lawyer_profile, public_key=os.urandom(PUBLIC_KEY_BYTES), passphrase_salt=os.urandom(SALT_BYTES),
+        lawyer_profile=lawyer_profile, public_key=public_key, passphrase_salt=os.urandom(SALT_BYTES),
         private_key_under_passphrase=os.urandom(ENCRYPTED_PRIVATE_KEY_BYTES),
         private_key_under_recovery_key=os.urandom(ENCRYPTED_PRIVATE_KEY_BYTES),
     )
@@ -149,6 +151,25 @@ def open_page_text(page_value, group_private_key):
     public_key = base64.b64encode(bytes(group_private_key.public_key)).decode()
     [sealed_key] = [item['sealed_data_key'] for item in sealed['sealed_keys'] if item['group_public_key'] == public_key]
     data_key = SealedBox(group_private_key).decrypt(base64.b64decode(sealed_key))
+    encrypted = base64.b64decode(sealed['ciphertext'])
+    padded = bindings.crypto_aead_xchacha20poly1305_ietf_decrypt(
+        encrypted[vault.NONCE_BYTES:], base64.b64decode(sealed['additional_data']), encrypted[:vault.NONCE_BYTES], data_key,
+    )
+    return bindings.sodium_unpad(padded, vault.TEXT_BLOCK).decode()
+
+
+def open_label(case, personal_private_key):
+    """A case's label as the lawyer's browser opens it with their personal key (keys/static/keys/case_labels.js)."""
+    import base64
+    import json
+
+    from nacl import bindings
+    from nacl.public import SealedBox
+
+    from cases import labels
+    from clips import vault
+    sealed = json.loads(labels.for_page(case))
+    data_key = SealedBox(personal_private_key).decrypt(base64.b64decode(sealed['sealed_key']))
     encrypted = base64.b64decode(sealed['ciphertext'])
     padded = bindings.crypto_aead_xchacha20poly1305_ietf_decrypt(
         encrypted[vault.NONCE_BYTES:], base64.b64decode(sealed['additional_data']), encrypted[:vault.NONCE_BYTES], data_key,
@@ -211,4 +232,9 @@ def make_case(lawyer_profile, label='A case', rings=2, **fields):
     }
     if 'cells' not in fields:
         values['cells'] = grid.widen([grid.cell_for_point(*BASTILLE, 11)], rings)
+    # The label is sealed to the lawyer's personal key: one is made if they have none, as
+    # admission requires since keys exist.
+    from keys.grants import current_key
+    if current_key(lawyer_profile) is None:
+        make_key(lawyer_profile)
     return Case.objects.create_with_area(lawyer_profile, label, **{**values, **fields})
