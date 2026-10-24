@@ -5,6 +5,8 @@ argon2-cffi==25.1.0
 django-otp==1.7.5
 h3==4.5.0
 huey==3.4.0
+# Encrypts the vault (SPEC.md §10, ADR 0007): libsodium, the same library as libsodium.js in lawyers' browsers.
+PyNaCl==1.6.2
 python-dotenv==1.2.2
 # Draws the QR code for setting up two-factor authentication, on the server.
 segno==1.6.6

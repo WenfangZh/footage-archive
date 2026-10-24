@@ -44,7 +44,7 @@ Only libsodium, as SPEC.md §10 requires: PyNaCl 1.6.2 on the server, and libsod
 
 Every encryption of an item carries, as additional data that the decryption checks, what the item is: the clip's id and the kind of item (`evidence_copy`, `proxy`, `context`, `contact_details`), or the case's id for a case label. A ciphertext moved to another clip or kind, or a sealed key moved with it, fails to open.
 
-The BLAKE2b uses each start their message with a label of their own, so that no value can stand in for another: `fa-codeholder-v1` (code holder seed), `fa-safetynum-v1` (safety number), `fa-keycheck-v1` (key check value). Plain `crypto_generichash` works the same in PyNaCl and libsodium.js, and the test vectors cover each use.
+The BLAKE2b uses each start their message with a label of their own, so that no value can stand in for another: `fa-codeholder-v1` (code holder seed), `fa-safetynum-v1` (safety number), `fa-keycheck-v1` (key check value). Plain `crypto_generichash` works the same in PyNaCl and libsodium.js, and the test vectors cover it labelled and keyed; the code holder seed is computed only on the server.
 
 No construction of our own: no chunk format, no key derivation scheme beyond single BLAKE2b calls, no signatures. The key check value (§5.5) is the one use of BLAKE2b as a keyed hash over a fixed label; the review should look at it in particular.
 
