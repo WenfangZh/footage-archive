@@ -56,7 +56,7 @@ class SealedGroupKeysField(forms.JSONField):
     def to_python(self, value):
         value = super().to_python(value)
         sealed = Base64BytesField(SEALED_GROUP_KEY_BYTES)
-        if not isinstance(value, dict) or not all(key.isdecimal() for key in value):
+        if not isinstance(value, dict) or not all(key.isascii() and key.isdigit() for key in value):
             raise forms.ValidationError(_('The key could not be read.'))
         return {int(key): sealed.clean(item) for key, item in value.items()}
 

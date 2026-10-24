@@ -1866,8 +1866,8 @@ msgstr "La clé n'a pas pu être lue."
 #: keys/forms.py:67
 msgid "I compared this safety number with them, by phone or in person."
 msgstr ""
-"J'ai comparé ce numéro de sécurité avec la personne, par téléphone ou en "
-"personne."
+"J'ai comparé ce numéro de sécurité avec la personne, par téléphone ou de "
+"vive voix."
 
 #: keys/templates/keys/grant.html:4 keys/templates/keys/grant.html:30
 msgid "Give the group key"

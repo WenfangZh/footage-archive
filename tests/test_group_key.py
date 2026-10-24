@@ -83,7 +83,9 @@ def start(client):
 def test_the_first_lawyer_makes_the_group_key_and_holds_it():
     first = person('first@example.org')
     client = client_for(first)
-    assert client.get(reverse('accounts:own_grants')).json() == {'grants': [], 'may_start': True}
+    assert client.get(reverse('accounts:own_grants')).json() == {
+        'public_key': b64(bytes(grants.current_key(first).public_key)), 'grants': [], 'may_start': True,
+    }
     assert start(client).status_code == 201
     key = GroupKey.objects.get()
     assert key.status == GroupStatus.CURRENT
@@ -117,6 +119,8 @@ def test_once_every_holder_is_revoked_the_next_lawyer_starts_over():
     old.refresh_from_db()
     new.refresh_from_db()
     assert (old.status, new.status) == (GroupStatus.RETIRED, GroupStatus.ABANDONED)
+    # An abandoned key loses its grants (design §5.5, step 8); the retired one keeps them, unreadable.
+    assert not new.grants.exists() and old.grants.exists()
     assert GroupKey.objects.get(status=GroupStatus.CURRENT).grants.get().lawyer_key.lawyer_profile == other
     assert AuditEntry.objects.get().action == Action.STARTING_OVER
 
@@ -232,7 +236,7 @@ def test_during_a_rotation_a_grant_covers_both_group_keys(newcomer):
     client = client_for(holder)
     only_old = grant_form(**{str(old.pk): b64(sealed())})
     response = client.post(grant_url(newcomer), only_old)
-    assert response.status_code == 302 and response['Location'] == grant_url(newcomer)
+    assert response.status_code == 302 and response['Location'] == reverse('lawyer:waiting')
     assert not KeyGrant.objects.filter(lawyer_key__lawyer_profile=newcomer).exists()
     assert client.post(grant_url(newcomer), grant_form(**{str(old.pk): b64(sealed()), str(new.pk): b64(sealed())})).status_code == 302
     assert set(KeyGrant.objects.filter(lawyer_key__lawyer_profile=newcomer).values_list('group_key', flat=True)) == {old.pk, new.pk}
@@ -247,10 +251,26 @@ def test_a_lawyer_grants_only_group_keys_they_hold(newcomer):
     assert not KeyGrant.objects.filter(lawyer_key__lawyer_profile=newcomer).exists()
 
 
-@pytest.mark.parametrize('value', ['not json', '[]', '{"x": "AAAA"}', json.dumps({'1': b64(os.urandom(10))})])
+@pytest.mark.parametrize('value', ['not json', '[]', '{"x": "AAAA"}', json.dumps({'1': b64(os.urandom(10))}), '{"١": "AAAA"}'])
 def test_grants_that_cannot_be_read_are_refused(holder, newcomer, value):
     response = client_for(holder).post(grant_url(newcomer), {'grants': value, 'safety_number_compared': 'on'})
     assert response.status_code == 400 and not grants.reads_vault(newcomer)
+
+
+def test_a_suspended_lawyer_grants_nothing_even_after_the_pages_role_check(holder, newcomer):
+    # As if the suspension committed between the role check and the transaction.
+    LawyerProfile.objects.filter(pk=holder.pk).update(status=Status.SUSPENDED)
+    with pytest.raises(grants.Refused):
+        grants.grant(holder, grants.current_key(newcomer).pk, {GroupKey.objects.get().pk: sealed()})
+    assert not grants.reads_vault(newcomer)
+
+
+def test_a_grant_to_a_retired_key_holds_nothing():
+    holder = person('holder@example.org')
+    group_key(holder)
+    grants.current_key(holder).retire()
+    # Its private half is erased: no one can open the grant, so no one holds the group key.
+    assert not grants.uploads_open() and grants.may_start(person('other@example.org'))
 
 
 def test_holders_see_who_is_waiting_for_the_group_key(holder, newcomer):
@@ -264,9 +284,14 @@ def test_holders_see_who_is_waiting_for_the_group_key(holder, newcomer):
 
 # The recipient's browser checks each grant (design §4).
 
+def report(client, grant, result, public_key=None):
+    public_key = public_key if public_key is not None else bytes(grant.lawyer_key.public_key)
+    return client.post(reverse('accounts:grant_checked'), {'grant': grant.pk, 'result': result, 'public_key': b64(public_key)})
+
+
 def test_a_grant_that_opens_is_marked_checked(holder):
     grant = KeyGrant.objects.get()
-    response = client_for(holder).post(reverse('accounts:grant_checked'), {'grant': grant.pk, 'result': 'passed'})
+    response = report(client_for(holder), grant, 'passed')
     assert response.status_code == 204
     grant.refresh_from_db()
     assert grant.checked_at is not None
@@ -277,7 +302,7 @@ def test_a_grant_that_fails_is_deleted_and_alerts_the_admin(holder, newcomer):
     grant = KeyGrant.objects.create(
         group_key=old.group_key, lawyer_key=grants.current_key(newcomer), sealed_private_key=sealed(), granted_by=holder,
     )
-    response = client_for(newcomer).post(reverse('accounts:grant_checked'), {'grant': grant.pk, 'result': 'failed'})
+    response = report(client_for(newcomer), grant, 'failed')
     assert response.status_code == 204
     assert not KeyGrant.objects.filter(pk=grant.pk).exists()
     alert = Alert.objects.get()
@@ -289,19 +314,25 @@ def test_a_grant_that_fails_is_deleted_and_alerts_the_admin(holder, newcomer):
 def test_only_the_recipient_reports_on_their_grant_and_only_once(holder, newcomer):
     grant = KeyGrant.objects.get()
     client = client_for(newcomer)
-    assert client.post(reverse('accounts:grant_checked'), {'grant': grant.pk, 'result': 'failed'}).status_code == 409
-    assert client.post(reverse('accounts:grant_checked'), {'grant': 'x', 'result': 'failed'}).status_code == 400
-    assert client.post(reverse('accounts:grant_checked'), {'grant': grant.pk, 'result': 'maybe'}).status_code == 400
+    assert report(client, grant, 'failed').status_code == 409
+    check = reverse('accounts:grant_checked')
+    public_key = b64(bytes(grant.lawyer_key.public_key))
+    assert client.post(check, {'grant': 'x', 'result': 'failed', 'public_key': public_key}).status_code == 400
+    assert client.post(check, {'grant': '١', 'result': 'failed', 'public_key': public_key}).status_code == 400
+    assert client.post(check, {'grant': grant.pk, 'result': 'maybe', 'public_key': public_key}).status_code == 400
+    assert client.post(check, {'grant': grant.pk, 'result': 'failed'}).status_code == 400
     holder_client = client_for(holder)
-    assert holder_client.post(reverse('accounts:grant_checked'), {'grant': grant.pk, 'result': 'passed'}).status_code == 204
-    assert holder_client.post(reverse('accounts:grant_checked'), {'grant': grant.pk, 'result': 'failed'}).status_code == 409
+    # Judged with another key than the one it is to, such as one replaced in another tab.
+    assert report(holder_client, grant, 'failed', public_key=os.urandom(PUBLIC_KEY_BYTES)).status_code == 409
+    assert report(holder_client, grant, 'passed').status_code == 204
+    assert report(holder_client, grant, 'failed').status_code == 409
     assert KeyGrant.objects.filter(pk=grant.pk).exists() and not Alert.objects.exists()
 
 
 def test_a_person_fetches_only_grants_to_their_own_current_key_on_keys_in_use(holder, newcomer):
     group_key(holder, newcomer, status=GroupStatus.REJECTED)
     held = client_for(newcomer).get(reverse('accounts:own_grants')).json()
-    assert held == {'grants': [], 'may_start': False}
+    assert held['grants'] == [] and held['may_start'] is False
     assert len(client_for(holder).get(reverse('accounts:own_grants')).json()['grants']) == 1
 
 

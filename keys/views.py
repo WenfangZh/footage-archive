@@ -11,6 +11,7 @@ import json
 import secrets
 
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -22,9 +23,9 @@ from accounts.models import LawyerProfile
 from accounts.roles import applicant_required, key_holder_required, lawyer_required
 
 from . import grants
-from .forms import GrantForm, GroupKeyForm, KeySetupForm
+from .forms import Base64BytesField, GrantForm, GroupKeyForm, KeySetupForm
 from .grants import current_key
-from .models import IN_USE, MEMLIMIT, OPSLIMIT, KeyGrant, LawyerKey
+from .models import IN_USE, MEMLIMIT, OPSLIMIT, PUBLIC_KEY_BYTES, KeyGrant, LawyerKey
 
 
 def login_id(request):
@@ -114,10 +115,13 @@ def own_grants(request):
     """The grants to the person's own current key on the group keys in use, for their browser
     to open and check, and whether it should make the first group key (design §4, §5.3)."""
     profile = request.user.lawyer_profile
+    key = current_key(profile)
     held = KeyGrant.objects.filter(
-        lawyer_key=current_key(profile), group_key__status__in=IN_USE,
+        lawyer_key=key, group_key__status__in=IN_USE,
     ).select_related('group_key').order_by('pk')
     return JsonResponse({
+        # The key these grants are to: the browser opens them only with that key's private half.
+        'public_key': b64(key.public_key) if key else None,
         'grants': [{
             'id': grant.pk, 'group_public_key': b64(grant.group_key.public_key),
             'sealed_private_key': b64(grant.sealed_private_key), 'checked': grant.checked_at is not None,
@@ -131,10 +135,14 @@ def own_grants(request):
 def grant_checked(request):
     """The browser opened a grant to the person's key: it found the group key, or not."""
     grant_id, result = request.POST.get('grant', ''), request.POST.get('result')
-    if not grant_id.isdecimal() or result not in ('passed', 'failed'):
+    try:
+        public_key = Base64BytesField(PUBLIC_KEY_BYTES).clean(request.POST.get('public_key', ''))
+    except ValidationError:
+        public_key = None
+    if not (grant_id.isascii() and grant_id.isdigit()) or result not in ('passed', 'failed') or public_key is None:
         return HttpResponse(status=400)
     try:
-        grants.report_check(request.user.lawyer_profile, int(grant_id), result == 'passed')
+        grants.report_check(request.user.lawyer_profile, int(grant_id), public_key, result == 'passed')
     except grants.Refused:
         return HttpResponse(status=409)
     return HttpResponse(status=204)
@@ -183,7 +191,7 @@ def grant(request, lawyer_key_id):
             grants.grant(profile, recipient_key.pk, form.cleaned_data['grants'])
         except grants.Refused:
             messages.error(request, _('The keys changed while this page was open. Please try again.'))
-            return redirect('lawyer:grant', lawyer_key_id=recipient_key.pk)
+            return redirect('lawyer:waiting')
         messages.success(request, _('%(name)s now holds the group key.') % {'name': recipient_key.lawyer_profile.user.get_full_name()})
         return redirect('lawyer:waiting')
     own = current_key(profile)

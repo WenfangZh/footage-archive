@@ -41,9 +41,12 @@ def current_key(profile):
 
 
 def held():
-    """Grants held by lawyers who are not revoked (design §5.7): a suspended lawyer may be
-    reinstated, and still holds theirs."""
-    return KeyGrant.objects.exclude(lawyer_key__lawyer_profile__status=Status.REVOKED)
+    """Grants to current personal keys of lawyers who are not revoked (design §5.7): a suspended
+    lawyer may be reinstated, and still holds theirs. A retired key's private half is erased,
+    so a grant to it can never be opened."""
+    return KeyGrant.objects.filter(lawyer_key__retired_at__isnull=True).exclude(
+        lawyer_key__lawyer_profile__status=Status.REVOKED,
+    )
 
 
 def reads_vault(profile):
@@ -80,8 +83,13 @@ def start(profile, public_key, sealed_private_key):
         if not may_start(profile):
             raise Refused
         for key in earlier:
-            # A new key whose rotation could not end, or the key it would have replaced.
-            key.status = GroupKey.Status.ABANDONED if key.status == GroupKey.Status.CHECKING else GroupKey.Status.RETIRED
+            # A new key whose rotation could not end, which loses its grants as any abandoned
+            # key does (design §5.5, step 8), or the key it would have replaced.
+            if key.status == GroupKey.Status.CHECKING:
+                key.status = GroupKey.Status.ABANDONED
+                key.grants.all().delete()
+            else:
+                key.status = GroupKey.Status.RETIRED
             key.save(update_fields=['status'])
         group_key = GroupKey.objects.create(public_key=public_key)
         KeyGrant.objects.create(
@@ -111,6 +119,10 @@ def grant(granter, recipient_key_id, sealed):
     colleague misses (design §5.3). `sealed` maps group key ids to sealed private keys."""
     with transaction.atomic():
         lock()
+        # Again, locked: a suspension may have been committed since the page's role check.
+        granter = LawyerProfile.objects.select_for_update().get(pk=granter.pk)
+        if granter.status != Status.LAWYER:
+            raise Refused
         recipient_key = LawyerKey.objects.current().filter(
             pk=recipient_key_id, admin_confirmed_at__isnull=False, lawyer_profile__status=Status.LAWYER,
         ).exclude(lawyer_profile=granter).select_related('lawyer_profile').first()
@@ -132,14 +144,15 @@ def grant(granter, recipient_key_id, sealed):
     return recipient_key
 
 
-def report_check(profile, grant_id, passed):
-    """The recipient's browser opened a grant to their current key (design §4). A grant that
-    failed is deleted, so that they wait for a new one, and the admin is alerted."""
+def report_check(profile, grant_id, public_key, passed):
+    """The recipient's browser opened a grant to their current key, whose public half it names,
+    so that a key replaced meanwhile in another tab is never judged with the old one (design §4).
+    A grant that failed is deleted, so that they wait for a new one, and the admin is alerted."""
     with transaction.atomic():
         lock()
         held_grant = KeyGrant.objects.filter(
             pk=grant_id, lawyer_key__lawyer_profile=profile, lawyer_key__retired_at__isnull=True,
-            group_key__status__in=IN_USE, checked_at__isnull=True,
+            lawyer_key__public_key=public_key, group_key__status__in=IN_USE, checked_at__isnull=True,
         ).first()
         if held_grant is None:
             raise Refused

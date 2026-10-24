@@ -70,6 +70,11 @@
     }
     const held = await response.json();
     const opened = new Map();
+    // A key replaced since this page was shown, in another tab: its grants are not this key's
+    // to open, nor to judge.
+    if (held.public_key !== form.dataset.publicKey) {
+      return opened;
+    }
     for (const grant of held.grants) {
       const groupPrivateKey = keys.openGrant(
         keys.b64.decode(grant.sealed_private_key), personalPrivateKey, keys.b64.decode(grant.group_public_key),
@@ -78,7 +83,9 @@
         opened.set(grant.group_public_key, groupPrivateKey);
       }
       if (!grant.checked) {
-        post(form.dataset.grantCheckedUrl, { grant: grant.id, result: groupPrivateKey ? 'passed' : 'failed' });
+        post(form.dataset.grantCheckedUrl, {
+          grant: grant.id, public_key: held.public_key, result: groupPrivateKey ? 'passed' : 'failed',
+        });
       }
     }
     if (held.may_start) {
