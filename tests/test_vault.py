@@ -12,7 +12,7 @@ from django.db.models import ProtectedError
 from clips import vault
 from clips.editing import delete_clip
 from clips.models import Clip, SealedKey, VaultFile, VaultStorage, VaultText
-from tests.conftest import TEST_CODE, lawyer_text, with_code_holder_key
+from tests.conftest import TEST_CODE, lawyer_text, rotation_attempt, with_code_holder_key
 from tests.conftest import put_vault_file as put_file
 
 # Every file is sealed to the group keys in use: one exists in each test here.
@@ -316,8 +316,8 @@ def test_the_vault_holds_no_plaintext_and_the_database_no_data_key(clip, big_fil
 def test_a_data_key_is_sealed_to_every_group_key_in_use(clip, local_file):
     from keys.models import GroupKey
     GroupKey.objects.update(status=GroupKey.Status.RETIRING)
-    new = GroupKey.objects.create(public_key=os.urandom(32), status=GroupKey.Status.CHECKING)
-    GroupKey.objects.create(public_key=os.urandom(32), status=GroupKey.Status.REJECTED)
+    new = GroupKey.objects.create(public_key=os.urandom(32), status=GroupKey.Status.CHECKING, attempt=rotation_attempt(GroupKey.Status.CHECKING))
+    GroupKey.objects.create(public_key=os.urandom(32), status=GroupKey.Status.REJECTED, attempt=rotation_attempt(GroupKey.Status.REJECTED))
     put_file(clip, vault.PROXY, local_file, 'mp4')
     sealed_to = set(SealedKey.objects.values_list('group_key__status', flat=True))
     assert sealed_to == {GroupKey.Status.RETIRING, GroupKey.Status.CHECKING} and new.sealed_keys.count() == 1
@@ -521,7 +521,7 @@ def test_a_text_moved_to_another_clip_or_kind_does_not_decrypt(clip):
 def test_a_text_is_sealed_to_every_group_key_in_use_and_to_the_code_holder(clip):
     from keys.models import GroupKey
     GroupKey.objects.update(status=GroupKey.Status.RETIRING)
-    GroupKey.objects.create(public_key=os.urandom(32), status=GroupKey.Status.CHECKING)
+    GroupKey.objects.create(public_key=os.urandom(32), status=GroupKey.Status.CHECKING, attempt=rotation_attempt(GroupKey.Status.CHECKING))
     vault.put_text(clip, vault.CONTEXT, 'Filmed from a balcony.')
     sealed = SealedKey.objects.filter(vault_text__isnull=False)
     assert sealed.filter(for_code_holder=True).count() == 1

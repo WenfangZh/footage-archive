@@ -25,7 +25,7 @@ from clips import grid, vault
 from clips.models import Clip, Original, Precision
 from keys import grants
 from keys.models import PUBLIC_KEY_BYTES, SEALED_GROUP_KEY_BYTES, GroupKey, KeyGrant
-from tests.conftest import BASTILLE, hand_over, log_in_with_second_factor, make_case, make_key, put_vault_file, with_code_holder_key, with_data_key
+from tests.conftest import BASTILLE, hand_over, log_in_with_second_factor, make_case, make_key, put_vault_file, rotation_attempt, with_code_holder_key, with_data_key
 
 pytestmark = pytest.mark.django_db
 
@@ -64,7 +64,11 @@ def client_for(profile):
 
 
 def group_key(*holders, status=GroupStatus.CURRENT):
-    key = GroupKey.objects.create(public_key=os.urandom(PUBLIC_KEY_BYTES), status=status)
+    # A rotation's new key names the attempt that made it.
+    rotation_made = status in (GroupStatus.CHECKING, GroupStatus.REJECTED, GroupStatus.ABANDONED)
+    key = GroupKey.objects.create(
+        public_key=os.urandom(PUBLIC_KEY_BYTES), status=status, attempt=rotation_attempt(status) if rotation_made else None,
+    )
     for holder in holders:
         KeyGrant.objects.create(
             group_key=key, lawyer_key=grants.current_key(holder), sealed_private_key=sealed(), granted_by=holder,
@@ -122,7 +126,11 @@ def test_once_every_holder_is_revoked_the_next_lawyer_starts_over():
     # An abandoned key loses its grants (design §5.5, step 8); the retired one keeps them, unreadable.
     assert not new.grants.exists() and old.grants.exists()
     assert GroupKey.objects.get(status=GroupStatus.CURRENT).grants.get().lawyer_key.lawyer_profile == other
-    assert AuditEntry.objects.get().action == Action.STARTING_OVER
+    # The rotation running ends with it, its attempt abandoned as the archive started over.
+    assert set(AuditEntry.objects.values_list('action', flat=True)) == {Action.STARTING_OVER, Action.ROTATION_ABANDON}
+    attempt = new.attempt
+    attempt.refresh_from_db()
+    assert attempt.abandoned_because == 'started_over' and attempt.rotation.ended_at is not None
 
 
 def test_only_a_lawyer_with_a_confirmed_key_makes_the_group_key():

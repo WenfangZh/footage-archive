@@ -508,3 +508,62 @@ def delete_stray_files(now=None):
 
 class TooManyStrays(Exception):
     """More vault files than MAX_STRAY_FILES look stray at once; none was deleted."""
+
+
+# Rotations of the group key (docs/m5-encryption-design.md §5.5): the data keys a rotator's
+# browser reseals from the old group key to the new one, and the checkers check. The vault's
+# rows stay here; keys.rotation decides who may do what, under the group key lock.
+
+def _item(sealed):
+    return {'vault_file_id': sealed.vault_file_id} if sealed.vault_file_id else {'vault_text_id': sealed.vault_text_id}
+
+
+def _key_check_of(sealed):
+    return bytes((sealed.vault_file or sealed.vault_text).key_check)
+
+
+def _not_yet_resealed(old_key, new_key):
+    """Data keys sealed to `old_key` whose item has none sealed to `new_key` yet."""
+    return SealedKey.objects.filter(group_key=old_key).exclude(
+        vault_file__sealed_keys__group_key=new_key,
+    ).exclude(vault_text__sealed_keys__group_key=new_key)
+
+
+def to_reseal(old_key, new_key, after=0, limit=100):
+    """The next batch of data keys to reseal, with their key check values, by id after `after`."""
+    rows = _not_yet_resealed(old_key, new_key).filter(pk__gt=after).select_related('vault_file', 'vault_text')
+    return [
+        {'id': sealed.pk, 'sealed_data_key': bytes(sealed.sealed_data_key), 'key_check': _key_check_of(sealed)}
+        for sealed in rows.order_by('pk')[:limit]
+    ]
+
+
+def left_to_reseal(old_key, new_key):
+    return _not_yet_resealed(old_key, new_key).exists()
+
+
+def store_resealed(old_sealed_id, old_key, new_key, sealed_data_key, sealer):
+    """Store a data key the rotator resealed to `new_key`, unless its item has one already (one
+    the server sealed at an upload or edit is never replaced) or is gone. Returns whether it was."""
+    old = SealedKey.objects.filter(pk=old_sealed_id, group_key=old_key).first()
+    if old is None or SealedKey.objects.filter(group_key=new_key, **_item(old)).exists():
+        return False
+    SealedKey.objects.create(group_key=new_key, sealed_data_key=sealed_data_key, sealed_by=sealer, **_item(old))
+    return True
+
+
+def resealed_by(new_key, sealer, ids=None):
+    """The data keys `sealer` resealed to `new_key`, with their key check values, for a checker."""
+    rows = SealedKey.objects.filter(group_key=new_key, sealed_by=sealer).select_related('vault_file', 'vault_text')
+    if ids is not None:
+        rows = rows.filter(pk__in=ids)
+    return [
+        {'id': sealed.pk, 'sealed_data_key': bytes(sealed.sealed_data_key), 'key_check': _key_check_of(sealed)}
+        for sealed in rows.order_by('pk')
+    ]
+
+
+def forget_sealed_keys(group_key):
+    """Delete every data key sealed to `group_key`: once a rotation ends, the old key opens
+    nothing in the database; once an attempt fails, its new key's copies are gone."""
+    SealedKey.objects.filter(group_key=group_key).delete()

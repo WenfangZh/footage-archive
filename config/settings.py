@@ -294,6 +294,15 @@ CASE_AREA_CAP_METRES = env_int('CASE_AREA_CAP_METRES', default=2_000, minimum=1,
 # A case not used for this long (no search, preview or download since its creation or
 # its last use) closes on its own (SPEC.md §7).
 CASE_INACTIVITY_DAYS = env_int('CASE_INACTIVITY_DAYS', default=365, minimum=1, maximum=36_500)
+
+# Rotations of the group key (docs/m5-encryption-design.md §5.5). A role in an attempt (the
+# rotator's resealing, a checker's or confirmer's check) has this many days before it is given
+# up or drawn again; a lawyer is drawn only if they unlocked their key within the last
+# ROTATION_UNLOCK_DAYS; and the admin is alerted when a rotation has waited this long for
+# enough lawyers to start.
+ROTATION_ROLE_DAYS = env_int('ROTATION_ROLE_DAYS', default=3, minimum=1, maximum=30)
+ROTATION_UNLOCK_DAYS = env_int('ROTATION_UNLOCK_DAYS', default=7, minimum=1, maximum=60)
+ROTATION_START_ALERT_DAYS = env_int('ROTATION_START_ALERT_DAYS', default=7, minimum=1, maximum=60)
 # A stated time more than this many minutes from the metadata time is highlighted to
 # lawyers (SPEC.md §7).
 TIME_MISMATCH_MINUTES = env_int('TIME_MISMATCH_MINUTES', default=15, minimum=1)

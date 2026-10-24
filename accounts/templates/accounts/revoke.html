@@ -11,6 +11,9 @@
   <p>{% blocktranslate with name=profile.user.get_full_name %}{{ name }} will lose access for good. They have no open cases.{% endblocktranslate %}</p>
   {% endif %}
   <p>{% translate "This can never be undone. Nothing they did is deleted. To suspend their access for a while instead, use suspension." %}</p>
+  {% if last_holder %}
+    <p role="alert"><strong>{% translate "They are the last lawyer holding the group key. Once they are revoked, no one can read what the vault holds: it becomes unreadable for good. Have the group key given to another lawyer first, unless revoking cannot wait." %}</strong></p>
+  {% endif %}
   <form method="post" action="{% url 'manage:revoke' profile.pk %}">
     {% csrf_token %}
     {% if wrong %}<p role="alert">{% translate "The address typed does not match." %}</p>{% endif %}

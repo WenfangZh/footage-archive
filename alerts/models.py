@@ -21,6 +21,13 @@ class Alert(models.Model):
         MANY_DOWNLOADS = 'many_downloads', _('Many downloads by one lawyer in a short time')
         MANY_CASES = 'many_cases', _('Many cases created by one lawyer in a short time')
         KEY_GRANT_FAILED = 'key_grant_failed', _('A key grant did not open for the lawyer who received it')
+        # Rotations of the group key (docs/m5-encryption-design.md §5.5): each names the lawyer concerned.
+        ROTATION_NOT_STARTING = 'rotation_not_starting', _('A rotation of the group key has waited long for enough lawyers')
+        ROTATOR_TIME = 'rotator_time', _('A rotator did not finish resealing in time')
+        ROTATION_ROLE_REDRAWN = 'rotation_role_redrawn', _('A lawyer drawn to check a rotation did not, in time')
+        ROTATION_NO_ONE_ELIGIBLE = 'rotation_no_one_eligible', _('No lawyer could be drawn for a rotation')
+        ROTATION_DISPUTED = 'rotation_disputed', _('Two lawyers disagree about a rotation')
+        ROTATION_REJECTED = 'rotation_rejected', _('A rotation of the group key failed its checks')
 
     kind = models.CharField(max_length=30, choices=Kind.choices)
     account = models.ForeignKey(

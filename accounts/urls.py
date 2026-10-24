@@ -31,6 +31,13 @@ lawyer_patterns = [
     # Handing over the group key (keys.views).
     path('keys/', key_views.waiting, name='waiting'),
     path('keys/<int:lawyer_key_id>/', key_views.grant, name='grant'),
+    # Rotations of the group key, for the rotator's and checkers' browsers (keys.views).
+    path('rotation/role.json', key_views.rotation_role, name='rotation_role'),
+    path('rotation/new-key/', key_views.rotation_new_key, name='rotation_new_key'),
+    path('rotation/reseal.json', key_views.rotation_reseal, name='rotation_reseal'),
+    path('rotation/resealed/', key_views.rotation_resealed, name='rotation_resealed'),
+    path('rotation/check.json', key_views.rotation_to_check, name='rotation_to_check'),
+    path('rotation/checked/', key_views.rotation_checked, name='rotation_checked'),
     # The map's data, never logged (maps.apps): keep every route of it under map/.
     path('map/style.json', map_views.style, name='map_style'),
     path('map/tiles.pmtiles', map_views.tiles, name='map_tiles'),

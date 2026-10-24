@@ -11,6 +11,8 @@ import binascii
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
+from clips.models import SEALED_DATA_KEY_BYTES
+
 from .models import ENCRYPTED_PRIVATE_KEY_BYTES, PUBLIC_KEY_BYTES, SALT_BYTES, SEALED_GROUP_KEY_BYTES
 
 
@@ -66,3 +68,47 @@ class GrantForm(forms.Form):
     safety_number_compared = forms.BooleanField(
         label=_('I compared this safety number with them, by phone or in person.'),
     )
+
+
+class SealedByIdField(forms.JSONField):
+    """{id: a key sealed to something, `length` bytes in base64}, as a JSON object of at most
+    `limit` entries."""
+
+    widget = forms.HiddenInput
+
+    def __init__(self, length, limit, **kwargs):
+        self.length, self.limit = length, limit
+        super().__init__(**kwargs)
+
+    def to_python(self, value):
+        value = super().to_python(value)
+        sealed = Base64BytesField(self.length)
+        if not isinstance(value, dict) or len(value) > self.limit or not all(
+            key.isascii() and key.isdigit() for key in value
+        ):
+            raise forms.ValidationError(_('The key could not be read.'))
+        return {int(key): sealed.clean(item) for key, item in value.items()}
+
+
+class NewGroupKeyForm(forms.Form):
+    """A rotator's new group key, sealed to each lawyer key holding the old one (design §5.5)."""
+
+    public_key = Base64BytesField(PUBLIC_KEY_BYTES)
+    grants = SealedByIdField(SEALED_GROUP_KEY_BYTES, limit=10_000)
+
+
+class ResealedForm(forms.Form):
+    """Data keys a rotator resealed to the new group key, by the id of the one sealed to the old."""
+
+    resealed = SealedByIdField(SEALED_DATA_KEY_BYTES, limit=500)
+
+
+class CheckResultForm(forms.Form):
+    result = forms.ChoiceField(choices=[('passed', 'passed'), ('failed', 'failed')])
+    failed_items = forms.JSONField(required=False)
+
+    def clean_failed_items(self):
+        items = self.cleaned_data['failed_items'] or []
+        if not isinstance(items, list) or len(items) > 10_000 or not all(type(item) is int for item in items):
+            raise forms.ValidationError(_('The key could not be read.'))
+        return items
