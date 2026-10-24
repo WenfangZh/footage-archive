@@ -79,7 +79,6 @@ def test_the_evidence_copy_in_the_vault_matches_its_hash_record(phone_video, tmp
     assert [list(pair) for pair in hashing.stream_hashes(copy, 60)] == record.original_stream_hashes
 
 
-
 def test_after_ingest_the_vault_holds_no_plaintext_of_either_file(phone_video, group_key_pair, settings):
     clip = confirmed_clip(phone_video)
     ingest.ingest(clip)
