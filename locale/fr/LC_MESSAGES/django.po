@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-24 02:55+0200\n"
+"POT-Creation-Date: 2026-10-24 12:29+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -351,7 +351,7 @@ msgid "Default margin"
 msgstr "Marge par défaut"
 
 #: accounts/templates/accounts/lawyer_home.html:18
-#: cases/templates/cases/clip.html:13 keys/templates/keys/key.html:4
+#: cases/templates/cases/clip.html:23 keys/templates/keys/key.html:4
 #: keys/templates/keys/key.html:15
 msgid "Your personal key"
 msgstr "Votre clé personnelle"
@@ -1063,21 +1063,21 @@ msgstr "Décider"
 msgid "No requests are waiting."
 msgstr "Aucune demande en attente."
 
-#: cases/templates/cases/clip.html:4 cases/templates/cases/clip.html:7
+#: cases/templates/cases/clip.html:4 cases/templates/cases/clip.html:17
 msgid "Clip"
 msgstr "Clip"
 
-#: cases/templates/cases/clip.html:8
+#: cases/templates/cases/clip.html:18
 msgid "Core match for this case."
 msgstr "Correspondance centrale pour ce dossier de recherche."
 
-#: cases/templates/cases/clip.html:8
+#: cases/templates/cases/clip.html:18
 msgid "Margin match for this case: just outside its time window or area."
 msgstr ""
 "Correspondance de marge pour ce dossier de recherche : juste en dehors de sa "
 "plage horaire ou de son périmètre."
 
-#: cases/templates/cases/clip.html:12
+#: cases/templates/cases/clip.html:22
 msgid ""
 "You do not hold the group key yet, so the archive shows you only this clip's "
 "index data: no preview, evidence copy, context or contact details."
@@ -1086,21 +1086,29 @@ msgstr ""
 "données d'index de ce clip, sans version de prévisualisation, copie de "
 "preuve, contexte ni moyen de contact."
 
-#: cases/templates/cases/clip.html:17
+#: cases/templates/cases/clip.html:30
+msgid ""
+"This clip's files could not be opened with your key. Reload the page; if it "
+"happens again, tell the admin."
+msgstr ""
+"Les fichiers de ce clip n'ont pas pu être ouverts avec votre clé. Rechargez "
+"la page ; si cela se reproduit, prévenez l'administrateur·rice."
+
+#: cases/templates/cases/clip.html:33
 msgid "A low-resolution preview. Watching it is recorded in the audit log."
 msgstr ""
 "Une version de prévisualisation en basse résolution. La regarder est inscrit "
 "au journal d'audit."
 
-#: cases/templates/cases/clip.html:20
+#: cases/templates/cases/clip.html:38
 msgid "Download the evidence copy"
 msgstr "Télécharger la copie de preuve"
 
-#: cases/templates/cases/clip.html:21
+#: cases/templates/cases/clip.html:39
 msgid "Download its hash record"
 msgstr "Télécharger les empreintes numériques (hash)"
 
-#: cases/templates/cases/clip.html:22
+#: cases/templates/cases/clip.html:40
 msgid ""
 "The evidence copy holds the clip's video and audio streams unchanged, never "
 "re-encoded, in a new container without the file's own metadata; its hash "
@@ -1112,7 +1120,7 @@ msgstr ""
 "fichier ; ses empreintes numériques (hash) montrent que les images n'ont pas "
 "été modifiées. Chaque téléchargement est inscrit au journal d'audit."
 
-#: cases/templates/cases/clip.html:25
+#: cases/templates/cases/clip.html:43
 #, python-format
 msgid "The stated time is %(minutes)s minute away from the metadata time."
 msgid_plural ""
@@ -1122,76 +1130,76 @@ msgstr[0] ""
 msgstr[1] ""
 "L'heure indiquée est à %(minutes)s minutes de l'heure des métadonnées."
 
-#: cases/templates/cases/clip.html:28 clips/templates/clips/clip.html:34
+#: cases/templates/cases/clip.html:46 clips/templates/clips/clip.html:34
 #: clips/templates/clips/confirm.html:15
 msgid "Time"
 msgstr "Heure"
 
-#: cases/templates/cases/clip.html:30 clips/models.py:180
+#: cases/templates/cases/clip.html:48 clips/models.py:180
 msgid "Stated time"
 msgstr "Heure indiquée"
 
-#: cases/templates/cases/clip.html:31
+#: cases/templates/cases/clip.html:49
 msgid "Metadata time"
 msgstr "Heure des métadonnées"
 
-#: cases/templates/cases/clip.html:31 cases/templates/cases/clip.html:32
-#: cases/templates/cases/clip.html:47 cases/templates/cases/place.html:1
+#: cases/templates/cases/clip.html:49 cases/templates/cases/clip.html:50
+#: cases/templates/cases/clip.html:65 cases/templates/cases/place.html:1
 msgid "not given"
 msgstr "non renseigné"
 
-#: cases/templates/cases/clip.html:32
+#: cases/templates/cases/clip.html:50
 msgid "Stated time as uploaded"
 msgstr "Heure indiquée telle qu'uploadée"
 
-#: cases/templates/cases/clip.html:33
+#: cases/templates/cases/clip.html:51
 msgid "Duration"
 msgstr "Durée"
 
-#: cases/templates/cases/clip.html:33 cases/templates/cases/matches.html:5
+#: cases/templates/cases/clip.html:51 cases/templates/cases/matches.html:5
 #, python-format
 msgid "%(seconds)s s"
 msgstr "%(seconds)s s"
 
-#: cases/templates/cases/clip.html:36 clips/templates/clips/clip.html:39
+#: cases/templates/cases/clip.html:54 clips/templates/clips/clip.html:39
 #: clips/templates/clips/confirm.html:25
 msgid "Place"
 msgstr "Lieu"
 
-#: cases/templates/cases/clip.html:38 clips/models.py:181
+#: cases/templates/cases/clip.html:56 clips/models.py:181
 msgid "Stated location"
 msgstr "Lieu indiqué"
 
-#: cases/templates/cases/clip.html:39 clips/models.py:185
+#: cases/templates/cases/clip.html:57 clips/models.py:185
 msgid "Metadata location"
 msgstr "Lieu des métadonnées"
 
-#: cases/templates/cases/clip.html:40
+#: cases/templates/cases/clip.html:58
 msgid "Stated location as uploaded"
 msgstr "Lieu indiqué tel qu'uploadé"
 
-#: cases/templates/cases/clip.html:43 clips/models.py:182
+#: cases/templates/cases/clip.html:61 clips/models.py:182
 msgid "Tags"
 msgstr "Étiquettes"
 
-#: cases/templates/cases/clip.html:46
+#: cases/templates/cases/clip.html:64
 msgid "No tags."
 msgstr "Aucune étiquette."
 
-#: cases/templates/cases/clip.html:47
+#: cases/templates/cases/clip.html:65
 msgid "Tags as uploaded:"
 msgstr "Étiquettes telles qu'uploadées :"
 
-#: cases/templates/cases/clip.html:50 clips/forms.py:69 clips/models.py:183
+#: cases/templates/cases/clip.html:68 clips/forms.py:69 clips/models.py:183
 #: clips/models.py:228
 msgid "Context"
 msgstr "Contexte"
 
-#: cases/templates/cases/clip.html:55 clips/models.py:184 clips/models.py:229
+#: cases/templates/cases/clip.html:73 clips/models.py:184 clips/models.py:229
 msgid "Contact details"
 msgstr "Moyen de contact"
 
-#: cases/templates/cases/clip.html:57
+#: cases/templates/cases/clip.html:75
 msgid ""
 "The code holder chose to leave these, knowing they could be used against "
 "them. Use them only for this case, and keep them out of anything you share."
@@ -1200,16 +1208,16 @@ msgstr ""
 "pourrait être utilisé contre elle. Ne l'utilisez que pour ce dossier de "
 "recherche, et ne le faites figurer dans rien de ce que vous partagez."
 
-#: cases/templates/cases/clip.html:60
+#: cases/templates/cases/clip.html:78
 msgid "Edits since upload"
 msgstr "Modifications depuis l'upload"
 
-#: cases/templates/cases/clip.html:62
+#: cases/templates/cases/clip.html:80
 #, python-format
 msgid "%(field)s: %(day)s, in the four hours from %(start)s"
 msgstr "%(field)s : %(day)s, dans les quatre heures à partir de %(start)s"
 
-#: cases/templates/cases/clip.html:63
+#: cases/templates/cases/clip.html:81
 msgid "None."
 msgstr "Aucun."
 
@@ -1234,6 +1242,24 @@ msgstr "Le garder ouvert"
 #: cases/templates/cases/closed_cases.html:13
 msgid "You have no closed cases."
 msgstr "Vous n'avez aucun dossier de recherche clos."
+
+#: cases/templates/cases/data_key_needed.html:4
+#: cases/templates/cases/data_key_needed.html:7
+msgid "Open the clip's page first"
+msgstr "Ouvrez d'abord la page du clip"
+
+#: cases/templates/cases/data_key_needed.html:8
+msgid ""
+"This file opens only with your key, which the clip's page hands over for two "
+"hours. Open the page again, then watch or download from there."
+msgstr ""
+"Ce fichier ne s'ouvre qu'avec votre clé, que la page du clip transmet pour "
+"deux heures. Ouvrez à nouveau la page, puis regardez ou téléchargez depuis "
+"celle-ci."
+
+#: cases/templates/cases/data_key_needed.html:9
+msgid "Back to the clip"
+msgstr "Retour au clip"
 
 #: cases/templates/cases/default_margin.html:8
 msgid ""
@@ -1477,11 +1503,11 @@ msgstr "personne qui détient le code"
 msgid "lawyer"
 msgstr "avocat·e"
 
-#: clips/models.py:267
+#: clips/models.py:268
 msgid "Evidence copy"
 msgstr "Copie de preuve"
 
-#: clips/models.py:268
+#: clips/models.py:269
 msgid "Proxy"
 msgstr "Version de prévisualisation"
 
@@ -2087,18 +2113,18 @@ msgstr "parrainage : %(vouched_by)s"
 msgid "No one is waiting for the group key."
 msgstr "Personne n'attend la clé commune."
 
-#: keys/views.py:56
+#: keys/views.py:55
 msgid "Your key is set up. Unlock it once to check your key passphrase."
 msgstr ""
 "Votre clé est créée. Déverrouillez-la une fois pour vérifier votre phrase "
 "secrète."
 
-#: keys/views.py:187
+#: keys/views.py:193
 msgid "The keys changed while this page was open. Please try again."
 msgstr ""
 "Les clés ont changé pendant que cette page était ouverte. Veuillez réessayer."
 
-#: keys/views.py:189
+#: keys/views.py:195
 #, python-format
 msgid "%(name)s now holds the group key."
 msgstr "%(name)s a maintenant la clé commune."
