@@ -441,3 +441,98 @@ def test_drawing_checkers_that_finds_no_one_abandons_the_attempt(world):
     running.refresh_from_db()
     assert (running.outcome, running.abandoned_because) == ('abandoned', Because.NO_ONE_ELIGIBLE)
     assert Alert.objects.filter(kind=Alert.Kind.ROTATION_NO_ONE_ELIGIBLE, account=None).exists()
+
+
+# From the review: revocation always rotates; keys that cannot serve; a confirmer goes with the
+# failure; abandons alert; the audit log keeps who found a failure.
+
+def revoke(profile):
+    from accounts.access import revoke_locked
+    request = type('Request', (), {'user': User.objects.get_or_create(email='admin@example.org', defaults={
+        'is_staff': True, 'is_superuser': True,
+    })[0]})()
+    with grants.transaction.atomic():
+        revoke_locked(request, LawyerProfile.objects.get(pk=profile.pk))
+
+
+def test_revoking_a_lawyer_whose_grant_is_gone_still_requests_a_rotation(world):
+    revoked = world['lawyers'][4]
+    # They had the group key, and had their grant deleted by reporting it as failing.
+    KeyGrant.objects.filter(lawyer_key__lawyer_profile=revoked).delete()
+    revoke(revoked)
+    world['key'].refresh_from_db()
+    assert world['key'].status == KeyStatus.ROTATION_REQUESTED and Rotation.objects.exists()
+
+
+@pytest.mark.parametrize('public_key', ['zeros', 'the old key'])
+def test_a_new_key_that_could_not_serve_is_refused(world, public_key):
+    request_rotation(world)
+    running = attempt()
+    client = client_for(running.rotator)
+    role = client.get(reverse('lawyer:rotation_role')).json()
+    sealed = {str(item['lawyer_key']): b64(os.urandom(80)) for item in role['seal_to']}
+    value = bytes(32) if public_key == 'zeros' else bytes(world['key'].public_key)
+    response = client.post(reverse('lawyer:rotation_new_key'), {'public_key': b64(value), 'grants': json.dumps(sealed)})
+    assert response.status_code in (400, 409) and rotation.new_key_of(running) is None
+
+
+def test_a_confirmer_goes_with_the_failure_once_its_checker_is_replaced(world):
+    lawyers = world['lawyers'] + [lawyer('fay'), lawyer('gus')]
+    give(world['key'], *lawyers[5:])
+    running = ready_for_checks(world)
+    failing = slot_holder(running, Slot.FIRST)
+    rotation.report(failing, False, resealed_ids(running))
+    confirmer = slot_holder(running, Slot.CONFIRMING)
+    with grants.transaction.atomic():
+        failing.change_status(Status.SUSPENDED)
+        grants.lock()
+        rotation.suspended(failing)
+    assert not running.checks.filter(slot=Slot.CONFIRMING, replaced_at__isnull=True).exists()
+    with pytest.raises(rotation.Refused):
+        rotation.report(confirmer, True)
+    # The new checker's failure is confirmed afresh.
+    rotation.report(slot_holder(running, Slot.FIRST), False, resealed_ids(running)[:1])
+    assert running.checks.filter(slot=Slot.CONFIRMING, replaced_at__isnull=True).exists()
+    running.refresh_from_db()
+    assert running.ended_at is None
+
+
+@pytest.mark.parametrize('cause', ['new request', 'rotator suspended'])
+def test_every_abandon_but_starting_over_alerts_the_admin(world, cause):
+    request_rotation(world)
+    running = attempt()
+    make_new_key(running)
+    if cause == 'new request':
+        request_rotation(world, by=world['lawyers'][4])
+    else:
+        with grants.transaction.atomic():
+            running.rotator.change_status(Status.SUSPENDED)
+            grants.lock()
+            rotation.suspended(running.rotator)
+    assert Alert.objects.filter(kind=Alert.Kind.ROTATION_ABANDONED, account=running.rotator.user).exists()
+
+
+def test_the_audit_log_keeps_who_passed_and_who_found_a_failure(world):
+    running = ready_for_checks(world)
+    first, second = slot_holder(running, Slot.FIRST), slot_holder(running, Slot.SECOND)
+    rotation.report(first, False, resealed_ids(running))
+    rotation.report(second, False, resealed_ids(running))
+    entries = AuditEntry.objects.filter(rotation_attempt=running)
+    assert set(entries.filter(action=Action.ROTATION_CHECK_FAILED).values_list('lawyer_profile', flat=True)) == {first.pk, second.pk}
+    assert entries.get(action=Action.ROTATION_REJECTION).lawyer_profile == running.rotator
+    assert entries.get(action=Action.ROTATION_ATTEMPT).lawyer_profile == running.rotator
+
+
+@pytest.mark.parametrize('name, data', [
+    ('lawyer:rotation_reseal', {'after': '9' * 5000}),
+])
+def test_numbers_too_long_to_be_ids_are_refused(world, name, data):
+    request_rotation(world)
+    assert client_for(attempt().rotator).get(reverse(name), data).status_code == 400
+
+
+def test_a_check_with_numbers_too_long_to_be_ids_is_refused(world):
+    running = ready_for_checks(world)
+    client = client_for(slot_holder(running, Slot.FIRST))
+    response = client.post(reverse('lawyer:rotation_checked'), {'result': 'failed', 'failed_items': '[' + '9' * 5000 + ']'})
+    assert response.status_code == 400

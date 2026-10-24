@@ -155,6 +155,10 @@ def submit_new_key(profile, public_key, sealed):
         to = {key.pk: key for key in lawyer_keys_to_seal_to(attempt)}
         if new_key_of(attempt) is not None or set(sealed) != set(to):
             raise Refused
+        # Never a key the archive has held: the old one would still open everything, for the very
+        # lawyer whose revocation this rotation answers.
+        if GroupKey.objects.filter(public_key=public_key).exists():
+            raise Refused
         old = attempt.rotation.group_key
         new = GroupKey.objects.create(public_key=public_key, status=Status.CHECKING, attempt=attempt)
         own = grants.current_key(profile)
@@ -263,7 +267,8 @@ def report(profile, passed, failed_items=()):
         check.result = Result.PASSED if passed else Result.FAILED
         check.failed_items = failed_items if check.slot != Slot.CONFIRMING else check.failed_items
         check.save(update_fields=['result', 'failed_items'])
-        record(Action.ROTATION_CHECK, profile, rotation_attempt=attempt)
+        # Who passed and who found a failure, kept in the append-only log.
+        record(Action.ROTATION_CHECK_PASSED if passed else Action.ROTATION_CHECK_FAILED, profile, rotation_attempt=attempt)
         decide(attempt)
 
 
@@ -297,6 +302,9 @@ def decide(attempt):
 def end(attempt):
     """Two passed checks: the old key opens nothing in the database any more."""
     old, new = attempt.rotation.group_key, new_key_of(attempt)
+    if vault.left_to_reseal(old, new):
+        # Never: checkers are drawn only once nothing is left. Deleting now would lose an item.
+        raise Refused
     vault.forget_sealed_keys(old)
     KeyGrant.objects.filter(group_key=old).delete()
     old.status = Status.RETIRED
@@ -327,6 +335,8 @@ def abandon(attempt, because):
         raise_alert(Alert.Kind.ROTATOR_TIME, attempt.rotator.user)
     elif because == Because.NO_ONE_ELIGIBLE:
         raise_alert(Alert.Kind.ROTATION_NO_ONE_ELIGIBLE)
+    elif because in (Because.NEW_REQUEST, Because.ROTATOR_SUSPENDED):
+        raise_alert(Alert.Kind.ROTATION_ABANDONED, attempt.rotator.user)
     if because not in (Because.STARTED_OVER, Because.NEW_REQUEST):
         start(attempt.rotation)
 
@@ -351,6 +361,19 @@ def _close(attempt, outcome, because=''):
     attempt.save(update_fields=['ended_at', 'outcome', 'abandoned_because'])
 
 
+def replace(attempt, check, also_excluding=(), now=None):
+    """Draw the check's slot again. A confirmer goes with the failure they were confirming: once
+    the checker who reported it is replaced, their failure no longer stands, and the new
+    checker's result decides afresh. Returns whether the attempt goes on."""
+    now = now or timezone.now()
+    check.replaced_at = now
+    check.save(update_fields=['replaced_at'])
+    if check.slot != Slot.CONFIRMING and check.result == Result.FAILED:
+        attempt.checks.filter(slot=Slot.CONFIRMING, replaced_at__isnull=True).update(replaced_at=now)
+    failed_items = check.failed_items if check.slot == Slot.CONFIRMING else ()
+    return draw_slot(attempt, check.slot, failed_items, also_excluding=also_excluding, now=now)
+
+
 # Suspension (step 4) and starting over (§5.7).
 
 def suspended(profile):
@@ -364,9 +387,7 @@ def suspended(profile):
         abandon(attempt, Because.ROTATOR_SUSPENDED)
         return
     for check in attempt.checks.filter(lawyer_profile=profile, replaced_at__isnull=True):
-        check.replaced_at = timezone.now()
-        check.save(update_fields=['replaced_at'])
-        if not draw_slot(attempt, check.slot, failed_items=check.failed_items if check.slot == Slot.CONFIRMING else ()):
+        if not replace(attempt, check):
             return
 
 
@@ -397,15 +418,12 @@ def tick(now=None):
             start(rotation, now=now)
             return
         if attempt.resealed_at is None:
-            if now - attempt.drawn_at >= role_days():
+            finish_resealing_if_done(attempt, now=now)
+            attempt.refresh_from_db()
+            if attempt.resealed_at is None and attempt.ended_at is None and now - attempt.drawn_at >= role_days():
                 abandon(attempt, Because.ROTATOR_TIME)
-            else:
-                finish_resealing_if_done(attempt, now=now)
             return
         for check in attempt.checks.filter(replaced_at__isnull=True, result=Result.NONE, drawn_at__lte=now - role_days()):
-            check.replaced_at = now
-            check.save(update_fields=['replaced_at'])
             raise_alert(Alert.Kind.ROTATION_ROLE_REDRAWN, check.lawyer_profile.user)
-            failed_items = check.failed_items if check.slot == Slot.CONFIRMING else ()
-            if not draw_slot(attempt, check.slot, failed_items, also_excluding={check.lawyer_profile_id}, now=now):
+            if not replace(attempt, check, also_excluding={check.lawyer_profile_id}, now=now):
                 return

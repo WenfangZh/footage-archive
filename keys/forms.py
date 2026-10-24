@@ -7,6 +7,7 @@ browser. A group key's private half arrives only sealed to a lawyer's personal k
 
 import base64
 import binascii
+import json
 
 from django import forms
 from django.utils.translation import gettext_lazy as _
@@ -43,10 +44,25 @@ class KeySetupForm(forms.Form):
     private_key_under_recovery_key = Base64BytesField(ENCRYPTED_PRIVATE_KEY_BYTES)
 
 
+def sealable(public_key):
+    """A public key a data key can be sealed to: libsodium refuses some 32-byte values (points of
+    small order), which would make every upload and edit fail once they were a group key."""
+    from nacl.exceptions import CryptoError
+    from nacl.public import PublicKey, SealedBox
+    try:
+        SealedBox(PublicKey(public_key)).encrypt(b'test')
+    except (CryptoError, RuntimeError, ValueError):
+        raise forms.ValidationError(_('The key could not be read.')) from None
+    return public_key
+
+
 class GroupKeyForm(forms.Form):
     """A group key made in the first lawyer's browser, and its grant to them (design §5.3)."""
 
     public_key = Base64BytesField(PUBLIC_KEY_BYTES)
+
+    def clean_public_key(self):
+        return sealable(self.cleaned_data['public_key'])
     sealed_private_key = Base64BytesField(SEALED_GROUP_KEY_BYTES)
 
 
@@ -58,7 +74,7 @@ class SealedGroupKeysField(forms.JSONField):
     def to_python(self, value):
         value = super().to_python(value)
         sealed = Base64BytesField(SEALED_GROUP_KEY_BYTES)
-        if not isinstance(value, dict) or not all(key.isascii() and key.isdigit() for key in value):
+        if not isinstance(value, dict) or not all(key.isascii() and key.isdigit() and len(key) <= 18 for key in value):
             raise forms.ValidationError(_('The key could not be read.'))
         return {int(key): sealed.clean(item) for key, item in value.items()}
 
@@ -84,7 +100,7 @@ class SealedByIdField(forms.JSONField):
         value = super().to_python(value)
         sealed = Base64BytesField(self.length)
         if not isinstance(value, dict) or len(value) > self.limit or not all(
-            key.isascii() and key.isdigit() for key in value
+            key.isascii() and key.isdigit() and len(key) <= 18 for key in value
         ):
             raise forms.ValidationError(_('The key could not be read.'))
         return {int(key): sealed.clean(item) for key, item in value.items()}
@@ -96,6 +112,9 @@ class NewGroupKeyForm(forms.Form):
     public_key = Base64BytesField(PUBLIC_KEY_BYTES)
     grants = SealedByIdField(SEALED_GROUP_KEY_BYTES, limit=10_000)
 
+    def clean_public_key(self):
+        return sealable(self.cleaned_data['public_key'])
+
 
 class ResealedForm(forms.Form):
     """Data keys a rotator resealed to the new group key, by the id of the one sealed to the old."""
@@ -105,10 +124,15 @@ class ResealedForm(forms.Form):
 
 class CheckResultForm(forms.Form):
     result = forms.ChoiceField(choices=[('passed', 'passed'), ('failed', 'failed')])
-    failed_items = forms.JSONField(required=False)
+    failed_items = forms.CharField(required=False)
 
     def clean_failed_items(self):
-        items = self.cleaned_data['failed_items'] or []
-        if not isinstance(items, list) or len(items) > 10_000 or not all(type(item) is int for item in items):
+        try:
+            items = json.loads(self.cleaned_data['failed_items'] or '[]')
+        except ValueError:  # Also a number too long for Python to read.
+            raise forms.ValidationError(_('The key could not be read.')) from None
+        if not isinstance(items, list) or len(items) > 10_000 or not all(
+            type(item) is int and 0 < item < 10 ** 18 for item in items
+        ):
             raise forms.ValidationError(_('The key could not be read.'))
         return items

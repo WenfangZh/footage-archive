@@ -90,7 +90,7 @@ def start(profile, public_key, sealed_private_key):
     with transaction.atomic():
         lock()
         profile = LawyerProfile.objects.select_for_update().get(pk=profile.pk)
-        if not may_start(profile):
+        if not may_start(profile) or GroupKey.objects.filter(public_key=public_key).exists():
             raise Refused
         # A rotation running ends, its new key abandoned: no one left can finish it.
         from . import rotation  # Here: keys.rotation imports this module.

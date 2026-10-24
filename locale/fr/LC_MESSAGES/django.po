@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-24 19:29+0200\n"
+"POT-Creation-Date: 2026-10-24 19:46+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -646,11 +646,18 @@ msgstr "Deux avocat·es sont en désaccord sur un renouvellement"
 msgid "A rotation of the group key failed its checks"
 msgstr "Un renouvellement de la clé commune a échoué aux vérifications"
 
-#: alerts/models.py:48
+#: alerts/models.py:31
+msgid ""
+"A rotation attempt was given up: a new request, or its rotator suspended"
+msgstr ""
+"Une tentative de renouvellement a été abandonnée : une nouvelle demande, ou "
+"la suspension de la personne qui renouvelle la clé commune"
+
+#: alerts/models.py:49
 msgid "Downloads"
 msgstr "Téléchargements"
 
-#: alerts/models.py:49
+#: alerts/models.py:50
 msgid "Cases created"
 msgstr "Dossiers de recherche créés"
 
@@ -822,20 +829,25 @@ msgstr "Nouvelle clé commune, de la personne qui la renouvelle"
 
 #: audit/models.py:60
 msgctxt "audit log action"
-msgid "Check of a rotation"
-msgstr "Vérification d'un renouvellement"
+msgid "Check of a rotation, passed"
+msgstr "Vérification d'un renouvellement, réussie"
 
 #: audit/models.py:61
+msgctxt "audit log action"
+msgid "Check of a rotation, failed"
+msgstr "Vérification d'un renouvellement, échouée"
+
+#: audit/models.py:62
 msgctxt "audit log action"
 msgid "Rejection of a rotation attempt"
 msgstr "Rejet d'une tentative de renouvellement"
 
-#: audit/models.py:62
+#: audit/models.py:63
 msgctxt "audit log action"
 msgid "Abandoning of a rotation attempt"
 msgstr "Abandon d'une tentative de renouvellement"
 
-#: audit/models.py:63
+#: audit/models.py:64
 msgctxt "audit log action"
 msgid "End of a rotation"
 msgstr "Fin d'un renouvellement"
@@ -1979,12 +1991,12 @@ msgstr "Français"
 msgid "English"
 msgstr "Anglais"
 
-#: keys/forms.py:33 keys/forms.py:35 keys/forms.py:62 keys/forms.py:89
-#: keys/forms.py:113
+#: keys/forms.py:34 keys/forms.py:36 keys/forms.py:55 keys/forms.py:78
+#: keys/forms.py:105 keys/forms.py:133 keys/forms.py:137
 msgid "The key could not be read."
 msgstr "La clé n'a pas pu être lue."
 
-#: keys/forms.py:69
+#: keys/forms.py:85
 msgid "I compared this safety number with them, by phone or in person."
 msgstr ""
 "J'ai comparé ce numéro de sécurité avec la personne, par téléphone ou de "

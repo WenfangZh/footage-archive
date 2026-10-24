@@ -120,10 +120,10 @@ def revoke_locked(request, profile):
         device.delete()
     record(Action.REVOCATION, profile, admin=request.user)
     grants.lock()
-    held_a_key = KeyGrant.objects.filter(lawyer_key__lawyer_profile=profile, group_key__in=grants.in_use()).exists()
     KeyGrant.objects.filter(lawyer_key__lawyer_profile=profile).delete()
     key = grants.current_key(profile)
     if key is not None:
         key.retire()
-    if held_a_key:
-        rotation.request(profile)
+    # Always, even when they hold no grant now: they may have had the group key, and had their
+    # grant deleted (a failure report, a key reset), before being revoked (design §5.5).
+    rotation.request(profile)

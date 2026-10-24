@@ -265,7 +265,7 @@ def rotation_new_key(request):
 @require_GET
 def rotation_reseal(request):
     after = request.GET.get('after', '0')
-    if not (after.isascii() and after.isdigit()):
+    if not (after.isascii() and after.isdigit() and len(after) <= 18):
         return HttpResponse(status=400)
     batch = rotation.reseal_batch(request.user.lawyer_profile, after=int(after))
     return JsonResponse({'items': [_item_json(item) for item in batch]})

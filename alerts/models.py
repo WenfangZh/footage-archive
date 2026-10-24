@@ -28,6 +28,7 @@ class Alert(models.Model):
         ROTATION_NO_ONE_ELIGIBLE = 'rotation_no_one_eligible', _('No lawyer could be drawn for a rotation')
         ROTATION_DISPUTED = 'rotation_disputed', _('Two lawyers disagree about a rotation')
         ROTATION_REJECTED = 'rotation_rejected', _('A rotation of the group key failed its checks')
+        ROTATION_ABANDONED = 'rotation_abandoned', _('A rotation attempt was given up: a new request, or its rotator suspended')
 
     kind = models.CharField(max_length=30, choices=Kind.choices)
     account = models.ForeignKey(

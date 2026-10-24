@@ -57,7 +57,8 @@ class Action(models.TextChoices):
     ROTATION_REQUEST = 'rotation_request', pgettext_lazy('audit log action', 'Request for a rotation of the group key')
     ROTATION_ATTEMPT = 'rotation_attempt', pgettext_lazy('audit log action', 'Drawing of a rotator')
     ROTATION_NEW_KEY = 'rotation_new_key', pgettext_lazy('audit log action', 'New group key from a rotator')
-    ROTATION_CHECK = 'rotation_check', pgettext_lazy('audit log action', 'Check of a rotation')
+    ROTATION_CHECK_PASSED = 'rotation_check_passed', pgettext_lazy('audit log action', 'Check of a rotation, passed')
+    ROTATION_CHECK_FAILED = 'rotation_check_failed', pgettext_lazy('audit log action', 'Check of a rotation, failed')
     ROTATION_REJECTION = 'rotation_rejection', pgettext_lazy('audit log action', 'Rejection of a rotation attempt')
     ROTATION_ABANDON = 'rotation_abandon', pgettext_lazy('audit log action', 'Abandoning of a rotation attempt')
     ROTATION_END = 'rotation_end', pgettext_lazy('audit log action', 'End of a rotation')
@@ -85,7 +86,8 @@ KEY_ACTIONS = [Action.KEY_GRANT]
 # revocation or report requested it, the rotator, or the lawyer who checked.
 ROTATION_ACTIONS = [Action.ROTATION_REQUEST]
 ATTEMPT_ACTIONS = [
-    Action.ROTATION_ATTEMPT, Action.ROTATION_NEW_KEY, Action.ROTATION_CHECK, Action.ROTATION_REJECTION,
+    Action.ROTATION_ATTEMPT, Action.ROTATION_NEW_KEY, Action.ROTATION_CHECK_PASSED, Action.ROTATION_CHECK_FAILED,
+    Action.ROTATION_REJECTION,
     Action.ROTATION_ABANDON, Action.ROTATION_END,
 ]
 # Entries that record limits, before and after.
