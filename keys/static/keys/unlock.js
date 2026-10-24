@@ -102,5 +102,5 @@
     return opened;
   }
 
-  globalThis.ArchiveUnlock = { personalKey, groupKeys };
+  globalThis.ArchiveUnlock = { personalKey, groupKeys, post };
 }());

@@ -200,12 +200,15 @@ def test_the_highest_raise_in_force_applies(lawyer):
     assert activity_limit(lawyer, DOWNLOADS) == 12
 
 
-def test_downloads_through_the_page_are_checked_and_resumes_are_not_counted(lawyer, settings, tmp_path):
+def test_downloads_through_the_page_are_checked_and_resumes_are_not_counted(lawyer, settings, tmp_path, group_key_pair):
+    from clips import vault
+    from tests.conftest import hand_over
     from tests.test_clip_pages import make_clip_for
 
     settings.ALERT_DOWNLOADS = 2
-    case, clip = make_clip_for(lawyer, tmp_path)
+    case, clip, data_keys = make_clip_for(lawyer, tmp_path)
     client = log_in_with_second_factor(Client(), lawyer.user)
+    hand_over(client, case, clip, vault.EVIDENCE_COPY, data_keys[vault.EVIDENCE_COPY])
     url = reverse('lawyer:download', kwargs={'case_id': case.pk, 'clip_id': clip.pk})
     client.get(url, HTTP_RANGE='bytes=0-9')
     client.get(url, HTTP_RANGE='bytes=10-')

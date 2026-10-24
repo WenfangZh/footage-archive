@@ -1,7 +1,17 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{% translate "Clip" %}{% endblock %}
+
+{% block head %}
+  {% if reads_vault %}
+    <script src="{% static 'core/vendor/libsodium/libsodium-sumo.js' %}" defer></script>
+    <script src="{% static 'core/vendor/libsodium/libsodium-wrappers.js' %}" defer></script>
+    <script src="{% static 'keys/keys.js' %}" defer></script>
+    <script src="{% static 'keys/unlock.js' %}" defer></script>
+    <script src="{% static 'keys/clip_keys.js' %}" defer></script>
+  {% endif %}
+{% endblock %}
 
 {% block content %}
   <h1>{% translate "Clip" %}</h1>
@@ -12,12 +22,20 @@
     <p role="note">{% translate "You do not hold the group key yet, so the archive shows you only this clip's index data: no preview, evidence copy, context or contact details." %}
       <a href="{% url 'accounts:key' %}">{% translate "Your personal key" %}</a></p>
   {% endif %}
-  {% if has_proxy %}
-    <video controls preload="none" src="{% url 'lawyer:preview' case_id=case.pk clip_id=clip.pk %}"></video>
-    <p>{% translate "A low-resolution preview. Watching it is recorded in the audit log." %}</p>
+  {% if reads_vault %}
+    <div id="clip-files" data-proxy-keys="{{ proxy_keys }}" data-evidence-keys="{{ evidence_keys }}"
+      data-proxy-key-url="{% url 'lawyer:data_key' case_id=case.pk clip_id=clip.pk file='proxy' %}"
+      data-evidence-key-url="{% url 'lawyer:data_key' case_id=case.pk clip_id=clip.pk file='evidence-copy' %}">
+      {% include "keys/unlock.html" %}
+      <p id="clip-keys-failed" role="alert" hidden>{% translate "This clip's files could not be opened with your key. Reload the page; if it happens again, tell the admin." %}</p>
+      {% if has_proxy %}
+        <video id="preview" controls preload="none" data-src="{% url 'lawyer:preview' case_id=case.pk clip_id=clip.pk %}" hidden></video>
+        <p>{% translate "A low-resolution preview. Watching it is recorded in the audit log." %}</p>
+      {% endif %}
+    </div>
   {% endif %}
 
-  <p>{% if reads_vault %}<a href="{% url 'lawyer:download' case_id=case.pk clip_id=clip.pk %}">{% translate "Download the evidence copy" %}</a>
+  <p>{% if reads_vault %}<a id="download" href="{% url 'lawyer:download' case_id=case.pk clip_id=clip.pk %}" hidden>{% translate "Download the evidence copy" %}</a>
     · {% endif %}<a href="{% url 'lawyer:hash_record' case_id=case.pk clip_id=clip.pk %}">{% translate "Download its hash record" %}</a></p>
   <p>{% translate "The evidence copy holds the clip's video and audio streams unchanged, never re-encoded, in a new container without the file's own metadata; its hash record shows that the frames were not altered. Each download is recorded in the audit log." %}</p>
 

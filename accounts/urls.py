@@ -24,6 +24,8 @@ lawyer_patterns = [
     path('cases/<int:case_id>/clips/<uuid:clip_id>/', clip_pages.clip_page, name='clip'),
     path('cases/<int:case_id>/clips/<uuid:clip_id>/preview/', clip_pages.preview, name='preview'),
     path('cases/<int:case_id>/clips/<uuid:clip_id>/download/', clip_pages.download, name='download'),
+    # Under the clip's own path: the data key cookie it sets is sent nowhere else (cases.clip_pages).
+    path('cases/<int:case_id>/clips/<uuid:clip_id>/data-key/<str:file>/', clip_pages.data_key, name='data_key'),
     path('cases/<int:case_id>/clips/<uuid:clip_id>/hash-record/', clip_pages.hash_record, name='hash_record'),
     path('margin/', case_views.default_margin, name='default_margin'),
     # Handing over the group key (keys.views).

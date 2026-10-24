@@ -11,16 +11,13 @@ from django.db.models import ProtectedError
 
 from clips import vault
 from clips.editing import delete_clip
-from clips.models import Clip, VaultFile, VaultStorage, VaultText
+from clips.models import Clip, SealedKey, VaultFile, VaultStorage, VaultText
+from tests.conftest import put_vault_file as put_file
 
-pytestmark = pytest.mark.django_db
+# Every file is sealed to the group keys in use: one exists in each test here.
+pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures('group_key_pair')]
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-def put_file(clip, kind, source_path, extension):
-    """Store a file and record it as the clip's, as ingest does."""
-    vault.record_file(clip, kind, vault.store_file(source_path, extension))
 
 
 @pytest.fixture
@@ -106,9 +103,10 @@ def local_file(tmp_path):
 
 @pytest.mark.parametrize('kind', [vault.EVIDENCE_COPY, vault.PROXY])
 def test_a_file_goes_in_and_comes_out(clip, local_file, kind):
-    put_file(clip, kind, local_file, 'mp4')
+    data_key = put_file(clip, kind, local_file, 'mp4')
     assert vault.has_file(clip, kind)
-    with vault.open_file(clip, kind) as stored:
+    with vault.open_file(clip, kind, data_key) as stored:
+        assert stored.size == len(local_file.read_bytes())
         assert stored.read() == local_file.read_bytes()
 
 
@@ -128,20 +126,21 @@ def test_a_new_file_replaces_the_old_one_on_disk(
     second = tmp_path / 'second.mp4'
     second.write_bytes(b'second attempt')
     with django_capture_on_commit_callbacks(execute=True):
-        put_file(clip, vault.PROXY, second, 'mp4')
-    [path] = vault_files_on_disk()
-    assert path.read_bytes() == b'second attempt'
+        data_key = put_file(clip, vault.PROXY, second, 'mp4')
+    assert len(vault_files_on_disk()) == 1
+    with vault.open_file(clip, vault.PROXY, data_key) as stored:
+        assert stored.read() == b'second attempt'
     assert VaultFile.objects.count() == 1
 
 
 def test_a_stored_file_belongs_to_no_clip_until_it_is_recorded(clip, local_file):
-    name = vault.store_file(local_file, 'mp4')
+    name, _ = vault.store_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
     assert not VaultFile.objects.exists()
     vault.delete_unrecorded_files([name])
     assert not vault_files_on_disk()
 
-    name = vault.store_file(local_file, 'mp4')
-    vault.record_file(clip, vault.EVIDENCE_COPY, name)
+    name, data_key = vault.store_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
+    vault.record_file(clip, vault.EVIDENCE_COPY, name, data_key)
     vault.delete_unrecorded_files([name])
     assert vault.has_file(clip, vault.EVIDENCE_COPY)
     assert len(vault_files_on_disk()) == 1
@@ -151,13 +150,15 @@ def test_a_failed_copy_leaves_no_file_and_keeps_the_others(clip, local_file, mon
     put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
     before = {path: path.read_bytes() for path in vault_files_on_disk()}
 
+    encrypting = vault._Encrypting.chunks
+
     def disk_fills_up(self, chunk_size=None):
-        yield b'the first chunk'
+        yield next(encrypting(self, chunk_size))
         raise OSError(errno.ENOSPC, 'No space left on device')
 
-    monkeypatch.setattr(BaseFile, 'chunks', disk_fills_up)
+    monkeypatch.setattr(vault._Encrypting, 'chunks', disk_fills_up)
     with pytest.raises(OSError):
-        vault.store_file(local_file, 'mp4')
+        vault.store_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
     assert {path: path.read_bytes() for path in vault_files_on_disk()} == before
 
 
@@ -166,7 +167,7 @@ def test_a_name_clash_fails_without_touching_the_file_there(clip, local_file, mo
     existing = settings.VAULT_DIR / f'{uuid.UUID(int=1).hex}.mp4'
     existing.write_bytes(b'someone else\'s evidence copy')
     with pytest.raises(FileExistsError):
-        vault.store_file(local_file, 'mp4')
+        vault.store_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
     assert vault_files_on_disk() == {existing}
     assert existing.read_bytes() == b'someone else\'s evidence copy'
 
@@ -184,7 +185,7 @@ def test_a_file_appearing_at_the_name_meanwhile_is_left_alone(clip, local_file, 
 
     monkeypatch.setattr(VaultStorage, 'get_available_name', name_taken_meanwhile)
     with pytest.raises(FileExistsError):
-        vault.store_file(local_file, 'mp4')
+        vault.store_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
     [path] = vault_files_on_disk()
     assert path.read_bytes() == b"someone else's evidence copy"
 
@@ -278,3 +279,170 @@ def test_too_many_strays_at_once_are_all_kept():
     with pytest.raises(vault.TooManyStrays):
         vault.delete_stray_files()
     assert all(path.exists() for path in paths)
+
+
+# Encryption (ADR 0008, docs/m5-encryption-design.md §6).
+
+def stored_bytes(clip, kind):
+    return (settings.VAULT_DIR / VaultFile.objects.get(clip=clip, kind=kind).file.name).read_bytes()
+
+
+# Several chunks, the last one short.
+PLAINTEXT = b'0123456789abcdef' * (vault.CHUNK_SIZE // 8) + b'the end'
+
+
+@pytest.fixture
+def big_file(tmp_path):
+    path = tmp_path / 'evidence.mp4'
+    path.write_bytes(PLAINTEXT)
+    return path
+
+
+def test_the_vault_holds_no_plaintext_and_the_database_no_data_key(clip, big_file, group_key_pair):
+    from nacl.public import SealedBox
+
+    data_key = put_file(clip, vault.EVIDENCE_COPY, big_file, 'mp4')
+    on_disk = stored_bytes(clip, vault.EVIDENCE_COPY)
+    assert b'0123456789abcdef' not in on_disk and b'the end' not in on_disk
+    vault_file = VaultFile.objects.get()
+    assert data_key not in bytes(vault_file.key_check)
+    # Only a group key's private half opens what the server keeps of the data key.
+    sealed = SealedKey.objects.get(vault_file=vault_file)
+    assert data_key not in bytes(sealed.sealed_data_key) and sealed.sealed_by is None
+    assert SealedBox(group_key_pair).decrypt(bytes(sealed.sealed_data_key)) == data_key
+
+
+def test_a_data_key_is_sealed_to_every_group_key_in_use(clip, local_file):
+    from keys.models import GroupKey
+    GroupKey.objects.update(status=GroupKey.Status.RETIRING)
+    new = GroupKey.objects.create(public_key=os.urandom(32), status=GroupKey.Status.CHECKING)
+    GroupKey.objects.create(public_key=os.urandom(32), status=GroupKey.Status.REJECTED)
+    put_file(clip, vault.PROXY, local_file, 'mp4')
+    sealed_to = set(SealedKey.objects.values_list('group_key__status', flat=True))
+    assert sealed_to == {GroupKey.Status.RETIRING, GroupKey.Status.CHECKING} and new.sealed_keys.count() == 1
+
+
+def test_no_file_is_recorded_without_a_group_key_to_seal_it_to(clip, local_file):
+    from keys.models import GroupKey
+    GroupKey.objects.update(status=GroupKey.Status.RETIRED)
+    name, data_key = vault.store_file(clip, vault.PROXY, local_file, 'mp4')
+    with pytest.raises(vault.NoGroupKey):
+        vault.record_file(clip, vault.PROXY, name, data_key)
+    assert not VaultFile.objects.exists()
+
+
+def test_a_wrong_data_key_opens_nothing(clip, local_file):
+    put_file(clip, vault.PROXY, local_file, 'mp4')
+    with pytest.raises(vault.WrongKey):
+        vault.open_file(clip, vault.PROXY, os.urandom(vault.DATA_KEY_BYTES))
+    assert not vault.is_data_key(clip, vault.PROXY, os.urandom(vault.DATA_KEY_BYTES))
+
+
+@pytest.mark.parametrize('position', [0, 1, vault.CHUNK_SIZE - 1, vault.CHUNK_SIZE, len(PLAINTEXT) - 3, len(PLAINTEXT)])
+def test_reading_from_any_position_gives_the_right_bytes(clip, big_file, position):
+    data_key = put_file(clip, vault.EVIDENCE_COPY, big_file, 'mp4')
+    with vault.open_file(clip, vault.EVIDENCE_COPY, data_key) as stored:
+        assert stored.size == len(PLAINTEXT)
+        stored.seek(position)
+        assert stored.read(100_000) == PLAINTEXT[position:position + 100_000]
+
+
+def read_all(clip, kind, data_key):
+    with vault.open_file(clip, kind, data_key) as stored:
+        return stored.read()
+
+
+@pytest.mark.parametrize('damage', ['cut at a chunk', 'cut inside a chunk', 'a byte altered', 'a byte added'])
+def test_a_cut_off_or_altered_file_is_never_read_as_complete(clip, big_file, damage):
+    data_key = put_file(clip, vault.EVIDENCE_COPY, big_file, 'mp4')
+    path = settings.VAULT_DIR / VaultFile.objects.get().file.name
+    stored = bytearray(path.read_bytes())
+    if damage == 'cut at a chunk':
+        stored = stored[:vault.HEADER_BYTES + 2 * (vault.CHUNK_SIZE + vault.ABYTES)]
+    elif damage == 'cut inside a chunk':
+        stored = stored[:-5]
+    elif damage == 'a byte altered':
+        stored[vault.HEADER_BYTES + vault.CHUNK_SIZE + 100] ^= 1
+    else:
+        stored += b'x'
+    path.write_bytes(bytes(stored))
+    with pytest.raises(vault.Unreadable):
+        read_all(clip, vault.EVIDENCE_COPY, data_key)
+
+
+def test_a_file_cut_at_a_chunk_boundary_fails_even_when_read_only_to_its_size(clip, big_file):
+    # A server serving `size` bytes never asks past them (clips.streaming).
+    data_key = put_file(clip, vault.EVIDENCE_COPY, big_file, 'mp4')
+    path = settings.VAULT_DIR / VaultFile.objects.get().file.name
+    path.write_bytes(path.read_bytes()[:vault.HEADER_BYTES + 2 * (vault.CHUNK_SIZE + vault.ABYTES)])
+    with vault.open_file(clip, vault.EVIDENCE_COPY, data_key) as stored:
+        with pytest.raises(vault.Unreadable):
+            stored.read(stored.size)
+
+
+@pytest.mark.parametrize('whole_chunks', [0, 2])
+def test_a_cut_leaving_what_looks_like_an_empty_final_chunk_is_refused(clip, big_file, whole_chunks):
+    # An empty final chunk ends only an empty file: after whole chunks, or alone at the start of
+    # a file that held bytes, such a block is what is left of a cut, and holds no bytes to read.
+    data_key = put_file(clip, vault.EVIDENCE_COPY, big_file, 'mp4')
+    path = settings.VAULT_DIR / VaultFile.objects.get().file.name
+    path.write_bytes(path.read_bytes()[:vault.HEADER_BYTES + whole_chunks * (vault.CHUNK_SIZE + vault.ABYTES) + vault.ABYTES])
+    with pytest.raises(vault.Unreadable):
+        with vault.open_file(clip, vault.EVIDENCE_COPY, data_key) as stored:
+            stored.read(stored.size)
+
+
+def test_an_empty_file_goes_in_and_comes_out(clip, tmp_path):
+    empty = tmp_path / 'empty.mp4'
+    empty.write_bytes(b'')
+    data_key = put_file(clip, vault.PROXY, empty, 'mp4')
+    with vault.open_file(clip, vault.PROXY, data_key) as stored:
+        assert stored.size == 0 and stored.read() == b''
+
+
+def test_a_file_moved_to_another_clip_or_kind_does_not_decrypt(clip, local_file):
+    other = Clip.objects.create(code_hash=uuid.uuid4().hex * 2)
+    data_key = put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
+    other_key = put_file(other, vault.PROXY, local_file, 'mp4')
+    moved = VaultFile.objects.get(clip=clip).file.name
+    # The file and its key check, as a database writer could swap them.
+    VaultFile.objects.filter(clip=other).update(file=moved, key_check=VaultFile.objects.get(clip=clip).key_check)
+    with pytest.raises(vault.Unreadable):
+        read_all(other, vault.PROXY, data_key)
+    VaultFile.objects.filter(clip=clip).update(kind=vault.PROXY)
+    VaultFile.objects.filter(clip=other).delete()
+    with pytest.raises(vault.Unreadable):
+        read_all(clip, vault.PROXY, data_key)
+    assert other_key != data_key
+
+
+def test_no_key_opens_a_file_stored_before_encryption(clip, local_file):
+    put_file(clip, vault.PROXY, local_file, 'mp4')
+    VaultFile.objects.update(key_check=None)
+    with pytest.raises(vault.WrongKey):
+        vault.open_file(clip, vault.PROXY, os.urandom(vault.DATA_KEY_BYTES))
+
+
+def test_encrypt_vault_encrypts_files_stored_before_encryption_once(clip, local_file, group_key_pair, django_capture_on_commit_callbacks):
+    from django.core.management import call_command
+
+    from tests.conftest import open_data_key
+    name = vault.vault_storage().save(f'{uuid.uuid4().hex}.mp4', BaseFile(local_file.open('rb')))
+    VaultFile.objects.create(clip=clip, kind=vault.PROXY, file=name)
+    with django_capture_on_commit_callbacks(execute=True):
+        call_command('encrypt_vault', stdout=open(os.devnull, 'w'))
+    [path] = vault_files_on_disk()
+    assert path.name != name and local_file.read_bytes() not in path.read_bytes()
+    with vault.open_file(clip, vault.PROXY, open_data_key(clip, vault.PROXY, group_key_pair)) as stored:
+        assert stored.read() == local_file.read_bytes()
+    assert vault.encrypt_plaintext_files() == 0
+    assert vault_files_on_disk() == {path}
+
+
+def test_encrypt_vault_needs_a_group_key(clip, local_file):
+    from django.core.management import CommandError, call_command
+
+    from keys.models import GroupKey
+    GroupKey.objects.all().delete()
+    with pytest.raises(CommandError):
+        call_command('encrypt_vault')

@@ -12,7 +12,8 @@ from clips import ingest, probe, tasks, vault
 from clips.models import Clip, HashRecord, Original
 from tests.media import H264
 
-pytestmark = pytest.mark.django_db
+# Ingest seals each file's data key to the group keys in use: one exists in each test here.
+pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures('group_key_pair')]
 
 
 @pytest.fixture(autouse=True)

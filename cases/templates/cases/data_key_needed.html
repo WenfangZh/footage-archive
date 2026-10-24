@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Open the clip's page first" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Open the clip's page first" %}</h1>
+  <p>{% translate "This file opens only once the clip's page has passed on this file's data key, which it does for two hours at a time. Open the page again, then watch or download from there." %}</p>
+  <p><a href="{{ clip_url }}">{% translate "Back to the clip" %}</a></p>
+{% endblock %}

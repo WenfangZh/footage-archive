@@ -259,8 +259,9 @@ def vault_storage():
 class VaultFile(models.Model):
     """A file held in the vault for a clip. Only clips.vault reads or writes it (SPEC.md §6).
 
-    Plaintext until M5. A clip cannot be deleted while it still has vault files, so
-    that no file is left behind on disk: clips.vault.delete_all removes them first.
+    Encrypted with its own data key (ADR 0008), which is stored only sealed to the group
+    keys (SealedKey, below). A clip cannot be deleted while it still has vault files,
+    so that no file is left behind on disk: clips.vault.delete_all removes them first.
     """
 
     class Kind(models.TextChoices):
@@ -270,10 +271,37 @@ class VaultFile(models.Model):
     clip = models.ForeignKey(Clip, on_delete=models.PROTECT, related_name='+')
     kind = models.CharField(max_length=20, choices=Kind.choices)
     file = models.FileField(storage=vault_storage)
+    # BLAKE2b keyed with the data key, so that a key someone presents can be checked
+    # without the file (design §5.5). Empty only on a file stored before M5, still plaintext,
+    # until `encrypt_vault` encrypts it (design §10).
+    key_check = models.BinaryField(max_length=32, null=True, blank=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['clip', 'kind'], name='one_vault_file_per_kind'),
+        ]
+
+
+# crypto_box_seal of a 32-byte data key: a 32-byte ephemeral public key, the key and a 16-byte tag.
+SEALED_DATA_KEY_BYTES = 32 + 32 + 16
+
+
+class SealedKey(models.Model):
+    """A vault item's data key, sealed to a group key (docs/m5-encryption-design.md §3.1, §3.2):
+    what a lawyer holding that group key opens to read the item. The server seals it when it
+    records the item, and forgets the data key. Only clips.vault reads or writes it."""
+
+    vault_file = models.ForeignKey(VaultFile, on_delete=models.CASCADE, related_name='sealed_keys')
+    group_key = models.ForeignKey('keys.GroupKey', on_delete=models.PROTECT, related_name='sealed_keys')
+    sealed_data_key = models.BinaryField(max_length=SEALED_DATA_KEY_BYTES)
+    # A rotator who resealed it (design §5.5); empty when the server sealed it.
+    sealed_by = models.ForeignKey(
+        'accounts.LawyerProfile', null=True, blank=True, on_delete=models.PROTECT, related_name='+',
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['vault_file', 'group_key'], name='one_sealed_key_per_item_and_group_key'),
         ]
 
 
