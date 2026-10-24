@@ -173,7 +173,7 @@ def cookie_value(data_key):
     return base64.urlsafe_b64encode(data_key).decode().rstrip('=')
 
 
-def open_or_refuse(request, clip, kind):
+def open_or_refuse(request, case, clip, kind):
     """The clip's vault file, opened with the data key in its cookie; or a refusal, if the
     key is missing or wrong (design §6.3)."""
     value = request.COOKIES.get(COOKIES[kind], '')
@@ -186,7 +186,10 @@ def open_or_refuse(request, clip, kind):
     try:
         return vault.open_file(clip, kind, key), None
     except vault.WrongKey:
-        return None, HttpResponseForbidden()
+        # A page, not an empty refusal: a lawyer following an old download link lands here.
+        return None, render(request, 'cases/data_key_needed.html', {
+            'clip_url': reverse('lawyer:clip', kwargs={'case_id': case.pk, 'clip_id': clip.pk}),
+        }, status=403)
     except (FileNotFoundError, ObjectDoesNotExist, vault.Unreadable):
         raise Http404 from None
 
@@ -195,7 +198,7 @@ def open_or_refuse(request, clip, kind):
 @require_GET
 def preview(request, case_id, clip_id):
     case, clip, _ = vault_case_and_clip(request, case_id, clip_id)
-    proxy, refusal = open_or_refuse(request, clip, vault.PROXY)
+    proxy, refusal = open_or_refuse(request, case, clip, vault.PROXY)
     if refusal:
         return refusal
     try:
@@ -218,7 +221,7 @@ DOWNLOAD_REPEAT = datetime.timedelta(hours=2)
 @require_GET
 def download(request, case_id, clip_id):
     case, clip, _ = vault_case_and_clip(request, case_id, clip_id)
-    evidence, refusal = open_or_refuse(request, clip, vault.EVIDENCE_COPY)
+    evidence, refusal = open_or_refuse(request, case, clip, vault.EVIDENCE_COPY)
     if refusal:
         return refusal
     size = evidence.size

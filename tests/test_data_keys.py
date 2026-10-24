@@ -174,6 +174,8 @@ def test_without_the_right_data_key_nothing_is_served_or_logged(case, clip, clie
         client_.cookies[COOKIES[kind]] = 'garbage'
     response = client_.get(url(name, case, clip))
     assert response.status_code == 403
+    # A page leading back to the clip, which hands the key over again.
+    assert url('clip', case, clip) in response.content.decode()
     assert not AuditEntry.objects.filter(action__in=[Action.PREVIEW, Action.DOWNLOAD]).exists()
 
 
