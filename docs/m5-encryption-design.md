@@ -82,7 +82,7 @@ Each sealed key records which public key it was sealed to, so a reader always kn
 - `Case.label` becomes the encrypted, padded label; its data key is sealed to the lawyer's personal key. A case has one label sealed to one key, so the case itself holds the sealed key, the key it is sealed to, and the key check value, rather than a `SealedKey`.
 - `Clip` gains the code holder public key.
 
-During the move from plaintext (§10), the new fields allow empty values; a later migration makes them required once no plaintext row is left, and fails loudly if one is.
+During the move from plaintext (§10), the new fields allow empty values; a later migration makes them required once no plaintext row is left, and fails loudly if one is. A case label is the exception: its encryption is bound to the case's id, which exists only once the row is inserted, so a case is inserted without a label and its label sealed in the same transaction. Its fields therefore stay optional for good; a case without a label holds no plaintext and shows its number instead.
 
 ### 3.3 What a lawyer needs to read a clip
 
