@@ -38,6 +38,25 @@ def limits_check(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def group_key_held(monkeypatch):
+    """Uploads are open and lawyers read the vault as if they held the group key: the real
+    checks only in tests that ask for key_gates (tests/test_group_key.py)."""
+    from cases import clip_pages
+    from clips import views
+    monkeypatch.setattr(views, 'uploads_open', lambda: True)
+    monkeypatch.setattr(clip_pages, 'reads_vault', lambda profile: True)
+
+
+@pytest.fixture
+def key_gates(monkeypatch):
+    from cases import clip_pages
+    from clips import views
+    from keys import grants
+    monkeypatch.setattr(views, 'uploads_open', grants.uploads_open)
+    monkeypatch.setattr(clip_pages, 'reads_vault', grants.reads_vault)
+
+
+@pytest.fixture(autouse=True)
 def empty_vault_folder():
     """Files outlive each test's database rollback, so every test starts with an empty vault."""
     for path in settings.VAULT_DIR.rglob('*'):

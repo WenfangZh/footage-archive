@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-24 01:22+0200\n"
+"POT-Creation-Date: 2026-10-24 02:55+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -351,9 +351,15 @@ msgid "Default margin"
 msgstr "Marge par défaut"
 
 #: accounts/templates/accounts/lawyer_home.html:18
-#: keys/templates/keys/key.html:4 keys/templates/keys/key.html:14
+#: cases/templates/cases/clip.html:13 keys/templates/keys/key.html:4
+#: keys/templates/keys/key.html:15
 msgid "Your personal key"
 msgstr "Votre clé personnelle"
+
+#: accounts/templates/accounts/lawyer_home.html:19
+#: keys/templates/keys/waiting.html:4 keys/templates/keys/waiting.html:7
+msgid "Colleagues waiting for the group key"
+msgstr "Collègues en attente de la clé commune"
 
 #: accounts/templates/accounts/login.html:4
 #: accounts/templates/accounts/login.html:9
@@ -579,28 +585,34 @@ msgstr ""
 "Saisissez une adresse e-mail et un mot de passe valides. Le mot de passe "
 "tient compte des majuscules et des minuscules."
 
-#: alerts/models.py:18
+#: alerts/models.py:19
 msgid "The ingest queue is backed up"
 msgstr "La file de préparation est engorgée"
 
-#: alerts/models.py:19
+#: alerts/models.py:20
 msgid "Many failed logins for one account"
 msgstr "Nombreuses connexions échouées pour un même compte"
 
-#: alerts/models.py:20
+#: alerts/models.py:21
 msgid "Many downloads by one lawyer in a short time"
 msgstr "Beaucoup de téléchargements par un·e avocat·e en peu de temps"
 
-#: alerts/models.py:21
+#: alerts/models.py:22
 msgid "Many cases created by one lawyer in a short time"
 msgstr ""
 "Beaucoup de dossiers de recherche créés par un·e avocat·e en peu de temps"
 
-#: alerts/models.py:39
+#: alerts/models.py:23
+msgid "A key grant did not open for the lawyer who received it"
+msgstr ""
+"Une remise de la clé commune ne s'est pas ouverte pour l'avocat·e qui l'a "
+"reçue"
+
+#: alerts/models.py:41
 msgid "Downloads"
 msgstr "Téléchargements"
 
-#: alerts/models.py:40
+#: alerts/models.py:42
 msgid "Cases created"
 msgstr "Dossiers de recherche créés"
 
@@ -661,84 +673,99 @@ msgstr "Au plus dix fois le seuil d'alerte habituel : %(limit)s."
 msgid "The alert limit is raised."
 msgstr "Le seuil d'alerte est relevé."
 
-#: audit/models.py:30
+#: audit/models.py:32
 msgid "Invitation"
 msgstr "Invitation"
 
-#: audit/models.py:31
+#: audit/models.py:33
 msgid "Declining"
 msgstr "Candidature non retenue"
 
-#: audit/models.py:32
+#: audit/models.py:34
 msgid "Admission"
 msgstr "Admission"
 
-#: audit/models.py:33
+#: audit/models.py:35
 msgid "Suspension"
 msgstr "Suspension de l'accès"
 
-#: audit/models.py:34
+#: audit/models.py:36
 msgid "Reinstatement"
 msgstr "Rétablissement de l'accès"
 
-#: audit/models.py:35
+#: audit/models.py:37
 msgid "Revocation"
 msgstr "Révocation de l'accès"
 
-#: audit/models.py:38
+#: audit/models.py:40
 msgctxt "audit log action"
 msgid "Case creation"
 msgstr "Création d'un dossier de recherche"
 
-#: audit/models.py:39
+#: audit/models.py:41
 msgctxt "audit log action"
 msgid "Case closing"
 msgstr "Clôture d'un dossier de recherche"
 
-#: audit/models.py:40
+#: audit/models.py:42
 msgctxt "audit log action"
 msgid "Request for a larger case"
 msgstr "Demande de dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:41
+#: audit/models.py:43
 msgctxt "audit log action"
 msgid "Search"
 msgstr "Recherche"
 
-#: audit/models.py:42
+#: audit/models.py:44
 msgctxt "audit log action"
 msgid "Preview"
 msgstr "Prévisualisation"
 
-#: audit/models.py:43
+#: audit/models.py:45
 msgctxt "audit log action"
 msgid "Download"
 msgstr "Téléchargement"
 
-#: audit/models.py:44
+#: audit/models.py:46
 msgctxt "audit log action"
 msgid "Viewing a clip's page"
 msgstr "Consultation de la page d'un clip"
 
-#: audit/models.py:45
+#: audit/models.py:47
 msgctxt "audit log action"
 msgid "Approval of a larger case"
 msgstr "Validation d'un dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:46
+#: audit/models.py:48
 msgctxt "audit log action"
 msgid "Refusal of a larger case"
 msgstr "Refus d'un dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:47
+#: audit/models.py:49
 msgctxt "audit log action"
 msgid "Change of the size caps and alert limits"
 msgstr "Changement des plafonds et des seuils d'alerte"
 
-#: audit/models.py:48
+#: audit/models.py:50
 msgctxt "audit log action"
 msgid "Temporary raise of a lawyer's alert limit"
 msgstr "Relèvement temporaire d'un seuil d'alerte pour un·e avocat·e"
+
+#: audit/models.py:52
+msgctxt "audit log action"
+msgid "Making the first group key"
+msgstr "Création de la première clé commune"
+
+#: audit/models.py:53
+msgctxt "audit log action"
+msgid "Starting over with a new group key"
+msgstr "Nouveau départ avec une nouvelle clé commune"
+
+#: audit/models.py:54
+msgctxt "audit log action"
+msgid "Key grant"
+msgstr "Remise de la clé commune"
 
 #: cases/approval.py:39
 msgid "The case is approved."
@@ -1050,21 +1077,30 @@ msgstr ""
 "Correspondance de marge pour ce dossier de recherche : juste en dehors de sa "
 "plage horaire ou de son périmètre."
 
-#: cases/templates/cases/clip.html:13
+#: cases/templates/cases/clip.html:12
+msgid ""
+"You do not hold the group key yet, so the archive shows you only this clip's "
+"index data: no preview, evidence copy, context or contact details."
+msgstr ""
+"Vous n'avez pas encore la clé commune : l'archive ne vous montre que les "
+"données d'index de ce clip, sans version de prévisualisation, copie de "
+"preuve, contexte ni moyen de contact."
+
+#: cases/templates/cases/clip.html:17
 msgid "A low-resolution preview. Watching it is recorded in the audit log."
 msgstr ""
 "Une version de prévisualisation en basse résolution. La regarder est inscrit "
 "au journal d'audit."
 
-#: cases/templates/cases/clip.html:16
+#: cases/templates/cases/clip.html:20
 msgid "Download the evidence copy"
 msgstr "Télécharger la copie de preuve"
 
-#: cases/templates/cases/clip.html:17
+#: cases/templates/cases/clip.html:21
 msgid "Download its hash record"
 msgstr "Télécharger les empreintes numériques (hash)"
 
-#: cases/templates/cases/clip.html:18
+#: cases/templates/cases/clip.html:22
 msgid ""
 "The evidence copy holds the clip's video and audio streams unchanged, never "
 "re-encoded, in a new container without the file's own metadata; its hash "
@@ -1076,7 +1112,7 @@ msgstr ""
 "fichier ; ses empreintes numériques (hash) montrent que les images n'ont pas "
 "été modifiées. Chaque téléchargement est inscrit au journal d'audit."
 
-#: cases/templates/cases/clip.html:21
+#: cases/templates/cases/clip.html:25
 #, python-format
 msgid "The stated time is %(minutes)s minute away from the metadata time."
 msgid_plural ""
@@ -1086,76 +1122,76 @@ msgstr[0] ""
 msgstr[1] ""
 "L'heure indiquée est à %(minutes)s minutes de l'heure des métadonnées."
 
-#: cases/templates/cases/clip.html:24 clips/templates/clips/clip.html:34
+#: cases/templates/cases/clip.html:28 clips/templates/clips/clip.html:34
 #: clips/templates/clips/confirm.html:15
 msgid "Time"
 msgstr "Heure"
 
-#: cases/templates/cases/clip.html:26 clips/models.py:180
+#: cases/templates/cases/clip.html:30 clips/models.py:180
 msgid "Stated time"
 msgstr "Heure indiquée"
 
-#: cases/templates/cases/clip.html:27
+#: cases/templates/cases/clip.html:31
 msgid "Metadata time"
 msgstr "Heure des métadonnées"
 
-#: cases/templates/cases/clip.html:27 cases/templates/cases/clip.html:28
-#: cases/templates/cases/clip.html:43 cases/templates/cases/place.html:1
+#: cases/templates/cases/clip.html:31 cases/templates/cases/clip.html:32
+#: cases/templates/cases/clip.html:47 cases/templates/cases/place.html:1
 msgid "not given"
 msgstr "non renseigné"
 
-#: cases/templates/cases/clip.html:28
+#: cases/templates/cases/clip.html:32
 msgid "Stated time as uploaded"
 msgstr "Heure indiquée telle qu'uploadée"
 
-#: cases/templates/cases/clip.html:29
+#: cases/templates/cases/clip.html:33
 msgid "Duration"
 msgstr "Durée"
 
-#: cases/templates/cases/clip.html:29 cases/templates/cases/matches.html:5
+#: cases/templates/cases/clip.html:33 cases/templates/cases/matches.html:5
 #, python-format
 msgid "%(seconds)s s"
 msgstr "%(seconds)s s"
 
-#: cases/templates/cases/clip.html:32 clips/templates/clips/clip.html:39
+#: cases/templates/cases/clip.html:36 clips/templates/clips/clip.html:39
 #: clips/templates/clips/confirm.html:25
 msgid "Place"
 msgstr "Lieu"
 
-#: cases/templates/cases/clip.html:34 clips/models.py:181
+#: cases/templates/cases/clip.html:38 clips/models.py:181
 msgid "Stated location"
 msgstr "Lieu indiqué"
 
-#: cases/templates/cases/clip.html:35 clips/models.py:185
+#: cases/templates/cases/clip.html:39 clips/models.py:185
 msgid "Metadata location"
 msgstr "Lieu des métadonnées"
 
-#: cases/templates/cases/clip.html:36
+#: cases/templates/cases/clip.html:40
 msgid "Stated location as uploaded"
 msgstr "Lieu indiqué tel qu'uploadé"
 
-#: cases/templates/cases/clip.html:39 clips/models.py:182
+#: cases/templates/cases/clip.html:43 clips/models.py:182
 msgid "Tags"
 msgstr "Étiquettes"
 
-#: cases/templates/cases/clip.html:42
+#: cases/templates/cases/clip.html:46
 msgid "No tags."
 msgstr "Aucune étiquette."
 
-#: cases/templates/cases/clip.html:43
+#: cases/templates/cases/clip.html:47
 msgid "Tags as uploaded:"
 msgstr "Étiquettes telles qu'uploadées :"
 
-#: cases/templates/cases/clip.html:46 clips/forms.py:69 clips/models.py:183
+#: cases/templates/cases/clip.html:50 clips/forms.py:69 clips/models.py:183
 #: clips/models.py:228
 msgid "Context"
 msgstr "Contexte"
 
-#: cases/templates/cases/clip.html:51 clips/models.py:184 clips/models.py:229
+#: cases/templates/cases/clip.html:55 clips/models.py:184 clips/models.py:229
 msgid "Contact details"
 msgstr "Moyen de contact"
 
-#: cases/templates/cases/clip.html:53
+#: cases/templates/cases/clip.html:57
 msgid ""
 "The code holder chose to leave these, knowing they could be used against "
 "them. Use them only for this case, and keep them out of anything you share."
@@ -1164,16 +1200,16 @@ msgstr ""
 "pourrait être utilisé contre elle. Ne l'utilisez que pour ce dossier de "
 "recherche, et ne le faites figurer dans rien de ce que vous partagez."
 
-#: cases/templates/cases/clip.html:56
+#: cases/templates/cases/clip.html:60
 msgid "Edits since upload"
 msgstr "Modifications depuis l'upload"
 
-#: cases/templates/cases/clip.html:58
+#: cases/templates/cases/clip.html:62
 #, python-format
 msgid "%(field)s: %(day)s, in the four hours from %(start)s"
 msgstr "%(field)s : %(day)s, dans les quatre heures à partir de %(start)s"
 
-#: cases/templates/cases/clip.html:59
+#: cases/templates/cases/clip.html:63
 msgid "None."
 msgstr "Aucun."
 
@@ -1786,6 +1822,20 @@ msgstr "Ce fichier dépasse %(size_limit)s : il ne peut pas être envoyé."
 msgid "Send"
 msgstr "Envoyer"
 
+#: clips/templates/clips/uploads_closed.html:4
+#: clips/templates/clips/uploads_closed.html:7
+msgid "Uploads are not open"
+msgstr "Les envois ne sont pas ouverts"
+
+#: clips/templates/clips/uploads_closed.html:8
+msgid ""
+"The archive cannot take videos at the moment. Please try again later. A "
+"video that was not fully sent is deleted automatically."
+msgstr ""
+"L'archive ne peut pas recevoir de vidéos pour le moment. Veuillez réessayer "
+"plus tard. Une vidéo dont l'envoi n'a pas été terminé est supprimée "
+"automatiquement."
+
 #: clips/uploads.py:52
 #, python-format
 msgid "%(size)s GB"
@@ -1809,11 +1859,62 @@ msgstr "Français"
 msgid "English"
 msgstr "Anglais"
 
-#: keys/forms.py:30 keys/forms.py:32
+#: keys/forms.py:31 keys/forms.py:33 keys/forms.py:60
 msgid "The key could not be read."
 msgstr "La clé n'a pas pu être lue."
 
-#: keys/templates/keys/key.html:16
+#: keys/forms.py:67
+msgid "I compared this safety number with them, by phone or in person."
+msgstr ""
+"J'ai comparé ce numéro de sécurité avec la personne, par téléphone ou de "
+"vive voix."
+
+#: keys/templates/keys/grant.html:4 keys/templates/keys/grant.html:30
+msgid "Give the group key"
+msgstr "Remettre la clé commune"
+
+#: keys/templates/keys/grant.html:16
+#, python-format
+msgid "Give the group key to %(name)s"
+msgstr "Remettre la clé commune à %(name)s"
+
+#: keys/templates/keys/grant.html:18
+#, python-format
+msgid "%(name)s, %(bar)s; vouched for by %(vouched_by)s."
+msgstr "%(name)s, %(bar)s ; parrainage : %(vouched_by)s."
+
+#: keys/templates/keys/grant.html:19
+msgid "Their safety number:"
+msgstr "Son numéro de sécurité :"
+
+#: keys/templates/keys/grant.html:20
+#, python-format
+msgid ""
+"Call %(name)s or meet them, and ask them to read you the safety number on "
+"their key page. Do not compare it by email, or by a message sent through the "
+"archive: whoever could change this page could change those too. Give the "
+"group key only if every digit matches."
+msgstr ""
+"Appelez %(name)s ou rencontrez la personne, et demandez-lui de vous lire le "
+"numéro de sécurité affiché sur sa page de clé. Ne le comparez pas par e-"
+"mail, ni par un message envoyé par l'archive : qui pourrait modifier cette "
+"page pourrait aussi les modifier. Ne remettez la clé commune que si tous les "
+"chiffres sont identiques."
+
+#: keys/templates/keys/grant.html:23
+msgid ""
+"Your browser could not open every group key they need. Reload the page; if "
+"it happens again, tell the admin."
+msgstr ""
+"Votre navigateur n'a pas pu ouvrir toutes les clés communes dont la personne "
+"a besoin. Rechargez la page ; si cela se reproduit, prévenez "
+"l'administrateur·rice."
+
+#: keys/templates/keys/grant.html:28
+msgid "The group key could not be given. Please try again."
+msgstr "La clé commune n'a pas pu être remise. Veuillez réessayer."
+
+#: keys/templates/keys/key.html:17
 msgid ""
 "Your account has no personal key. Keys are set up before admission: ask the "
 "admin what to do."
@@ -1821,51 +1922,39 @@ msgstr ""
 "Votre compte n'a pas de clé personnelle. Les clés se créent avant "
 "l'admission : demandez à l'administrateur·rice ce qu'il faut faire."
 
-#: keys/templates/keys/key.html:21
-msgid "Unlocking your key needs JavaScript."
-msgstr "Déverrouiller votre clé nécessite JavaScript."
-
-#: keys/templates/keys/key.html:24
-msgid "Key passphrase:"
-msgstr "Phrase secrète :"
-
-#: keys/templates/keys/key.html:26
-msgid "Unlock"
-msgstr "Déverrouiller"
-
-#: keys/templates/keys/key.html:27
-msgid "That key passphrase does not unlock your key."
-msgstr "Cette phrase secrète ne déverrouille pas votre clé."
-
-#: keys/templates/keys/key.html:28
-msgid ""
-"Your key does not match the one the archive shows for you. Do not go on: "
-"tell the admin, by phone."
-msgstr ""
-"Votre clé ne correspond pas à celle que l'archive indique pour vous. N'allez "
-"pas plus loin : prévenez l'administrateur·rice par téléphone."
-
-#: keys/templates/keys/key.html:29
-msgid "Your key could not be fetched. Please reload the page."
-msgstr "Votre clé n'a pas pu être récupérée. Veuillez recharger la page."
-
-#: keys/templates/keys/key.html:33
+#: keys/templates/keys/key.html:22
 msgid "Your key is unlocked in this browser tab until you log out."
 msgstr ""
 "Votre clé est déverrouillée dans cet onglet du navigateur jusqu'à ce que "
 "vous vous déconnectiez."
 
-#: keys/templates/keys/key.html:34
+#: keys/templates/keys/key.html:23
 msgid "Your safety number:"
 msgstr "Votre numéro de sécurité :"
 
-#: keys/templates/keys/key.html:36
+#: keys/templates/keys/key.html:25
 msgid ""
 "The admin will compare it with you before admitting you. Read it to them "
 "when they contact you, and only then."
 msgstr ""
 "L'administrateur·rice le comparera avec vous avant de vous admettre. Lisez-"
 "le-lui quand on vous contactera, et seulement à ce moment-là."
+
+#: keys/templates/keys/key.html:27
+msgid ""
+"You hold the group key: you can read what the archive holds for lawyers."
+msgstr ""
+"Vous avez la clé commune : vous pouvez lire ce que l'archive conserve pour "
+"les avocat·es."
+
+#: keys/templates/keys/key.html:28
+msgid ""
+"You do not hold the group key yet. A lawyer who holds it will compare your "
+"safety number with you, by phone or in person, and then give it to you."
+msgstr ""
+"Vous n'avez pas encore la clé commune. Un·e avocat·e qui l'a comparera votre "
+"numéro de sécurité avec vous, par téléphone ou en personne, puis vous la "
+"remettra."
 
 #: keys/templates/keys/setup.html:15
 msgid ""
@@ -1946,11 +2035,73 @@ msgstr ""
 msgid "Set up my key"
 msgstr "Créer ma clé"
 
-#: keys/views.py:53
+#: keys/templates/keys/unlock.html:3
+msgid "Unlocking your key needs JavaScript."
+msgstr "Déverrouiller votre clé nécessite JavaScript."
+
+#: keys/templates/keys/unlock.html:8
+msgid "Key passphrase:"
+msgstr "Phrase secrète :"
+
+#: keys/templates/keys/unlock.html:10
+msgid "Unlock"
+msgstr "Déverrouiller"
+
+#: keys/templates/keys/unlock.html:11
+msgid "That key passphrase does not unlock your key."
+msgstr "Cette phrase secrète ne déverrouille pas votre clé."
+
+#: keys/templates/keys/unlock.html:12
+msgid ""
+"Your key does not match the one the archive shows for you. Do not go on: "
+"tell the admin, by phone."
+msgstr ""
+"Votre clé ne correspond pas à celle que l'archive indique pour vous. N'allez "
+"pas plus loin : prévenez l'administrateur·rice par téléphone."
+
+#: keys/templates/keys/unlock.html:13
+msgid "Your key could not be fetched. Please reload the page."
+msgstr "Votre clé n'a pas pu être récupérée. Veuillez recharger la page."
+
+#: keys/templates/keys/waiting.html:9
+msgid "You do not hold the group key yet, so you cannot give it to anyone."
+msgstr ""
+"Vous n'avez pas encore la clé commune : vous ne pouvez donc la remettre à "
+"personne."
+
+#: keys/templates/keys/waiting.html:11
+msgid ""
+"The admin has admitted them and compared their safety number with them. "
+"Before giving them the group key, compare it with them yourself."
+msgstr ""
+"L'administrateur·rice a admis ces personnes et comparé leur numéro de "
+"sécurité avec elles. Avant de leur remettre la clé commune, comparez-le vous-"
+"même avec elles."
+
+#: keys/templates/keys/waiting.html:15
+#, python-format
+msgid "vouched for by %(vouched_by)s"
+msgstr "parrainage : %(vouched_by)s"
+
+#: keys/templates/keys/waiting.html:19
+msgid "No one is waiting for the group key."
+msgstr "Personne n'attend la clé commune."
+
+#: keys/views.py:56
 msgid "Your key is set up. Unlock it once to check your key passphrase."
 msgstr ""
 "Votre clé est créée. Déverrouillez-la une fois pour vérifier votre phrase "
 "secrète."
+
+#: keys/views.py:187
+msgid "The keys changed while this page was open. Please try again."
+msgstr ""
+"Les clés ont changé pendant que cette page était ouverte. Veuillez réessayer."
+
+#: keys/views.py:189
+#, python-format
+msgid "%(name)s now holds the group key."
+msgstr "%(name)s a maintenant la clé commune."
 
 #: templates/base.html:7 templates/home.html:5
 msgid "Footage archive"

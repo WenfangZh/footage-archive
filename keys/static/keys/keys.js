@@ -82,6 +82,23 @@
     return privateKey;
   }
 
+  // The group private key, sealed so that only the recipient's personal key opens it (design §5.3).
+  function sealGroupKey(groupPrivateKey, recipientPublicKey) {
+    return sodium.crypto_box_seal(groupPrivateKey, recipientPublicKey);
+  }
+
+  // The group private key a grant holds, or null if it does not open or does not give the
+  // group key's public half (design §4).
+  function openGrant(sealed, personalPrivateKey, groupPublicKey) {
+    let groupPrivateKey;
+    try {
+      groupPrivateKey = sodium.crypto_box_seal_open(sealed, sodium.crypto_scalarmult_base(personalPrivateKey), personalPrivateKey);
+    } catch (error) {
+      return null;
+    }
+    return samePublicKey(groupPrivateKey, groupPublicKey) ? groupPrivateKey : null;
+  }
+
   function samePublicKey(privateKey, publicKey) {
     const derived = sodium.crypto_scalarmult_base(privateKey);
     return derived.length === publicKey.length && sodium.memcmp(derived, publicKey);
@@ -130,6 +147,7 @@
 
   globalThis.ArchiveKeys = {
     PASSPHRASE_LENGTH, RECOVERY_KEY_LENGTH, WrongSecret, KeyMismatch, b64, randomCode, display, normalise,
-    passphraseKey, recoveryWrappingKey, encryptPrivateKey, decryptPrivateKey, safetyNumber, remember, recall, forget,
+    passphraseKey, recoveryWrappingKey, encryptPrivateKey, decryptPrivateKey, sealGroupKey, openGrant, safetyNumber,
+    remember, recall, forget,
   };
 }());

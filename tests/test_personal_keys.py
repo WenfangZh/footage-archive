@@ -139,9 +139,10 @@ def test_nobody_but_an_applicant_or_lawyer_reaches_the_key_pages(kind):
         make_key(profile)
         log_in_with_second_factor(client, profile.user)
     expected = 302 if kind == 'logged out' else 403  # To the login page, or refused.
-    for name in ['accounts:key', 'accounts:key_setup', 'accounts:encrypted_key']:
+    for name in ['accounts:key', 'accounts:key_setup', 'accounts:encrypted_key', 'accounts:own_grants']:
         assert client.get(reverse(name)).status_code == expected, name
-    assert client.post(reverse('accounts:key_unlocked')).status_code == expected
+    for name in ['accounts:key_unlocked', 'accounts:grant_checked', 'accounts:start_group_key']:
+        assert client.post(reverse(name)).status_code == expected, name
     assert client.post(reverse('accounts:key_setup'), as_form(sent_key())).status_code == expected
     assert LawyerKey.objects.filter(last_unlocked_on__isnull=False).count() == 0
     assert LawyerKey.objects.count() == (0 if kind in ('logged out', 'admin', 'neither') else 1)
@@ -155,7 +156,7 @@ def test_a_lawyer_cannot_set_up_or_replace_a_key_outside_a_key_reset():
     # A lawyer admitted before keys existed is told so, and has nothing to unlock.
     page = client.get(reverse('accounts:key'))
     assert page.status_code == 200 and page.context['key'] is None
-    assert 'id="key-page"' not in page.content.decode()
+    assert 'id="unlock"' not in page.content.decode()
     assert client.get(reverse('accounts:encrypted_key')).status_code == 404
 
 
