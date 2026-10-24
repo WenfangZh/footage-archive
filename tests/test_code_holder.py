@@ -300,3 +300,39 @@ def test_the_failed_message_is_in_french(client, uploaded):
     html = client.post(ENTRY_URL, {'code': code}, headers={'accept_language': 'fr'}).content.decode()
     assert 'Échec de la préparation' in html
     assert "Nous n'avons pas pu préparer votre clip" in html
+
+
+# An edit racing ingest (SPEC.md §9): the clip the request loaded may have changed before it is saved.
+
+def changing_meanwhile(monkeypatch, **fields):
+    """Change the clip's row once the edit has loaded it, as ingest or give_up would."""
+    from clips import editing
+    real = editing.code_holder_tags
+
+    def and_meanwhile(clip):
+        Clip.objects.filter(pk=clip.pk).update(**fields)
+        return real(clip)
+
+    monkeypatch.setattr(editing, 'code_holder_tags', and_meanwhile)
+
+
+def test_an_edit_keeps_what_ingest_recorded_meanwhile(client, uploaded, monkeypatch):
+    clip, code = uploaded
+    Clip.objects.filter(pk=clip.pk).update(status=Clip.Status.PROCESSING, duration=None)
+    changing_meanwhile(monkeypatch, status=Clip.Status.READY, duration=datetime.timedelta(seconds=42), width=320)
+    assert edit(client, code, stated_time='2026-05-01T14:30').status_code == 200
+    clip.refresh_from_db()
+    assert (clip.status, clip.duration, clip.width) == (Clip.Status.READY, datetime.timedelta(seconds=42), 320)
+    assert clip.stated_time == datetime.datetime(2026, 5, 1, 12, 30, tzinfo=UTC)
+
+
+def test_an_edit_does_not_bring_back_a_clip_that_failed_meanwhile(client, uploaded, monkeypatch):
+    clip, code = uploaded
+    Clip.objects.filter(pk=clip.pk).update(status=Clip.Status.PROCESSING)
+    VaultText.objects.all().delete()
+    changing_meanwhile(monkeypatch, status=Clip.Status.FAILED)
+    response = edit(client, code, context='Written after it failed.')
+    assert response.status_code == 409
+    clip.refresh_from_db()
+    # Nothing is left to describe: its texts went with it (SPEC.md §9).
+    assert clip.status == Clip.Status.FAILED and not VaultText.objects.exists() and not Edit.objects.exists()

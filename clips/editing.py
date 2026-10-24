@@ -10,6 +10,13 @@ from . import grid, upload_codes, vault
 from .models import Clip, ClipTag, Edit, Original
 
 Field = Edit.EditableField
+# The clip's own fields a code holder edits: only these are saved, so that an edit never
+# overwrites what ingest recorded meanwhile (its status, duration, size).
+EDITED_FIELDS = ['stated_time', 'stated_cell', 'stated_precision', 'metadata_cell']
+
+
+class NotEditable(Exception):
+    """The clip failed or was deleted after the request found it."""
 
 
 def clip_for_code(typed):
@@ -30,7 +37,11 @@ def code_holder_tags(clip):
 
 
 def apply_edits(clip, cleaned):
-    """Apply the code holder's form to the clip; returns the fields that changed."""
+    """Apply the code holder's form to the clip; returns the fields that changed.
+
+    Raises NotEditable if the clip failed or was deleted since it was loaded: a failed clip has
+    nothing left to describe (SPEC.md §9).
+    """
     changed = []
 
     if cleaned['stated_time'] != clip.stated_time:
@@ -64,7 +75,10 @@ def apply_edits(clip, cleaned):
     changed.extend(new_texts)
 
     with transaction.atomic():
-        clip.save()
+        # Again, locked: ingest may have finished or given up since the clip was loaded.
+        if not Clip.objects.select_for_update().filter(pk=clip.pk).exclude(status=Clip.Status.FAILED).exists():
+            raise NotEditable
+        clip.save(update_fields=EDITED_FIELDS)
         if tags_changed:
             ClipTag.objects.filter(clip=clip, source=ClipTag.Source.CODE_HOLDER).delete()
             ClipTag.objects.bulk_create(
