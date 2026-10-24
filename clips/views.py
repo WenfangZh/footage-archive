@@ -12,7 +12,7 @@ from django.views.decorators.http import require_http_methods
 
 from . import grid, probe, rate_limits, vault
 from .confirmation import AlreadyConfirmed, confirm_upload
-from .editing import apply_edits, clip_for_code, code_holder_tags, delete_clip
+from .editing import NotEditable, apply_edits, clip_for_code, code_holder_tags, delete_clip
 from .forms import METADATA_PRECISIONS, ConfirmForm, EditForm, FileForm
 from .models import Clip, Original, Precision
 from .tags import DEFAULT_TAGS
@@ -147,7 +147,14 @@ def edit(request):
     form = edit_form(clip, data=request.POST)
     if not form.is_valid():
         return render_clip(request, clip, form, status=400)
-    changed = apply_edits(clip, form.cleaned_data)
+    try:
+        changed = apply_edits(clip, form.cleaned_data)
+    except NotEditable:
+        # Failed or deleted meanwhile: shown as it is now.
+        clip = clip_for_code(typed)
+        if clip is None:
+            return render(request, 'clips/code_entry.html', {'wrong_code': True}, status=404)
+        return render_clip(request, clip, edit_form(clip, code=typed), status=409)
     return render_clip(request, clip, edit_form(clip, code=typed), saved=bool(changed))
 
 
