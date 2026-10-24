@@ -8,7 +8,9 @@ not logged again: a video player asks for many pieces of one file. Two first req
 once may both be logged, which only ever logs too much. Opening the page is logged the
 same way, as a view.
 The evidence copy is downloaded as it is, and every download is logged; its hash record
-comes as a JSON file.
+comes as a JSON file. The vault's content (preview, evidence copy, context and contact
+details) goes only to a lawyer who holds the group key (docs/m5-encryption-design.md §3.3);
+without it, the page shows the clip's index data alone.
 """
 
 import datetime
@@ -31,6 +33,7 @@ from clips import grid, vault
 from clips.models import Clip, HashRecord
 from clips.streaming import file_response, requested_range
 from clips.tags import DEFAULT_TAGS
+from keys.grants import reads_vault
 
 from .models import Case
 from .search import match_of
@@ -46,6 +49,14 @@ def case_and_clip(request, case_id, clip_id):
     if match is None:
         raise Http404
     return case, clip, match
+
+
+def vault_case_and_clip(request, case_id, clip_id):
+    """As case_and_clip, for a lawyer who holds the group key; otherwise not found."""
+    found = case_and_clip(request, case_id, clip_id)
+    if not reads_vault(request.user.lawyer_profile):
+        raise Http404
+    return found
 
 
 def place(cell, precision=''):
@@ -83,6 +94,7 @@ def clip_page(request, case_id, clip_id):
         if gap > datetime.timedelta(minutes=settings.TIME_MISMATCH_MINUTES):
             mismatch = round(gap.total_seconds() / 60)
     tags = clip.tags.order_by('source', 'key', 'custom_name')
+    reads = reads_vault(case.lawyer_profile)
     uploaded = clip.as_uploaded_tags or {}
     return render(request, 'cases/clip.html', {
         'case': case, 'clip': clip, 'match': match, 'mismatch': mismatch,
@@ -92,10 +104,11 @@ def clip_page(request, case_id, clip_id):
         'tags': [(tag.get_key_display() or tag.custom_name, tag.get_source_display()) for tag in tags],
         'uploaded_tags': tag_names(uploaded.get('default', []), uploaded.get('custom', [])),
         'edits': clip.edits.order_by('edited_at', 'pk'),
-        'context': vault.get_text(clip, vault.CONTEXT),
+        'reads_vault': reads,
+        'context': reads and vault.get_text(clip, vault.CONTEXT),
         # Left by the code holder on purpose, despite the risk, so that a lawyer can reach them.
-        'contact_details': vault.get_text(clip, vault.CONTACT_DETAILS),
-        'has_proxy': vault.has_file(clip, vault.PROXY),
+        'contact_details': reads and vault.get_text(clip, vault.CONTACT_DETAILS),
+        'has_proxy': reads and vault.has_file(clip, vault.PROXY),
     })
 
 
@@ -111,7 +124,7 @@ def open_or_404(clip, kind):
 @lawyer_required
 @require_GET
 def preview(request, case_id, clip_id):
-    case, clip, _ = case_and_clip(request, case_id, clip_id)
+    case, clip, _ = vault_case_and_clip(request, case_id, clip_id)
     proxy, size = open_or_404(clip, vault.PROXY)
     try:
         record_once_in_a_while(Action.PREVIEW, case, clip)
@@ -132,7 +145,7 @@ DOWNLOAD_REPEAT = datetime.timedelta(hours=2)
 @lawyer_required
 @require_GET
 def download(request, case_id, clip_id):
-    case, clip, _ = case_and_clip(request, case_id, clip_id)
+    case, clip, _ = vault_case_and_clip(request, case_id, clip_id)
     evidence, size = open_or_404(clip, vault.EVIDENCE_COPY)
     try:
         extension = vault.extension(clip, vault.EVIDENCE_COPY)

@@ -26,6 +26,9 @@ lawyer_patterns = [
     path('cases/<int:case_id>/clips/<uuid:clip_id>/download/', clip_pages.download, name='download'),
     path('cases/<int:case_id>/clips/<uuid:clip_id>/hash-record/', clip_pages.hash_record, name='hash_record'),
     path('margin/', case_views.default_margin, name='default_margin'),
+    # Handing over the group key (keys.views).
+    path('keys/', key_views.waiting, name='waiting'),
+    path('keys/<int:lawyer_key_id>/', key_views.grant, name='grant'),
     # The map's data, never logged (maps.apps): keep every route of it under map/.
     path('map/style.json', map_views.style, name='map_style'),
     path('map/tiles.pmtiles', map_views.tiles, name='map_tiles'),
@@ -59,6 +62,9 @@ urlpatterns = [
     path('account/key/setup/', key_views.setup, name='key_setup'),
     path('account/key/encrypted.json', key_views.encrypted_key, name='encrypted_key'),
     path('account/key/unlocked/', key_views.unlocked, name='key_unlocked'),
+    path('account/key/grants.json', key_views.own_grants, name='own_grants'),
+    path('account/key/grant-checked/', key_views.grant_checked, name='grant_checked'),
+    path('account/key/group-key/', key_views.start_group_key, name='start_group_key'),
     # Django's set-password page, reached from the link in an invitation.
     path('account/invitation/<uidb64>/<token>/', invitations.accept_invitation, name='accept_invitation'),
 ]

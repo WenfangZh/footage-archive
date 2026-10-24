@@ -1,10 +1,14 @@
-"""Lawyers' personal keys (docs/m5-encryption-design.md §3, §5; ADR 0007).
+"""Lawyers' personal keys, the group key and key grants (docs/m5-encryption-design.md §3, §5; ADR 0007).
 
 A personal key is made in the lawyer's browser. The server keeps its public half, and its
 private half only encrypted twice: under the lawyer's key passphrase and under their
 recovery key, neither of which it ever sees. A lawyer has at most one current key; an
 older one is retired, which erases both encrypted copies of its private half, while its
 public half stays for the audit log's sake.
+
+The group key is one key pair shared by all lawyers, made in a lawyer's browser too. The
+server keeps its public half, and its private half only sealed to each lawyer's personal
+key: one key grant each.
 """
 
 from django.db import models
@@ -75,3 +79,61 @@ class LawyerKey(models.Model):
         self.private_key_under_recovery_key = b''
         self.retired_at = timezone.now()
         self.save(update_fields=['private_key_under_passphrase', 'private_key_under_recovery_key', 'retired_at'])
+
+
+# crypto_box_seal: a 32-byte ephemeral public key, then the 32-byte private key and a 16-byte tag.
+SEALED_GROUP_KEY_BYTES = 32 + 32 + 16
+
+
+class GroupKey(models.Model):
+    class Status(models.TextChoices):
+        CURRENT = 'current'
+        # Current, and a rotation is due (design §5.5).
+        ROTATION_REQUESTED = 'rotation_requested'
+        # The new key of a rotation, waiting for its checks.
+        CHECKING = 'checking'
+        # The old key during a rotation.
+        RETIRING = 'retiring'
+        RETIRED = 'retired'
+        # A new key whose checks failed.
+        REJECTED = 'rejected'
+        # A new key whose rotation was given up.
+        ABANDONED = 'abandoned'
+
+    public_key = models.BinaryField(max_length=PUBLIC_KEY_BYTES)
+    made_at = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.CURRENT)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=Q(status__in=[
+                'current', 'rotation_requested', 'checking', 'retiring', 'retired', 'rejected', 'abandoned',
+            ]), name='known_group_key_status'),
+            # The key in use before any rotation running: at most one.
+            models.UniqueConstraint(
+                models.Value(True), condition=Q(status__in=['current', 'rotation_requested', 'retiring']),
+                name='one_established_group_key',
+            ),
+        ]
+
+
+# Keys that ingest seals to and lawyers read with (design §3.3, §5.5).
+IN_USE = [GroupKey.Status.CURRENT, GroupKey.Status.ROTATION_REQUESTED, GroupKey.Status.CHECKING, GroupKey.Status.RETIRING]
+
+
+class KeyGrant(models.Model):
+    """The group private key, sealed to one lawyer's personal key (design §5.3)."""
+
+    group_key = models.ForeignKey(GroupKey, on_delete=models.PROTECT, related_name='grants')
+    lawyer_key = models.ForeignKey(LawyerKey, on_delete=models.PROTECT, related_name='grants')
+    sealed_private_key = models.BinaryField(max_length=SEALED_GROUP_KEY_BYTES)
+    # The lawyer whose browser sealed it: the recipient themselves for the first group key.
+    granted_by = models.ForeignKey(LawyerProfile, on_delete=models.PROTECT, related_name='+')
+    granted_at = models.DateTimeField(default=timezone.now)
+    # When the recipient's browser opened it and found the group key's private half (design §4).
+    checked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['group_key', 'lawyer_key'], name='one_grant_per_group_key_and_lawyer_key'),
+        ]

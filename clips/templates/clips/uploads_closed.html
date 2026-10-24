@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Uploads are not open" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Uploads are not open" %}</h1>
+  <p>{% translate "The archive cannot take videos at the moment. Please try again later. A video that was not fully sent is deleted automatically." %}</p>
+{% endblock %}
