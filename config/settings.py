@@ -203,6 +203,9 @@ FILE_UPLOAD_HANDLERS = [
 DATA_UPLOAD_MAX_NUMBER_FILES = 1
 
 
+# Error reports show no frame's variables, only where the error happened (core.error_reports).
+DEFAULT_EXCEPTION_REPORTER_FILTER = 'core.error_reports.NoFrameVariablesFilter'
+
 # Upload (SPEC.md §5, §8)
 
 # Key for the keyed hash of upload codes. It is separate from SECRET_KEY, so that
