@@ -10,7 +10,8 @@ same way, as a view.
 The evidence copy is downloaded as it is, and every download is logged; its hash record
 comes as a JSON file. The vault's content (preview, evidence copy, context and contact
 details) goes only to a lawyer who holds the group key (docs/m5-encryption-design.md §3.3);
-without it, the page shows the clip's index data alone. The preview and the download
+without it, the page shows the clip's index data alone. The context and contact details
+come encrypted, for the script to open (§7.1). The preview and the download
 decrypt their file with its data key, which the page's script opens with the group key
 and hands over first (§6.3): it comes back in a cookie that only that clip's preview and
 download in that case receive, and is never stored on the server.
@@ -122,15 +123,29 @@ def clip_page(request, case_id, clip_id):
         'uploaded_tags': tag_names(uploaded.get('default', []), uploaded.get('custom', [])),
         'edits': clip.edits.order_by('edited_at', 'pk'),
         'reads_vault': reads,
-        'context': reads and vault.get_text(clip, vault.CONTEXT),
+        'context': reads and sealed_text_json(clip, vault.CONTEXT),
         # Left by the code holder on purpose, despite the risk, so that a lawyer can reach them.
-        'contact_details': reads and vault.get_text(clip, vault.CONTACT_DETAILS),
+        'contact_details': reads and sealed_text_json(clip, vault.CONTACT_DETAILS),
         'has_proxy': reads and vault.has_file(clip, vault.PROXY),
         # For the script to open with the group key (keys/static/keys/clip_keys.js), as JSON in
         # attributes, which the template escapes.
         'proxy_keys': reads and sealed_keys_json(clip, vault.PROXY),
         'evidence_keys': reads and sealed_keys_json(clip, vault.EVIDENCE_COPY),
         **unlock_context(request, current_key(case.lawyer_profile)),
+    })
+
+
+def sealed_text_json(clip, kind):
+    """The text, encrypted, with its data key sealed to each group key in use, as JSON; '' if none."""
+    sealed = vault.sealed_text(clip, kind)
+    if sealed is None:
+        return ''
+    return json.dumps({
+        'ciphertext': b64(sealed['ciphertext']), 'additional_data': b64(sealed['additional_data']),
+        'sealed_keys': [
+            {'group_public_key': b64(public_key), 'sealed_data_key': b64(sealed_key)}
+            for public_key, sealed_key in sealed['sealed_keys']
+        ],
     })
 
 

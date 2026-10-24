@@ -14,7 +14,8 @@ from clips.probe import quick_read
 from clips.time_blocks import four_hour_block
 from tests.media import H264
 
-pytestmark = pytest.mark.django_db
+# Texts are sealed to the group keys in use when they are written: one exists in each test here.
+pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures('group_key_pair')]
 
 UTC = datetime.UTC
 ENGLISH = {'accept_language': 'en'}
@@ -102,11 +103,23 @@ def test_confirming_creates_the_clip_and_shows_its_code(client, video):
         ('arrest', '', 'code_holder'), ('kettling', '', 'code_holder'),
         ('', 'Pont Neuf', 'code_holder'), ('', 'Barricade', 'code_holder'),
     }
-    assert vault.get_text(clip, vault.CONTEXT) == 'Filmed from across the street.'
-    assert vault.get_text(clip, vault.CONTACT_DETAILS) == '@someone-test-handle'
+    # Only the code opens them for the code holder (docs/m5-encryption-design.md §7.2).
+    assert vault.code_holder_text(clip, vault.CONTEXT, code) == 'Filmed from across the street.'
+    assert vault.code_holder_text(clip, vault.CONTACT_DETAILS, code) == '@someone-test-handle'
     original = Original.objects.get()
     assert original.clip == clip
     assert original.received_at == four_hour_block(original.received_at)
+
+
+def test_the_database_holds_no_plaintext_of_the_context_or_contact_details(client, video, group_key_pair):
+    from tests.conftest import lawyer_text
+    client.post(start_upload(client, video), full_form())
+    connection.ensure_connection()
+    dump = '\n'.join(connection.connection.iterdump())
+    for text in ('Filmed from across the street', 'someone-test-handle'):
+        assert text not in dump and text.encode().hex() not in dump.lower()
+    # Lawyers read them with the group key.
+    assert lawyer_text(Clip.objects.get(), vault.CONTEXT, group_key_pair) == 'Filmed from across the street.'
 
 
 def test_the_code_is_stored_nowhere(client, video):

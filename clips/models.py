@@ -57,6 +57,10 @@ class Clip(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # HMAC-SHA-256 of the upload code (clips.upload_codes); the code itself is never stored.
     code_hash = models.CharField(max_length=64, unique=True)
+    # The public half of the key pair the upload code gives (docs/m5-encryption-design.md §7.2):
+    # texts are sealed to it for the code holder. Empty on a clip confirmed before encryption,
+    # until its code holder saves an edit.
+    code_holder_public_key = models.BinaryField(max_length=32, null=True, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PROCESSING)
     upload_time = FourHourBlockField(default=timezone.now)
 
@@ -220,8 +224,10 @@ class HashRecord(models.Model):
 class VaultText(models.Model):
     """Text held in the vault for a clip. Only clips.vault reads or writes it (SPEC.md §6).
 
-    Plaintext until M5. It deliberately has no readable __str__, so that its content
-    never ends up in logs or error pages through a model's text form.
+    Padded and encrypted with its own data key (docs/m5-encryption-design.md §7.1), which is
+    stored only sealed: to the group keys, and to the clip's code holder key. It deliberately
+    has no readable __str__, so that its content never ends up in logs or error pages through
+    a model's text form.
     """
 
     class Kind(models.TextChoices):
@@ -230,11 +236,24 @@ class VaultText(models.Model):
 
     clip = models.ForeignKey(Clip, on_delete=models.CASCADE, related_name='+')
     kind = models.CharField(max_length=20, choices=Kind.choices)
-    content = models.TextField()
+    # The plaintext of a text stored before encryption, until `encrypt_vault` encrypts it
+    # (design §10); empty on every text since.
+    content = models.TextField(blank=True)
+    # A 24-byte nonce, then the padded text encrypted with XChaCha20-Poly1305.
+    ciphertext = models.BinaryField(null=True, blank=True)
+    # As VaultFile.key_check.
+    key_check = models.BinaryField(max_length=32, null=True, blank=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['clip', 'kind'], name='one_vault_text_per_kind'),
+            # Plaintext from before encryption, or encrypted with its key check and no plaintext:
+            # never both, so that encrypting can never leave the plaintext behind.
+            models.CheckConstraint(
+                condition=(Q(ciphertext__isnull=True, key_check__isnull=True) & ~Q(content=''))
+                | Q(ciphertext__isnull=False, key_check__isnull=False, content=''),
+                name='vault_text_plaintext_or_encrypted',
+            ),
         ]
 
 
@@ -287,12 +306,21 @@ SEALED_DATA_KEY_BYTES = 32 + 32 + 16
 
 
 class SealedKey(models.Model):
-    """A vault item's data key, sealed to a group key (docs/m5-encryption-design.md §3.1, §3.2):
-    what a lawyer holding that group key opens to read the item. The server seals it when it
-    records the item, and forgets the data key. Only clips.vault reads or writes it."""
+    """A vault item's data key, sealed to a public key (docs/m5-encryption-design.md §3.1, §3.2):
+    a group key, which lawyers holding it open, or for a text the clip's code holder key, which
+    only the upload code opens. The server seals it when it records the item, and forgets the
+    data key. Only clips.vault reads or writes it.
 
-    vault_file = models.ForeignKey(VaultFile, on_delete=models.CASCADE, related_name='sealed_keys')
-    group_key = models.ForeignKey('keys.GroupKey', on_delete=models.PROTECT, related_name='sealed_keys')
+    One item (a file or a text) and one public key (a group key, or the code holder's).
+    """
+
+    vault_file = models.ForeignKey(VaultFile, null=True, blank=True, on_delete=models.CASCADE, related_name='sealed_keys')
+    vault_text = models.ForeignKey(VaultText, null=True, blank=True, on_delete=models.CASCADE, related_name='sealed_keys')
+    group_key = models.ForeignKey(
+        'keys.GroupKey', null=True, blank=True, on_delete=models.PROTECT, related_name='sealed_keys',
+    )
+    # Sealed to the clip's code holder key (Clip.code_holder_public_key) instead.
+    for_code_holder = models.BooleanField(default=False)
     sealed_data_key = models.BinaryField(max_length=SEALED_DATA_KEY_BYTES)
     # A rotator who resealed it (design §5.5); empty when the server sealed it.
     sealed_by = models.ForeignKey(
@@ -301,7 +329,21 @@ class SealedKey(models.Model):
 
     class Meta:
         constraints = [
+            models.CheckConstraint(
+                condition=Q(vault_file__isnull=False, vault_text__isnull=True)
+                | Q(vault_file__isnull=True, vault_text__isnull=False),
+                name='sealed_key_of_one_item',
+            ),
+            models.CheckConstraint(
+                condition=Q(group_key__isnull=False, for_code_holder=False)
+                | Q(group_key__isnull=True, for_code_holder=True, vault_text__isnull=False),
+                name='sealed_key_to_one_public_key',
+            ),
             models.UniqueConstraint(fields=['vault_file', 'group_key'], name='one_sealed_key_per_item_and_group_key'),
+            models.UniqueConstraint(fields=['vault_text', 'group_key'], name='one_sealed_key_per_text_and_group_key'),
+            models.UniqueConstraint(
+                fields=['vault_text'], condition=Q(for_code_holder=True), name='one_code_holder_key_per_text',
+            ),
         ]
 
 

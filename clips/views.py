@@ -18,7 +18,7 @@ from .editing import NotEditable, apply_edits, clip_for_code, code_holder_tags, 
 from .forms import METADATA_PRECISIONS, ConfirmForm, EditForm, FileForm
 from .models import Clip, Original, Precision
 from .tags import DEFAULT_TAGS
-from .upload_codes import display
+from .upload_codes import display, normalise
 from .uploads import size_limit_display
 
 # How the metadata location's cell size is described, by H3 resolution.
@@ -160,7 +160,7 @@ def edit(request):
     if not form.is_valid():
         return render_clip(request, clip, form, status=400)
     try:
-        changed = apply_edits(clip, form.cleaned_data)
+        changed = apply_edits(clip, form.cleaned_data, normalise(typed))
     except NotEditable:
         # Failed or deleted meanwhile: shown as it is now.
         clip = clip_for_code(typed)
@@ -201,6 +201,7 @@ def clip_or_refusal(request, typed):
     return clip, None
 
 
+@sensitive_variables('code', 'initial')
 def edit_form(clip, code=None, data=None):
     """The edit form for a clip: pre-filled from it, or bound to what was sent."""
     stated_centre = None
@@ -220,8 +221,9 @@ def edit_form(clip, code=None, data=None):
         'precision': clip.stated_precision,
         'tags': keys,
         'custom_tags': ', '.join(custom),
-        'context': vault.get_text(clip, vault.CONTEXT),
-        'contact_details': vault.get_text(clip, vault.CONTACT_DETAILS),
+        # Opened with the code, during this request only (docs/m5-encryption-design.md §7.2).
+        'context': vault.code_holder_text(clip, vault.CONTEXT, normalise(code)),
+        'contact_details': vault.code_holder_text(clip, vault.CONTACT_DETAILS, normalise(code)),
     }
     if stated_centre is not None:
         initial['latitude'], initial['longitude'] = stated_centre

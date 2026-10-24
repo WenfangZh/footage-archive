@@ -2,8 +2,10 @@
 
 A code is 28 random characters in Crockford's base32 (140 bits), shown in 7 groups
 of 4. The server never stores a code, only its keyed hash: HMAC-SHA-256 with
-UPLOAD_CODE_KEY. Without that key, a copy of the database cannot be used to test
-guesses, and with it a presented code can still be looked up.
+UPLOAD_CODE_KEY, with which a presented code is looked up. The code also gives the clip's
+code holder key pair (clips.vault.code_holder_key), whose public half is stored: so a copy
+of the database can test a guessed code, even without the key, which 140 random bits make
+harmless (docs/m5-encryption-design.md §7.2).
 """
 
 import hashlib
