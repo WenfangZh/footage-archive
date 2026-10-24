@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Colleagues waiting for the group key" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Colleagues waiting for the group key" %}</h1>
+  {% if not reads_vault %}
+    <p>{% translate "You do not hold the group key yet, so you cannot give it to anyone." %}</p>
+  {% elif waiting %}
+    <p>{% translate "The admin has admitted them and compared their safety number with them. Before giving them the group key, compare it with them yourself." %}</p>
+    <ul>
+      {% for key in waiting %}
+        <li><a href="{% url 'lawyer:grant' lawyer_key_id=key.pk %}">{{ key.lawyer_profile.user.get_full_name }}</a>
+          ({{ key.lawyer_profile.bar }}; {% blocktranslate with vouched_by=key.lawyer_profile.vouched_by %}vouched for by {{ vouched_by }}{% endblocktranslate %})</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>{% translate "No one is waiting for the group key." %}</p>
+  {% endif %}
+{% endblock %}

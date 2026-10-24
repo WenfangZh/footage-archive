@@ -1,7 +1,8 @@
 """Alerts to the admin (SPEC.md §5): shown on the admin's pages, not sent by email for now.
 
 M3 has two kinds: a backed-up ingest queue (SPEC.md §9), and many failed logins for one
-account (SPEC.md §10). M4 adds unusual lawyer activity. An alert holds a kind, the
+account (SPEC.md §10). M4 adds unusual lawyer activity, M5 a key grant that its recipient's
+browser could not open (docs/m5-encryption-design.md §4). An alert holds a kind, the
 account it concerns if any, and when it was raised and seen: never text from anyone.
 Raising and checking them is in alerts.checks.
 """
@@ -19,6 +20,7 @@ class Alert(models.Model):
         FAILED_LOGINS = 'failed_logins', _('Many failed logins for one account')
         MANY_DOWNLOADS = 'many_downloads', _('Many downloads by one lawyer in a short time')
         MANY_CASES = 'many_cases', _('Many cases created by one lawyer in a short time')
+        KEY_GRANT_FAILED = 'key_grant_failed', _('A key grant did not open for the lawyer who received it')
 
     kind = models.CharField(max_length=30, choices=Kind.choices)
     account = models.ForeignKey(

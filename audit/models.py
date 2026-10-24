@@ -12,7 +12,9 @@ id, so that deleting a clip never deletes or changes an entry. A search records 
 clips it found instead (SPEC.md §7). The admin's decision on a larger case names the case.
 One entry names nobody: a change of the size caps or alert limits found when the archive
 starts, with the numbers before and after (audit.limits). The admin's temporary raise of
-one lawyer's alert limit records the limit before and after too.
+one lawyer's alert limit records the limit before and after too. A key grant names the
+lawyer who granted and the personal key it was granted to, which names its lawyer
+(docs/m5-encryption-design.md §5.3).
 """
 
 from django.apps import apps
@@ -46,6 +48,10 @@ class Action(models.TextChoices):
     CASE_REFUSAL = 'case_refusal', pgettext_lazy('audit log action', 'Refusal of a larger case')
     LIMITS_CHANGE = 'limits_change', pgettext_lazy('audit log action', 'Change of the size caps and alert limits')
     ALERT_LIMIT_RAISE = 'alert_limit_raise', pgettext_lazy('audit log action', "Temporary raise of a lawyer's alert limit")
+    # Keys (docs/m5-encryption-design.md §5.3, §5.7).
+    GROUP_KEY_CREATION = 'group_key_creation', pgettext_lazy('audit log action', 'Making the first group key')
+    STARTING_OVER = 'starting_over', pgettext_lazy('audit log action', 'Starting over with a new group key')
+    KEY_GRANT = 'key_grant', pgettext_lazy('audit log action', 'Key grant')
 
 
 # Actions the admin takes; every other action is a lawyer's own, or about the archive.
@@ -64,6 +70,8 @@ CLIP_ACTIONS = [Action.PREVIEW, Action.DOWNLOAD, Action.CLIP_VIEW]
 COUNT_ACTIONS = [Action.SEARCH]
 # Entries about the archive itself, which name no applicant or lawyer.
 ARCHIVE_ACTIONS = [Action.LIMITS_CHANGE]
+# Entries that name the personal key the action was about.
+KEY_ACTIONS = [Action.KEY_GRANT]
 # Entries that record limits, before and after.
 LIMIT_ACTIONS = [Action.LIMITS_CHANGE, Action.ALERT_LIMIT_RAISE]
 # The settings a change of limits records (audit.limits): each new size cap or alert limit
@@ -127,6 +135,8 @@ class AuditEntry(models.Model):
     # "before" null the first time. The admin raising one lawyer's alert limit: the limit
     # before and after, and "days": for how long. Setting names and numbers only.
     limits = models.JSONField(null=True, blank=True)
+    # A key grant: the personal key the group key was sealed to. Keys are never deleted.
+    lawyer_key = models.ForeignKey('keys.LawyerKey', null=True, blank=True, on_delete=models.PROTECT, related_name='+')
     # The time of writing, never one passed in. Precise: alerts look for many actions in a
     # short time (SPEC.md §7).
     at = models.DateTimeField(auto_now_add=True)
@@ -170,6 +180,11 @@ class AuditEntry(models.Model):
                 condition=Q(action__in=LIMIT_ACTIONS, limits__isnull=False)
                 | (~Q(action__in=LIMIT_ACTIONS) & Q(limits__isnull=True)),
                 name='limits_on_limit_actions_only',
+            ),
+            models.CheckConstraint(
+                condition=Q(action__in=KEY_ACTIONS, lawyer_key__isnull=False)
+                | (~Q(action__in=KEY_ACTIONS) & Q(lawyer_key__isnull=True)),
+                name='lawyer_key_on_key_actions_only',
             ),
         ]
 
@@ -235,10 +250,11 @@ def _a_raise(limits):
 
 def record(
     action, lawyer_profile, admin=None, case=None, clip=None, core_count=None, margin_count=None, limits=None,
+    lawyer_key=None,
 ):
     """Add an entry to the audit log: the way every entry is meant to be written."""
     return AuditEntry.objects.create(
         action=action, lawyer_profile=lawyer_profile, admin=admin, case=case,
         clip_id=clip.pk if clip is not None else None, core_count=core_count, margin_count=margin_count,
-        limits=limits,
+        limits=limits, lawyer_key=lawyer_key,
     )
