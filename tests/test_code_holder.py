@@ -6,11 +6,13 @@ from django.db import connection
 from django.urls import reverse
 
 from clips import grid, vault
+from clips.upload_codes import normalise
 from clips.models import Clip, ClipTag, Edit, Original, Precision, VaultText
 from clips.time_blocks import four_hour_block
 from tests.media import H264
 
-pytestmark = pytest.mark.django_db
+# Texts are sealed to the group keys in use when they are written: one exists in each test here.
+pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures('group_key_pair')]
 
 UTC = datetime.UTC
 ENGLISH = {'accept_language': 'en'}
@@ -134,9 +136,9 @@ def test_the_metadata_time_cannot_be_edited(client, uploaded):
 def test_old_context_and_contact_details_are_not_kept(client, uploaded):
     clip, code = uploaded
     edit(client, code, context='Second context.', contact_details='')
-    assert vault.get_text(clip, vault.CONTEXT) == 'Second context.'
-    assert vault.get_text(clip, vault.CONTACT_DETAILS) == ''
-    assert list(VaultText.objects.values_list('content', flat=True)) == ['Second context.']
+    assert vault.code_holder_text(clip, vault.CONTEXT, normalise(code)) == 'Second context.'
+    assert vault.code_holder_text(clip, vault.CONTACT_DETAILS, normalise(code)) == ''
+    assert VaultText.objects.get().kind == vault.CONTEXT
     connection.ensure_connection()
     dump = '\n'.join(connection.connection.iterdump())
     assert 'First context.' not in dump and '@first-test-handle' not in dump
@@ -218,7 +220,7 @@ def test_an_edit_with_a_wrong_code_changes_nothing(client, uploaded):
     values = form_values(open_clip(client, code).content.decode())
     values.update(code='7K3Q-M9XA-2B4C-D6EF-8GHJ-0KMN-1PQR', context='Changed by someone else.')
     assert client.post(EDIT_URL, values).status_code == 404
-    assert vault.get_text(clip, vault.CONTEXT) == 'First context.'
+    assert vault.code_holder_text(clip, vault.CONTEXT, normalise(code)) == 'First context.'
     assert not Edit.objects.exists()
 
 

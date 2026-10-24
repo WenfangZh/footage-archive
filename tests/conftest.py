@@ -121,6 +121,47 @@ def group_key_pair():
     return private_key
 
 
+# A normalised upload code, fictitious, for clips made directly in tests.
+TEST_CODE = '7K3QM9XA2B4CD6EF8GHJ0KMN1PQR'
+
+
+def with_code_holder_key(clip, code=TEST_CODE):
+    """Give the clip the code holder key that `code` gives, as confirmation does."""
+    from clips import vault
+    clip.code_holder_public_key = bytes(vault.code_holder_key(code).public_key)
+    clip.save(update_fields=['code_holder_public_key'])
+    return clip
+
+
+def open_page_text(page_value, group_private_key):
+    """A text as a lawyer's browser opens it from the clip page (keys/static/keys/clip_keys.js),
+    with the group key; None if the page has none."""
+    import base64
+    import json
+
+    from nacl import bindings
+    from nacl.public import SealedBox
+
+    from clips import vault
+    if not page_value:
+        return None
+    sealed = json.loads(page_value)
+    public_key = base64.b64encode(bytes(group_private_key.public_key)).decode()
+    [sealed_key] = [item['sealed_data_key'] for item in sealed['sealed_keys'] if item['group_public_key'] == public_key]
+    data_key = SealedBox(group_private_key).decrypt(base64.b64decode(sealed_key))
+    encrypted = base64.b64decode(sealed['ciphertext'])
+    padded = bindings.crypto_aead_xchacha20poly1305_ietf_decrypt(
+        encrypted[vault.NONCE_BYTES:], base64.b64decode(sealed['additional_data']), encrypted[:vault.NONCE_BYTES], data_key,
+    )
+    return bindings.sodium_unpad(padded, vault.TEXT_BLOCK).decode()
+
+
+def lawyer_text(clip, kind, group_private_key):
+    """The clip's text as a lawyer's browser opens it, or None if there is none."""
+    from cases.clip_pages import sealed_text_json
+    return open_page_text(sealed_text_json(clip, kind), group_private_key)
+
+
 def put_vault_file(clip, kind, source_path, extension):
     """Encrypt a file into the vault and record it as the clip's, as ingest does; returns its
     data key, which a lawyer's browser would open from its sealed key."""

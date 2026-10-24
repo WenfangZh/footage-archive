@@ -12,6 +12,7 @@ from django.db.models import ProtectedError
 from clips import vault
 from clips.editing import delete_clip
 from clips.models import Clip, SealedKey, VaultFile, VaultStorage, VaultText
+from tests.conftest import TEST_CODE, lawyer_text, with_code_holder_key
 from tests.conftest import put_vault_file as put_file
 
 # Every file is sealed to the group keys in use: one exists in each test here.
@@ -22,46 +23,46 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 @pytest.fixture
 def clip():
-    return Clip.objects.create(code_hash=uuid.uuid4().hex * 2)
+    return with_code_holder_key(Clip.objects.create(code_hash=uuid.uuid4().hex * 2))
 
 
 @pytest.mark.parametrize('kind', [vault.CONTEXT, vault.CONTACT_DETAILS])
 def test_text_goes_in_and_comes_out(clip, kind):
     vault.put_text(clip, kind, 'Filmed from the corner, facing the square.')
-    assert vault.get_text(clip, kind) == 'Filmed from the corner, facing the square.'
+    assert vault.code_holder_text(clip, kind, TEST_CODE) == 'Filmed from the corner, facing the square.'
 
 
 def test_a_clip_with_nothing_in_the_vault_reads_as_empty(clip):
-    assert vault.get_text(clip, vault.CONTEXT) == ''
+    assert vault.code_holder_text(clip, vault.CONTEXT, TEST_CODE) == ''
 
 
 def test_a_new_value_replaces_the_old_one(clip):
     vault.put_text(clip, vault.CONTACT_DETAILS, 'first handle')
     vault.put_text(clip, vault.CONTACT_DETAILS, 'second handle')
-    assert vault.get_text(clip, vault.CONTACT_DETAILS) == 'second handle'
-    assert list(VaultText.objects.values_list('content', flat=True)) == ['second handle']
+    assert vault.code_holder_text(clip, vault.CONTACT_DETAILS, TEST_CODE) == 'second handle'
+    assert VaultText.objects.count() == 1
 
 
 def test_an_empty_value_removes_the_text(clip):
     vault.put_text(clip, vault.CONTEXT, 'some context')
     vault.put_text(clip, vault.CONTEXT, '')
-    assert vault.get_text(clip, vault.CONTEXT) == ''
+    assert vault.code_holder_text(clip, vault.CONTEXT, TEST_CODE) == ''
     assert not VaultText.objects.exists()
 
 
 def test_kinds_are_kept_apart(clip):
     vault.put_text(clip, vault.CONTEXT, 'context')
     vault.put_text(clip, vault.CONTACT_DETAILS, 'contact')
-    assert vault.get_text(clip, vault.CONTEXT) == 'context'
-    assert vault.get_text(clip, vault.CONTACT_DETAILS) == 'contact'
+    assert vault.code_holder_text(clip, vault.CONTEXT, TEST_CODE) == 'context'
+    assert vault.code_holder_text(clip, vault.CONTACT_DETAILS, TEST_CODE) == 'contact'
 
 
 def test_delete_all_and_clip_deletion_empty_the_vault(clip):
-    other = Clip.objects.create(code_hash=uuid.uuid4().hex * 2)
+    other = with_code_holder_key(Clip.objects.create(code_hash=uuid.uuid4().hex * 2))
     vault.put_text(clip, vault.CONTEXT, 'context')
     vault.put_text(other, vault.CONTEXT, 'other context')
     vault.delete_all(clip)
-    assert vault.get_text(clip, vault.CONTEXT) == ''
+    assert vault.code_holder_text(clip, vault.CONTEXT, TEST_CODE) == ''
     other.delete()
     assert not VaultText.objects.exists()
 
@@ -423,6 +424,8 @@ def test_no_key_opens_a_file_stored_before_encryption(clip, local_file):
         vault.open_file(clip, vault.PROXY, os.urandom(vault.DATA_KEY_BYTES))
 
 
+# VACUUM cannot run inside the transaction other tests run in.
+@pytest.mark.django_db(transaction=True)
 def test_encrypt_vault_encrypts_files_stored_before_encryption_once(clip, local_file, group_key_pair, django_capture_on_commit_callbacks):
     from django.core.management import call_command
 
@@ -446,3 +449,62 @@ def test_encrypt_vault_needs_a_group_key(clip, local_file):
     GroupKey.objects.all().delete()
     with pytest.raises(CommandError):
         call_command('encrypt_vault')
+
+
+# Encrypted texts (docs/m5-encryption-design.md §7.1, §7.2).
+
+def test_a_text_opens_with_the_code_for_the_code_holder_and_the_group_key_for_lawyers(clip, group_key_pair):
+    vault.put_text(clip, vault.CONTEXT, 'Filmed from a balcony.\nSecond line.')
+    stored = VaultText.objects.get()
+    assert stored.content == '' and b'balcony' not in bytes(stored.ciphertext)
+    # Padded: the length shows only to the nearest 256 bytes.
+    assert len(bytes(stored.ciphertext)) == vault.NONCE_BYTES + vault.TEXT_BLOCK + 16
+    assert vault.code_holder_text(clip, vault.CONTEXT, TEST_CODE) == 'Filmed from a balcony.\nSecond line.'
+    assert lawyer_text(clip, vault.CONTEXT, group_key_pair) == 'Filmed from a balcony.\nSecond line.'
+
+
+def test_nothing_opens_a_text_without_the_code_or_the_group_key(clip):
+    from nacl.exceptions import CryptoError
+    vault.put_text(clip, vault.CONTEXT, 'Filmed from a balcony.')
+    with pytest.raises(CryptoError):
+        vault.code_holder_text(clip, vault.CONTEXT, 'Z' * 28)
+    from nacl.public import PrivateKey
+    with pytest.raises(ValueError):
+        lawyer_text(clip, vault.CONTEXT, PrivateKey.generate())
+
+
+def test_a_text_moved_to_another_clip_or_kind_does_not_decrypt(clip):
+    from nacl.exceptions import CryptoError
+    other = with_code_holder_key(Clip.objects.create(code_hash=uuid.uuid4().hex * 2))
+    vault.put_text(clip, vault.CONTEXT, 'Filmed from a balcony.')
+    VaultText.objects.update(kind=vault.CONTACT_DETAILS)
+    with pytest.raises(CryptoError):
+        vault.code_holder_text(clip, vault.CONTACT_DETAILS, TEST_CODE)
+    VaultText.objects.update(clip=other, kind=vault.CONTEXT)
+    with pytest.raises(CryptoError):
+        vault.code_holder_text(other, vault.CONTEXT, TEST_CODE)
+
+
+def test_a_text_is_sealed_to_every_group_key_in_use_and_to_the_code_holder(clip):
+    from keys.models import GroupKey
+    GroupKey.objects.update(status=GroupKey.Status.RETIRING)
+    GroupKey.objects.create(public_key=os.urandom(32), status=GroupKey.Status.CHECKING)
+    vault.put_text(clip, vault.CONTEXT, 'Filmed from a balcony.')
+    sealed = SealedKey.objects.filter(vault_text__isnull=False)
+    assert sealed.filter(for_code_holder=True).count() == 1
+    assert set(sealed.filter(for_code_holder=False).values_list('group_key__status', flat=True)) == {
+        GroupKey.Status.RETIRING, GroupKey.Status.CHECKING,
+    }
+
+
+@pytest.mark.django_db(transaction=True)
+def test_encrypt_vault_encrypts_texts_stored_before_encryption_for_lawyers_only(clip, group_key_pair):
+    from django.core.management import call_command
+    VaultText.objects.create(clip=clip, kind=vault.CONTEXT, content='Filmed before encryption.')
+    call_command('encrypt_vault', stdout=open(os.devnull, 'w'))
+    stored = VaultText.objects.get()
+    assert stored.content == '' and stored.ciphertext is not None
+    assert lawyer_text(clip, vault.CONTEXT, group_key_pair) == 'Filmed before encryption.'
+    # The server does not know the code: the code holder sees it empty, until they enter it again.
+    assert vault.code_holder_text(clip, vault.CONTEXT, TEST_CODE) == ''
+    assert vault.encrypt_plaintext_texts() == 0

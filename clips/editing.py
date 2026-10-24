@@ -5,6 +5,7 @@ values stay as they were, and old context and contact details are replaced in pl
 """
 
 from django.db import transaction
+from django.views.decorators.debug import sensitive_variables
 
 from . import grid, upload_codes, vault
 from .models import Clip, ClipTag, Edit, Original
@@ -12,7 +13,7 @@ from .models import Clip, ClipTag, Edit, Original
 Field = Edit.EditableField
 # The clip's own fields a code holder edits: only these are saved, so that an edit never
 # overwrites what ingest recorded meanwhile (its status, duration, size).
-EDITED_FIELDS = ['stated_time', 'stated_cell', 'stated_precision', 'metadata_cell']
+EDITED_FIELDS = ['stated_time', 'stated_cell', 'stated_precision', 'metadata_cell', 'code_holder_public_key']
 
 
 class NotEditable(Exception):
@@ -36,13 +37,18 @@ def code_holder_tags(clip):
     )
 
 
-def apply_edits(clip, cleaned):
-    """Apply the code holder's form to the clip; returns the fields that changed.
+@sensitive_variables('cleaned', 'code', 'new_texts')
+def apply_edits(clip, cleaned, code):
+    """Apply the code holder's form to the clip; returns the fields that changed. `code` is the
+    normalised upload code, which opens the clip's texts (docs/m5-encryption-design.md §7.2).
 
     Raises NotEditable if the clip failed or was deleted since it was loaded: a failed clip has
     nothing left to describe (SPEC.md §9).
     """
     changed = []
+    if clip.code_holder_public_key is None:
+        # Confirmed before encryption: the key pair is known only now, from the code.
+        clip.code_holder_public_key = bytes(vault.code_holder_key(code).public_key)
 
     if cleaned['stated_time'] != clip.stated_time:
         clip.stated_time = cleaned['stated_time']
@@ -70,7 +76,7 @@ def apply_edits(clip, cleaned):
     texts = {Field.CONTEXT: vault.CONTEXT, Field.CONTACT_DETAILS: vault.CONTACT_DETAILS}
     new_texts = {
         field: cleaned[field.value] for field, kind in texts.items()
-        if cleaned[field.value] != vault.get_text(clip, kind)
+        if cleaned[field.value] != vault.code_holder_text(clip, kind, code)
     }
     changed.extend(new_texts)
 
