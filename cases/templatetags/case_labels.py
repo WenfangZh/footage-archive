@@ -16,7 +16,7 @@ register = template.Library()
 def case_label(case):
     fallback = _('Case no. %(number)s') % {'number': case.pk}
     if labels.unreadable(case):
-        return format_html('<span class="case-label">{}</span>', _('Case no. %(number)s (label unreadable)') % {'number': case.pk})
+        return format_html('<span class="case-label">{}</span>', _('Case no. %(number)s (case label unreadable)') % {'number': case.pk})
     return format_html(
         '<span class="case-label" data-label="{}" data-fallback="{}">{}</span>', labels.for_page(case), fallback, fallback,
     )

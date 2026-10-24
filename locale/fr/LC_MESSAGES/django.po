@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-24 17:32+0200\n"
+"POT-Creation-Date: 2026-10-24 17:46+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -1394,10 +1394,12 @@ msgstr "Dossier de recherche nº %(number)s"
 
 #: cases/templatetags/case_labels.py:19
 #, python-format
-msgid "Case no. %(number)s (label unreadable)"
-msgstr "Dossier de recherche nº %(number)s (libellé illisible)"
+msgid "Case no. %(number)s (case label unreadable)"
+msgstr ""
+"Dossier de recherche nº %(number)s (libellé du dossier de recherche "
+"illisible)"
 
-#: cases/views.py:55
+#: cases/views.py:56
 msgid ""
 "Your account has no personal key to lock the case label with. Ask the admin "
 "what to do."
@@ -1405,11 +1407,11 @@ msgstr ""
 "Votre compte n'a pas de clé personnelle pour chiffrer le libellé du dossier "
 "de recherche. Demandez à l'administrateur·rice comment faire."
 
-#: cases/views.py:88
+#: cases/views.py:89
 msgid "Your new cases will start with this margin."
 msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
 
-#: cases/views.py:99
+#: cases/views.py:100
 msgid "The case is closed."
 msgstr "Le dossier de recherche est clos."
 

@@ -27,8 +27,9 @@ def own_profile(request):
 
 @lawyer_required
 # Left out of Django's error reports: the typed place is never kept, and the cells are as precise.
-# The reason is deleted after the admin's decision, so it stays out of them too.
-@sensitive_post_parameters('latitude', 'longitude', 'cells', 'reason')
+# The reason is deleted after the admin's decision, so it stays out of them too, and the label is
+# stored only encrypted (docs/m5-encryption-design.md §7.4).
+@sensitive_post_parameters('latitude', 'longitude', 'cells', 'reason', 'label')
 # And out of the variables a traceback shows: the form and its cleaned data hold them too.
 @sensitive_variables('form', 'fields')
 def new_case(request):

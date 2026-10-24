@@ -58,7 +58,7 @@ class CaseQuerySet(models.QuerySet):
             last_use=Max('audit_entries__at', filter=Q(audit_entries__action__in=uses)),
         ).filter(Q(last_use__lt=cutoff) | Q(last_use__isnull=True, opened_at__lt=cutoff))
 
-    @method_decorator(sensitive_variables('approval_reason'))
+    @method_decorator(sensitive_variables('approval_reason', 'label'))
     def create_with_area(
         self, lawyer_profile, label, starts_at, ends_at, cells, margin_minutes, margin_rings, approval_reason='',
     ):

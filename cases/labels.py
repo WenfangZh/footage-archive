@@ -27,6 +27,8 @@ def additional_data(case):
 @sensitive_variables('label', 'data_key')
 def seal(case, label, lawyer_key):
     """Encrypt `label` as the case's, sealed to `lawyer_key`, replacing what it held."""
+    if lawyer_key.lawyer_profile_id != case.lawyer_profile_id or lawyer_key.retired_at is not None:
+        raise ValueError("A case's label is sealed only to its own lawyer's current personal key.")
     data_key = random(vault.DATA_KEY_BYTES)
     case.label = ''
     case.label_ciphertext = vault.encrypt_text(label, data_key, additional_data(case))
@@ -43,7 +45,7 @@ def for_page(case):
         return ''
     return json.dumps({
         'ciphertext': b64(case.label_ciphertext), 'additional_data': b64(additional_data(case)),
-        'sealed_key': b64(case.label_sealed_key), 'public_key': b64(case.label_key.public_key),
+        'sealed_key': b64(case.label_sealed_key),
     })
 
 

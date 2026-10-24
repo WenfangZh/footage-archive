@@ -93,7 +93,7 @@ def test_a_label_sealed_to_a_retired_key_is_unreadable(settings):
     current_key(lawyer).retire()
     make_key(lawyer)
     page = log_in_with_second_factor(Client(), lawyer.user).get(reverse('lawyer:home')).content.decode()
-    assert f'Case no. {case.pk} (label unreadable)' in page and 'data-label' not in page
+    assert f'Case no. {case.pk} (case label unreadable)' in page and 'data-label' not in page
 
 
 def test_a_closed_case_can_have_its_label_sealed_but_nothing_else_changed():
@@ -134,3 +134,38 @@ def test_encrypt_vault_seals_labels_from_before_encryption_to_their_lawyer_s_key
     assert keyless.label == 'Keyless label' and keyless.label_ciphertext is None
     assert labels.encrypt_plaintext_labels() == (0, 1)
 
+
+
+def test_a_label_is_sealed_only_to_its_own_lawyer_s_current_key():
+    lawyer, other = make_lawyer(), make_lawyer('other@example.org')
+    case = make_case(lawyer, 'Bastille, 15 June')
+    with pytest.raises(ValueError):
+        labels.seal(case, 'Bastille, 15 June', current_key(other))
+    old = current_key(lawyer)
+    old.retire()
+    with pytest.raises(ValueError):
+        labels.seal(case, 'Bastille, 15 June', old)
+
+
+def test_error_reports_hide_the_label_in_the_form_and_where_it_is_sealed(monkeypatch, caplog):
+    from django.views.debug import ExceptionReporter
+
+    from cases.models import CaseCellQuerySet
+    lawyer = make_lawyer()
+    client = log_in_with_second_factor(Client(raise_request_exception=False), lawyer.user)
+
+    def fails(*args, **kwargs):
+        raise RuntimeError('the database went away')
+
+    monkeypatch.setattr(CaseCellQuerySet, 'bulk_create', fails)
+    response = client.post(reverse('lawyer:new_case'), {
+        'label': 'SecretLabelXYZ', 'starts_at': '2026-06-15T18:00', 'ends_at': '2026-06-15T19:00',
+        'latitude': str(BASTILLE[0]), 'longitude': str(BASTILLE[1]), 'radius_metres': '50',
+        'margin_minutes': '10', 'margin_rings': '1',
+    })
+    assert response.status_code == 500 and not Case.objects.exists()
+    [record] = [record for record in caplog.records if record.name == 'django.request']
+    data = ExceptionReporter(record.request, *record.exc_info).get_traceback_data()
+    assert 'SecretLabelXYZ' not in str(data['filtered_POST_items'])
+    [frame] = [frame for frame in data['frames'] if frame['function'] == 'create_with_area']
+    assert 'SecretLabelXYZ' not in str(frame['vars'])

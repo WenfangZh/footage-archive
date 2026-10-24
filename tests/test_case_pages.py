@@ -109,12 +109,12 @@ def test_the_typed_place_is_never_kept_or_logged(lawyer_client, caplog):
         assert '85417' not in kept and '36923' not in kept
 
 
-def test_the_typed_place_and_reason_are_left_out_of_error_reports(lawyer_client):
+def test_the_typed_place_reason_and_label_are_left_out_of_error_reports(lawyer_client):
     request = create(lawyer_client, label='', reason=REASON).wsgi_request
     shown = SafeExceptionReporterFilter().get_post_parameters(request)
     hidden = SafeExceptionReporterFilter.cleansed_substitute
-    assert shown['latitude'] == shown['longitude'] == shown['reason'] == hidden
-    assert shown['label'] == ''
+    # The label too: it is stored only encrypted (docs/m5-encryption-design.md §7.4).
+    assert shown['latitude'] == shown['longitude'] == shown['reason'] == shown['label'] == hidden
 
 
 def test_a_case_over_the_size_caps_is_refused_with_its_size(lawyer_client, settings):
