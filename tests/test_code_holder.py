@@ -320,7 +320,8 @@ def test_an_edit_keeps_what_ingest_recorded_meanwhile(client, uploaded, monkeypa
     clip, code = uploaded
     Clip.objects.filter(pk=clip.pk).update(status=Clip.Status.PROCESSING, duration=None)
     changing_meanwhile(monkeypatch, status=Clip.Status.READY, duration=datetime.timedelta(seconds=42), width=320)
-    assert edit(client, code, stated_time='2026-05-01T14:30').status_code == 200
+    response = edit(client, code, stated_time='2026-05-01T14:30')
+    assert response.status_code == 200 and response.context['clip'].status == Clip.Status.READY
     clip.refresh_from_db()
     assert (clip.status, clip.duration, clip.width) == (Clip.Status.READY, datetime.timedelta(seconds=42), 320)
     assert clip.stated_time == datetime.datetime(2026, 5, 1, 12, 30, tzinfo=UTC)

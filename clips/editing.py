@@ -89,6 +89,8 @@ def apply_edits(clip, cleaned):
         for field, text in new_texts.items():
             vault.put_text(clip, texts[field], text)
         Edit.objects.bulk_create([Edit(clip=clip, field=field) for field in changed])
+    # As stored, with what ingest recorded meanwhile, for the page that follows.
+    clip.refresh_from_db()
     return changed
 
 
