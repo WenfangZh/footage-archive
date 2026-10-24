@@ -221,3 +221,17 @@ def test_no_data_key_is_stored_or_logged(case, clip, client_, caplog):
     logged = '\n'.join(record.getMessage() for record in caplog.records).encode()
     for form in forms:
         assert form not in stored and form not in cached and form not in logged
+
+
+@pytest.mark.parametrize('asked', [None, 'bytes=-100'])
+def test_a_file_cut_at_a_chunk_boundary_is_never_served_as_complete(case, clip, client_, asked):
+    # Whole chunks only, the final one gone: its size still looks like a file's.
+    hand_over(client_, case, clip, vault.EVIDENCE_COPY, clip.data_keys[vault.EVIDENCE_COPY])
+    path = settings.VAULT_DIR / VaultFile.objects.get(clip=clip, kind=vault.EVIDENCE_COPY).file.name
+    path.write_bytes(path.read_bytes()[:vault.HEADER_BYTES + 2 * (vault.CHUNK_SIZE + vault.ABYTES)])
+    headers = {'HTTP_RANGE': asked} if asked else {}
+    response = client_.get(url('download', case, clip), **headers)
+    if response.status_code == 404:
+        return  # Refused before anything is sent.
+    with pytest.raises(vault.Unreadable):
+        served(response)

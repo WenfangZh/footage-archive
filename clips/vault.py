@@ -245,7 +245,7 @@ def is_data_key(clip, kind, data_key):
 
 
 def _opens(vault_file, data_key):
-    # In constant time (design §5.5). A file still plaintext (design §10) opens with no key.
+    # In constant time (design §5.5). No key opens a file still plaintext (design §10).
     return (
         data_key is not None and vault_file.key_check is not None
         and hmac.compare_digest(key_check(data_key), bytes(vault_file.key_check))
@@ -283,7 +283,8 @@ class DecryptedFile:
         self._data_key = data_key
         self._ad = ad
         self._name = name
-        self.size = plaintext_size(os.fstat(stored.fileno()).st_size)
+        self._stored_size = os.fstat(stored.fileno()).st_size
+        self.size = plaintext_size(self._stored_size)
         try:
             if self.size is None:
                 self._fail()
@@ -336,10 +337,12 @@ class DecryptedFile:
         except (CryptoError, ValueError):
             # Includes a file that ends without its final chunk.
             self._fail()
-        if tag == FINAL:
-            self._finished = True
-            if self._stored.read(1):
-                self._fail()
+        # The final chunk, and only it, ends the file: checked before its bytes are returned, so
+        # that a file cut at a chunk boundary fails even when a reader stops at `size` and
+        # never asks past it, and anything after the final chunk fails too.
+        self._finished = tag == FINAL
+        if self._finished != (self._stored.tell() >= self._stored_size):
+            self._fail()
         return chunk
 
     def _fail(self):
