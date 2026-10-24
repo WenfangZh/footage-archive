@@ -465,12 +465,43 @@ def test_a_text_opens_with_the_code_for_the_code_holder_and_the_group_key_for_la
 
 def test_nothing_opens_a_text_without_the_code_or_the_group_key(clip):
     from nacl.exceptions import CryptoError
+    from nacl.public import PrivateKey, SealedBox
     vault.put_text(clip, vault.CONTEXT, 'Filmed from a balcony.')
     with pytest.raises(CryptoError):
         vault.code_holder_text(clip, vault.CONTEXT, 'Z' * 28)
-    from nacl.public import PrivateKey
-    with pytest.raises(ValueError):
-        lawyer_text(clip, vault.CONTEXT, PrivateKey.generate())
+    # No other key opens any of its sealed copies.
+    for sealed in SealedKey.objects.filter(vault_text__isnull=False):
+        with pytest.raises(CryptoError):
+            SealedBox(PrivateKey.generate()).decrypt(bytes(sealed.sealed_data_key))
+
+
+def test_the_code_holder_key_is_the_one_design_section_7_2_gives():
+    # A known answer: BLAKE2b-256 of the label and the normalised code, as a crypto_box seed. A
+    # change here would lock every code holder out of their texts.
+    assert bytes(vault.code_holder_key(TEST_CODE).public_key).hex() == (
+        '8b61554bcd7af95ae3bf3327fc0a5764f8ef7e1a1dd775b81be3d5ab09197755'
+    )
+
+
+def test_no_text_or_data_key_is_stored_in_the_clear(clip, monkeypatch):
+    from django.db import connection
+    drawn = []
+    real_random = vault.random
+    monkeypatch.setattr(vault, 'random', lambda size: drawn.append(real_random(size)) or drawn[-1])
+    vault.put_text(clip, vault.CONTEXT, 'Filmed from a balcony.')
+    dump = '\n'.join(connection.connection.iterdump()).lower()
+    assert 'balcony' not in dump and 'balcony'.encode().hex() not in dump
+    data_key = next(value for value in drawn if len(value) == vault.DATA_KEY_BYTES)
+    assert data_key.hex() not in dump and bytes(vault.code_holder_key(TEST_CODE)).hex() not in dump
+
+
+def test_a_text_cannot_be_stored_both_in_plaintext_and_encrypted(clip):
+    from django.db import IntegrityError, transaction
+    vault.put_text(clip, vault.CONTEXT, 'Filmed from a balcony.')
+    with pytest.raises(IntegrityError), transaction.atomic():
+        VaultText.objects.update(content='Filmed from a balcony.')
+    with pytest.raises(IntegrityError), transaction.atomic():
+        VaultText.objects.create(clip=clip, kind=vault.CONTACT_DETAILS)
 
 
 def test_a_text_moved_to_another_clip_or_kind_does_not_decrypt(clip):

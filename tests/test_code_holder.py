@@ -145,6 +145,18 @@ def test_old_context_and_contact_details_are_not_kept(client, uploaded):
     assert set(Edit.objects.values_list('field', flat=True)) == {'context', 'contact_details'}
 
 
+def test_a_clip_confirmed_before_encryption_gets_its_code_holder_key_at_its_first_edit(client, uploaded, group_key_pair):
+    from tests.conftest import lawyer_text
+    clip, code = uploaded
+    Clip.objects.filter(pk=clip.pk).update(code_holder_public_key=None)
+    VaultText.objects.all().delete()
+    edit(client, code, context='Entered again after encryption.')
+    clip.refresh_from_db()
+    assert bytes(clip.code_holder_public_key) == bytes(vault.code_holder_key(normalise(code)).public_key)
+    assert vault.code_holder_text(clip, vault.CONTEXT, normalise(code)) == 'Entered again after encryption.'
+    assert lawyer_text(clip, vault.CONTEXT, group_key_pair) == 'Entered again after encryption.'
+
+
 def test_moving_the_place_keeps_the_as_uploaded_one(client, uploaded):
     clip, code = uploaded
     edit(client, code, latitude=str(ELSEWHERE[0]), longitude=str(ELSEWHERE[1]))

@@ -89,6 +89,7 @@ def text_additional_data(clip, kind):
     return f'fa-vaulttext-v1:{clip.pk}:{kind}'.encode()
 
 
+@sensitive_variables('text', 'data_key')
 def put_text(clip, kind, text):
     """Store `text` as the clip's context or contact details, encrypted, replacing any old value;
     its data key is sealed to every group key in use and to the clip's code holder key, under the
@@ -112,6 +113,7 @@ def put_text(clip, kind, text):
         )
 
 
+@sensitive_variables('text', 'data_key', 'padded')
 def _encrypt_text(text, data_key, ad):
     nonce = random(NONCE_BYTES)
     padded = sodium.sodium_pad(text.encode(), TEXT_BLOCK)

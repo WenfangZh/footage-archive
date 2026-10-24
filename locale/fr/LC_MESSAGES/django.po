@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-24 14:22+0200\n"
+"POT-Creation-Date: 2026-10-24 14:28+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -1088,11 +1088,11 @@ msgstr ""
 
 #: cases/templates/cases/clip.html:30
 msgid ""
-"This clip's files could not be opened with your key. Reload the page; if it "
-"happens again, tell the admin."
+"Some of this clip's contents could not be opened with your key. Reload the "
+"page; if it happens again, tell the admin."
 msgstr ""
-"Les fichiers de ce clip n'ont pas pu être ouverts avec votre clé. Rechargez "
-"la page ; si cela se reproduit, prévenez l'administrateur·rice."
+"Une partie du contenu de ce clip n'a pas pu être ouverte avec votre clé. "
+"Rechargez la page ; si cela se reproduit, prévenez l'administrateur·rice."
 
 #: cases/templates/cases/clip.html:33
 msgid "A low-resolution preview. Watching it is recorded in the audit log."
@@ -1504,11 +1504,11 @@ msgstr "personne qui détient le code"
 msgid "lawyer"
 msgstr "avocat·e"
 
-#: clips/models.py:280
+#: clips/models.py:287
 msgid "Evidence copy"
 msgstr "Copie de preuve"
 
-#: clips/models.py:281
+#: clips/models.py:288
 msgid "Proxy"
 msgstr "Version de prévisualisation"
 

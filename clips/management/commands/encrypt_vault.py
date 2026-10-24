@@ -17,7 +17,8 @@ class Command(BaseCommand):
         # Rewrites the database file, so that no free page keeps a plaintext text.
         with connection.cursor() as cursor:
             cursor.execute('VACUUM')
-        self.stdout.write(
-            f'Encrypted {files} files and {texts} texts. The {texts} texts have no copy for their code holder, '
-            'who sees them empty until they enter them again.'
-        )
+        self.stdout.write(f'Encrypted {files} files and {texts} texts.')
+        if texts:
+            self.stdout.write(
+                'Those texts have no copy for their code holder, who sees them empty until they enter them again.'
+            )
