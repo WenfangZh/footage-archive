@@ -15,6 +15,7 @@ def a_failing_function(value):
 
 
 def test_no_frame_of_a_report_shows_a_variable(settings):
+    # As on a server, where reports could be sent; with DEBUG on, Django's debug page shows them.
     settings.DEBUG = False
     # Built here, so that it is in no line of source a report quotes, only in variables.
     secret = '-'.join(['Secret', 'Value'])
