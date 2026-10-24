@@ -25,7 +25,7 @@ from clips import grid, vault
 from clips.models import Clip, Original, Precision
 from keys import grants
 from keys.models import PUBLIC_KEY_BYTES, SEALED_GROUP_KEY_BYTES, GroupKey, KeyGrant
-from tests.conftest import BASTILLE, hand_over, log_in_with_second_factor, make_case, make_key, put_vault_file, with_data_key
+from tests.conftest import BASTILLE, hand_over, log_in_with_second_factor, make_case, make_key, put_vault_file, with_code_holder_key, with_data_key
 
 pytestmark = pytest.mark.django_db
 
@@ -358,10 +358,10 @@ def clip(tmp_path):
     if not grants.in_use().exists():
         group_key()
     centre = grid.cell_for_point(*BASTILLE, 11)
-    clip = Clip.objects.create(
+    clip = with_code_holder_key(Clip.objects.create(
         code_hash='1' * 64, status=Clip.Status.READY, stated_time=START + datetime.timedelta(minutes=10),
         duration=datetime.timedelta(seconds=42), stated_cell=centre, stated_precision=Precision.EXACT_SPOT,
-    )
+    ))
     source = tmp_path / 'video.mp4'
     source.write_bytes(b'not really a video')
     clip.data_keys = {kind: put_vault_file(clip, kind, source, 'mp4') for kind in (vault.PROXY, vault.EVIDENCE_COPY)}
@@ -390,7 +390,7 @@ def test_a_lawyer_whose_key_holds_no_grant_gets_nothing_from_the_vault(key_gates
     client = client_for(lawyer)
     page = client.get(urls['clip'])
     assert page.status_code == 200 and not page.context['reads_vault']
-    assert 'balcony' not in page.content.decode() and not page.context['has_proxy']
+    assert not page.context['context'] and not page.context['has_proxy']
     # Even with the data keys, from a browser that held the group key before.
     for kind in (vault.PROXY, vault.EVIDENCE_COPY):
         assert hand_over(client, case, clip, kind, clip.data_keys[kind]).status_code == 404
@@ -403,7 +403,8 @@ def test_a_lawyer_whose_key_holds_no_grant_gets_nothing_from_the_vault(key_gates
 def test_a_lawyer_holding_a_grant_reads_the_vault(key_gates, holder, clip):
     case, urls = clip_urls(holder, clip)
     client = client_for(holder)
-    assert 'balcony' in client.get(urls['clip']).content.decode()
+    # The texts come encrypted, for the browser to open (docs/m5-encryption-design.md §7.1).
+    assert client.get(urls['clip']).context['context']
     for kind in (vault.PROXY, vault.EVIDENCE_COPY):
         assert hand_over(client, case, clip, kind, clip.data_keys[kind]).status_code == 204
     assert client.get(urls['preview']).status_code == 200

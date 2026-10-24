@@ -15,7 +15,9 @@ from audit.models import Action, AuditEntry
 from cases.models import Case
 from clips import grid, vault
 from clips.models import Clip, ClipTag, Edit, Precision
-from tests.conftest import BASTILLE, log_in_with_second_factor, make_case, put_vault_file, with_data_key
+from tests.conftest import (
+    BASTILLE, log_in_with_second_factor, make_case, open_page_text, put_vault_file, with_code_holder_key, with_data_key,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -59,6 +61,7 @@ def clip(tmp_path, group_key_pair, lawyer_client):
         as_uploaded_stated_precision=Precision.EXACT_SPOT,
         as_uploaded_tags={'default': ['arrest'], 'custom': ['Rue de la Roquette']},
     )
+    with_code_holder_key(clip)
     source = tmp_path / 'proxy.mp4'
     source.write_bytes(PROXY_BYTES)
     with_data_key(lawyer_client, vault.PROXY, put_vault_file(clip, vault.PROXY, source, 'mp4'))
@@ -73,7 +76,7 @@ def url(name, case, clip):
     return reverse(f'lawyer:{name}', kwargs={'case_id': case.pk, 'clip_id': clip.pk})
 
 
-def test_a_lawyer_sees_a_matching_clip_with_its_values(case, clip, lawyer_client, settings):
+def test_a_lawyer_sees_a_matching_clip_with_its_values(case, clip, lawyer_client, settings, group_key_pair):
     settings.LANGUAGE_CODE = 'en'
     ClipTag.objects.create(clip=clip, key='use_of_force', source=ClipTag.Source.CODE_HOLDER)
     Edit.objects.create(clip=clip, field=Edit.EditableField.STATED_TIME)
@@ -83,21 +86,25 @@ def test_a_lawyer_sees_a_matching_clip_with_its_values(case, clip, lawyer_client
     page = response.content.decode()
     for shown in (
         'Use of force <small>(code holder)</small>', 'Tags as uploaded: Arrest, Rue de la Roquette',
-        'Filmed from the corner', 'Stated time: ', 'in the four hours from', '42 s', 'Exact spot',
+        'Stated time: ', 'in the four hours from', '42 s', 'Exact spot',
         'about 60 m across',
         # Stated, metadata and as-uploaded times, in Paris time.
         '15 June 2026 18:10:00', '15 June 2026 18:10:30', '15 June 2026 18:00:00',
     ):
         assert shown in page, shown
     assert url('preview', case, clip) in page
+    # The context comes encrypted, for the page's script to open with the group key.
+    assert 'Filmed from the corner' not in page
+    assert open_page_text(response.context['context'], group_key_pair) == 'Filmed from the corner of the square.'
 
 
 def test_uploader_text_is_escaped(case, clip, lawyer_client):
+    # Texts are never in the page as text: the script adds them as text nodes, never markup.
     ClipTag.objects.create(clip=clip, custom_name='<script>x</script>', source=ClipTag.Source.CODE_HOLDER)
     vault.put_text(clip, vault.CONTEXT, 'Seen from "there" & <b>here</b>')
     page = lawyer_client.get(url('clip', case, clip)).content.decode()
     assert '<script>x' not in page and '&lt;script&gt;x&lt;/script&gt;' in page
-    assert '<b>here' not in page and '&amp; &lt;b&gt;here' in page
+    assert 'here' not in page
 
 
 def test_viewing_the_page_is_logged_once_in_two_hours_and_is_not_a_preview(case, clip, lawyer_client):
@@ -248,10 +255,12 @@ def make_clip_for(lawyer, tmp_path):
     return case, clip, data_keys
 
 
-def test_contact_details_left_by_the_code_holder_are_shown_escaped_with_a_reminder(case, clip, lawyer_client, settings):
+def test_contact_details_left_by_the_code_holder_come_with_a_reminder(case, clip, lawyer_client, settings, group_key_pair):
     settings.LANGUAGE_CODE = 'en'
     assert 'Contact details' not in lawyer_client.get(url('clip', case, clip)).content.decode()
     vault.put_text(clip, vault.CONTACT_DETAILS, '@filmer_example <b>')
-    page = lawyer_client.get(url('clip', case, clip)).content.decode()
-    assert 'Contact details' in page and '@filmer_example &lt;b&gt;' in page
+    response = lawyer_client.get(url('clip', case, clip))
+    page = response.content.decode()
+    assert 'Contact details' in page and 'filmer_example' not in page
+    assert open_page_text(response.context['contact_details'], group_key_pair) == '@filmer_example <b>'
     assert 'Use them only for this case' in page

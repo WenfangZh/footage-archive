@@ -4,7 +4,10 @@ It holds a clip's context and contact details, and its evidence copy and proxy. 
 file is encrypted with its own random data key, in libsodium's secretstream (ADR 0008):
 the server seals the data key to the group keys when it records the file, and forgets
 it. Reading a file takes its data key, which only a lawyer's browser can open and hand
-back (docs/m5-encryption-design.md §6). The texts are still plaintext. M6 adds messages.
+back (docs/m5-encryption-design.md §6). Each text is padded and encrypted with its own data
+key, sealed to the group keys and to the clip's code holder key, which only the upload code
+gives (§7): lawyers' browsers decrypt texts, and the server does only for a code holder,
+during their request. M6 adds messages.
 
 Nothing here logs content. A new value replaces the old one in place, and an empty
 value removes it: old values of context and contact details are never kept (SPEC.md §5).
@@ -27,11 +30,12 @@ from pathlib import PurePath
 from django.core.files import File
 from django.db import transaction
 from django.utils import timezone
+from django.views.decorators.debug import sensitive_variables
 from nacl import bindings as sodium
 from nacl.encoding import RawEncoder
 from nacl.exceptions import CryptoError
 from nacl.hash import blake2b
-from nacl.public import PublicKey, SealedBox
+from nacl.public import PrivateKey, PublicKey, SealedBox
 from nacl.utils import random
 
 from keys import grants
@@ -68,20 +72,90 @@ HEADER_BYTES = sodium.crypto_secretstream_xchacha20poly1305_HEADERBYTES
 ABYTES = sodium.crypto_secretstream_xchacha20poly1305_ABYTES
 FINAL = sodium.crypto_secretstream_xchacha20poly1305_TAG_FINAL
 KEY_CHECK_LABEL = b'fa-keycheck-v1'
+CODE_HOLDER_LABEL = b'fa-codeholder-v1'
+# Texts are padded to a multiple of this, so that their length shows only roughly (design §7.1).
+TEXT_BLOCK = 256
+NONCE_BYTES = sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES
+
+
+def code_holder_key(code):
+    """The key pair a normalised upload code gives (design §7.2). The code has 140 random bits,
+    enough to be key material; its lookup hash (clips.upload_codes) is unrelated to this."""
+    return PrivateKey.from_seed(blake2b(CODE_HOLDER_LABEL + code.encode(), digest_size=32, encoder=RawEncoder))
+
+
+def text_additional_data(clip, kind):
+    """Bound to the ciphertext, so that a text moved to another clip or kind does not decrypt."""
+    return f'fa-vaulttext-v1:{clip.pk}:{kind}'.encode()
 
 
 def put_text(clip, kind, text):
-    """Store `text` as the clip's context or contact details, replacing any old value."""
-    if text:
-        VaultText.objects.update_or_create(clip=clip, kind=kind, defaults={'content': text})
-    else:
+    """Store `text` as the clip's context or contact details, encrypted, replacing any old value;
+    its data key is sealed to every group key in use and to the clip's code holder key, under the
+    group key lock (design §5.5, §7.1). An empty text removes it."""
+    with transaction.atomic():
+        group_keys = grants.lock()
         VaultText.objects.filter(clip=clip, kind=kind).delete()
+        if not text:
+            return
+        if not group_keys:
+            raise NoGroupKey
+        data_key = random(DATA_KEY_BYTES)
+        vault_text = VaultText.objects.create(
+            clip=clip, kind=kind, ciphertext=_encrypt_text(text, data_key, text_additional_data(clip, kind)),
+            key_check=key_check(data_key),
+        )
+        _seal(data_key, group_keys, vault_text=vault_text)
+        SealedKey.objects.create(
+            vault_text=vault_text, for_code_holder=True,
+            sealed_data_key=SealedBox(PublicKey(bytes(clip.code_holder_public_key))).encrypt(data_key),
+        )
 
 
-def get_text(clip, kind):
-    """The clip's context or contact details, or '' if there are none."""
-    entry = VaultText.objects.filter(clip=clip, kind=kind).first()
-    return entry.content if entry else ''
+def _encrypt_text(text, data_key, ad):
+    nonce = random(NONCE_BYTES)
+    padded = sodium.sodium_pad(text.encode(), TEXT_BLOCK)
+    return nonce + sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(padded, ad, nonce, data_key)
+
+
+def _seal(data_key, group_keys, **item):
+    for group_key in group_keys:
+        SealedKey.objects.create(
+            group_key=group_key, sealed_data_key=SealedBox(PublicKey(bytes(group_key.public_key))).encrypt(data_key),
+            **item,
+        )
+
+
+@sensitive_variables('code', 'data_key', 'padded')
+def code_holder_text(clip, kind, code):
+    """The clip's context or contact details, opened with the normalised upload code `code`; ''
+    if there are none, or none sealed to the code holder (a text encrypted from before
+    encryption, design §10)."""
+    sealed = SealedKey.objects.filter(
+        vault_text__clip=clip, vault_text__kind=kind, for_code_holder=True,
+    ).select_related('vault_text').first()
+    if sealed is None:
+        return ''
+    data_key = SealedBox(code_holder_key(code)).decrypt(bytes(sealed.sealed_data_key))
+    nonce, ciphertext = bytes(sealed.vault_text.ciphertext[:NONCE_BYTES]), bytes(sealed.vault_text.ciphertext[NONCE_BYTES:])
+    padded = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(ciphertext, text_additional_data(clip, kind), nonce, data_key)
+    return sodium.sodium_unpad(padded, TEXT_BLOCK).decode()
+
+
+def sealed_text(clip, kind):
+    """The clip's encrypted context or contact details and its data key sealed to each group key
+    in use, for a lawyer's browser to open (design §7.1); None if there are none."""
+    vault_text = VaultText.objects.filter(clip=clip, kind=kind, ciphertext__isnull=False).first()
+    if vault_text is None:
+        return None
+    return {
+        'ciphertext': bytes(vault_text.ciphertext),
+        'additional_data': text_additional_data(clip, kind),
+        'sealed_keys': [
+            (bytes(sealed.group_key.public_key), bytes(sealed.sealed_data_key))
+            for sealed in vault_text.sealed_keys.filter(group_key__status__in=grants.IN_USE).select_related('group_key')
+        ],
+    }
 
 
 def store_file(clip, kind, source_path, extension):
@@ -165,11 +239,7 @@ def record_file(clip, kind, name, data_key):
         if old is not None:
             old.delete()
         vault_file = VaultFile.objects.create(clip=clip, kind=kind, file=name, key_check=key_check(data_key))
-        for group_key in group_keys:
-            SealedKey.objects.create(
-                vault_file=vault_file, group_key=group_key,
-                sealed_data_key=SealedBox(PublicKey(bytes(group_key.public_key))).encrypt(data_key),
-            )
+        _seal(data_key, group_keys, vault_file=vault_file)
     if old is not None:
         storage = vault_storage()
         transaction.on_commit(lambda: storage.delete(old.file.name))
@@ -198,6 +268,28 @@ def encrypt_plaintext_files():
                     encrypted += 1
         finally:
             delete_unrecorded_files([name])
+    return encrypted
+
+
+def encrypt_plaintext_texts():
+    """Encrypt each text stored before encryption (design §10), development data only, sealed to
+    the group keys in use alone: the server does not know the codes, so the code holder sees
+    such a text as empty until they enter it again. Returns how many."""
+    encrypted = 0
+    for vault_text in VaultText.objects.filter(ciphertext__isnull=True).select_related('clip'):
+        with transaction.atomic():
+            group_keys = grants.lock()
+            if not group_keys:
+                raise NoGroupKey
+            if not VaultText.objects.select_for_update().filter(pk=vault_text.pk, ciphertext__isnull=True).exists():
+                continue
+            data_key = random(DATA_KEY_BYTES)
+            ad = text_additional_data(vault_text.clip, vault_text.kind)
+            VaultText.objects.filter(pk=vault_text.pk).update(
+                ciphertext=_encrypt_text(vault_text.content, data_key, ad), key_check=key_check(data_key), content='',
+            )
+            _seal(data_key, group_keys, vault_text=vault_text)
+            encrypted += 1
     return encrypted
 
 
