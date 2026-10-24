@@ -60,7 +60,8 @@ VAULT_FILE_NAME = re.compile(r'[0-9a-f]{32}(_[A-Za-z0-9]{7})?\.[A-Za-z0-9]+')
 
 DATA_KEY_BYTES = 32
 # The secretstream format (ADR 0008): a header, then chunks of CHUNK_SIZE bytes, each with
-# ABYTES of overhead, the last one shorter or empty and marked final. Part of the format:
+# ABYTES of overhead, the last one marked final: shorter, or full when the size is a multiple
+# of CHUNK_SIZE, and empty only for an empty file. Part of the format:
 # sizes are computed from it.
 CHUNK_SIZE = 64 * 1024
 HEADER_BYTES = sodium.crypto_secretstream_xchacha20poly1305_HEADERBYTES
@@ -266,8 +267,10 @@ def plaintext_size(stored_size):
     body = stored_size - HEADER_BYTES
     chunks = max(1, math.ceil(body / (CHUNK_SIZE + ABYTES)))
     last = body - (chunks - 1) * (CHUNK_SIZE + ABYTES)
-    if last < ABYTES:
-        return None  # No file this format writes: cut off, or something else.
+    # Only an empty file ends with an empty chunk (one of ABYTES): a file that holds bytes ends
+    # with a chunk that does. Anything else is no file this format writes: cut off, or other.
+    if last < ABYTES or (last == ABYTES and chunks > 1):
+        return None
     return body - chunks * ABYTES
 
 
@@ -289,6 +292,10 @@ class DecryptedFile:
             if self.size is None:
                 self._fail()
             self.seek(0)
+            if self.size == 0:
+                # Its one chunk holds no bytes, so no read would ever pull and check it: checked
+                # now, which also refuses a file cut to the size of an empty one.
+                self._next_chunk()
         except Unreadable:
             stored.close()
             raise

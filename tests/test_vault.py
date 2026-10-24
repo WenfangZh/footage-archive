@@ -380,6 +380,26 @@ def test_a_file_cut_at_a_chunk_boundary_fails_even_when_read_only_to_its_size(cl
             stored.read(stored.size)
 
 
+@pytest.mark.parametrize('whole_chunks', [0, 2])
+def test_a_cut_leaving_what_looks_like_an_empty_final_chunk_is_refused(clip, big_file, whole_chunks):
+    # An empty final chunk ends only an empty file: after whole chunks, or alone at the start of
+    # a file that held bytes, such a block is what is left of a cut, and holds no bytes to read.
+    data_key = put_file(clip, vault.EVIDENCE_COPY, big_file, 'mp4')
+    path = settings.VAULT_DIR / VaultFile.objects.get().file.name
+    path.write_bytes(path.read_bytes()[:vault.HEADER_BYTES + whole_chunks * (vault.CHUNK_SIZE + vault.ABYTES) + vault.ABYTES])
+    with pytest.raises(vault.Unreadable):
+        with vault.open_file(clip, vault.EVIDENCE_COPY, data_key) as stored:
+            stored.read(stored.size)
+
+
+def test_an_empty_file_goes_in_and_comes_out(clip, tmp_path):
+    empty = tmp_path / 'empty.mp4'
+    empty.write_bytes(b'')
+    data_key = put_file(clip, vault.PROXY, empty, 'mp4')
+    with vault.open_file(clip, vault.PROXY, data_key) as stored:
+        assert stored.size == 0 and stored.read() == b''
+
+
 def test_a_file_moved_to_another_clip_or_kind_does_not_decrypt(clip, local_file):
     other = Clip.objects.create(code_hash=uuid.uuid4().hex * 2)
     data_key = put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
