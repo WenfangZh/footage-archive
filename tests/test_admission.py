@@ -8,7 +8,8 @@ from unittest import mock
 
 from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
-from tests.conftest import log_in_with_second_factor
+from keys.models import LawyerKey
+from tests.conftest import log_in_with_second_factor, make_key
 
 pytestmark = pytest.mark.django_db
 
@@ -16,6 +17,13 @@ User = get_user_model()
 Status = LawyerProfile.Status
 PASSWORD = 'a long test passphrase'
 ADMISSION = {'verified_via': 'The bar directory, by phone', 'vouched_by': 'A defence organisation'}
+
+
+def admission(applicant, **changes):
+    """The admission form as sent once the admin has compared the safety number of the
+    applicant's current key (docs/m5-encryption-design.md §5.2)."""
+    key = LawyerKey.objects.current().get(lawyer_profile=applicant)
+    return {**ADMISSION, 'key': key.pk, 'key_confirmed': 'on', **changes}
 
 
 @pytest.fixture
@@ -29,11 +37,13 @@ def applicant():
     user = User.objects.create_user('applicant@example.org', PASSWORD, first_name='Camille', last_name='Exemple')
     TOTPDevice.objects.create(user=user, name='authenticator app', confirmed=True)
     StaticDevice.objects.create(user=user, name='recovery codes')
-    return LawyerProfile.objects.create(user=user, bar='Paris')
+    profile = LawyerProfile.objects.create(user=user, bar='Paris')
+    make_key(profile)
+    return profile
 
 
 def test_admitting_records_how_and_makes_a_lawyer_who_sees_the_lawyer_pages(admin_client, applicant):
-    response = admin_client.post(reverse('manage:applicant', args=[applicant.pk]), ADMISSION)
+    response = admin_client.post(reverse('manage:applicant', args=[applicant.pk]), admission(applicant))
     assert response.status_code == 302
     applicant.refresh_from_db()
     assert applicant.status == Status.LAWYER
@@ -46,7 +56,7 @@ def test_admitting_records_how_and_makes_a_lawyer_who_sees_the_lawyer_pages(admi
 
 @pytest.mark.parametrize('missing', ['verified_via', 'vouched_by'])
 def test_admission_needs_both_the_verification_and_the_vouch(admin_client, applicant, missing):
-    response = admin_client.post(reverse('manage:applicant', args=[applicant.pk]), {**ADMISSION, missing: ''})
+    response = admin_client.post(reverse('manage:applicant', args=[applicant.pk]), admission(applicant, **{missing: ''}))
     assert response.status_code == 200
     applicant.refresh_from_db()
     assert applicant.status == Status.APPLICANT
@@ -55,7 +65,7 @@ def test_admission_needs_both_the_verification_and_the_vouch(admin_client, appli
 
 def test_only_applicants_can_be_admitted_or_declined(admin_client, applicant):
     applicant.change_status(Status.DECLINED)
-    assert admin_client.post(reverse('manage:applicant', args=[applicant.pk]), ADMISSION).status_code == 404
+    assert admin_client.post(reverse('manage:applicant', args=[applicant.pk]), admission(applicant)).status_code == 404
     assert admin_client.post(reverse('manage:decline', args=[applicant.pk]), {'confirm': 'yes'}).status_code == 404
 
 
@@ -93,15 +103,18 @@ def test_a_declined_applicant_can_be_invited_again_as_a_new_applicant(admin_clie
     assert applicant.status == Status.DECLINED
 
 
-@pytest.mark.parametrize('missing', ['password', 'second factor'])
-def test_nobody_is_admitted_before_setting_a_password_and_a_second_factor(admin_client, applicant, missing):
+@pytest.mark.parametrize('missing', ['password', 'second factor', 'personal key'])
+def test_nobody_is_admitted_before_setting_a_password_a_second_factor_and_a_key(admin_client, applicant, missing):
     user = applicant.user
+    form = admission(applicant)
     if missing == 'password':
         user.set_unusable_password()
         user.save()
-    else:
+    elif missing == 'second factor':
         TOTPDevice.objects.filter(user=user).delete()
-    response = admin_client.post(reverse('manage:applicant', args=[applicant.pk]), ADMISSION)
+    else:
+        LawyerKey.objects.get(lawyer_profile=applicant).retire()
+    response = admin_client.post(reverse('manage:applicant', args=[applicant.pk]), form)
     assert response.status_code == 200
     applicant.refresh_from_db()
     assert applicant.status == Status.APPLICANT and applicant.verified_via == ''
@@ -131,7 +144,40 @@ def test_if_declining_fails_halfway_nothing_changes(admin_client, applicant):
 
 
 def test_a_lawyer_cannot_be_admitted_or_declined_again(admin_client, applicant):
-    admin_client.post(reverse('manage:applicant', args=[applicant.pk]), ADMISSION)
-    assert admin_client.post(reverse('manage:applicant', args=[applicant.pk]), ADMISSION).status_code == 404
+    admin_client.post(reverse('manage:applicant', args=[applicant.pk]), admission(applicant))
+    assert admin_client.post(reverse('manage:applicant', args=[applicant.pk]), admission(applicant)).status_code == 404
     assert admin_client.post(reverse('manage:decline', args=[applicant.pk]), {'confirm': 'yes'}).status_code == 404
     assert AuditEntry.objects.count() == 1
+
+
+def test_admitting_confirms_the_key_whose_safety_number_the_admin_was_shown(admin_client, applicant):
+    key = LawyerKey.objects.get(lawyer_profile=applicant)
+    page = admin_client.get(reverse('manage:applicant', args=[applicant.pk]))
+    assert key.safety_number() in page.content.decode()
+    admin_client.post(reverse('manage:applicant', args=[applicant.pk]), admission(applicant))
+    key.refresh_from_db()
+    assert key.admin_confirmed_at is not None
+
+
+def test_nobody_is_admitted_unless_the_admin_says_they_compared_the_safety_number(admin_client, applicant):
+    response = admin_client.post(reverse('manage:applicant', args=[applicant.pk]), admission(applicant, key_confirmed=''))
+    assert response.status_code == 200
+    applicant.refresh_from_db()
+    assert applicant.status == Status.APPLICANT
+    assert LawyerKey.objects.get(lawyer_profile=applicant).admin_confirmed_at is None
+
+
+def test_a_key_made_after_the_page_was_shown_is_not_confirmed_with_it(admin_client, applicant):
+    shown = admission(applicant)
+    LawyerKey.objects.get(lawyer_profile=applicant).retire()
+    newer = make_key(applicant)
+    response = admin_client.post(reverse('manage:applicant', args=[applicant.pk]), shown, follow=True)
+    applicant.refresh_from_db()
+    assert applicant.status == Status.APPLICANT
+    newer.refresh_from_db()
+    assert newer.admin_confirmed_at is None and not AuditEntry.objects.exists()
+    # A fresh page, showing the new key's safety number, from which admission works again.
+    assert newer.safety_number() in response.content.decode()
+    admin_client.post(reverse('manage:applicant', args=[applicant.pk]), admission(applicant))
+    applicant.refresh_from_db()
+    assert applicant.status == Status.LAWYER

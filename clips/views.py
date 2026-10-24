@@ -10,6 +10,8 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_http_methods
 
+from keys.grants import uploads_open
+
 from . import grid, probe, rate_limits, vault
 from .confirmation import AlreadyConfirmed, confirm_upload
 from .editing import NotEditable, apply_edits, clip_for_code, code_holder_tags, delete_clip
@@ -29,6 +31,8 @@ PRIVATE_FIELDS = ('latitude', 'longitude', 'custom_tags', 'context', 'contact_de
 @require_http_methods(['GET', 'POST'])
 def upload(request):
     """Upload step 1: receive the file into quarantine and check that it is a video."""
+    if not uploads_open():
+        return uploads_closed(request)
     if request.method == 'GET':
         return render_upload(request, FileForm())
 
@@ -52,6 +56,12 @@ def upload(request):
     return redirect('clips:confirm', original_id=original.id)
 
 
+def uploads_closed(request):
+    """Refused while no lawyer could read what is uploaded (docs/m5-encryption-design.md §5.7, §10):
+    ingest never has to store a file it cannot encrypt for someone."""
+    return render(request, 'clips/uploads_closed.html', status=503)
+
+
 def render_upload(request, form, problem=None, status=200):
     return render(request, 'clips/upload.html', {
         'form': form,
@@ -69,6 +79,8 @@ def confirm(request, original_id):
     if Original.objects.filter(id=original_id, clip__isnull=False).exists():
         return already_sent(request)
     original = unconfirmed_original_or_404(original_id)
+    if not uploads_open():
+        return uploads_closed(request)
     read = probe.quick_read(original.file.path)
     has_gps = read.gps is not None
 

@@ -5,8 +5,8 @@ workers and requests for data all come from the archive, no inline script or sty
 and no page can be framed. That keeps the map's requests on the archive (ADR 0006), and it
 is the main guard of lawyers' keys, which a script injected into a page could read.
 
-Only lawyer pages may also run WebAssembly, which libsodium.js needs to open the vault
-(ADR 0007).
+Only lawyer pages, and the pages where an applicant or lawyer sets up or unlocks their key,
+may also run WebAssembly, which libsodium.js needs (ADR 0007).
 """
 
 POLICY = '; '.join([
@@ -18,6 +18,7 @@ POLICY = '; '.join([
     "frame-ancestors 'none'",
 ])
 LAWYER_POLICY = f"{POLICY}; script-src 'self' 'wasm-unsafe-eval'"
+KEY_PAGES = {'accounts:key', 'accounts:key_setup'}
 
 
 class ContentSecurityPolicyMiddleware:
@@ -29,6 +30,6 @@ class ContentSecurityPolicyMiddleware:
         # Set once the URL is resolved; a request that matched no page has none.
         match = getattr(request, 'resolver_match', None)
         # The outermost namespace, so that pages in a namespace nested under it count too.
-        lawyer_page = match is not None and match.namespaces[:1] == ['lawyer']
+        lawyer_page = match is not None and (match.namespaces[:1] == ['lawyer'] or match.view_name in KEY_PAGES)
         response['Content-Security-Policy'] = LAWYER_POLICY if lawyer_page else POLICY
         return response

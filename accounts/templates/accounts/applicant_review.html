@@ -8,7 +8,11 @@
   <p>{% translate "Bar:" %} {{ profile.bar }}</p>
   <p>{% translate "Email address:" %} {{ profile.user.email }}</p>
 
-  <p>{% if ready %}{% translate "They have set their password and two-factor authentication." %}{% else %}{% translate "They have not yet set their password and two-factor authentication: they cannot be admitted before then." %}{% endif %}</p>
+  <p>{% if ready %}{% translate "They have set their password, two-factor authentication and personal key." %}{% else %}{% translate "They have not yet set their password, two-factor authentication and personal key: they cannot be admitted before then." %}{% endif %}</p>
+  {% if key %}
+    <p>{% translate "Safety number of their key:" %} <strong>{{ key.safety_number }}</strong></p>
+    <p>{% translate "Before admitting them, contact them through the bar directory's contact details, never those they gave, and ask them to read the safety number shown on their key page. Admit them only if it is the same as this one." %}</p>
+  {% endif %}
 
   <h2>{% translate "Admit" %}</h2>
   <p>{% translate "Admit them only once their registration with the bar is verified and someone has vouched for them." %}</p>
