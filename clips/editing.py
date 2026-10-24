@@ -37,7 +37,7 @@ def code_holder_tags(clip):
     )
 
 
-@sensitive_variables('cleaned', 'code', 'new_texts')
+@sensitive_variables('cleaned', 'code', 'new_texts', 'text')
 def apply_edits(clip, cleaned, code):
     """Apply the code holder's form to the clip; returns the fields that changed. `code` is the
     normalised upload code, which opens the clip's texts (docs/m5-encryption-design.md §7.2).

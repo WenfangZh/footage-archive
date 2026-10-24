@@ -26,7 +26,8 @@ if (files) {
         continue;
       }
       // As text, line by line: never as markup.
-      text.split('\n').forEach((line, index) => {
+      // Browsers send a textarea's line breaks as CRLF.
+      text.split(/\r?\n/).forEach((line, index) => {
         if (index) {
           element.append(document.createElement('br'));
         }

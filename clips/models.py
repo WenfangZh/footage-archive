@@ -247,6 +247,13 @@ class VaultText(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['clip', 'kind'], name='one_vault_text_per_kind'),
+            # Plaintext from before encryption, or encrypted with its key check and no plaintext:
+            # never both, so that encrypting can never leave the plaintext behind.
+            models.CheckConstraint(
+                condition=(Q(ciphertext__isnull=True, key_check__isnull=True) & ~Q(content=''))
+                | Q(ciphertext__isnull=False, key_check__isnull=False, content=''),
+                name='vault_text_plaintext_or_encrypted',
+            ),
         ]
 
 
