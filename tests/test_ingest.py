@@ -10,9 +10,11 @@ from django.db import connection
 from clips import grid, hashing, ingest, probe, proxy, vault
 from clips.editing import delete_clip
 from clips.models import Clip, HashRecord, Original
+from tests.conftest import open_data_key
 from tests.media import H264, run_ffmpeg
 
-pytestmark = pytest.mark.django_db
+# Ingest seals each file's data key to the group keys in use: one exists in each test here.
+pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures('group_key_pair')]
 
 UTC = datetime.UTC
 # A fake position of a public place, injected into synthetic videos.
@@ -66,12 +68,12 @@ def test_a_clip_is_ingested(phone_video, django_capture_on_commit_callbacks):
         open(original_path, 'rb')
 
 
-def test_the_evidence_copy_in_the_vault_matches_its_hash_record(phone_video, tmp_path):
+def test_the_evidence_copy_in_the_vault_matches_its_hash_record(phone_video, tmp_path, group_key_pair):
     clip = confirmed_clip(phone_video)
     ingest.ingest(clip)
     record = HashRecord.objects.get(clip=clip)
     copy = tmp_path / 'downloaded.mov'
-    with vault.open_file(clip, vault.EVIDENCE_COPY) as stored:
+    with vault.open_file(clip, vault.EVIDENCE_COPY, open_data_key(clip, vault.EVIDENCE_COPY, group_key_pair)) as stored:
         copy.write_bytes(stored.read())
     assert hashing.file_hash(copy) == record.evidence_sha256
     assert [list(pair) for pair in hashing.stream_hashes(copy, 60)] == record.original_stream_hashes
@@ -118,7 +120,7 @@ def test_an_original_that_no_longer_says_what_it_did_is_rejected(phone_video):
         ingest.ingest(clip)
 
 
-def test_no_stored_location_is_finer_than_the_grid(phone_video, tmp_path):
+def test_no_stored_location_is_finer_than_the_grid(phone_video, tmp_path, group_key_pair):
     # M2 done-when (g): the GPS position is kept only as its cell, nowhere else.
     clip = confirmed_clip(phone_video, metadata_resolution=10)
     ingest.ingest(clip)
@@ -135,7 +137,7 @@ def test_no_stored_location_is_finer_than_the_grid(phone_video, tmp_path):
     for fragment in ('48.8532', '2.3692', '48.85', 'FakePhoneMaker'):
         assert fragment not in dumped
     for kind in (vault.EVIDENCE_COPY, vault.PROXY):
-        with vault.open_file(clip, kind) as stored:
+        with vault.open_file(clip, kind, open_data_key(clip, kind, group_key_pair)) as stored:
             data = stored.read()
         assert b'48.8532' not in data and b'FakePhoneMaker' not in data
 

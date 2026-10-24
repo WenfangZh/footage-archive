@@ -137,3 +137,4 @@ class KeyGrant(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['group_key', 'lawyer_key'], name='one_grant_per_group_key_and_lawyer_key'),
         ]
+
