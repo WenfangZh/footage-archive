@@ -10,20 +10,27 @@ same way, as a view.
 The evidence copy is downloaded as it is, and every download is logged; its hash record
 comes as a JSON file. The vault's content (preview, evidence copy, context and contact
 details) goes only to a lawyer who holds the group key (docs/m5-encryption-design.md §3.3);
-without it, the page shows the clip's index data alone.
+without it, the page shows the clip's index data alone. The preview and the download
+decrypt their file with its data key, which the page's script opens with the group key
+and hands over first (§6.3): it comes back in a cookie that only that clip's preview and
+download in that case receive, and is never stored on the server.
 """
 
+import base64
+import binascii
 import datetime
 import json
-import os
 
 from django.conf import settings
+from django import forms
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import content_disposition_header
-from django.views.decorators.http import require_GET
+from django.views.decorators.debug import sensitive_post_parameters
+from django.views.decorators.http import require_GET, require_POST
 
 from accounts.roles import lawyer_required
 from alerts.checks import check_activity
@@ -33,12 +40,22 @@ from clips import grid, vault
 from clips.models import Clip, HashRecord
 from clips.streaming import file_response, requested_range
 from clips.tags import DEFAULT_TAGS
-from keys.grants import reads_vault
+from keys.forms import Base64BytesField
+from keys.grants import current_key, reads_vault
+from keys.views import unlock_context
 
 from .models import Case
 from .search import match_of
 
 PREVIEW_REPEAT = datetime.timedelta(hours=2)
+# How long a data key handed over stays usable: as long as the preview and download logging windows.
+DATA_KEY_LIFETIME = datetime.timedelta(hours=2)
+# The files whose data key a page hands over, by the name in their URL, with their cookie.
+DATA_KEY_FILES = {
+    'proxy': (vault.PROXY, 'proxy_data_key'),
+    'evidence-copy': (vault.EVIDENCE_COPY, 'evidence_copy_data_key'),
+}
+COOKIES = dict(DATA_KEY_FILES.values())
 
 
 def case_and_clip(request, case_id, clip_id):
@@ -109,26 +126,81 @@ def clip_page(request, case_id, clip_id):
         # Left by the code holder on purpose, despite the risk, so that a lawyer can reach them.
         'contact_details': reads and vault.get_text(clip, vault.CONTACT_DETAILS),
         'has_proxy': reads and vault.has_file(clip, vault.PROXY),
+        # For the script to open with the group key (keys/static/keys/clip_keys.js), as JSON in
+        # attributes, which the template escapes.
+        'proxy_keys': reads and sealed_keys_json(clip, vault.PROXY),
+        'evidence_keys': reads and sealed_keys_json(clip, vault.EVIDENCE_COPY),
+        **unlock_context(request, current_key(case.lawyer_profile)),
     })
 
 
-def open_or_404(clip, kind):
-    """The clip's vault file, opened, and its size read from that same open file."""
+def sealed_keys_json(clip, kind):
+    return json.dumps([{
+        'group_public_key': base64.b64encode(bytes(sealed.group_key.public_key)).decode(),
+        'sealed_data_key': base64.b64encode(bytes(sealed.sealed_data_key)).decode(),
+    } for sealed in vault.sealed_keys(clip, kind)])
+
+
+@lawyer_required
+@sensitive_post_parameters('data_key')
+@require_POST
+def data_key(request, case_id, clip_id, file):
+    """Take a file's data key from the page's script, check it, and hand it back in a cookie
+    for the preview or download (design §6.3). Nothing is stored."""
+    if file not in DATA_KEY_FILES:
+        raise Http404
+    case, clip, _ = vault_case_and_clip(request, case_id, clip_id)
+    kind, cookie = DATA_KEY_FILES[file]
     try:
-        opened = vault.open_file(clip, kind)
-    except (FileNotFoundError, ObjectDoesNotExist):
+        key = Base64BytesField(vault.DATA_KEY_BYTES).clean(request.POST.get('data_key', ''))
+    except forms.ValidationError:
+        return HttpResponse(status=400)
+    if not vault.is_data_key(clip, kind, key):
+        return HttpResponseForbidden()
+    response = HttpResponse(status=204)
+    response.set_cookie(
+        cookie, cookie_value(key),
+        max_age=int(DATA_KEY_LIFETIME.total_seconds()),
+        # Sent only with this clip's pages in this case: its preview and its download.
+        path=reverse('lawyer:clip', kwargs={'case_id': case.pk, 'clip_id': clip.pk}),
+        secure=True, httponly=True, samesite='Strict',
+    )
+    return response
+
+
+def cookie_value(data_key):
+    # URL-safe and unpadded: characters a cookie holds without quoting.
+    return base64.urlsafe_b64encode(data_key).decode().rstrip('=')
+
+
+def open_or_refuse(request, clip, kind):
+    """The clip's vault file, opened with the data key in its cookie; or a refusal, if the
+    key is missing or wrong (design §6.3)."""
+    value = request.COOKIES.get(COOKIES[kind], '')
+    try:
+        key = base64.urlsafe_b64decode(value + '=' * (-len(value) % 4))
+    except (binascii.Error, ValueError):
+        key = None
+    if key is not None and len(key) != vault.DATA_KEY_BYTES:
+        key = None
+    try:
+        return vault.open_file(clip, kind, key), None
+    except vault.WrongKey:
+        return None, HttpResponseForbidden()
+    except (FileNotFoundError, ObjectDoesNotExist, vault.Unreadable):
         raise Http404 from None
-    return opened, os.fstat(opened.fileno()).st_size
 
 
 @lawyer_required
 @require_GET
 def preview(request, case_id, clip_id):
     case, clip, _ = vault_case_and_clip(request, case_id, clip_id)
-    proxy, size = open_or_404(clip, vault.PROXY)
+    proxy, refusal = open_or_refuse(request, clip, vault.PROXY)
+    if refusal:
+        return refusal
     try:
         record_once_in_a_while(Action.PREVIEW, case, clip)
-        return file_response(request, proxy, size, 'video/mp4')
+        return file_response(request, proxy, proxy.size, 'video/mp4')
     except BaseException:
         proxy.close()
         raise
@@ -146,7 +218,10 @@ DOWNLOAD_REPEAT = datetime.timedelta(hours=2)
 @require_GET
 def download(request, case_id, clip_id):
     case, clip, _ = vault_case_and_clip(request, case_id, clip_id)
-    evidence, size = open_or_404(clip, vault.EVIDENCE_COPY)
+    evidence, refusal = open_or_refuse(request, clip, vault.EVIDENCE_COPY)
+    if refusal:
+        return refusal
+    size = evidence.size
     try:
         extension = vault.extension(clip, vault.EVIDENCE_COPY)
         served, _ = requested_range(request, size)

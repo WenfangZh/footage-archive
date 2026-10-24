@@ -137,19 +137,21 @@ def finish(clip, original, result):
     # up every other write, such as lawyers' audit entries, until they gave up with
     # "database is locked". Postgres locks rows, so there this mainly keeps the
     # transaction short.
+    # The data keys stay in memory until record_file seals them (docs/m5-encryption-design.md §6.1).
     stored = []
     try:
-        stored.append(vault.store_file(result['evidence_path'], result['extension']))
-        stored.append(vault.store_file(result['proxy_path'], proxy.PROXY_EXTENSION))
-        evidence_name, proxy_name = stored
+        evidence_name, evidence_key = vault.store_file(clip, vault.EVIDENCE_COPY, result['evidence_path'], result['extension'])
+        stored.append(evidence_name)
+        proxy_name, proxy_key = vault.store_file(clip, vault.PROXY, result['proxy_path'], proxy.PROXY_EXTENSION)
+        stored.append(proxy_name)
         with transaction.atomic():
             # The code holder may have deleted the clip meanwhile.
             if not Clip.objects.select_for_update().filter(
                 pk=clip.pk, status=Clip.Status.PROCESSING,
             ).exists():
                 return
-            vault.record_file(clip, vault.EVIDENCE_COPY, evidence_name)
-            vault.record_file(clip, vault.PROXY, proxy_name)
+            vault.record_file(clip, vault.EVIDENCE_COPY, evidence_name, evidence_key)
+            vault.record_file(clip, vault.PROXY, proxy_name, proxy_key)
             record = result['hash_record']
             record.clip = clip
             record.save()

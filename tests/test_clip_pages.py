@@ -15,7 +15,7 @@ from audit.models import Action, AuditEntry
 from cases.models import Case
 from clips import grid, vault
 from clips.models import Clip, ClipTag, Edit, Precision
-from tests.conftest import BASTILLE, log_in_with_second_factor, make_case
+from tests.conftest import BASTILLE, log_in_with_second_factor, make_case, put_vault_file, with_data_key
 
 pytestmark = pytest.mark.django_db
 
@@ -49,7 +49,8 @@ def case(lawyer):
 
 
 @pytest.fixture
-def clip(tmp_path):
+def clip(tmp_path, group_key_pair, lawyer_client):
+    """A ready clip with a proxy, whose data key the lawyer's browser has handed over."""
     clip = Clip.objects.create(
         code_hash='1' * 64, status=Clip.Status.READY, stated_time=START + datetime.timedelta(minutes=10),
         metadata_time=START + datetime.timedelta(minutes=10, seconds=30), duration=datetime.timedelta(seconds=42),
@@ -60,7 +61,7 @@ def clip(tmp_path):
     )
     source = tmp_path / 'proxy.mp4'
     source.write_bytes(PROXY_BYTES)
-    vault.record_file(clip, vault.PROXY, vault.store_file(source, 'mp4'))
+    with_data_key(lawyer_client, vault.PROXY, put_vault_file(clip, vault.PROXY, source, 'mp4'))
     return clip
 
 
@@ -232,17 +233,19 @@ def test_search_results_link_to_the_clip_page(case, clip, lawyer_client):
 
 
 def make_clip_for(lawyer, tmp_path):
-    """A case for `lawyer` and a ready clip it matches, with a proxy and an evidence copy."""
+    """A case for `lawyer` and a ready clip it matches, with a proxy and an evidence copy, and
+    their data keys. A group key must be in use."""
     case = make_case(lawyer, rings=2, starts_at=START, ends_at=START + datetime.timedelta(hours=1))
     clip = Clip.objects.create(
         code_hash='2' * 64, status=Clip.Status.READY, stated_time=START + datetime.timedelta(minutes=10),
         stated_cell=CENTRE, stated_precision=Precision.EXACT_SPOT,
     )
+    data_keys = {}
     for kind, name in ((vault.PROXY, 'proxy.mp4'), (vault.EVIDENCE_COPY, 'evidence.mp4')):
         source = tmp_path / name
         source.write_bytes(PROXY_BYTES)
-        vault.record_file(clip, kind, vault.store_file(source, 'mp4'))
-    return case, clip
+        data_keys[kind] = put_vault_file(clip, kind, source, 'mp4')
+    return case, clip, data_keys
 
 
 def test_contact_details_left_by_the_code_holder_are_shown_escaped_with_a_reminder(case, clip, lawyer_client, settings):

@@ -25,7 +25,7 @@ from clips import grid, vault
 from clips.models import Clip, Original, Precision
 from keys import grants
 from keys.models import PUBLIC_KEY_BYTES, SEALED_GROUP_KEY_BYTES, GroupKey, KeyGrant
-from tests.conftest import BASTILLE, log_in_with_second_factor, make_case, make_key
+from tests.conftest import BASTILLE, hand_over, log_in_with_second_factor, make_case, make_key, put_vault_file, with_data_key
 
 pytestmark = pytest.mark.django_db
 
@@ -343,6 +343,10 @@ START = datetime.datetime(2026, 6, 15, 16, tzinfo=datetime.UTC)
 
 @pytest.fixture
 def clip(tmp_path):
+    """A ready clip with both files and a context, sealed to the group key in use (one is
+    made if none is), with the files' data keys as `data_keys`."""
+    if not grants.in_use().exists():
+        group_key()
     centre = grid.cell_for_point(*BASTILLE, 11)
     clip = Clip.objects.create(
         code_hash='1' * 64, status=Clip.Status.READY, stated_time=START + datetime.timedelta(minutes=10),
@@ -350,40 +354,48 @@ def clip(tmp_path):
     )
     source = tmp_path / 'video.mp4'
     source.write_bytes(b'not really a video')
-    vault.record_file(clip, vault.PROXY, vault.store_file(source, 'mp4'))
-    vault.record_file(clip, vault.EVIDENCE_COPY, vault.store_file(source, 'mp4'))
+    clip.data_keys = {kind: put_vault_file(clip, kind, source, 'mp4') for kind in (vault.PROXY, vault.EVIDENCE_COPY)}
     vault.put_text(clip, vault.CONTEXT, 'Filmed from a balcony.')
     return clip
 
 
 def clip_urls(profile, clip):
     case = make_case(profile, starts_at=START, ends_at=START + datetime.timedelta(hours=1))
-    return {name: reverse(f'lawyer:{name}', kwargs={'case_id': case.pk, 'clip_id': clip.pk}) for name in ['clip', 'preview', 'download']}
+    return case, {name: reverse(f'lawyer:{name}', kwargs={'case_id': case.pk, 'clip_id': clip.pk}) for name in ['clip', 'preview', 'download']}
 
 
 @pytest.mark.parametrize('kind', ['no grant', 'grant on an old key', 'grant on a rejected key'])
 def test_a_lawyer_whose_key_holds_no_grant_gets_nothing_from_the_vault(key_gates, clip, kind):
     lawyer = person('lawyer@example.org')
     if kind == 'grant on an old key':
-        group_key(lawyer)
+        KeyGrant.objects.create(
+            group_key=GroupKey.objects.get(), lawyer_key=grants.current_key(lawyer), sealed_private_key=sealed(),
+            granted_by=lawyer,
+        )
         grants.current_key(lawyer).retire()
         make_key(lawyer)
     elif kind == 'grant on a rejected key':
         group_key(lawyer, status=GroupStatus.REJECTED)
-    urls = clip_urls(lawyer, clip)
+    case, urls = clip_urls(lawyer, clip)
     client = client_for(lawyer)
     page = client.get(urls['clip'])
     assert page.status_code == 200 and not page.context['reads_vault']
     assert 'balcony' not in page.content.decode() and not page.context['has_proxy']
+    # Even with the data keys, from a browser that held the group key before.
+    for kind in (vault.PROXY, vault.EVIDENCE_COPY):
+        assert hand_over(client, case, clip, kind, clip.data_keys[kind]).status_code == 404
+        with_data_key(client, kind, clip.data_keys[kind])
     assert client.get(urls['preview']).status_code == 404
     assert client.get(urls['download']).status_code == 404
     assert not AuditEntry.objects.filter(action__in=[Action.PREVIEW, Action.DOWNLOAD]).exists()
 
 
-def test_a_lawyer_holding_a_grant_reads_the_vault(key_gates, clip, holder):
-    urls = clip_urls(holder, clip)
+def test_a_lawyer_holding_a_grant_reads_the_vault(key_gates, holder, clip):
+    case, urls = clip_urls(holder, clip)
     client = client_for(holder)
     assert 'balcony' in client.get(urls['clip']).content.decode()
+    for kind in (vault.PROXY, vault.EVIDENCE_COPY):
+        assert hand_over(client, case, clip, kind, clip.data_keys[kind]).status_code == 204
     assert client.get(urls['preview']).status_code == 200
     assert client.get(urls['download']).status_code == 200
 
