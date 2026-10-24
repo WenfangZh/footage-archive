@@ -311,6 +311,16 @@ def test_a_grant_that_fails_is_deleted_and_alerts_the_admin(holder, newcomer):
     assert [key.lawyer_profile for key in grants.waiting()] == [newcomer]
 
 
+def test_the_last_grant_held_on_a_group_key_is_kept_despite_a_failure_report(holder):
+    grant = KeyGrant.objects.get()
+    assert report(client_for(holder), grant, 'failed').status_code == 204
+    # Kept: otherwise no one would hold the group key, and the next unlock would start over.
+    assert KeyGrant.objects.filter(pk=grant.pk).exists()
+    assert not grants.may_start(person('other@example.org'))
+    alert = Alert.objects.get()
+    assert (alert.kind, alert.account) == (Alert.Kind.KEY_GRANT_FAILED, holder.user)
+
+
 def test_only_the_recipient_reports_on_their_grant_and_only_once(holder, newcomer):
     grant = KeyGrant.objects.get()
     client = client_for(newcomer)

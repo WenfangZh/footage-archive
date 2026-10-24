@@ -147,7 +147,9 @@ def grant(granter, recipient_key_id, sealed):
 def report_check(profile, grant_id, public_key, passed):
     """The recipient's browser opened a grant to their current key, whose public half it names,
     so that a key replaced meanwhile in another tab is never judged with the old one (design §4).
-    A grant that failed is deleted, so that they wait for a new one, and the admin is alerted."""
+    A grant that failed is deleted, so that they wait for a new one, and the admin is alerted;
+    but the last grant held on its group key is kept: the server cannot tell a true report from
+    a wrong one, and deleting it would make the archive start over (§5.7)."""
     with transaction.atomic():
         lock()
         held_grant = KeyGrant.objects.filter(
@@ -160,5 +162,6 @@ def report_check(profile, grant_id, public_key, passed):
             held_grant.checked_at = timezone.now()
             held_grant.save(update_fields=['checked_at'])
         else:
-            held_grant.delete()
+            if held().filter(group_key=held_grant.group_key).exclude(pk=held_grant.pk).exists():
+                held_grant.delete()
             raise_alert(Alert.Kind.KEY_GRANT_FAILED, profile.user)
