@@ -260,7 +260,7 @@ class VaultFile(models.Model):
     """A file held in the vault for a clip. Only clips.vault reads or writes it (SPEC.md §6).
 
     Encrypted with its own data key (ADR 0008), which is stored only sealed to the group
-    keys (keys.models.SealedKey). A clip cannot be deleted while it still has vault files,
+    keys (SealedKey, below). A clip cannot be deleted while it still has vault files,
     so that no file is left behind on disk: clips.vault.delete_all removes them first.
     """
 

@@ -79,6 +79,19 @@ def test_the_evidence_copy_in_the_vault_matches_its_hash_record(phone_video, tmp
     assert [list(pair) for pair in hashing.stream_hashes(copy, 60)] == record.original_stream_hashes
 
 
+
+def test_after_ingest_the_vault_holds_no_plaintext_of_either_file(phone_video, group_key_pair, settings):
+    clip = confirmed_clip(phone_video)
+    ingest.ingest(clip)
+    stored = b''.join(path.read_bytes() for path in settings.VAULT_DIR.rglob('*') if path.is_file())
+    for kind in (vault.EVIDENCE_COPY, vault.PROXY):
+        with vault.open_file(clip, kind, open_data_key(clip, kind, group_key_pair)) as opened:
+            plaintext = opened.read()
+        # Any stretch of the file would do: its first bytes (the container's header) and its middle.
+        for start in (0, len(plaintext) // 2):
+            assert plaintext[start:start + 64] not in stored
+
+
 def test_working_files_are_removed(phone_video, settings):
     clip = confirmed_clip(phone_video)
     ingest.ingest(clip)

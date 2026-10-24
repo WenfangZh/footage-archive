@@ -29,7 +29,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import content_disposition_header
-from django.views.decorators.debug import sensitive_post_parameters
+from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_GET, require_POST
 
 from accounts.roles import lawyer_required
@@ -42,7 +42,7 @@ from clips.streaming import file_response, requested_range
 from clips.tags import DEFAULT_TAGS
 from keys.forms import Base64BytesField
 from keys.grants import current_key, reads_vault
-from keys.views import unlock_context
+from keys.views import b64, unlock_context
 
 from .models import Case
 from .search import match_of
@@ -136,13 +136,13 @@ def clip_page(request, case_id, clip_id):
 
 def sealed_keys_json(clip, kind):
     return json.dumps([{
-        'group_public_key': base64.b64encode(bytes(sealed.group_key.public_key)).decode(),
-        'sealed_data_key': base64.b64encode(bytes(sealed.sealed_data_key)).decode(),
+        'group_public_key': b64(sealed.group_key.public_key), 'sealed_data_key': b64(sealed.sealed_data_key),
     } for sealed in vault.sealed_keys(clip, kind)])
 
 
 @lawyer_required
 @sensitive_post_parameters('data_key')
+@sensitive_variables('key')
 @require_POST
 def data_key(request, case_id, clip_id, file):
     """Take a file's data key from the page's script, check it, and hand it back in a cookie
@@ -204,6 +204,10 @@ def preview(request, case_id, clip_id):
     try:
         record_once_in_a_while(Action.PREVIEW, case, clip)
         return file_response(request, proxy, proxy.size, 'video/mp4')
+    except vault.Unreadable:
+        # Found while seeking to a range's start, before anything was sent.
+        proxy.close()
+        raise Http404 from None
     except BaseException:
         proxy.close()
         raise
@@ -238,6 +242,10 @@ def download(request, case_id, clip_id):
             record(Action.DOWNLOAD, case.lawyer_profile, case=case, clip=clip)
             check_activity(case.lawyer_profile, AlertLimitRaise.Activity.DOWNLOADS)
         response = file_response(request, evidence, size, CONTENT_TYPES.get(extension, 'application/octet-stream'))
+    except vault.Unreadable:
+        # Found while seeking to a range's start, before anything was sent.
+        evidence.close()
+        raise Http404 from None
     except BaseException:
         evidence.close()
         raise

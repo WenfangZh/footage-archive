@@ -370,6 +370,16 @@ def test_a_cut_off_or_altered_file_is_never_read_as_complete(clip, big_file, dam
         read_all(clip, vault.EVIDENCE_COPY, data_key)
 
 
+def test_a_file_cut_at_a_chunk_boundary_fails_even_when_read_only_to_its_size(clip, big_file):
+    # A server serving `size` bytes never asks past them (clips.streaming).
+    data_key = put_file(clip, vault.EVIDENCE_COPY, big_file, 'mp4')
+    path = settings.VAULT_DIR / VaultFile.objects.get().file.name
+    path.write_bytes(path.read_bytes()[:vault.HEADER_BYTES + 2 * (vault.CHUNK_SIZE + vault.ABYTES)])
+    with vault.open_file(clip, vault.EVIDENCE_COPY, data_key) as stored:
+        with pytest.raises(vault.Unreadable):
+            stored.read(stored.size)
+
+
 def test_a_file_moved_to_another_clip_or_kind_does_not_decrypt(clip, local_file):
     other = Clip.objects.create(code_hash=uuid.uuid4().hex * 2)
     data_key = put_file(clip, vault.EVIDENCE_COPY, local_file, 'mp4')
@@ -386,7 +396,7 @@ def test_a_file_moved_to_another_clip_or_kind_does_not_decrypt(clip, local_file)
     assert other_key != data_key
 
 
-def test_a_file_stored_before_encryption_opens_with_no_key(clip, local_file):
+def test_no_key_opens_a_file_stored_before_encryption(clip, local_file):
     put_file(clip, vault.PROXY, local_file, 'mp4')
     VaultFile.objects.update(key_check=None)
     with pytest.raises(vault.WrongKey):

@@ -15,9 +15,13 @@ if (files) {
         const groupPrivateKey = opened.get(sealed.group_public_key);
         const dataKey = groupPrivateKey && keys.openSealed(keys.b64.decode(sealed.sealed_data_key), groupPrivateKey);
         if (dataKey) {
-          const response = await ArchiveUnlock.post(url, { data_key: keys.b64.encode(dataKey) });
-          if (response.ok) {
-            return true;
+          try {
+            const response = await ArchiveUnlock.post(url, { data_key: keys.b64.encode(dataKey) });
+            if (response.ok) {
+              return true;
+            }
+          } catch (error) {
+            // The network failed: said below, like a key that did not open.
           }
         }
       }
