@@ -13,7 +13,7 @@ from audit.models import Action, AuditEntry
 from cases.models import Case
 from clips import vault
 from clips.models import HashRecord
-from tests.conftest import log_in_with_second_factor, make_case
+from tests.conftest import log_in_with_second_factor, make_case, put_vault_file, with_data_key
 from tests.test_clip_pages import START, make_lawyer  # noqa: F401 - fixtures below
 from tests.test_clip_pages import case, clip, lawyer, lawyer_client  # noqa: F401
 
@@ -23,10 +23,11 @@ EVIDENCE_BYTES = b'evidence ' * 500
 
 
 @pytest.fixture
-def evidence(clip, tmp_path):
+def evidence(clip, tmp_path, lawyer_client):
+    """The clip with an evidence copy, whose data key the lawyer's browser has handed over."""
     source = tmp_path / 'evidence.mov'
     source.write_bytes(EVIDENCE_BYTES)
-    vault.record_file(clip, vault.EVIDENCE_COPY, vault.store_file(source, 'mov'))
+    with_data_key(lawyer_client, vault.EVIDENCE_COPY, put_vault_file(clip, vault.EVIDENCE_COPY, source, 'mov'))
     return clip
 
 

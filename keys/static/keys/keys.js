@@ -87,16 +87,20 @@
     return sodium.crypto_box_seal(groupPrivateKey, recipientPublicKey);
   }
 
-  // The group private key a grant holds, or null if it does not open or does not give the
-  // group key's public half (design §4).
-  function openGrant(sealed, personalPrivateKey, groupPublicKey) {
-    let groupPrivateKey;
+  // What was sealed to the key pair whose private half is given, or null if it does not open.
+  function openSealed(sealed, privateKey) {
     try {
-      groupPrivateKey = sodium.crypto_box_seal_open(sealed, sodium.crypto_scalarmult_base(personalPrivateKey), personalPrivateKey);
+      return sodium.crypto_box_seal_open(sealed, sodium.crypto_scalarmult_base(privateKey), privateKey);
     } catch (error) {
       return null;
     }
-    return samePublicKey(groupPrivateKey, groupPublicKey) ? groupPrivateKey : null;
+  }
+
+  // The group private key a grant holds, or null if it does not open or does not give the
+  // group key's public half (design §4).
+  function openGrant(sealed, personalPrivateKey, groupPublicKey) {
+    const groupPrivateKey = openSealed(sealed, personalPrivateKey);
+    return groupPrivateKey && samePublicKey(groupPrivateKey, groupPublicKey) ? groupPrivateKey : null;
   }
 
   function samePublicKey(privateKey, publicKey) {
@@ -147,7 +151,7 @@
 
   globalThis.ArchiveKeys = {
     PASSPHRASE_LENGTH, RECOVERY_KEY_LENGTH, WrongSecret, KeyMismatch, b64, randomCode, display, normalise,
-    passphraseKey, recoveryWrappingKey, encryptPrivateKey, decryptPrivateKey, sealGroupKey, openGrant, safetyNumber,
+    passphraseKey, recoveryWrappingKey, encryptPrivateKey, decryptPrivateKey, sealGroupKey, openSealed, openGrant, safetyNumber,
     remember, recall, forget,
   };
 }());

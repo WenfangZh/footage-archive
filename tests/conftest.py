@@ -110,6 +110,57 @@ def make_key(lawyer_profile):
     )
 
 
+@pytest.fixture
+def group_key_pair():
+    """A group key in use, and its private half, as a lawyer's browser holds it (keys.models)."""
+    from nacl.public import PrivateKey
+
+    from keys.models import GroupKey
+    private_key = PrivateKey.generate()
+    GroupKey.objects.create(public_key=bytes(private_key.public_key))
+    return private_key
+
+
+def put_vault_file(clip, kind, source_path, extension):
+    """Encrypt a file into the vault and record it as the clip's, as ingest does; returns its
+    data key, which a lawyer's browser would open from its sealed key."""
+    from clips import vault
+    name, data_key = vault.store_file(clip, kind, source_path, extension)
+    vault.record_file(clip, kind, name, data_key)
+    return data_key
+
+
+def open_data_key(clip, kind, group_private_key):
+    """The file's data key, opened from its sealed key as a lawyer's browser does."""
+    from nacl.public import SealedBox
+
+    from clips.models import SealedKey
+    sealed = SealedKey.objects.get(vault_file__clip=clip, vault_file__kind=kind, group_key__public_key=bytes(group_private_key.public_key))
+    return SealedBox(group_private_key).decrypt(bytes(sealed.sealed_data_key))
+
+
+def with_data_key(client, kind, data_key):
+    """The cookie a hand-over sets (hand_over), set directly. Django's test client sends every
+    cookie, whatever its path: tests/test_data_keys.py checks the path a browser keeps to."""
+    from cases.clip_pages import COOKIES, cookie_value
+    client.cookies[COOKIES[kind]] = cookie_value(data_key)
+    return client
+
+
+def hand_over(client, case, clip, kind, data_key):
+    """What a clip page's script does: hand the file's data key over, for its cookie (cases.clip_pages)."""
+    import base64
+
+    from django.urls import reverse
+
+    from clips import vault
+    file = {vault.PROXY: 'proxy', vault.EVIDENCE_COPY: 'evidence-copy'}[kind]
+    return client.post(
+        reverse('lawyer:data_key', kwargs={'case_id': case.pk, 'clip_id': clip.pk, 'file': file}),
+        {'data_key': base64.b64encode(data_key).decode()},
+    )
+
+
 def make_case(lawyer_profile, label='A case', rings=2, **fields):
     """A small case for `lawyer_profile`: one hour around a public place, with the default margin."""
     starts_at = timezone.now() - datetime.timedelta(days=30)
