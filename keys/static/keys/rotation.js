@@ -122,8 +122,10 @@
       }
       newPublicKey = pair.publicKey;
     } else {
-      // Resealed only to a key this lawyer holds: their own grant on it, from their own browser
-      // at step 2, shows the server named the key that browser made.
+      // Resealed only to a key this lawyer holds a grant on. That does not prove it is the key
+      // their browser made at step 2 (anyone can seal a grant to their public key), but a
+      // database writer could as well add a lawyer key of their own to the list at step 2
+      // (design §11).
       if (!oldPrivateKey || !groupKeys.has(role.new_public_key)) {
         throw new Error('The old or the new group key did not open.');
       }
@@ -145,19 +147,28 @@
     const failed = [];
     if (newPrivateKey) {
       const toCheck = await get(urls.toCheck);
+      // A claim that a data key does not open can be checked only with the old key: without it,
+      // no result, rather than a pass that would let those items be lost unchecked. The slot is
+      // drawn again in time.
+      if (toCheck.unopenable.length && !oldPrivateKey) {
+        throw new Error('The old group key did not open.');
+      }
       for (const item of toCheck.items) {
         if (!keys.openDataKey(decode(item.sealed_data_key), newPrivateKey, decode(item.key_check))) {
           failed.push(item.id);
         }
       }
       for (const item of toCheck.unopenable) {
-        if (oldPrivateKey && keys.openDataKey(decode(item.sealed_data_key), oldPrivateKey, decode(item.key_check))) {
+        if (keys.openDataKey(decode(item.sealed_data_key), oldPrivateKey, decode(item.key_check))) {
           failed.push(item.id);
         }
       }
     }
     const passed = Boolean(newPrivateKey) && !failed.length;
-    await post(urls.checked, { result: passed ? 'passed' : 'failed', failed_items: JSON.stringify(failed) });
+    // Naming the key checked: the server refuses a result meant for another attempt's.
+    await post(urls.checked, {
+      new_public_key: role.new_public_key, result: passed ? 'passed' : 'failed', failed_items: JSON.stringify(failed),
+    });
     show('rotation-checked');
     return true;
   }
@@ -170,15 +181,21 @@
       if (response.status === 404) {
         return;
       }
+      const shown = await (await fetched(response)).json();
+      if (!shown.role) {
+        return;
+      }
+      show(shown.role === 'rotator' ? 'rotation-rotator' : 'rotation-checking');
+      const groupKeys = await ArchiveUnlock.groupKeys(await ArchiveUnlock.personalKey());
       // At most a few times round: the server's list of lawyer keys may change while the new
-      // key is made.
+      // key is made. The role is fetched again once the key is unlocked, which may be long
+      // after the page was shown.
       for (let round = 0; round < 3; round += 1) {
-        const role = round ? await get(urls.role) : await (await fetched(response)).json();
+        const role = await get(urls.role);
         if (!role.role) {
+          show('');
           return;
         }
-        show(role.role === 'rotator' ? 'rotation-rotator' : 'rotation-checking');
-        const groupKeys = await ArchiveUnlock.groupKeys(await ArchiveUnlock.personalKey());
         const done = role.role === 'rotator' ? await rotate(role, groupKeys) : await check(role, groupKeys);
         if (done) {
           return;

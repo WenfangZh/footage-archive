@@ -161,6 +161,8 @@ class ItemIdsForm(forms.Form):
 
 
 class CheckResultForm(forms.Form):
+    # The new group key checked, as the role named it.
+    new_public_key = Base64BytesField(PUBLIC_KEY_BYTES)
     result = forms.ChoiceField(choices=[('passed', 'passed'), ('failed', 'failed')])
     failed_items = forms.CharField(required=False)
 

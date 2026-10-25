@@ -119,7 +119,8 @@
   // computes it on the server (design §5.5), and compared in constant time.
   function openDataKey(sealed, groupPrivateKey, keyCheck) {
     const dataKey = openSealed(sealed, groupPrivateKey);
-    if (!dataKey) {
+    // Any other length is junk, which BLAKE2b would refuse as a key, throwing.
+    if (!dataKey || dataKey.length !== 32) {
       return null;
     }
     const check = sodium.crypto_generichash(32, text('fa-keycheck-v1'), dataKey);

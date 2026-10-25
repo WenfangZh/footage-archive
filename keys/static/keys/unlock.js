@@ -74,7 +74,10 @@
   let opening = null;
 
   function groupKeys(personalPrivateKey) {
-    opening = opening || openGroupKeys(personalPrivateKey);
+    opening = opening || openGroupKeys(personalPrivateKey).catch((error) => {
+      opening = null; // Tried again when a script next asks.
+      throw error;
+    });
     return opening;
   }
 
