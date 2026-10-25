@@ -1,0 +1,13 @@
+{% load i18n %}
+{# What keys/static/keys/rotation.js shows while this lawyer's browser takes part in a rotation of the group key. #}
+<div id="rotation" role="status" data-role="{% url 'lawyer:rotation_role' %}" data-new-key="{% url 'lawyer:rotation_new_key' %}"
+  data-reseal="{% url 'lawyer:rotation_reseal' %}" data-resealed="{% url 'lawyer:rotation_resealed' %}"
+  data-unopenable="{% url 'lawyer:rotation_unopenable' %}" data-to-check="{% url 'lawyer:rotation_to_check' %}"
+  data-checked="{% url 'lawyer:rotation_checked' %}">
+  <p id="rotation-rotator" hidden>{% translate "You were drawn to carry out the rotation of the group key. Unlock your key: your browser does the rest." %}</p>
+  <p id="rotation-resealing" hidden>{% translate "Your browser is resealing the vault's data keys to the new group key. Keep this page open until it says it is done; if it closes, your browser carries on at your next page." %}</p>
+  <p id="rotation-resealed" hidden>{% translate "Your browser has finished its part in the rotation of the group key." %}</p>
+  <p id="rotation-checking" hidden>{% translate "You were drawn to check a rotation of the group key. Your browser checks it once your key is unlocked; keep this page open for a moment." %}</p>
+  <p id="rotation-checked" hidden>{% translate "Your browser has checked the rotation of the group key and sent the result." %}</p>
+  <p id="rotation-failed" role="alert" hidden>{% translate "Your browser could not take part in the rotation of the group key. Reload the page; if it happens again, tell the admin." %}</p>
+</div>

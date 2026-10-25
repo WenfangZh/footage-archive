@@ -106,6 +106,13 @@ def slot_holder(running, slot):
     return running.checks.get(slot=slot, replaced_at__isnull=True).lawyer_profile
 
 
+def report(profile, passed, failed_items=()):
+    """A result naming the running attempt's new key, as the browser sends it."""
+    running = rotation.running_attempt()
+    new = running and rotation.new_key_of(running)
+    return rotation.report(profile, passed, failed_items, bytes(new.public_key) if new else bytes(32))
+
+
 def resealed_ids(running):
     return [item['id'] for item in vault.resealed_by(rotation.new_key_of(running), running.rotator)]
 
@@ -217,11 +224,11 @@ def test_the_old_sealed_keys_go_only_after_two_passes_by_two_lawyers_other_than_
     running = ready_for_checks(world)
     old_sealed = SealedKey.objects.filter(group_key=world['key'])
     assert old_sealed.exists()
-    rotation.report(slot_holder(running, Slot.FIRST), True)
+    report(slot_holder(running, Slot.FIRST), True)
     assert old_sealed.exists()
     with pytest.raises(rotation.Refused):
-        rotation.report(running.rotator, True)
-    rotation.report(slot_holder(running, Slot.SECOND), True)
+        report(running.rotator, True)
+    report(slot_holder(running, Slot.SECOND), True)
     world['key'].refresh_from_db()
     new = rotation.new_key_of(running)
     new.refresh_from_db()
@@ -243,16 +250,16 @@ def test_a_file_recorded_during_a_rotation_stays_readable_whichever_way_it_ends(
     sealed_to = set(SealedKey.objects.filter(vault_file__isnull=False).values_list('group_key', flat=True))
     assert sealed_to == {world['key'].pk, rotation.new_key_of(running).pk}
     # Rejected: the old key's copy stays.
-    rotation.report(slot_holder(running, Slot.FIRST), False, resealed_ids(running))
-    rotation.report(slot_holder(running, Slot.SECOND), False, resealed_ids(running))
+    report(slot_holder(running, Slot.FIRST), False, resealed_ids(running))
+    report(slot_holder(running, Slot.SECOND), False, resealed_ids(running))
     assert SealedKey.objects.filter(vault_file__isnull=False, group_key=world['key']).exists()
 
 
 def test_two_failures_reject_the_attempt_at_once(world):
     running = ready_for_checks(world)
     new = rotation.new_key_of(running)
-    rotation.report(slot_holder(running, Slot.FIRST), False, resealed_ids(running))
-    rotation.report(slot_holder(running, Slot.SECOND), False, resealed_ids(running))
+    report(slot_holder(running, Slot.FIRST), False, resealed_ids(running))
+    report(slot_holder(running, Slot.SECOND), False, resealed_ids(running))
     running.refresh_from_db()
     new.refresh_from_db()
     world['key'].refresh_from_db()
@@ -266,14 +273,14 @@ def test_two_failures_reject_the_attempt_at_once(world):
 def test_one_failure_is_rejected_only_once_a_confirmer_outside_both_slots_agrees(world):
     running = ready_for_checks(world)
     failing = slot_holder(running, Slot.FIRST)
-    rotation.report(failing, False, resealed_ids(running)[:1])
+    report(failing, False, resealed_ids(running)[:1])
     running.refresh_from_db()
     assert running.ended_at is None
     confirmer = slot_holder(running, Slot.CONFIRMING)
     assert confirmer.pk not in {running.rotator.pk, failing.pk, slot_holder(running, Slot.SECOND).pk}
     _, items, _ = rotation.to_check(confirmer)
     assert [item['id'] for item in items] == resealed_ids(running)[:1]
-    rotation.report(confirmer, False, resealed_ids(running)[:1])
+    report(confirmer, False, resealed_ids(running)[:1])
     running.refresh_from_db()
     assert running.outcome == 'rejected'
 
@@ -281,9 +288,9 @@ def test_one_failure_is_rejected_only_once_a_confirmer_outside_both_slots_agrees
 def test_a_confirmer_finding_the_items_sound_abandons_the_attempt_as_disputed(world):
     running = ready_for_checks(world)
     failing = slot_holder(running, Slot.FIRST)
-    rotation.report(failing, False, resealed_ids(running))
+    report(failing, False, resealed_ids(running))
     confirmer = slot_holder(running, Slot.CONFIRMING)
-    rotation.report(confirmer, True)
+    report(confirmer, True)
     running.refresh_from_db()
     assert (running.outcome, running.abandoned_because) == ('abandoned', Because.DISPUTED)
     named = set(Alert.objects.filter(kind=Alert.Kind.ROTATION_DISPUTED).values_list('account', flat=True))
@@ -299,7 +306,7 @@ def test_a_failure_no_one_can_confirm_abandons_the_attempt_and_names_the_checker
         if profile.pk not in {running.rotator.pk, slot_holder(running, Slot.FIRST).pk, slot_holder(running, Slot.SECOND).pk}:
             profile.change_status(Status.SUSPENDED)
     failing = slot_holder(running, Slot.FIRST)
-    rotation.report(failing, False, resealed_ids(running))
+    report(failing, False, resealed_ids(running))
     running.refresh_from_db()
     assert (running.outcome, running.abandoned_because) == ('abandoned', Because.NO_ONE_ELIGIBLE)
     assert Alert.objects.filter(kind=Alert.Kind.ROTATION_NO_ONE_ELIGIBLE, account=failing.user).exists()
@@ -312,14 +319,14 @@ def test_a_failure_no_one_can_confirm_abandons_the_attempt_and_names_the_checker
 def test_a_slot_without_a_result_after_three_days_is_drawn_again_with_an_alert(world):
     running = ready_for_checks(world)
     idle = slot_holder(running, Slot.SECOND)
-    rotation.report(slot_holder(running, Slot.FIRST), True)
+    report(slot_holder(running, Slot.FIRST), True)
     rotation.tick(now=timezone.now() + datetime.timedelta(days=3, minutes=1))
     replacement = slot_holder(running, Slot.SECOND)
     assert replacement != idle and replacement != running.rotator
     assert Alert.objects.filter(kind=Alert.Kind.ROTATION_ROLE_REDRAWN, account=idle.user).exists()
     with pytest.raises(rotation.Refused):
-        rotation.report(idle, True)
-    rotation.report(replacement, True)
+        report(idle, True)
+    report(replacement, True)
     assert rotation.new_key_of(running).status == KeyStatus.CURRENT
 
 
@@ -327,13 +334,13 @@ def test_a_suspended_checker_loses_their_slot_even_after_passing(world):
     from accounts.access import change_access  # noqa: F401 - the path a suspension takes
     running = ready_for_checks(world)
     passed = slot_holder(running, Slot.FIRST)
-    rotation.report(passed, True)
+    report(passed, True)
     with grants.transaction.atomic():
         passed.change_status(Status.SUSPENDED)
         grants.lock()
         rotation.suspended(passed)
     assert slot_holder(running, Slot.FIRST) != passed
-    rotation.report(slot_holder(running, Slot.SECOND), True)
+    report(slot_holder(running, Slot.SECOND), True)
     # One pass left, from the second slot: the attempt has not ended.
     running.refresh_from_db()
     assert running.ended_at is None
@@ -367,7 +374,7 @@ def test_a_grant_on_the_new_key_reported_as_failing_is_kept(world):
     assert KeyGrant.objects.filter(pk=grant.pk).exists()
 
 
-# The views the browsers use (step 9 builds the browser side).
+# The views the browsers use (keys/static/keys/rotation.js).
 
 def client_for(profile):
     return log_in_with_second_factor(Client(), profile.user)
@@ -390,10 +397,29 @@ def test_the_rotation_views_walk_an_attempt_to_its_end(world):
     running.refresh_from_db()
     for slot in (Slot.FIRST, Slot.SECOND):
         checker = client_for(slot_holder(running, slot))
-        assert checker.get(reverse('lawyer:rotation_role')).json()['role'] == 'checker'
+        role = checker.get(reverse('lawyer:rotation_role')).json()
+        # The old key too, to try what the rotator said they could not open.
+        assert role == {
+            'role': 'checker', 'old_public_key': b64(bytes(world['key'].public_key)),
+            'new_public_key': b64(bytes(rotation.new_key_of(running).public_key)),
+        }
         assert len(checker.get(reverse('lawyer:rotation_to_check')).json()['items']) == 2
-        assert checker.post(reverse('lawyer:rotation_checked'), {'result': 'passed'}).status_code == 204
+        assert checker.post(reverse('lawyer:rotation_checked'), {
+            'result': 'passed', 'new_public_key': role['new_public_key'],
+        }).status_code == 204
     assert rotation.new_key_of(running).status == KeyStatus.CURRENT
+
+
+def test_a_result_for_another_attempts_key_is_refused(world):
+    """A page left open during an earlier attempt, whose lawyer was drawn again: its result
+    names the earlier key, and must not count as a check of this one."""
+    running = ready_for_checks(world)
+    checker = slot_holder(running, Slot.FIRST)
+    response = client_for(checker).post(reverse('lawyer:rotation_checked'), {
+        'result': 'failed', 'new_public_key': b64(bytes(PrivateKey.generate().public_key)),
+    })
+    assert response.status_code == 409
+    assert running.checks.get(slot=Slot.FIRST, replaced_at__isnull=True).result == RotationCheck.Result.NONE
 
 
 def test_the_rotation_views_are_for_lawyers_holding_the_group_key(world):
@@ -404,6 +430,16 @@ def test_the_rotation_views_are_for_lawyers_holding_the_group_key(world):
         assert client.get(reverse(name)).status_code == 404
     other = next(profile for profile in world['lawyers'] if profile != attempt().rotator)
     assert client_for(other).get(reverse('lawyer:rotation_reseal')).status_code == 409
+
+
+def test_lawyers_pages_take_part_in_rotations(world):
+    """Every page that unlocks the key runs the rotation script, with where it reports: a role
+    is carried out at the lawyer's next vault page, whichever it is (design §5.5)."""
+    page = client_for(world['lawyers'][0]).get(reverse('lawyer:home')).content.decode()
+    assert 'keys/rotation.js' in page and 'id="rotation"' in page
+    for name in ('rotation_role', 'rotation_new_key', 'rotation_reseal', 'rotation_resealed', 'rotation_unopenable',
+                 'rotation_to_check', 'rotation_checked'):
+        assert f'"{reverse("lawyer:" + name)}"' in page
 
 
 def test_the_revoke_page_warns_before_revoking_the_last_holder(settings):
@@ -422,7 +458,7 @@ def test_a_confirmer_redrawn_after_three_days_checks_the_same_items(world):
     lawyers = world['lawyers'] + [lawyer('fay')]
     give(world['key'], lawyers[-1])
     running = ready_for_checks(world)
-    rotation.report(slot_holder(running, Slot.FIRST), False, resealed_ids(running)[:1])
+    report(slot_holder(running, Slot.FIRST), False, resealed_ids(running)[:1])
     idle = slot_holder(running, Slot.CONFIRMING)
     rotation.tick(now=timezone.now() + datetime.timedelta(days=3, minutes=1))
     replacement = slot_holder(running, Slot.CONFIRMING)
@@ -486,7 +522,7 @@ def test_a_confirmer_goes_with_the_failure_once_its_checker_is_replaced(world, m
     give(world['key'], *lawyers[5:])
     running = ready_for_checks(world)
     failing = slot_holder(running, Slot.FIRST)
-    rotation.report(failing, False, resealed_ids(running))
+    report(failing, False, resealed_ids(running))
     confirmer = slot_holder(running, Slot.CONFIRMING)
     # Once their role ends, the former confirmer may be drawn for the new slot (design §5.5):
     # kept out here, so that what they report can only be about the check that ended.
@@ -497,9 +533,9 @@ def test_a_confirmer_goes_with_the_failure_once_its_checker_is_replaced(world, m
         rotation.suspended(failing)
     assert not running.checks.filter(slot=Slot.CONFIRMING, replaced_at__isnull=True).exists()
     with pytest.raises(rotation.Refused):
-        rotation.report(confirmer, True)
+        report(confirmer, True)
     # The new checker's failure is confirmed afresh.
-    rotation.report(slot_holder(running, Slot.FIRST), False, resealed_ids(running)[:1])
+    report(slot_holder(running, Slot.FIRST), False, resealed_ids(running)[:1])
     assert running.checks.filter(slot=Slot.CONFIRMING, replaced_at__isnull=True).exists()
     running.refresh_from_db()
     assert running.ended_at is None
@@ -523,8 +559,8 @@ def test_every_abandon_but_starting_over_alerts_the_admin(world, cause):
 def test_the_audit_log_keeps_who_passed_and_who_found_a_failure(world):
     running = ready_for_checks(world)
     first, second = slot_holder(running, Slot.FIRST), slot_holder(running, Slot.SECOND)
-    rotation.report(first, False, resealed_ids(running))
-    rotation.report(second, False, resealed_ids(running))
+    report(first, False, resealed_ids(running))
+    report(second, False, resealed_ids(running))
     entries = AuditEntry.objects.filter(rotation_attempt=running)
     assert set(entries.filter(action=Action.ROTATION_CHECK_FAILED).values_list('lawyer_profile', flat=True)) == {first.pk, second.pk}
     assert entries.get(action=Action.ROTATION_REJECTION).lawyer_profile == running.rotator
@@ -578,7 +614,7 @@ def test_resealing_goes_on_without_what_the_rotator_cannot_open_and_the_checkers
 def test_an_item_no_one_can_open_loses_its_old_copy_at_the_end_and_the_admin_is_told(world, caplog):
     running, unopenable = reported_unopenable(world)
     for slot in (Slot.FIRST, Slot.SECOND):
-        rotation.report(slot_holder(running, slot), True)
+        report(slot_holder(running, slot), True)
     assert rotation.new_key_of(running).status == KeyStatus.CURRENT
     assert not SealedKey.objects.filter(pk=unopenable).exists()
     assert Alert.objects.filter(kind=Alert.Kind.ROTATION_UNOPENABLE_ITEMS).exists()
@@ -588,7 +624,7 @@ def test_an_item_no_one_can_open_loses_its_old_copy_at_the_end_and_the_admin_is_
 def test_a_false_claim_that_an_item_cannot_be_opened_is_a_failed_check(world):
     running, unopenable = reported_unopenable(world)
     # Both checkers opened it with the old key: the rotator's claim was false.
-    rotation.report(slot_holder(running, Slot.FIRST), False, [unopenable])
-    rotation.report(slot_holder(running, Slot.SECOND), False, [unopenable])
+    report(slot_holder(running, Slot.FIRST), False, [unopenable])
+    report(slot_holder(running, Slot.SECOND), False, [unopenable])
     running.refresh_from_db()
     assert running.outcome == 'rejected' and SealedKey.objects.filter(pk=unopenable).exists()

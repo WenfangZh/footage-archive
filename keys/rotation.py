@@ -277,13 +277,17 @@ def to_check(profile):
     return check, resealed, unopenable
 
 
-def report(profile, passed, failed_items=()):
-    """A checker's or confirmer's result, set once; then the attempt goes on (steps 6 to 9)."""
+def report(profile, passed, failed_items, new_public_key):
+    """A checker's or confirmer's result, set once; then the attempt goes on (steps 6 to 9). It
+    names the new key it checked: a result from a page shown during an earlier attempt, to the
+    same lawyer drawn again, is refused rather than taken as this attempt's."""
     with transaction.atomic():
         grants.lock()
         profile = LawyerProfile.objects.get(pk=profile.pk)
         check = checks_of(profile)
         attempt = check.attempt
+        if bytes(new_key_of(attempt).public_key) != new_public_key:
+            raise Refused
         if passed:
             failed_items = []
         else:
