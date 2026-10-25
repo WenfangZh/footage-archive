@@ -69,8 +69,16 @@
 
   // The group private keys the person's grants hold, by group public key (base64). Each grant
   // not yet checked is reported, opened or not; a lawyer whose browser should make the first
-  // group key makes it here, sealed to their own key (design §5.3).
-  async function groupKeys(personalPrivateKey) {
+  // group key makes it here, sealed to their own key (design §5.3). Once per page, whichever
+  // scripts ask, so that a grant is reported once.
+  let opening = null;
+
+  function groupKeys(personalPrivateKey) {
+    opening = opening || openGroupKeys(personalPrivateKey);
+    return opening;
+  }
+
+  async function openGroupKeys(personalPrivateKey) {
     const response = await fetch(form.dataset.grantsUrl, { credentials: 'same-origin' });
     if (!response.ok) {
       throw new Error('The key grants could not be fetched.');
@@ -99,7 +107,7 @@
       const pair = sodium.crypto_box_keypair();
       const started = await post(form.dataset.startUrl, {
         public_key: keys.b64.encode(pair.publicKey),
-        sealed_private_key: keys.b64.encode(keys.sealGroupKey(pair.privateKey, keys.b64.decode(form.dataset.publicKey))),
+        sealed_private_key: keys.b64.encode(keys.seal(pair.privateKey, keys.b64.decode(form.dataset.publicKey))),
       });
       // Refused if another lawyer's browser made one first: then a grant from them comes later.
       if (started.status === 201) {

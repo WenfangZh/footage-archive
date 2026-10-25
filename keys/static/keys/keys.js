@@ -82,9 +82,11 @@
     return privateKey;
   }
 
-  // The group private key, sealed so that only the recipient's personal key opens it (design §5.3).
-  function sealGroupKey(groupPrivateKey, recipientPublicKey) {
-    return sodium.crypto_box_seal(groupPrivateKey, recipientPublicKey);
+  // A key sealed so that only the holder of the recipient key's private half opens it: the
+  // group private key to a lawyer's personal key (design §5.3), or a data key to the group key
+  // (§5.5).
+  function seal(key, recipientPublicKey) {
+    return sodium.crypto_box_seal(key, recipientPublicKey);
   }
 
   // What was sealed to the key pair whose private half is given, or null if it does not open.
@@ -110,6 +112,18 @@
     } catch (error) {
       return null;
     }
+  }
+
+  // The data key a sealed key holds, or null if it does not open or is not the item's key: the
+  // key check value is BLAKE2b-256 of a label, keyed with the data key, as clips.vault.key_check
+  // computes it on the server (design §5.5), and compared in constant time.
+  function openDataKey(sealed, groupPrivateKey, keyCheck) {
+    const dataKey = openSealed(sealed, groupPrivateKey);
+    if (!dataKey) {
+      return null;
+    }
+    const check = sodium.crypto_generichash(32, text('fa-keycheck-v1'), dataKey);
+    return check.length === keyCheck.length && sodium.memcmp(check, keyCheck) ? dataKey : null;
   }
 
   // The group private key a grant holds, or null if it does not open or does not give the
@@ -167,7 +181,7 @@
 
   globalThis.ArchiveKeys = {
     PASSPHRASE_LENGTH, RECOVERY_KEY_LENGTH, WrongSecret, KeyMismatch, b64, randomCode, display, normalise,
-    passphraseKey, recoveryWrappingKey, encryptPrivateKey, decryptPrivateKey, sealGroupKey, openSealed, openGrant, openText, safetyNumber,
+    passphraseKey, recoveryWrappingKey, encryptPrivateKey, decryptPrivateKey, seal, openSealed, openGrant, openDataKey, openText, safetyNumber,
     remember, recall, forget,
   };
 }());

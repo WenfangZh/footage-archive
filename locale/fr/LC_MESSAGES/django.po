@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-25 02:00+0200\n"
+"POT-Creation-Date: 2026-10-25 21:58+0100\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -2096,6 +2096,59 @@ msgstr ""
 "Vous n'avez pas encore la clé commune. Un·e avocat·e qui l'a comparera votre "
 "numéro de sécurité avec vous, par téléphone ou en personne, puis vous la "
 "remettra."
+
+#: keys/templates/keys/rotation.html:7
+msgid ""
+"You were drawn to carry out the rotation of the group key. Unlock your key: "
+"your browser does the rest."
+msgstr ""
+"Vous avez été tiré·e au sort pour renouveler la clé commune. Déverrouillez "
+"votre clé : votre navigateur fait le reste."
+
+#: keys/templates/keys/rotation.html:8
+msgid ""
+"Your browser is resealing the vault's data keys to the new group key. Keep "
+"this page open until it says it is done; if it closes, your browser carries "
+"on at your next page."
+msgstr ""
+"Votre navigateur scelle à nouveau les clés des éléments du coffre avec la "
+"nouvelle clé commune. Gardez cette page ouverte jusqu'à ce qu'elle indique "
+"que c'est terminé ; si elle se ferme, votre navigateur reprend à votre "
+"prochaine page."
+
+#: keys/templates/keys/rotation.html:9
+msgid ""
+"Your browser's part in the rotation of the group key is done. The browsers "
+"of two other lawyers, drawn at random, will now check it."
+msgstr ""
+"La part de votre navigateur dans le renouvellement de la clé commune est "
+"terminée. Les navigateurs de deux autres avocat·es, tiré·es au sort, vont "
+"maintenant la vérifier."
+
+#: keys/templates/keys/rotation.html:10
+msgid ""
+"You were drawn to check a rotation of the group key. Your browser checks it "
+"once your key is unlocked; keep this page open for a moment."
+msgstr ""
+"Vous avez été tiré·e au sort pour vérifier un renouvellement de la clé "
+"commune. Votre navigateur le vérifie dès que votre clé est déverrouillée ; "
+"gardez cette page ouverte un instant."
+
+#: keys/templates/keys/rotation.html:11
+msgid ""
+"Your browser has checked the rotation of the group key and sent the result."
+msgstr ""
+"Votre navigateur a vérifié le renouvellement de la clé commune et envoyé le "
+"résultat."
+
+#: keys/templates/keys/rotation.html:12
+msgid ""
+"Your browser could not take part in the rotation of the group key. Reload "
+"the page; if it happens again, tell the admin."
+msgstr ""
+"Votre navigateur n'a pas pu prendre part au renouvellement de la clé "
+"commune. Rechargez la page ; si cela se reproduit, prévenez "
+"l'administrateur·rice."
 
 #: keys/templates/keys/setup.html:15
 msgid ""

@@ -367,7 +367,7 @@ def test_a_grant_on_the_new_key_reported_as_failing_is_kept(world):
     assert KeyGrant.objects.filter(pk=grant.pk).exists()
 
 
-# The views the browsers use (step 9 builds the browser side).
+# The views the browsers use (keys/static/keys/rotation.js).
 
 def client_for(profile):
     return log_in_with_second_factor(Client(), profile.user)
@@ -390,7 +390,12 @@ def test_the_rotation_views_walk_an_attempt_to_its_end(world):
     running.refresh_from_db()
     for slot in (Slot.FIRST, Slot.SECOND):
         checker = client_for(slot_holder(running, slot))
-        assert checker.get(reverse('lawyer:rotation_role')).json()['role'] == 'checker'
+        role = checker.get(reverse('lawyer:rotation_role')).json()
+        # The old key too, to try what the rotator said they could not open.
+        assert role == {
+            'role': 'checker', 'old_public_key': b64(bytes(world['key'].public_key)),
+            'new_public_key': b64(bytes(rotation.new_key_of(running).public_key)),
+        }
         assert len(checker.get(reverse('lawyer:rotation_to_check')).json()['items']) == 2
         assert checker.post(reverse('lawyer:rotation_checked'), {'result': 'passed'}).status_code == 204
     assert rotation.new_key_of(running).status == KeyStatus.CURRENT
@@ -404,6 +409,16 @@ def test_the_rotation_views_are_for_lawyers_holding_the_group_key(world):
         assert client.get(reverse(name)).status_code == 404
     other = next(profile for profile in world['lawyers'] if profile != attempt().rotator)
     assert client_for(other).get(reverse('lawyer:rotation_reseal')).status_code == 409
+
+
+def test_lawyers_pages_take_part_in_rotations(world):
+    """Every page that unlocks the key runs the rotation script, with where it reports: a role
+    is carried out at the lawyer's next vault page, whichever it is (design §5.5)."""
+    page = client_for(world['lawyers'][0]).get(reverse('lawyer:home')).content.decode()
+    assert 'keys/rotation.js' in page and 'id="rotation"' in page
+    for name in ('rotation_role', 'rotation_new_key', 'rotation_reseal', 'rotation_resealed', 'rotation_unopenable',
+                 'rotation_to_check', 'rotation_checked'):
+        assert f'"{reverse("lawyer:" + name)}"' in page
 
 
 def test_the_revoke_page_warns_before_revoking_the_last_holder(settings):

@@ -1,5 +1,7 @@
 """{% unlock_form %}: the form that unlocks the personal key on a page that needs it
-(keys/templates/keys/unlock.html), for an applicant or lawyer who has one; nothing otherwise."""
+(keys/templates/keys/unlock.html), for an applicant or lawyer who has one; nothing otherwise.
+With it, where their browser says how it takes part in a rotation of the group key
+(keys/templates/keys/rotation.html): it is used only on lawyers' pages."""
 
 from django import template
 

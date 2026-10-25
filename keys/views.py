@@ -249,7 +249,8 @@ def rotation_role(request):
         return JsonResponse({'role': None})
     return JsonResponse({
         'role': 'confirmer' if check.slot == RotationCheck.Slot.CONFIRMING else 'checker',
-        'new_public_key': b64(new.public_key),
+        # The old key too: a data key the rotator said they could not open is tried with it.
+        'old_public_key': b64(old.public_key), 'new_public_key': b64(new.public_key),
     })
 
 

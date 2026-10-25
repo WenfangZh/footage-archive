@@ -18,7 +18,7 @@ if (page) {
     form.addEventListener('submit', () => {
       const sealed = {};
       for (const groupKey of needed) {
-        sealed[groupKey.id] = keys.b64.encode(keys.sealGroupKey(opened.get(groupKey.public_key), recipientPublicKey));
+        sealed[groupKey.id] = keys.b64.encode(keys.seal(opened.get(groupKey.public_key), recipientPublicKey));
       }
       form.elements.grants.value = JSON.stringify(sealed);
     });
