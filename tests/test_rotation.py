@@ -481,13 +481,16 @@ def test_a_new_key_that_could_not_serve_is_refused(world, public_key):
     assert response.status_code in (400, 409) and rotation.new_key_of(running) is None
 
 
-def test_a_confirmer_goes_with_the_failure_once_its_checker_is_replaced(world):
+def test_a_confirmer_goes_with_the_failure_once_its_checker_is_replaced(world, monkeypatch):
     lawyers = world['lawyers'] + [lawyer('fay'), lawyer('gus')]
     give(world['key'], *lawyers[5:])
     running = ready_for_checks(world)
     failing = slot_holder(running, Slot.FIRST)
     rotation.report(failing, False, resealed_ids(running))
     confirmer = slot_holder(running, Slot.CONFIRMING)
+    # Once their role ends, the former confirmer may be drawn for the new slot (design §5.5):
+    # kept out here, so that what they report can only be about the check that ended.
+    monkeypatch.setattr(rotation, 'draw', lambda pool: LawyerProfile.objects.get(pk=min(set(pool) - {confirmer.pk})))
     with grants.transaction.atomic():
         failing.change_status(Status.SUSPENDED)
         grants.lock()
