@@ -14,7 +14,8 @@ One entry names nobody: a change of the size caps or alert limits found when the
 starts, with the numbers before and after (audit.limits). The admin's temporary raise of
 one lawyer's alert limit records the limit before and after too. A key grant names the
 lawyer who granted and the personal key it was granted to, which names its lawyer
-(docs/m5-encryption-design.md §5.3).
+(docs/m5-encryption-design.md §5.3). A rotation's entries name the rotation or the attempt,
+whose rows record who held each role and why it ended (§5.5).
 """
 
 from django.apps import apps
@@ -52,6 +53,15 @@ class Action(models.TextChoices):
     GROUP_KEY_CREATION = 'group_key_creation', pgettext_lazy('audit log action', 'Making the first group key')
     STARTING_OVER = 'starting_over', pgettext_lazy('audit log action', 'Starting over with a new group key')
     KEY_GRANT = 'key_grant', pgettext_lazy('audit log action', 'Key grant')
+    # Rotations of the group key (docs/m5-encryption-design.md §5.5).
+    ROTATION_REQUEST = 'rotation_request', pgettext_lazy('audit log action', 'Request for a rotation of the group key')
+    ROTATION_ATTEMPT = 'rotation_attempt', pgettext_lazy('audit log action', 'Drawing of a rotator')
+    ROTATION_NEW_KEY = 'rotation_new_key', pgettext_lazy('audit log action', 'New group key from a rotator')
+    ROTATION_CHECK_PASSED = 'rotation_check_passed', pgettext_lazy('audit log action', 'Check of a rotation, passed')
+    ROTATION_CHECK_FAILED = 'rotation_check_failed', pgettext_lazy('audit log action', 'Check of a rotation, failed')
+    ROTATION_REJECTION = 'rotation_rejection', pgettext_lazy('audit log action', 'Rejection of a rotation attempt')
+    ROTATION_ABANDON = 'rotation_abandon', pgettext_lazy('audit log action', 'Abandoning of a rotation attempt')
+    ROTATION_END = 'rotation_end', pgettext_lazy('audit log action', 'End of a rotation')
 
 
 # Actions the admin takes; every other action is a lawyer's own, or about the archive.
@@ -72,6 +82,14 @@ COUNT_ACTIONS = [Action.SEARCH]
 ARCHIVE_ACTIONS = [Action.LIMITS_CHANGE]
 # Entries that name the personal key the action was about.
 KEY_ACTIONS = [Action.KEY_GRANT]
+# Entries about a rotation, and about one of its attempts. The lawyer named is the one whose
+# revocation or report requested it, the rotator, or the lawyer who checked.
+ROTATION_ACTIONS = [Action.ROTATION_REQUEST]
+ATTEMPT_ACTIONS = [
+    Action.ROTATION_ATTEMPT, Action.ROTATION_NEW_KEY, Action.ROTATION_CHECK_PASSED, Action.ROTATION_CHECK_FAILED,
+    Action.ROTATION_REJECTION,
+    Action.ROTATION_ABANDON, Action.ROTATION_END,
+]
 # Entries that record limits, before and after.
 LIMIT_ACTIONS = [Action.LIMITS_CHANGE, Action.ALERT_LIMIT_RAISE]
 # The settings a change of limits records (audit.limits): each new size cap or alert limit
@@ -137,6 +155,11 @@ class AuditEntry(models.Model):
     limits = models.JSONField(null=True, blank=True)
     # A key grant: the personal key the group key was sealed to. Keys are never deleted.
     lawyer_key = models.ForeignKey('keys.LawyerKey', null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    # A rotation of the group key, or one attempt at it; neither is ever deleted.
+    rotation = models.ForeignKey('keys.Rotation', null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    rotation_attempt = models.ForeignKey(
+        'keys.RotationAttempt', null=True, blank=True, on_delete=models.PROTECT, related_name='+',
+    )
     # The time of writing, never one passed in. Precise: alerts look for many actions in a
     # short time (SPEC.md §7).
     at = models.DateTimeField(auto_now_add=True)
@@ -185,6 +208,16 @@ class AuditEntry(models.Model):
                 condition=Q(action__in=KEY_ACTIONS, lawyer_key__isnull=False)
                 | (~Q(action__in=KEY_ACTIONS) & Q(lawyer_key__isnull=True)),
                 name='lawyer_key_on_key_actions_only',
+            ),
+            models.CheckConstraint(
+                condition=Q(action__in=ROTATION_ACTIONS, rotation__isnull=False)
+                | (~Q(action__in=ROTATION_ACTIONS) & Q(rotation__isnull=True)),
+                name='rotation_on_rotation_actions_only',
+            ),
+            models.CheckConstraint(
+                condition=Q(action__in=ATTEMPT_ACTIONS, rotation_attempt__isnull=False)
+                | (~Q(action__in=ATTEMPT_ACTIONS) & Q(rotation_attempt__isnull=True)),
+                name='attempt_on_attempt_actions_only',
             ),
         ]
 
@@ -250,11 +283,11 @@ def _a_raise(limits):
 
 def record(
     action, lawyer_profile, admin=None, case=None, clip=None, core_count=None, margin_count=None, limits=None,
-    lawyer_key=None,
+    lawyer_key=None, rotation=None, rotation_attempt=None,
 ):
     """Add an entry to the audit log: the way every entry is meant to be written."""
     return AuditEntry.objects.create(
         action=action, lawyer_profile=lawyer_profile, admin=admin, case=case,
         clip_id=clip.pk if clip is not None else None, core_count=core_count, margin_count=margin_count,
-        limits=limits, lawyer_key=lawyer_key,
+        limits=limits, lawyer_key=lawyer_key, rotation=rotation, rotation_attempt=rotation_attempt,
     )

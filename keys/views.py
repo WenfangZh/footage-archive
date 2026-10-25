@@ -7,6 +7,7 @@ private key unless sealed or encrypted.
 """
 
 import base64
+import functools
 import json
 import secrets
 
@@ -22,10 +23,12 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from accounts.models import LawyerProfile
 from accounts.roles import applicant_required, key_holder_required, lawyer_required
 
-from . import grants
-from .forms import Base64BytesField, GrantForm, GroupKeyForm, KeySetupForm
+from . import grants, rotation
+from .forms import (
+    Base64BytesField, CheckResultForm, GrantForm, GroupKeyForm, ItemIdsForm, KeySetupForm, NewGroupKeyForm, ResealedForm,
+)
 from .grants import current_key
-from .models import IN_USE, MEMLIMIT, OPSLIMIT, PUBLIC_KEY_BYTES, KeyGrant, LawyerKey
+from .models import IN_USE, MEMLIMIT, OPSLIMIT, PUBLIC_KEY_BYTES, KeyGrant, LawyerKey, RotationCheck
 
 
 def login_id(request):
@@ -201,3 +204,116 @@ def grant(request, lawyer_key_id):
         'group_keys': json.dumps([{'id': key.pk, 'public_key': b64(key.public_key)} for key in group_keys]),
         **unlock_context(request, own),
     }, status=400 if form.errors else 200)
+
+
+# Rotations of the group key (keys.rotation, design §5.5): what the rotator's and checkers'
+# browsers fetch and send. Only for a lawyer who holds the group key (§3.3).
+
+def rotation_view(view):
+    """lawyer_required, and the vault's own gate: nothing here for a lawyer without a grant."""
+    @lawyer_required
+    @functools.wraps(view)
+    def wrapped(request, *args, **kwargs):
+        if not grants.reads_vault(request.user.lawyer_profile):
+            raise Http404
+        try:
+            return view(request, *args, **kwargs)
+        except rotation.Refused:
+            return HttpResponse(status=409)
+    return wrapped
+
+
+@rotation_view
+@require_GET
+def rotation_role(request):
+    """The lawyer's role in the attempt running, if any, and what their browser needs for it."""
+    profile = request.user.lawyer_profile
+    attempt = rotation.running_attempt()
+    if attempt is None:
+        return JsonResponse({'role': None})
+    old, new = attempt.rotation.group_key, rotation.new_key_of(attempt)
+    if attempt.rotator_id == profile.pk and attempt.resealed_at is None:
+        if new is None:
+            return JsonResponse({
+                'role': 'rotator', 'stage': 'new_key', 'old_public_key': b64(old.public_key),
+                'seal_to': [
+                    {'lawyer_key': key.pk, 'public_key': b64(key.public_key)} for key in rotation.lawyer_keys_to_seal_to(attempt)
+                ],
+            })
+        return JsonResponse({
+            'role': 'rotator', 'stage': 'reseal', 'old_public_key': b64(old.public_key), 'new_public_key': b64(new.public_key),
+        })
+    try:
+        check = rotation.checks_of(profile)
+    except rotation.Refused:
+        return JsonResponse({'role': None})
+    return JsonResponse({
+        'role': 'confirmer' if check.slot == RotationCheck.Slot.CONFIRMING else 'checker',
+        'new_public_key': b64(new.public_key),
+    })
+
+
+@rotation_view
+@require_POST
+def rotation_new_key(request):
+    form = NewGroupKeyForm(request.POST)
+    if not form.is_valid():
+        return HttpResponse(status=400)
+    rotation.submit_new_key(request.user.lawyer_profile, form.cleaned_data['public_key'], form.cleaned_data['grants'])
+    return HttpResponse(status=201)
+
+
+@rotation_view
+@require_GET
+def rotation_reseal(request):
+    after = request.GET.get('after', '0')
+    if not (after.isascii() and after.isdigit() and len(after) <= 18):
+        return HttpResponse(status=400)
+    batch = rotation.reseal_batch(request.user.lawyer_profile, after=int(after))
+    return JsonResponse({'items': [_item_json(item) for item in batch]})
+
+
+@rotation_view
+@require_POST
+def rotation_resealed(request):
+    form = ResealedForm(request.POST)
+    if not form.is_valid():
+        return HttpResponse(status=400)
+    stored = rotation.submit_resealed(request.user.lawyer_profile, form.cleaned_data['resealed'])
+    return JsonResponse({'stored': stored})
+
+
+@rotation_view
+@require_POST
+def rotation_unopenable(request):
+    form = ItemIdsForm(request.POST)
+    if not form.is_valid():
+        return HttpResponse(status=400)
+    rotation.report_unopenable(request.user.lawyer_profile, form.cleaned_data['ids'])
+    return HttpResponse(status=204)
+
+
+@rotation_view
+@require_GET
+def rotation_to_check(request):
+    _, resealed, unopenable = rotation.to_check(request.user.lawyer_profile)
+    return JsonResponse({
+        'items': [_item_json(item) for item in resealed],
+        # To open with the old key: if one opens, the rotator's claim was false.
+        'unopenable': [_item_json(item) for item in unopenable],
+    })
+
+
+@rotation_view
+@require_POST
+def rotation_checked(request):
+    form = CheckResultForm(request.POST)
+    if not form.is_valid():
+        return HttpResponse(status=400)
+    passed = form.cleaned_data['result'] == 'passed'
+    rotation.report(request.user.lawyer_profile, passed, form.cleaned_data['failed_items'])
+    return HttpResponse(status=204)
+
+
+def _item_json(item):
+    return {'id': item['id'], 'sealed_data_key': b64(item['sealed_data_key']), 'key_check': b64(item['key_check'])}

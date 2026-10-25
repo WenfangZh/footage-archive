@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-24 17:46+0200\n"
+"POT-Creation-Date: 2026-10-25 02:00+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -12,17 +12,17 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: accounts/access.py:61
+#: accounts/access.py:69
 #, python-format
 msgid "%(name)s's access is suspended."
 msgstr "L'accès de %(name)s est suspendu."
 
-#: accounts/access.py:70
+#: accounts/access.py:78
 #, python-format
 msgid "%(name)s's access is reinstated."
 msgstr "L'accès de %(name)s est rétabli."
 
-#: accounts/access.py:95
+#: accounts/access.py:104
 #, python-format
 msgid "%(name)s's access is revoked."
 msgstr "L'accès de %(name)s est révoqué."
@@ -502,16 +502,27 @@ msgstr ""
 "C'est définitif. Rien de ce que la personne a fait n'est effacé. Pour "
 "suspendre son accès pour un temps, utilisez plutôt la suspension de l'accès."
 
-#: accounts/templates/accounts/revoke.html:16
+#: accounts/templates/accounts/revoke.html:15
+msgid ""
+"They are the last lawyer holding the group key. Once they are revoked, no "
+"one can read what the vault holds: it becomes unreadable for good. Have the "
+"group key given to another lawyer first, unless revoking cannot wait."
+msgstr ""
+"C'est le dernier ou la dernière avocat·e à détenir la clé commune. Une fois "
+"son accès révoqué, plus personne ne pourra lire ce que l'archive conserve : "
+"cela deviendra illisible pour de bon. Faites d'abord remettre la clé commune "
+"à un·e autre avocat·e, sauf si la révocation ne peut pas attendre."
+
+#: accounts/templates/accounts/revoke.html:19
 msgid "The address typed does not match."
 msgstr "L'adresse saisie ne correspond pas."
 
-#: accounts/templates/accounts/revoke.html:17
+#: accounts/templates/accounts/revoke.html:20
 #, python-format
 msgid "To confirm, type their email address (%(email)s):"
 msgstr "Pour confirmer, saisissez son adresse e-mail (%(email)s) :"
 
-#: accounts/templates/accounts/revoke.html:19
+#: accounts/templates/accounts/revoke.html:22
 msgid "Revoke access for good"
 msgstr "Révoquer l'accès définitivement"
 
@@ -608,11 +619,52 @@ msgstr ""
 "Une remise de la clé commune ne s'est pas ouverte pour l'avocat·e qui l'a "
 "reçue"
 
-#: alerts/models.py:41
+#: alerts/models.py:25
+msgid "A rotation of the group key has waited long for enough lawyers"
+msgstr ""
+"Un renouvellement de la clé commune attend depuis longtemps assez d'avocat·es"
+
+#: alerts/models.py:26
+msgid "A rotator did not finish resealing in time"
+msgstr "La personne qui renouvelle la clé commune n'a pas terminé à temps"
+
+#: alerts/models.py:27
+msgid "A lawyer drawn to check a rotation did not, in time"
+msgstr ""
+"Un·e avocat·e tiré·e au sort pour vérifier un renouvellement ne l'a pas fait "
+"à temps"
+
+#: alerts/models.py:28
+msgid "No lawyer could be drawn for a rotation"
+msgstr "Aucun·e avocat·e n'a pu être tiré·e au sort pour un renouvellement"
+
+#: alerts/models.py:29
+msgid "Two lawyers disagree about a rotation"
+msgstr "Deux avocat·es sont en désaccord sur un renouvellement"
+
+#: alerts/models.py:30
+msgid "A rotation of the group key failed its checks"
+msgstr "Un renouvellement de la clé commune a échoué aux vérifications"
+
+#: alerts/models.py:31
+msgid ""
+"A rotation attempt was given up: a new request, or its rotator suspended"
+msgstr ""
+"Une tentative de renouvellement a été abandonnée : une nouvelle demande, ou "
+"la suspension de la personne qui renouvelle la clé commune"
+
+#: alerts/models.py:32
+msgid ""
+"A rotation found items no lawyer could open: see the log for their clips"
+msgstr ""
+"Un renouvellement a trouvé des éléments qu'aucun·e avocat·e ne peut ouvrir : "
+"leurs clips sont dans le journal du serveur"
+
+#: alerts/models.py:50
 msgid "Downloads"
 msgstr "Téléchargements"
 
-#: alerts/models.py:42
+#: alerts/models.py:51
 msgid "Cases created"
 msgstr "Dossiers de recherche créés"
 
@@ -673,99 +725,139 @@ msgstr "Au plus dix fois le seuil d'alerte habituel : %(limit)s."
 msgid "The alert limit is raised."
 msgstr "Le seuil d'alerte est relevé."
 
-#: audit/models.py:32
+#: audit/models.py:33
 msgid "Invitation"
 msgstr "Invitation"
 
-#: audit/models.py:33
+#: audit/models.py:34
 msgid "Declining"
 msgstr "Candidature non retenue"
 
-#: audit/models.py:34
+#: audit/models.py:35
 msgid "Admission"
 msgstr "Admission"
 
-#: audit/models.py:35
+#: audit/models.py:36
 msgid "Suspension"
 msgstr "Suspension de l'accès"
 
-#: audit/models.py:36
+#: audit/models.py:37
 msgid "Reinstatement"
 msgstr "Rétablissement de l'accès"
 
-#: audit/models.py:37
+#: audit/models.py:38
 msgid "Revocation"
 msgstr "Révocation de l'accès"
 
-#: audit/models.py:40
+#: audit/models.py:41
 msgctxt "audit log action"
 msgid "Case creation"
 msgstr "Création d'un dossier de recherche"
 
-#: audit/models.py:41
+#: audit/models.py:42
 msgctxt "audit log action"
 msgid "Case closing"
 msgstr "Clôture d'un dossier de recherche"
 
-#: audit/models.py:42
+#: audit/models.py:43
 msgctxt "audit log action"
 msgid "Request for a larger case"
 msgstr "Demande de dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:43
+#: audit/models.py:44
 msgctxt "audit log action"
 msgid "Search"
 msgstr "Recherche"
 
-#: audit/models.py:44
+#: audit/models.py:45
 msgctxt "audit log action"
 msgid "Preview"
 msgstr "Prévisualisation"
 
-#: audit/models.py:45
+#: audit/models.py:46
 msgctxt "audit log action"
 msgid "Download"
 msgstr "Téléchargement"
 
-#: audit/models.py:46
+#: audit/models.py:47
 msgctxt "audit log action"
 msgid "Viewing a clip's page"
 msgstr "Consultation de la page d'un clip"
 
-#: audit/models.py:47
+#: audit/models.py:48
 msgctxt "audit log action"
 msgid "Approval of a larger case"
 msgstr "Validation d'un dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:48
+#: audit/models.py:49
 msgctxt "audit log action"
 msgid "Refusal of a larger case"
 msgstr "Refus d'un dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:49
+#: audit/models.py:50
 msgctxt "audit log action"
 msgid "Change of the size caps and alert limits"
 msgstr "Changement des plafonds et des seuils d'alerte"
 
-#: audit/models.py:50
+#: audit/models.py:51
 msgctxt "audit log action"
 msgid "Temporary raise of a lawyer's alert limit"
 msgstr "Relèvement temporaire d'un seuil d'alerte pour un·e avocat·e"
 
-#: audit/models.py:52
+#: audit/models.py:53
 msgctxt "audit log action"
 msgid "Making the first group key"
 msgstr "Création de la première clé commune"
 
-#: audit/models.py:53
+#: audit/models.py:54
 msgctxt "audit log action"
 msgid "Starting over with a new group key"
 msgstr "Nouveau départ avec une nouvelle clé commune"
 
-#: audit/models.py:54
+#: audit/models.py:55
 msgctxt "audit log action"
 msgid "Key grant"
 msgstr "Remise de la clé commune"
+
+#: audit/models.py:57
+msgctxt "audit log action"
+msgid "Request for a rotation of the group key"
+msgstr "Demande de renouvellement de la clé commune"
+
+#: audit/models.py:58
+msgctxt "audit log action"
+msgid "Drawing of a rotator"
+msgstr "Tirage au sort de la personne qui renouvelle la clé commune"
+
+#: audit/models.py:59
+msgctxt "audit log action"
+msgid "New group key from a rotator"
+msgstr "Nouvelle clé commune, de la personne qui la renouvelle"
+
+#: audit/models.py:60
+msgctxt "audit log action"
+msgid "Check of a rotation, passed"
+msgstr "Vérification d'un renouvellement, réussie"
+
+#: audit/models.py:61
+msgctxt "audit log action"
+msgid "Check of a rotation, failed"
+msgstr "Vérification d'un renouvellement, échouée"
+
+#: audit/models.py:62
+msgctxt "audit log action"
+msgid "Rejection of a rotation attempt"
+msgstr "Rejet d'une tentative de renouvellement"
+
+#: audit/models.py:63
+msgctxt "audit log action"
+msgid "Abandoning of a rotation attempt"
+msgstr "Abandon d'une tentative de renouvellement"
+
+#: audit/models.py:64
+msgctxt "audit log action"
+msgid "End of a rotation"
+msgstr "Fin d'un renouvellement"
 
 #: cases/approval.py:39
 msgid "The case is approved."
@@ -1898,19 +1990,21 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:364
+#: config/settings.py:376
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:365
+#: config/settings.py:377
 msgid "English"
 msgstr "Anglais"
 
-#: keys/forms.py:31 keys/forms.py:33 keys/forms.py:60
+#: keys/forms.py:34 keys/forms.py:36 keys/forms.py:59 keys/forms.py:63
+#: keys/forms.py:82 keys/forms.py:94 keys/forms.py:121 keys/forms.py:146
+#: keys/forms.py:150
 msgid "The key could not be read."
 msgstr "La clé n'a pas pu être lue."
 
-#: keys/forms.py:67
+#: keys/forms.py:101
 msgid "I compared this safety number with them, by phone or in person."
 msgstr ""
 "J'ai comparé ce numéro de sécurité avec la personne, par téléphone ou de "
@@ -2134,18 +2228,18 @@ msgstr "parrainage : %(vouched_by)s"
 msgid "No one is waiting for the group key."
 msgstr "Personne n'attend la clé commune."
 
-#: keys/views.py:55
+#: keys/views.py:58
 msgid "Your key is set up. Unlock it once to check your key passphrase."
 msgstr ""
 "Votre clé est créée. Déverrouillez-la une fois pour vérifier votre phrase "
 "secrète."
 
-#: keys/views.py:193
+#: keys/views.py:196
 msgid "The keys changed while this page was open. Please try again."
 msgstr ""
 "Les clés ont changé pendant que cette page était ouverte. Veuillez réessayer."
 
-#: keys/views.py:195
+#: keys/views.py:198
 #, python-format
 msgid "%(name)s now holds the group key."
 msgstr "%(name)s a maintenant la clé commune."

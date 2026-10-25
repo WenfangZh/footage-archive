@@ -64,6 +64,16 @@ def uploads_open():
     return newest is not None and held().filter(group_key=newest).exists()
 
 
+def last_holder(profile):
+    """Whether `profile` is the last lawyer who is not revoked holding a grant on the newest group
+    key in use: revoking them would leave what the vault holds unreadable for good (design §5.7)."""
+    newest = in_use().order_by('-made_at', '-pk').first()
+    on_newest = held().filter(group_key=newest) if newest else KeyGrant.objects.none()
+    return on_newest.filter(lawyer_key__lawyer_profile=profile).exists() and not on_newest.exclude(
+        lawyer_key__lawyer_profile=profile,
+    ).exists()
+
+
 def may_start(profile):
     """Whether this lawyer's browser should make a new group key: no one who is not revoked
     holds a grant on any group key, and they are a lawyer with a confirmed key (design §5.3, §5.7)."""
@@ -78,18 +88,15 @@ def start(profile, public_key, sealed_private_key):
     """Store the group key a lawyer's browser made, and its grant to them; ends every earlier
     group key still in use, which no one left can open (design §5.7)."""
     with transaction.atomic():
-        earlier = lock()
+        lock()
         profile = LawyerProfile.objects.select_for_update().get(pk=profile.pk)
-        if not may_start(profile):
+        if not may_start(profile) or GroupKey.objects.filter(public_key=public_key).exists():
             raise Refused
-        for key in earlier:
-            # A new key whose rotation could not end, which loses its grants as any abandoned
-            # key does (design §5.5, step 8), or the key it would have replaced.
-            if key.status == GroupKey.Status.CHECKING:
-                key.status = GroupKey.Status.ABANDONED
-                key.grants.all().delete()
-            else:
-                key.status = GroupKey.Status.RETIRED
+        # A rotation running ends, its new key abandoned: no one left can finish it.
+        from . import rotation  # Here: keys.rotation imports this module.
+        rotation.started_over()
+        for key in in_use():
+            key.status = GroupKey.Status.RETIRED
             key.save(update_fields=['status'])
         group_key = GroupKey.objects.create(public_key=public_key)
         KeyGrant.objects.create(
@@ -162,6 +169,9 @@ def report_check(profile, grant_id, public_key, passed):
             held_grant.checked_at = timezone.now()
             held_grant.save(update_fields=['checked_at'])
         else:
-            if held().filter(group_key=held_grant.group_key).exclude(pk=held_grant.pk).exists():
+            # Kept on a rotation's new key, whose checks judge it, and which is sealed to exactly
+            # the lawyers holding the old one (design §5.5).
+            in_rotation = held_grant.group_key.status == GroupKey.Status.CHECKING
+            if not in_rotation and held().filter(group_key=held_grant.group_key).exclude(pk=held_grant.pk).exists():
                 held_grant.delete()
             raise_alert(Alert.Kind.KEY_GRANT_FAILED, profile.user)

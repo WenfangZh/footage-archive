@@ -6,6 +6,10 @@ brings one back, and the status says why.
 Reinstatement gives the access back. Revocation, after an explicit confirmation, ends the
 access for good and closes all the lawyer's cases; it deletes nothing they did. Each
 writes an audit entry, in the same transaction.
+
+Keys (docs/m5-encryption-design.md §5.4, §5.5): suspension changes none, but takes away the
+lawyer's roles in a rotation running. Revocation retires their personal key and deletes their
+grants, and requests a rotation of the group key, which they may have copied.
 """
 
 from django.contrib import messages
@@ -19,6 +23,8 @@ from django_otp import devices_for_user
 
 from audit.models import Action, record
 from cases.models import Case
+from keys import grants, rotation
+from keys.models import KeyGrant
 
 from .models import LawyerProfile
 from .roles import admin_required
@@ -38,6 +44,8 @@ def change_access(request, profile_id, before, after, active, action, notice):
             user.save(update_fields=['is_active'])
             if not active:
                 end_sessions(user)
+                grants.lock()
+                rotation.suspended(profile)
             record(action, profile, admin=request.user)
     except ValueError:
         # Another request changed the status first.
@@ -81,6 +89,7 @@ def revoke(request, profile_id):
     if request.method != 'POST' or not confirmed:
         return render(request, 'accounts/revoke.html', {
             'profile': profile, 'open_cases': profile.cases.open().count(), 'wrong': request.method == 'POST',
+            'last_holder': grants.last_holder(profile),
         }, status=400 if request.method == 'POST' else 200)
     try:
         with transaction.atomic():
@@ -110,3 +119,11 @@ def revoke_locked(request, profile):
     for device in devices_for_user(user, confirmed=None):
         device.delete()
     record(Action.REVOCATION, profile, admin=request.user)
+    grants.lock()
+    KeyGrant.objects.filter(lawyer_key__lawyer_profile=profile).delete()
+    key = grants.current_key(profile)
+    if key is not None:
+        key.retire()
+    # Always, even when they hold no grant now: they may have had the group key, and had their
+    # grant deleted (a failure report, a key reset), before being revoked (design §5.5).
+    rotation.request(profile)

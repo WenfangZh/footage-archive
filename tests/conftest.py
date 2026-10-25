@@ -183,6 +183,27 @@ def lawyer_text(clip, kind, group_private_key):
     return open_page_text(sealed_text_json(clip, kind), group_private_key)
 
 
+def rotation_attempt(status):
+    """An attempt at a rotation, for a test that needs a rotation's new key with `status`:
+    running for a key being checked, ended for one rejected or abandoned (keys.models)."""
+    from django.contrib.auth import get_user_model
+
+    from accounts.models import LawyerProfile
+    from keys.models import GroupKey, Rotation, RotationAttempt
+    old = GroupKey.objects.filter(status__in=['current', 'rotation_requested', 'retiring']).first()
+    if old is None:
+        old = GroupKey.objects.create(public_key=os.urandom(32), status=GroupKey.Status.RETIRING)
+    rotation = Rotation.objects.filter(ended_at__isnull=True).first() or Rotation.objects.create(group_key=old)
+    user = get_user_model().objects.create_user(f'rotator-{RotationAttempt.objects.count()}@example.org')
+    rotator = LawyerProfile.objects.create(user=user, bar='Paris')
+    if status == GroupKey.Status.CHECKING:
+        return RotationAttempt.objects.create(rotation=rotation, rotator=rotator)
+    outcome = {GroupKey.Status.REJECTED: ('rejected', ''), GroupKey.Status.ABANDONED: ('abandoned', 'disputed')}[status]
+    return RotationAttempt.objects.create(
+        rotation=rotation, rotator=rotator, ended_at=timezone.now(), outcome=outcome[0], abandoned_because=outcome[1],
+    )
+
+
 def put_vault_file(clip, kind, source_path, extension):
     """Encrypt a file into the vault and record it as the clip's, as ingest does; returns its
     data key, which a lawyer's browser would open from its sealed key."""

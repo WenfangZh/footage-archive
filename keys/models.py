@@ -103,6 +103,10 @@ class GroupKey(models.Model):
     public_key = models.BinaryField(max_length=PUBLIC_KEY_BYTES)
     made_at = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.CURRENT)
+    # The rotation attempt that made it; empty for the first key and after starting over.
+    attempt = models.OneToOneField(
+        'RotationAttempt', null=True, blank=True, on_delete=models.PROTECT, related_name='new_key',
+    )
 
     class Meta:
         constraints = [
@@ -113,6 +117,13 @@ class GroupKey(models.Model):
             models.UniqueConstraint(
                 models.Value(True), condition=Q(status__in=['current', 'rotation_requested', 'retiring']),
                 name='one_established_group_key',
+            ),
+            # The new key of the rotation running: at most one.
+            models.UniqueConstraint(models.Value(True), condition=Q(status='checking'), name='one_checking_group_key'),
+            # A key a rotation made, and only such a key, is or was checked.
+            models.CheckConstraint(
+                condition=~Q(status__in=['checking', 'rejected', 'abandoned']) | Q(attempt__isnull=False),
+                name='rotation_keys_name_their_attempt',
             ),
         ]
 
@@ -136,4 +147,99 @@ class KeyGrant(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['group_key', 'lawyer_key'], name='one_grant_per_group_key_and_lawyer_key'),
+        ]
+
+
+class Rotation(models.Model):
+    """Replacing a group key, after a revocation or a reported exposure (design §5.5). It runs
+    until an attempt ends it, or the archive starts over (§5.7); attempts that fail are retried."""
+
+    group_key = models.ForeignKey(GroupKey, on_delete=models.PROTECT, related_name='rotations')
+    requested_at = models.DateTimeField(default=timezone.now)
+    ended_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(models.Value(True), condition=Q(ended_at__isnull=True), name='one_rotation_running'),
+        ]
+
+
+class RotationAttempt(models.Model):
+    """One try at a rotation: a rotator drawn at random makes the new key and reseals; two
+    checkers, and a confirmer for a reported failure, check it (design §5.5)."""
+
+    class Outcome(models.TextChoices):
+        ENDED = 'ended'
+        REJECTED = 'rejected'
+        ABANDONED = 'abandoned'
+
+    class AbandonedBecause(models.TextChoices):
+        ROTATOR_TIME = 'rotator_time'
+        DISPUTED = 'disputed'
+        NO_ONE_ELIGIBLE = 'no_one_eligible'
+        NEW_REQUEST = 'new_request'
+        STARTED_OVER = 'started_over'
+        # The rotator was suspended before resealing was done (design §5.5, step 4).
+        ROTATOR_SUSPENDED = 'rotator_suspended'
+
+    rotation = models.ForeignKey(Rotation, on_delete=models.PROTECT, related_name='attempts')
+    rotator = models.ForeignKey(LawyerProfile, on_delete=models.PROTECT, related_name='+')
+    drawn_at = models.DateTimeField(default=timezone.now)
+    # When nothing was left to reseal, and the checkers were drawn.
+    resealed_at = models.DateTimeField(null=True, blank=True)
+    # Data keys sealed to the old key that the rotator's browser could not open, as their ids
+    # (clips.models.SealedKey): resealing goes on without them, and the checkers check the claim.
+    unopenable_items = models.JSONField(default=list, blank=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    outcome = models.CharField(max_length=20, choices=Outcome.choices, blank=True)
+    abandoned_because = models.CharField(max_length=20, choices=AbandonedBecause.choices, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['rotation'], condition=Q(ended_at__isnull=True), name='one_attempt_running_per_rotation',
+            ),
+            # Ended with an outcome, and abandoned with why; running with neither.
+            models.CheckConstraint(
+                condition=Q(ended_at__isnull=True, outcome='', abandoned_because='')
+                | Q(ended_at__isnull=False, outcome__in=['ended', 'rejected'], abandoned_because='')
+                | (Q(ended_at__isnull=False, outcome='abandoned') & ~Q(abandoned_because='')),
+                name='attempt_outcome_when_ended',
+            ),
+        ]
+
+
+class RotationCheck(models.Model):
+    """One role of checking an attempt's new key (design §5.5, steps 4 to 6)."""
+
+    class Slot(models.TextChoices):
+        FIRST = 'first'
+        SECOND = 'second'
+        # Draws one lawyer to check items a checker reported as failing.
+        CONFIRMING = 'confirming'
+
+    class Result(models.TextChoices):
+        NONE = ''
+        PASSED = 'passed'
+        FAILED = 'failed'
+
+    attempt = models.ForeignKey(RotationAttempt, on_delete=models.PROTECT, related_name='checks')
+    slot = models.CharField(max_length=20, choices=Slot.choices)
+    lawyer_profile = models.ForeignKey(LawyerProfile, on_delete=models.PROTECT, related_name='+')
+    drawn_at = models.DateTimeField(default=timezone.now)
+    result = models.CharField(max_length=10, choices=Result.choices, blank=True)
+    # The items that failed, as their sealed keys' ids (clips.models.SealedKey); for a
+    # confirmer, those a checker named.
+    failed_items = models.JSONField(default=list, blank=True)
+    # When the slot was drawn again: a result from a replaced holder is refused.
+    replaced_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['attempt', 'slot'], condition=Q(replaced_at__isnull=True), name='one_holder_per_slot',
+            ),
+            models.UniqueConstraint(
+                fields=['attempt', 'lawyer_profile'], condition=Q(replaced_at__isnull=True), name='one_role_per_lawyer',
+            ),
         ]
