@@ -13,7 +13,9 @@ from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from cases.models import Case, CaseApproval
 from clips import grid
-from tests.conftest import BASTILLE, log_in_with_second_factor, make_case
+from nacl.public import PrivateKey
+
+from tests.conftest import BASTILLE, log_in_with_second_factor, make_case, make_key, open_label
 
 pytestmark = pytest.mark.django_db
 
@@ -26,6 +28,9 @@ def make_lawyer(email):
     profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
     profile.save()
     profile.change_status(LawyerProfile.Status.LAWYER)
+    # A real key pair, so that tests can open the labels sealed to it, as the browser does.
+    profile.private_key = PrivateKey.generate()
+    make_key(profile, profile.private_key)
     return profile
 
 
@@ -65,7 +70,9 @@ def test_a_lawyer_creates_a_case_from_a_place_and_a_radius(lawyer, lawyer_client
     response = create(lawyer_client)
     case = Case.objects.get()
     assert response.status_code == 302 and response['Location'] == reverse('lawyer:case', kwargs={'case_id': case.pk})
-    assert (case.lawyer_profile, case.label, case.margin_minutes, case.margin_rings) == (lawyer, 'Bastille, 15 June', 10, 1)
+    assert (case.lawyer_profile, case.margin_minutes, case.margin_rings) == (lawyer, 10, 1)
+    assert open_label(case, lawyer.private_key) == 'Bastille, 15 June'
+    assert case.label == '' and b'Bastille' not in bytes(case.label_ciphertext)
     paris = datetime.timezone(datetime.timedelta(hours=2))
     assert case.starts_at == datetime.datetime(2026, 6, 15, 18, tzinfo=paris)
     assert case.ends_at - case.starts_at == datetime.timedelta(hours=1)
@@ -102,12 +109,12 @@ def test_the_typed_place_is_never_kept_or_logged(lawyer_client, caplog):
         assert '85417' not in kept and '36923' not in kept
 
 
-def test_the_typed_place_and_reason_are_left_out_of_error_reports(lawyer_client):
+def test_the_typed_place_reason_and_label_are_left_out_of_error_reports(lawyer_client):
     request = create(lawyer_client, label='', reason=REASON).wsgi_request
     shown = SafeExceptionReporterFilter().get_post_parameters(request)
     hidden = SafeExceptionReporterFilter.cleansed_substitute
-    assert shown['latitude'] == shown['longitude'] == shown['reason'] == hidden
-    assert shown['label'] == ''
+    # The label too: it is stored only encrypted (docs/m5-encryption-design.md §7.4).
+    assert shown['latitude'] == shown['longitude'] == shown['reason'] == shown['label'] == hidden
 
 
 def test_a_case_over_the_size_caps_is_refused_with_its_size(lawyer_client, settings):
@@ -187,7 +194,9 @@ def test_a_lawyer_sees_only_their_own_cases(lawyer, lawyer_client):
     assert lawyer_client.get(reverse('lawyer:case', kwargs={'case_id': own.pk})).status_code == 200
     assert lawyer_client.get(reverse('lawyer:case', kwargs={'case_id': others.pk})).status_code == 404
     home = lawyer_client.get(reverse('lawyer:home')).content.decode()
-    assert 'Mine' in home and 'Not mine' not in home
+    # Labels come encrypted (cases.labels): the links tell which cases are listed.
+    assert reverse('lawyer:case', kwargs={'case_id': own.pk}) in home
+    assert reverse('lawyer:case', kwargs={'case_id': others.pk}) not in home
 
 
 def test_a_case_page_shows_its_window_area_and_margin(lawyer, lawyer_client, settings):
@@ -271,7 +280,7 @@ def test_the_admin_sees_the_window_area_and_reason_but_not_the_label(admin_clien
     listing = admin_client.get(reverse('manage:case_requests')).content.decode()
     assert reverse('manage:case_request', kwargs={'case_id': waiting_case.pk}) in listing
     page = admin_client.get(reverse('manage:case_request', kwargs={'case_id': waiting_case.pk})).content.decode()
-    assert REASON in page and waiting_case.label not in page
+    assert REASON in page and FORM['label'] not in page and 'case-label' not in page
     # Where the area is, to about 100 m: coarser than the cells, never the typed place.
     assert '48.853, 2.369' in page and FORM['latitude'] not in page and '140 minutes' in page
 

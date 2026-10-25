@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-24 14:28+0200\n"
+"POT-Creation-Date: 2026-10-24 17:46+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -319,44 +319,44 @@ msgid "Send the invitation"
 msgstr "Envoyer l'invitation"
 
 #: accounts/templates/accounts/lawyer_home.html:4
-#: accounts/templates/accounts/lawyer_home.html:7
-#: cases/templates/cases/case.html:37
-#: cases/templates/cases/closed_cases.html:15
+#: accounts/templates/accounts/lawyer_home.html:9
+#: cases/templates/cases/case.html:40
+#: cases/templates/cases/closed_cases.html:18
 msgid "Your cases"
 msgstr "Vos dossiers de recherche"
 
-#: accounts/templates/accounts/lawyer_home.html:10
+#: accounts/templates/accounts/lawyer_home.html:13
 msgid "waiting for approval"
 msgstr "en attente de validation"
 
-#: accounts/templates/accounts/lawyer_home.html:13
+#: accounts/templates/accounts/lawyer_home.html:16
 msgid "You have no cases yet."
 msgstr "Vous n'avez pas encore de dossier de recherche."
 
-#: accounts/templates/accounts/lawyer_home.html:15
+#: accounts/templates/accounts/lawyer_home.html:18
 #: cases/templates/cases/new_case.html:4 cases/templates/cases/new_case.html:15
 msgid "New case"
 msgstr "Nouveau dossier de recherche"
 
-#: accounts/templates/accounts/lawyer_home.html:16
+#: accounts/templates/accounts/lawyer_home.html:19
 #: cases/templates/cases/closed_cases.html:4
-#: cases/templates/cases/closed_cases.html:7
+#: cases/templates/cases/closed_cases.html:9
 msgid "Closed cases"
 msgstr "Dossiers de recherche clos"
 
-#: accounts/templates/accounts/lawyer_home.html:17
+#: accounts/templates/accounts/lawyer_home.html:20
 #: cases/templates/cases/default_margin.html:4
 #: cases/templates/cases/default_margin.html:7
 msgid "Default margin"
 msgstr "Marge par défaut"
 
-#: accounts/templates/accounts/lawyer_home.html:18
-#: cases/templates/cases/clip.html:23 keys/templates/keys/key.html:4
+#: accounts/templates/accounts/lawyer_home.html:21
+#: cases/templates/cases/clip.html:19 keys/templates/keys/key.html:4
 #: keys/templates/keys/key.html:15
 msgid "Your personal key"
 msgstr "Votre clé personnelle"
 
-#: accounts/templates/accounts/lawyer_home.html:19
+#: accounts/templates/accounts/lawyer_home.html:22
 #: keys/templates/keys/waiting.html:4 keys/templates/keys/waiting.html:7
 msgid "Colleagues waiting for the group key"
 msgstr "Collègues en attente de la clé commune"
@@ -925,28 +925,28 @@ msgstr ""
 "Gardée avec le dossier de recherche, et visible par son avocat·e. Jamais le "
 "nom d'un·e client·e."
 
-#: cases/models.py:118
+#: cases/models.py:128
 msgid "Closed by its lawyer"
 msgstr "Clos par son avocat·e"
 
-#: cases/models.py:119
+#: cases/models.py:129
 msgid "Closed when its lawyer's access was revoked"
 msgstr "Clos à la révocation de l'accès de son avocat·e"
 
-#: cases/models.py:120
+#: cases/models.py:130
 msgid "Closed after a long time without use"
 msgstr "Clos après une longue période sans usage"
 
-#: cases/models.py:121
+#: cases/models.py:131
 msgid "Closed when the admin refused it"
 msgstr "Clos au refus de l'administrateur·rice"
 
-#: cases/templates/cases/case.html:8
+#: cases/templates/cases/case.html:11
 #, python-format
 msgid "%(because)s, on %(closed_at)s."
 msgstr "%(because)s, le %(closed_at)s."
 
-#: cases/templates/cases/case.html:11
+#: cases/templates/cases/case.html:14
 msgid ""
 "Larger than the size caps: waiting for the admin's approval. It cannot be "
 "used until then."
@@ -954,68 +954,68 @@ msgstr ""
 "Au-delà des plafonds : en attente de validation par l'administrateur·rice. "
 "Il ne peut pas être utilisé d'ici là."
 
-#: cases/templates/cases/case.html:13
+#: cases/templates/cases/case.html:16
 msgid "Larger than the size caps, and approved by the admin."
 msgstr "Au-delà des plafonds, et validé par l'administrateur·rice."
 
-#: cases/templates/cases/case.html:15
+#: cases/templates/cases/case.html:18
 msgid "The admin's note:"
 msgstr "Note de l'administrateur·rice :"
 
-#: cases/templates/cases/case.html:18
+#: cases/templates/cases/case.html:21
 #: cases/templates/cases/case_request.html:10
 msgid "Time window"
 msgstr "Plage horaire"
 
-#: cases/templates/cases/case.html:20
+#: cases/templates/cases/case.html:23
 #: cases/templates/cases/case_request.html:12
 msgid "Area"
 msgstr "Périmètre"
 
-#: cases/templates/cases/case.html:21
+#: cases/templates/cases/case.html:24
 #, python-format
 msgid "%(cells)s cell, about %(metres)s m across"
 msgid_plural "%(cells)s cells, about %(metres)s m across"
 msgstr[0] "%(cells)s maille, environ %(metres)s m de large"
 msgstr[1] "%(cells)s mailles, environ %(metres)s m de large"
 
-#: cases/templates/cases/case.html:22
+#: cases/templates/cases/case.html:25
 msgid "Margin"
 msgstr "Marge"
 
-#: cases/templates/cases/case.html:23
+#: cases/templates/cases/case.html:26
 #, python-format
 msgid "%(minutes)s minute"
 msgid_plural "%(minutes)s minutes"
 msgstr[0] "%(minutes)s minute"
 msgstr[1] "%(minutes)s minutes"
 
-#: cases/templates/cases/case.html:24
+#: cases/templates/cases/case.html:27
 #, python-format
 msgid "%(rings)s ring of cells"
 msgid_plural "%(rings)s rings of cells"
 msgstr[0] "%(rings)s anneau de mailles"
 msgstr[1] "%(rings)s anneaux de mailles"
 
-#: cases/templates/cases/case.html:29
+#: cases/templates/cases/case.html:32
 msgid "Search for clips"
 msgstr "Rechercher des clips"
 
-#: cases/templates/cases/case.html:32 cases/templates/cases/close_case.html:4
-#: cases/templates/cases/close_case.html:7
+#: cases/templates/cases/case.html:35 cases/templates/cases/close_case.html:4
+#: cases/templates/cases/close_case.html:9
 msgid "Close this case"
 msgstr "Clore ce dossier de recherche"
 
-#: cases/templates/cases/case.html:33
+#: cases/templates/cases/case.html:36
 msgid "Case log"
 msgstr "Journal du dossier de recherche"
 
-#: cases/templates/cases/case.html:35
+#: cases/templates/cases/case.html:38
 #, python-format
 msgid "clip %(clip)s"
 msgstr "clip %(clip)s"
 
-#: cases/templates/cases/case.html:35
+#: cases/templates/cases/case.html:38
 #, python-format
 msgid "core matches: %(core)s, margin matches: %(margin)s"
 msgstr ""
@@ -1063,21 +1063,21 @@ msgstr "Décider"
 msgid "No requests are waiting."
 msgstr "Aucune demande en attente."
 
-#: cases/templates/cases/clip.html:4 cases/templates/cases/clip.html:17
+#: cases/templates/cases/clip.html:4 cases/templates/cases/clip.html:12
 msgid "Clip"
 msgstr "Clip"
 
-#: cases/templates/cases/clip.html:18
+#: cases/templates/cases/clip.html:13
 msgid "Core match for this case."
 msgstr "Correspondance centrale pour ce dossier de recherche."
 
-#: cases/templates/cases/clip.html:18
+#: cases/templates/cases/clip.html:13
 msgid "Margin match for this case: just outside its time window or area."
 msgstr ""
 "Correspondance de marge pour ce dossier de recherche : juste en dehors de sa "
 "plage horaire ou de son périmètre."
 
-#: cases/templates/cases/clip.html:22
+#: cases/templates/cases/clip.html:18
 msgid ""
 "You do not hold the group key yet, so the archive shows you only this clip's "
 "index data: no preview, evidence copy, context or contact details."
@@ -1086,7 +1086,7 @@ msgstr ""
 "données d'index de ce clip, sans version de prévisualisation, copie de "
 "preuve, contexte ni moyen de contact."
 
-#: cases/templates/cases/clip.html:30
+#: cases/templates/cases/clip.html:25
 msgid ""
 "Some of this clip's contents could not be opened with your key. Reload the "
 "page; if it happens again, tell the admin."
@@ -1094,21 +1094,21 @@ msgstr ""
 "Une partie du contenu de ce clip n'a pas pu être ouverte avec votre clé. "
 "Rechargez la page ; si cela se reproduit, prévenez l'administrateur·rice."
 
-#: cases/templates/cases/clip.html:33
+#: cases/templates/cases/clip.html:28
 msgid "A low-resolution preview. Watching it is recorded in the audit log."
 msgstr ""
 "Une version de prévisualisation en basse résolution. La regarder est inscrit "
 "au journal d'audit."
 
-#: cases/templates/cases/clip.html:38
+#: cases/templates/cases/clip.html:33
 msgid "Download the evidence copy"
 msgstr "Télécharger la copie de preuve"
 
-#: cases/templates/cases/clip.html:39
+#: cases/templates/cases/clip.html:34
 msgid "Download its hash record"
 msgstr "Télécharger les empreintes numériques (hash)"
 
-#: cases/templates/cases/clip.html:40
+#: cases/templates/cases/clip.html:35
 msgid ""
 "The evidence copy holds the clip's video and audio streams unchanged, never "
 "re-encoded, in a new container without the file's own metadata; its hash "
@@ -1120,7 +1120,7 @@ msgstr ""
 "fichier ; ses empreintes numériques (hash) montrent que les images n'ont pas "
 "été modifiées. Chaque téléchargement est inscrit au journal d'audit."
 
-#: cases/templates/cases/clip.html:43
+#: cases/templates/cases/clip.html:38
 #, python-format
 msgid "The stated time is %(minutes)s minute away from the metadata time."
 msgid_plural ""
@@ -1130,76 +1130,76 @@ msgstr[0] ""
 msgstr[1] ""
 "L'heure indiquée est à %(minutes)s minutes de l'heure des métadonnées."
 
-#: cases/templates/cases/clip.html:46 clips/templates/clips/clip.html:34
+#: cases/templates/cases/clip.html:41 clips/templates/clips/clip.html:34
 #: clips/templates/clips/confirm.html:15
 msgid "Time"
 msgstr "Heure"
 
-#: cases/templates/cases/clip.html:48 clips/models.py:184
+#: cases/templates/cases/clip.html:43 clips/models.py:184
 msgid "Stated time"
 msgstr "Heure indiquée"
 
-#: cases/templates/cases/clip.html:49
+#: cases/templates/cases/clip.html:44
 msgid "Metadata time"
 msgstr "Heure des métadonnées"
 
-#: cases/templates/cases/clip.html:49 cases/templates/cases/clip.html:50
-#: cases/templates/cases/clip.html:65 cases/templates/cases/place.html:1
+#: cases/templates/cases/clip.html:44 cases/templates/cases/clip.html:45
+#: cases/templates/cases/clip.html:60 cases/templates/cases/place.html:1
 msgid "not given"
 msgstr "non renseigné"
 
-#: cases/templates/cases/clip.html:50
+#: cases/templates/cases/clip.html:45
 msgid "Stated time as uploaded"
 msgstr "Heure indiquée telle qu'uploadée"
 
-#: cases/templates/cases/clip.html:51
+#: cases/templates/cases/clip.html:46
 msgid "Duration"
 msgstr "Durée"
 
-#: cases/templates/cases/clip.html:51 cases/templates/cases/matches.html:5
+#: cases/templates/cases/clip.html:46 cases/templates/cases/matches.html:5
 #, python-format
 msgid "%(seconds)s s"
 msgstr "%(seconds)s s"
 
-#: cases/templates/cases/clip.html:54 clips/templates/clips/clip.html:39
+#: cases/templates/cases/clip.html:49 clips/templates/clips/clip.html:39
 #: clips/templates/clips/confirm.html:25
 msgid "Place"
 msgstr "Lieu"
 
-#: cases/templates/cases/clip.html:56 clips/models.py:185
+#: cases/templates/cases/clip.html:51 clips/models.py:185
 msgid "Stated location"
 msgstr "Lieu indiqué"
 
-#: cases/templates/cases/clip.html:57 clips/models.py:189
+#: cases/templates/cases/clip.html:52 clips/models.py:189
 msgid "Metadata location"
 msgstr "Lieu des métadonnées"
 
-#: cases/templates/cases/clip.html:58
+#: cases/templates/cases/clip.html:53
 msgid "Stated location as uploaded"
 msgstr "Lieu indiqué tel qu'uploadé"
 
-#: cases/templates/cases/clip.html:61 clips/models.py:186
+#: cases/templates/cases/clip.html:56 clips/models.py:186
 msgid "Tags"
 msgstr "Étiquettes"
 
-#: cases/templates/cases/clip.html:64
+#: cases/templates/cases/clip.html:59
 msgid "No tags."
 msgstr "Aucune étiquette."
 
-#: cases/templates/cases/clip.html:65
+#: cases/templates/cases/clip.html:60
 msgid "Tags as uploaded:"
 msgstr "Étiquettes telles qu'uploadées :"
 
-#: cases/templates/cases/clip.html:69 clips/forms.py:69 clips/models.py:187
+#: cases/templates/cases/clip.html:64 clips/forms.py:69 clips/models.py:187
 #: clips/models.py:234
 msgid "Context"
 msgstr "Contexte"
 
-#: cases/templates/cases/clip.html:74 clips/models.py:188 clips/models.py:235
+#: cases/templates/cases/clip.html:69 clips/models.py:188 clips/models.py:235
 msgid "Contact details"
 msgstr "Moyen de contact"
 
-#: cases/templates/cases/clip.html:76
+#: cases/templates/cases/clip.html:71
 msgid ""
 "The code holder chose to leave these, knowing they could be used against "
 "them. Use them only for this case, and keep them out of anything you share."
@@ -1208,20 +1208,20 @@ msgstr ""
 "pourrait être utilisé contre elle. Ne l'utilisez que pour ce dossier de "
 "recherche, et ne le faites figurer dans rien de ce que vous partagez."
 
-#: cases/templates/cases/clip.html:79
+#: cases/templates/cases/clip.html:74
 msgid "Edits since upload"
 msgstr "Modifications depuis l'upload"
 
-#: cases/templates/cases/clip.html:81
+#: cases/templates/cases/clip.html:76
 #, python-format
 msgid "%(field)s: %(day)s, in the four hours from %(start)s"
 msgstr "%(field)s : %(day)s, dans les quatre heures à partir de %(start)s"
 
-#: cases/templates/cases/clip.html:82
+#: cases/templates/cases/clip.html:77
 msgid "None."
 msgstr "Aucun."
 
-#: cases/templates/cases/close_case.html:8
+#: cases/templates/cases/close_case.html:11
 #, python-format
 msgid ""
 "Once \"%(label)s\" is closed, it allows no searches, previews or downloads, "
@@ -1231,15 +1231,15 @@ msgstr ""
 "prévisualisation, ni téléchargement, et il ne peut pas être rouvert. Il "
 "reste parmi vos dossiers de recherche et dans le journal d'audit."
 
-#: cases/templates/cases/close_case.html:11
+#: cases/templates/cases/close_case.html:14
 msgid "Close the case"
 msgstr "Clore le dossier de recherche"
 
-#: cases/templates/cases/close_case.html:13
+#: cases/templates/cases/close_case.html:16
 msgid "Keep it open"
 msgstr "Le garder ouvert"
 
-#: cases/templates/cases/closed_cases.html:13
+#: cases/templates/cases/closed_cases.html:16
 msgid "You have no closed cases."
 msgstr "Vous n'avez aucun dossier de recherche clos."
 
@@ -1354,44 +1354,64 @@ msgstr ""
 "la maille autour de %(latitude)s, %(longitude)s, d'environ %(width)s m de "
 "large"
 
-#: cases/templates/cases/search.html:4 cases/templates/cases/search.html:7
+#: cases/templates/cases/search.html:4 cases/templates/cases/search.html:9
 #, python-format
 msgid "Search: %(label)s"
 msgstr "Recherche : %(label)s"
 
-#: cases/templates/cases/search.html:8
+#: cases/templates/cases/search.html:11
 msgid ""
 "This search is recorded in the audit log, with the number of clips found."
 msgstr ""
 "Cette recherche est inscrite au journal d'audit, avec le nombre de clips "
 "trouvés."
 
-#: cases/templates/cases/search.html:10
+#: cases/templates/cases/search.html:13
 msgid "Core matches"
 msgstr "Correspondances centrales"
 
-#: cases/templates/cases/search.html:11
+#: cases/templates/cases/search.html:14
 msgid "Clips in the case's time window and area themselves."
 msgstr ""
 "Clips dans la plage horaire et le périmètre du dossier de recherche eux-"
 "mêmes."
 
-#: cases/templates/cases/search.html:14
+#: cases/templates/cases/search.html:17
 msgid "Margin matches"
 msgstr "Correspondances de marge"
 
-#: cases/templates/cases/search.html:15
+#: cases/templates/cases/search.html:18
 msgid ""
 "Clips found only in the margin, just outside the time window or the area."
 msgstr ""
 "Clips trouvés seulement dans la marge, juste en dehors de la plage horaire "
 "ou du périmètre."
 
-#: cases/views.py:86
+#: cases/templatetags/case_labels.py:17 cases/templatetags/case_labels.py:28
+#, python-format
+msgid "Case no. %(number)s"
+msgstr "Dossier de recherche nº %(number)s"
+
+#: cases/templatetags/case_labels.py:19
+#, python-format
+msgid "Case no. %(number)s (case label unreadable)"
+msgstr ""
+"Dossier de recherche nº %(number)s (libellé du dossier de recherche "
+"illisible)"
+
+#: cases/views.py:56
+msgid ""
+"Your account has no personal key to lock the case label with. Ask the admin "
+"what to do."
+msgstr ""
+"Votre compte n'a pas de clé personnelle pour chiffrer le libellé du dossier "
+"de recherche. Demandez à l'administrateur·rice comment faire."
+
+#: cases/views.py:89
 msgid "Your new cases will start with this margin."
 msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
 
-#: cases/views.py:97
+#: cases/views.py:100
 msgid "The case is closed."
 msgstr "Le dossier de recherche est clos."
 

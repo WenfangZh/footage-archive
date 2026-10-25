@@ -14,7 +14,7 @@ from accounts.models import LawyerProfile
 from alerts.checks import activity_limit, check_activity
 from alerts.models import Alert, AlertLimitRaise
 from audit.models import Action, AuditEntry, record
-from tests.conftest import log_in_with_second_factor, make_case
+from tests.conftest import log_in_with_second_factor, make_case, make_key
 
 pytestmark = pytest.mark.django_db
 
@@ -27,6 +27,7 @@ def make_lawyer(email):
     profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
     profile.save()
     profile.change_status(LawyerProfile.Status.LAWYER)
+    make_key(profile)
     return profile
 
 

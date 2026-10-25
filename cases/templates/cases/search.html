@@ -1,10 +1,13 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n case_labels keys %}
 
-{% block title %}{% blocktranslate with label=case.label %}Search: {{ label }}{% endblocktranslate %}{% endblock %}
+{% block title %}{% case_title case as label %}{% blocktranslate %}Search: {{ label }}{% endblocktranslate %}{% endblock %}
+
+{% block head %}{% include "keys/scripts.html" %}{% endblock %}
 
 {% block content %}
-  <h1>{% blocktranslate with label=case.label %}Search: {{ label }}{% endblocktranslate %}</h1>
+  <h1>{% case_label case as label %}{% blocktranslate %}Search: {{ label }}{% endblocktranslate %}</h1>
+  {% unlock_form %}
   <p>{% translate "This search is recorded in the audit log, with the number of clips found." %}</p>
 
   <h2>{% translate "Core matches" %}</h2>
@@ -15,5 +18,5 @@
   <p>{% translate "Clips found only in the margin, just outside the time window or the area." %}</p>
   {% include "cases/matches.html" with clips=margin %}
 
-  <p><a href="{% url 'lawyer:case' case_id=case.pk %}">{{ case.label }}</a></p>
+  <p><a href="{% url 'lawyer:case' case_id=case.pk %}">{% case_label case %}</a></p>
 {% endblock %}

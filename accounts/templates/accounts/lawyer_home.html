@@ -1,13 +1,16 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n case_labels keys %}
 
 {% block title %}{% translate "Your cases" %}{% endblock %}
 
+{% block head %}{% include "keys/scripts.html" %}{% endblock %}
+
 {% block content %}
   <h1>{% translate "Your cases" %}</h1>
+  {% unlock_form %}
   {% if cases %}
     <ul>
-      {% for case in cases %}<li><a href="{% url 'lawyer:case' case_id=case.pk %}">{{ case.label }}</a>{% if case.waiting_for_approval %} ({% translate "waiting for approval" %}){% endif %}</li>{% endfor %}
+      {% for case in cases %}<li><a href="{% url 'lawyer:case' case_id=case.pk %}">{% case_label case %}</a>{% if case.waiting_for_approval %} ({% translate "waiting for approval" %}){% endif %}</li>{% endfor %}
     </ul>
   {% else %}
     <p>{% translate "You have no cases yet." %}</p>
