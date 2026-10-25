@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-24 19:46+0200\n"
+"POT-Creation-Date: 2026-10-25 02:00+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -653,11 +653,18 @@ msgstr ""
 "Une tentative de renouvellement a été abandonnée : une nouvelle demande, ou "
 "la suspension de la personne qui renouvelle la clé commune"
 
-#: alerts/models.py:49
+#: alerts/models.py:32
+msgid ""
+"A rotation found items no lawyer could open: see the log for their clips"
+msgstr ""
+"Un renouvellement a trouvé des éléments qu'aucun·e avocat·e ne peut ouvrir : "
+"leurs clips sont dans le journal du serveur"
+
+#: alerts/models.py:50
 msgid "Downloads"
 msgstr "Téléchargements"
 
-#: alerts/models.py:50
+#: alerts/models.py:51
 msgid "Cases created"
 msgstr "Dossiers de recherche créés"
 
@@ -1991,12 +1998,13 @@ msgstr "Français"
 msgid "English"
 msgstr "Anglais"
 
-#: keys/forms.py:34 keys/forms.py:36 keys/forms.py:55 keys/forms.py:78
-#: keys/forms.py:105 keys/forms.py:133 keys/forms.py:137
+#: keys/forms.py:34 keys/forms.py:36 keys/forms.py:59 keys/forms.py:63
+#: keys/forms.py:82 keys/forms.py:94 keys/forms.py:121 keys/forms.py:146
+#: keys/forms.py:150
 msgid "The key could not be read."
 msgstr "La clé n'a pas pu être lue."
 
-#: keys/forms.py:85
+#: keys/forms.py:101
 msgid "I compared this safety number with them, by phone or in person."
 msgstr ""
 "J'ai comparé ce numéro de sécurité avec la personne, par téléphone ou de "
@@ -2220,18 +2228,18 @@ msgstr "parrainage : %(vouched_by)s"
 msgid "No one is waiting for the group key."
 msgstr "Personne n'attend la clé commune."
 
-#: keys/views.py:56
+#: keys/views.py:58
 msgid "Your key is set up. Unlock it once to check your key passphrase."
 msgstr ""
 "Votre clé est créée. Déverrouillez-la une fois pour vérifier votre phrase "
 "secrète."
 
-#: keys/views.py:194
+#: keys/views.py:196
 msgid "The keys changed while this page was open. Please try again."
 msgstr ""
 "Les clés ont changé pendant que cette page était ouverte. Veuillez réessayer."
 
-#: keys/views.py:196
+#: keys/views.py:198
 #, python-format
 msgid "%(name)s now holds the group key."
 msgstr "%(name)s a maintenant la clé commune."

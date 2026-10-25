@@ -29,6 +29,7 @@ class Alert(models.Model):
         ROTATION_DISPUTED = 'rotation_disputed', _('Two lawyers disagree about a rotation')
         ROTATION_REJECTED = 'rotation_rejected', _('A rotation of the group key failed its checks')
         ROTATION_ABANDONED = 'rotation_abandoned', _('A rotation attempt was given up: a new request, or its rotator suspended')
+        ROTATION_UNOPENABLE_ITEMS = 'rotation_unopenable_items', _('A rotation found items no lawyer could open: see the log for their clips')
 
     kind = models.CharField(max_length=30, choices=Kind.choices)
     account = models.ForeignKey(

@@ -522,24 +522,46 @@ def _key_check_of(sealed):
     return bytes((sealed.vault_file or sealed.vault_text).key_check)
 
 
-def _not_yet_resealed(old_key, new_key):
-    """Data keys sealed to `old_key` whose item has none sealed to `new_key` yet."""
-    return SealedKey.objects.filter(group_key=old_key).exclude(
+def _not_yet_resealed(old_key, new_key, skipped=()):
+    """Data keys sealed to `old_key` whose item has none sealed to `new_key` yet, but those
+    `skipped` (ones the rotator could not open)."""
+    return SealedKey.objects.filter(group_key=old_key).exclude(pk__in=skipped).exclude(
         vault_file__sealed_keys__group_key=new_key,
     ).exclude(vault_text__sealed_keys__group_key=new_key)
 
 
-def to_reseal(old_key, new_key, after=0, limit=100):
+def to_reseal(old_key, new_key, after=0, limit=100, skipped=()):
     """The next batch of data keys to reseal, with their key check values, by id after `after`."""
-    rows = _not_yet_resealed(old_key, new_key).filter(pk__gt=after).select_related('vault_file', 'vault_text')
+    rows = _not_yet_resealed(old_key, new_key, skipped).filter(pk__gt=after).select_related('vault_file', 'vault_text')
     return [
         {'id': sealed.pk, 'sealed_data_key': bytes(sealed.sealed_data_key), 'key_check': _key_check_of(sealed)}
         for sealed in rows.order_by('pk')[:limit]
     ]
 
 
-def left_to_reseal(old_key, new_key):
-    return _not_yet_resealed(old_key, new_key).exists()
+def left_to_reseal(old_key, new_key, skipped=()):
+    return _not_yet_resealed(old_key, new_key, skipped).exists()
+
+
+def still_to_reseal(old_key, new_key, ids):
+    """Which of `ids` are data keys sealed to `old_key` not resealed to `new_key` yet."""
+    return set(_not_yet_resealed(old_key, new_key).filter(pk__in=ids).values_list('pk', flat=True))
+
+
+def sealed_by_id(group_key, ids):
+    """Data keys sealed to `group_key`, by id, with their key check values: what a checker opens
+    to check a rotator's claim that they could not (design §5.5)."""
+    rows = SealedKey.objects.filter(group_key=group_key, pk__in=ids).select_related('vault_file', 'vault_text')
+    return [
+        {'id': sealed.pk, 'sealed_data_key': bytes(sealed.sealed_data_key), 'key_check': _key_check_of(sealed)}
+        for sealed in rows.order_by('pk')
+    ]
+
+
+def clips_of(sealed_ids):
+    """The clips the data keys `sealed_ids` belong to, as ids, for the admin to find them."""
+    rows = SealedKey.objects.filter(pk__in=sealed_ids).select_related('vault_file', 'vault_text')
+    return sorted({str((sealed.vault_file or sealed.vault_text).clip_id) for sealed in rows})
 
 
 def store_resealed(old_sealed_id, old_key, new_key, sealed_data_key, sealer):

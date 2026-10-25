@@ -24,7 +24,9 @@ from accounts.models import LawyerProfile
 from accounts.roles import applicant_required, key_holder_required, lawyer_required
 
 from . import grants, rotation
-from .forms import Base64BytesField, CheckResultForm, GrantForm, GroupKeyForm, KeySetupForm, NewGroupKeyForm, ResealedForm
+from .forms import (
+    Base64BytesField, CheckResultForm, GrantForm, GroupKeyForm, ItemIdsForm, KeySetupForm, NewGroupKeyForm, ResealedForm,
+)
 from .grants import current_key
 from .models import IN_USE, MEMLIMIT, OPSLIMIT, PUBLIC_KEY_BYTES, KeyGrant, LawyerKey, RotationCheck
 
@@ -282,10 +284,24 @@ def rotation_resealed(request):
 
 
 @rotation_view
+@require_POST
+def rotation_unopenable(request):
+    form = ItemIdsForm(request.POST)
+    if not form.is_valid():
+        return HttpResponse(status=400)
+    rotation.report_unopenable(request.user.lawyer_profile, form.cleaned_data['ids'])
+    return HttpResponse(status=204)
+
+
+@rotation_view
 @require_GET
 def rotation_to_check(request):
-    _, items = rotation.to_check(request.user.lawyer_profile)
-    return JsonResponse({'items': [_item_json(item) for item in items]})
+    _, resealed, unopenable = rotation.to_check(request.user.lawyer_profile)
+    return JsonResponse({
+        'items': [_item_json(item) for item in resealed],
+        # To open with the old key: if one opens, the rotator's claim was false.
+        'unopenable': [_item_json(item) for item in unopenable],
+    })
 
 
 @rotation_view

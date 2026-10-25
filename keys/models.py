@@ -187,6 +187,9 @@ class RotationAttempt(models.Model):
     drawn_at = models.DateTimeField(default=timezone.now)
     # When nothing was left to reseal, and the checkers were drawn.
     resealed_at = models.DateTimeField(null=True, blank=True)
+    # Data keys sealed to the old key that the rotator's browser could not open, as their ids
+    # (clips.models.SealedKey): resealing goes on without them, and the checkers check the claim.
+    unopenable_items = models.JSONField(default=list, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True)
     outcome = models.CharField(max_length=20, choices=Outcome.choices, blank=True)
     abandoned_because = models.CharField(max_length=20, choices=AbandonedBecause.choices, blank=True)

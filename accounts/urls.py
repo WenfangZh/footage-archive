@@ -36,6 +36,7 @@ lawyer_patterns = [
     path('rotation/new-key/', key_views.rotation_new_key, name='rotation_new_key'),
     path('rotation/reseal.json', key_views.rotation_reseal, name='rotation_reseal'),
     path('rotation/resealed/', key_views.rotation_resealed, name='rotation_resealed'),
+    path('rotation/unopenable/', key_views.rotation_unopenable, name='rotation_unopenable'),
     path('rotation/check.json', key_views.rotation_to_check, name='rotation_to_check'),
     path('rotation/checked/', key_views.rotation_checked, name='rotation_checked'),
     # The map's data, never logged (maps.apps): keep every route of it under map/.

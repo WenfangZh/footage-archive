@@ -14,6 +14,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
+from nacl.public import PrivateKey
 
 from accounts.models import LawyerProfile
 from alerts.models import Alert
@@ -270,7 +271,7 @@ def test_one_failure_is_rejected_only_once_a_confirmer_outside_both_slots_agrees
     assert running.ended_at is None
     confirmer = slot_holder(running, Slot.CONFIRMING)
     assert confirmer.pk not in {running.rotator.pk, failing.pk, slot_holder(running, Slot.SECOND).pk}
-    _, items = rotation.to_check(confirmer)
+    _, items, _ = rotation.to_check(confirmer)
     assert [item['id'] for item in items] == resealed_ids(running)[:1]
     rotation.report(confirmer, False, resealed_ids(running)[:1])
     running.refresh_from_db()
@@ -380,7 +381,8 @@ def test_the_rotation_views_walk_an_attempt_to_its_end(world):
     assert role['role'] == 'rotator' and role['stage'] == 'new_key' and len(role['seal_to']) == 5
     sealed = {str(item['lawyer_key']): b64(os.urandom(80)) for item in role['seal_to']}
     assert rotator.post(reverse('lawyer:rotation_new_key'), {
-        'public_key': b64(os.urandom(32)), 'grants': json.dumps(sealed),
+        # A real key: the form refuses what is not one.
+        'public_key': b64(bytes(PrivateKey.generate().public_key)), 'grants': json.dumps(sealed),
     }).status_code == 201
     items = rotator.get(reverse('lawyer:rotation_reseal')).json()['items']
     resealed = {str(item['id']): b64(os.urandom(80)) for item in items}
@@ -464,7 +466,7 @@ def test_revoking_a_lawyer_whose_grant_is_gone_still_requests_a_rotation(world):
     assert world['key'].status == KeyStatus.ROTATION_REQUESTED and Rotation.objects.exists()
 
 
-@pytest.mark.parametrize('public_key', ['zeros', 'the old key'])
+@pytest.mark.parametrize('public_key', ['zeros', 'the old key', 'the old key with its top bit set'])
 def test_a_new_key_that_could_not_serve_is_refused(world, public_key):
     request_rotation(world)
     running = attempt()
@@ -472,6 +474,9 @@ def test_a_new_key_that_could_not_serve_is_refused(world, public_key):
     role = client.get(reverse('lawyer:rotation_role')).json()
     sealed = {str(item['lawyer_key']): b64(os.urandom(80)) for item in role['seal_to']}
     value = bytes(32) if public_key == 'zeros' else bytes(world['key'].public_key)
+    if public_key == 'the old key with its top bit set':
+        # X25519 ignores that bit: the same key, written otherwise.
+        value = value[:31] + bytes([value[31] | 0x80])
     response = client.post(reverse('lawyer:rotation_new_key'), {'public_key': b64(value), 'grants': json.dumps(sealed)})
     assert response.status_code in (400, 409) and rotation.new_key_of(running) is None
 
@@ -536,3 +541,51 @@ def test_a_check_with_numbers_too_long_to_be_ids_is_refused(world):
     client = client_for(slot_holder(running, Slot.FIRST))
     response = client.post(reverse('lawyer:rotation_checked'), {'result': 'failed', 'failed_items': '[' + '9' * 5000 + ']'})
     assert response.status_code == 400
+
+
+def test_a_check_nested_too_deep_to_read_is_refused(world):
+    running = ready_for_checks(world)
+    client = client_for(slot_holder(running, Slot.FIRST))
+    response = client.post(reverse('lawyer:rotation_checked'), {'result': 'failed', 'failed_items': '[' * 100_000})
+    assert response.status_code == 400
+
+
+# Data keys no one can open (design §5.5): the rotator says so, the checkers check the claim.
+
+def reported_unopenable(world):
+    request_rotation(world)
+    running = attempt()
+    make_new_key(running)
+    batch = rotation.reseal_batch(running.rotator)
+    unopenable, rest = batch[0]['id'], batch[1:]
+    # An id that is not one to reseal is ignored.
+    rotation.report_unopenable(running.rotator, [unopenable, 10 ** 12])
+    rotation.submit_resealed(running.rotator, {item['id']: os.urandom(80) for item in rest})
+    running.refresh_from_db()
+    return running, unopenable
+
+
+def test_resealing_goes_on_without_what_the_rotator_cannot_open_and_the_checkers_see_it(world):
+    running, unopenable = reported_unopenable(world)
+    assert running.unopenable_items == [unopenable] and running.resealed_at is not None
+    _, resealed, claimed = rotation.to_check(slot_holder(running, Slot.FIRST))
+    assert [item['id'] for item in claimed] == [unopenable] and len(resealed) == 1
+
+
+def test_an_item_no_one_can_open_loses_its_old_copy_at_the_end_and_the_admin_is_told(world, caplog):
+    running, unopenable = reported_unopenable(world)
+    for slot in (Slot.FIRST, Slot.SECOND):
+        rotation.report(slot_holder(running, slot), True)
+    assert rotation.new_key_of(running).status == KeyStatus.CURRENT
+    assert not SealedKey.objects.filter(pk=unopenable).exists()
+    assert Alert.objects.filter(kind=Alert.Kind.ROTATION_UNOPENABLE_ITEMS).exists()
+    assert str(world['clip'].pk) in caplog.text
+
+
+def test_a_false_claim_that_an_item_cannot_be_opened_is_a_failed_check(world):
+    running, unopenable = reported_unopenable(world)
+    # Both checkers opened it with the old key: the rotator's claim was false.
+    rotation.report(slot_holder(running, Slot.FIRST), False, [unopenable])
+    rotation.report(slot_holder(running, Slot.SECOND), False, [unopenable])
+    running.refresh_from_db()
+    assert running.outcome == 'rejected' and SealedKey.objects.filter(pk=unopenable).exists()

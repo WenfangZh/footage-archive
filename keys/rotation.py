@@ -20,6 +20,7 @@ keys. Every change here holds the group key lock (keys.grants.lock).
 """
 
 import datetime
+import logging
 import secrets
 
 from django.conf import settings
@@ -35,6 +36,7 @@ from clips import vault
 from . import grants
 from .models import GroupKey, KeyGrant, LawyerKey, Rotation, RotationAttempt, RotationCheck
 
+logger = logging.getLogger(__name__)
 Status = GroupKey.Status
 Slot = RotationCheck.Slot
 Result = RotationCheck.Result
@@ -181,7 +183,24 @@ def reseal_batch(profile, after=0):
     new = new_key_of(attempt)
     if new is None or attempt.resealed_at is not None:
         raise Refused
-    return vault.to_reseal(attempt.rotation.group_key, new, after=after)
+    return vault.to_reseal(attempt.rotation.group_key, new, after=after, skipped=attempt.unopenable_items)
+
+
+def report_unopenable(profile, ids):
+    """The rotator's browser could not open these data keys sealed to the old key: resealing goes
+    on without them, and the checkers check the claim (design §5.5). Every lawyer holds the same
+    group key, so one that does not open for the rotator opens for no one."""
+    with transaction.atomic():
+        grants.lock()
+        profile = LawyerProfile.objects.get(pk=profile.pk)
+        attempt = rotators_attempt(profile)
+        new = new_key_of(attempt)
+        if new is None or attempt.resealed_at is not None:
+            raise Refused
+        found = vault.still_to_reseal(attempt.rotation.group_key, new, ids)
+        attempt.unopenable_items = sorted(set(attempt.unopenable_items) | found)
+        attempt.save(update_fields=['unopenable_items'])
+        finish_resealing_if_done(attempt)
 
 
 def submit_resealed(profile, resealed):
@@ -205,7 +224,9 @@ def submit_resealed(profile, resealed):
 def finish_resealing_if_done(attempt, now=None):
     """Once nothing is left to reseal, draw the two checkers (step 4); with none, abandon."""
     new = new_key_of(attempt)
-    if new is None or attempt.resealed_at is not None or vault.left_to_reseal(attempt.rotation.group_key, new):
+    if new is None or attempt.resealed_at is not None or vault.left_to_reseal(
+        attempt.rotation.group_key, new, attempt.unopenable_items,
+    ):
         return
     attempt.resealed_at = now or timezone.now()
     attempt.save(update_fields=['resealed_at'])
@@ -242,12 +263,18 @@ def checks_of(profile):
 
 
 def to_check(profile):
-    """What a checker's browser checks: the data keys the rotator resealed (a confirmer, only
-    those reported as failing), with their key check values (step 5)."""
+    """What a checker's browser checks (step 5): the data keys the rotator resealed, to open with
+    the new key, and those the rotator could not open, which must not open with the old key
+    either; a confirmer, only the items reported as failing. With their key check values."""
     check = checks_of(profile)
     attempt = check.attempt
-    ids = check.failed_items if check.slot == Slot.CONFIRMING else None
-    return check, vault.resealed_by(new_key_of(attempt), attempt.rotator, ids=ids)
+    resealed = vault.resealed_by(new_key_of(attempt), attempt.rotator)
+    unopenable = vault.sealed_by_id(attempt.rotation.group_key, attempt.unopenable_items)
+    if check.slot == Slot.CONFIRMING:
+        named = set(check.failed_items)
+        resealed = [item for item in resealed if item['id'] in named]
+        unopenable = [item for item in unopenable if item['id'] in named]
+    return check, resealed, unopenable
 
 
 def report(profile, passed, failed_items=()):
@@ -260,10 +287,10 @@ def report(profile, passed, failed_items=()):
         if passed:
             failed_items = []
         else:
-            # Only items the rotator resealed, which are what was checked; none, when it is the
-            # checker's own grant on the new key that did not open.
+            # Only items that were checked; none, when it is the checker's own grant on the new
+            # key that did not open.
             known = {item['id'] for item in vault.resealed_by(new_key_of(attempt), attempt.rotator)}
-            failed_items = sorted(set(failed_items) & known)
+            failed_items = sorted(set(failed_items) & (known | set(attempt.unopenable_items)))
         check.result = Result.PASSED if passed else Result.FAILED
         check.failed_items = failed_items if check.slot != Slot.CONFIRMING else check.failed_items
         check.save(update_fields=['result', 'failed_items'])
@@ -302,9 +329,15 @@ def decide(attempt):
 def end(attempt):
     """Two passed checks: the old key opens nothing in the database any more."""
     old, new = attempt.rotation.group_key, new_key_of(attempt)
-    if vault.left_to_reseal(old, new):
+    if vault.left_to_reseal(old, new, attempt.unopenable_items):
         # Never: checkers are drawn only once nothing is left. Deleting now would lose an item.
         raise Refused
+    if attempt.unopenable_items:
+        # No lawyer could open them: they lose their copy for the group key, which loses nothing
+        # (a text keeps its code holder's). The admin is told which clips, by id.
+        logger.warning('A rotation ended without %s data keys no one could open, of clips %s',
+                       len(attempt.unopenable_items), ', '.join(vault.clips_of(attempt.unopenable_items)))
+        raise_alert(Alert.Kind.ROTATION_UNOPENABLE_ITEMS)
     vault.forget_sealed_keys(old)
     KeyGrant.objects.filter(group_key=old).delete()
     old.status = Status.RETIRED

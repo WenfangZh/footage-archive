@@ -17,6 +17,7 @@ from django.db import IntegrityError
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
+from nacl.public import PrivateKey
 
 from accounts.models import LawyerProfile
 from alerts.models import Alert
@@ -78,7 +79,8 @@ def group_key(*holders, status=GroupStatus.CURRENT):
 
 def start(client):
     return client.post(reverse('accounts:start_group_key'), {
-        'public_key': b64(os.urandom(PUBLIC_KEY_BYTES)), 'sealed_private_key': b64(sealed()),
+        # A real key: the form refuses what is not one.
+        'public_key': b64(bytes(PrivateKey.generate().public_key)), 'sealed_private_key': b64(sealed()),
     })
 
 
@@ -148,7 +150,7 @@ def test_only_a_lawyer_with_a_confirmed_key_makes_the_group_key():
 def test_a_group_key_that_cannot_be_one_is_refused():
     client = client_for(person('first@example.org'))
     response = client.post(reverse('accounts:start_group_key'), {
-        'public_key': b64(os.urandom(PUBLIC_KEY_BYTES)), 'sealed_private_key': b64(os.urandom(SEALED_GROUP_KEY_BYTES - 1)),
+        'public_key': b64(bytes(PrivateKey.generate().public_key)), 'sealed_private_key': b64(os.urandom(SEALED_GROUP_KEY_BYTES - 1)),
     })
     assert response.status_code == 400 and not GroupKey.objects.exists()
 
