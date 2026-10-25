@@ -21,11 +21,12 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from accounts.models import LawyerProfile
-from accounts.roles import applicant_required, key_holder_required, lawyer_required
+from accounts.roles import admin_required, key_holder_required, lawyer_required
 
-from . import grants, rotation
+from . import grants, recovery, rotation
 from .forms import (
-    Base64BytesField, CheckResultForm, GrantForm, GroupKeyForm, ItemIdsForm, KeySetupForm, NewGroupKeyForm, ResealedForm,
+    Base64BytesField, CheckResultForm, GrantForm, GroupKeyForm, ItemIdsForm, KeyConfirmationForm, KeyResetForm,
+    KeySetupForm, NewGroupKeyForm, NewPassphraseForm, ResealedForm,
 )
 from .grants import current_key
 from .models import IN_USE, MEMLIMIT, OPSLIMIT, PUBLIC_KEY_BYTES, KeyGrant, LawyerKey, RotationCheck
@@ -37,9 +38,9 @@ def login_id(request):
     return request.session.setdefault('key_login_id', secrets.token_hex(16))
 
 
-# Applicants only: a lawyer replaces their key through a key reset, which the admin confirms
-# and the audit log records (design §5.6).
-@applicant_required
+# An applicant before admission, or a lawyer after a key reset (design §5.6). A key the admin
+# confirmed is replaced only through a key reset, which the audit log records.
+@key_holder_required
 @require_http_methods(['GET', 'POST'])
 def setup(request):
     profile = request.user.lawyer_profile
@@ -70,9 +71,11 @@ def setup(request):
 def key_page(request):
     profile = request.user.lawyer_profile
     key = current_key(profile)
-    if key is None and profile.status == LawyerProfile.Status.APPLICANT:
+    if key is None:
         return redirect('accounts:key_setup')
-    return render(request, 'keys/key.html', {'key': key, **unlock_context(request, key)})
+    return render(request, 'keys/key.html', {
+        'key': key, 'lawyer': profile.status == LawyerProfile.Status.LAWYER, **unlock_context(request, key),
+    })
 
 
 def unlock_context(request, key):
@@ -106,6 +109,73 @@ def unlocked(request):
         last_unlocked_on=timezone.localdate(),
     )
     return HttpResponse(status=204)
+
+
+@key_holder_required
+@require_http_methods(['GET', 'POST'])
+def recover(request):
+    """A forgotten key passphrase: the browser opens the key with the recovery key, and sets a
+    new passphrase (design §5.6). The key, its safety number and its grants stay the same."""
+    profile = request.user.lawyer_profile
+    key = current_key(profile)
+    if key is None:
+        return redirect('accounts:key_setup')
+    form = NewPassphraseForm(request.POST if request.method == 'POST' else None)
+    if request.method == 'POST' and form.is_valid():
+        try:
+            recovery.replace_passphrase(profile, **form.cleaned_data)
+        except recovery.Refused:
+            messages.error(request, _('Your key changed while this page was open. Please try again.'))
+            return redirect('accounts:key_recover')
+        messages.success(request, _('Your new key passphrase is saved. Your key and its safety number stay the same.'))
+        return redirect('accounts:key')
+    return render(request, 'keys/recover.html', {
+        # The copy the recovery key opens: on this page only, never in what every page fetches.
+        'recovery_copy': b64(key.private_key_under_recovery_key),
+        'form': form, 'opslimit': OPSLIMIT, 'memlimit': MEMLIMIT, **unlock_context(request, key),
+    }, status=400 if form.errors else 200)
+
+
+@lawyer_required
+@require_http_methods(['GET', 'POST'])
+def reset(request):
+    """Both the key passphrase and the recovery key lost (design §5.6): the key is retired, and
+    the lawyer sets up a new one."""
+    profile = request.user.lawyer_profile
+    if current_key(profile) is None:
+        return redirect('accounts:key_setup')
+    form = KeyResetForm(request.POST if request.method == 'POST' else None)
+    if request.method == 'POST' and form.is_valid():
+        try:
+            recovery.reset(profile)
+        except recovery.Refused:
+            raise Http404 from None
+        messages.success(request, _('Your key is reset. Set up a new one.'))
+        return redirect('accounts:key_setup')
+    return render(request, 'keys/reset.html', {
+        'form': form, 'last_holder': grants.last_holder(profile),
+    }, status=400 if form.errors else 200)
+
+
+@admin_required
+@require_http_methods(['GET', 'POST'])
+def confirm_key(request, profile_id):
+    """The admin compares the safety number of a lawyer's new key with them (design §5.2, §5.6)."""
+    key = recovery.unconfirmed_key(profile_id)
+    if key is None:
+        raise Http404
+    form = KeyConfirmationForm(request.POST if request.method == 'POST' else None, initial={'key': key.pk})
+    if request.method == 'POST' and form.is_valid():
+        try:
+            recovery.confirm(request.user, profile_id, form.cleaned_data['key'])
+        except recovery.Refused:
+            messages.error(request, _('They have made a new key since this page was shown. Compare its safety number with them again.'))
+            return redirect('manage:confirm_key', profile_id=profile_id)
+        messages.success(request, _("%(name)s's new key is confirmed. A lawyer can now give them the group key.") % {
+            'name': key.lawyer_profile.user.get_full_name(),
+        })
+        return redirect('manage:home')
+    return render(request, 'keys/confirm_key.html', {'form': form, 'key': key}, status=400 if form.errors else 200)
 
 
 def b64(value):

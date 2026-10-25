@@ -8,6 +8,7 @@
   <p><label for="unlock-passphrase">{% translate "Key passphrase:" %}</label>
     <input id="unlock-passphrase" type="password" autocomplete="off" required></p>
   <button type="submit">{% translate "Unlock" %}</button>
+  <p><a href="{% url 'accounts:key_recover' %}">{% translate "Forgotten your key passphrase?" %}</a></p>
   <p id="wrong-passphrase" role="alert" hidden>{% translate "That key passphrase does not unlock your key." %}</p>
   <p id="key-mismatch" role="alert" hidden>{% translate "Your key does not match the one the archive shows for you. Do not go on: tell the admin, by phone." %}</p>
   <p id="unlock-failed" role="alert" hidden>{% translate "Your key could not be fetched. Please reload the page." %}</p>

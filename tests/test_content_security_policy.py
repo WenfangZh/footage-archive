@@ -61,7 +61,7 @@ def test_the_pages_where_an_applicant_sets_up_or_unlocks_a_key_may_run_webassemb
     user = django_user_model.objects.create_user('applicant@example.org', 'a long test passphrase')
     make_key(LawyerProfile.objects.create(user=user, bar='Paris'))
     log_in_with_second_factor(client, user)
-    for name in ['accounts:key_setup', 'accounts:key']:
+    for name in ['accounts:key_setup', 'accounts:key', 'accounts:key_recover']:
         url = reverse(name)
         response = client.get(url)
         assert response.status_code == 200, url

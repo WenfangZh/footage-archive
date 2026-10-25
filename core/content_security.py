@@ -5,8 +5,8 @@ workers and requests for data all come from the archive, no inline script or sty
 and no page can be framed. That keeps the map's requests on the archive (ADR 0006), and it
 is the main guard of lawyers' keys, which a script injected into a page could read.
 
-Only lawyer pages, and the pages where an applicant or lawyer sets up or unlocks their key,
-may also run WebAssembly, which libsodium.js needs (ADR 0007).
+Only lawyer pages, and the pages where an applicant or lawyer sets up, unlocks or recovers
+their key, may also run WebAssembly, which libsodium.js needs (ADR 0007).
 """
 
 POLICY = '; '.join([
@@ -18,7 +18,7 @@ POLICY = '; '.join([
     "frame-ancestors 'none'",
 ])
 LAWYER_POLICY = f"{POLICY}; script-src 'self' 'wasm-unsafe-eval'"
-KEY_PAGES = {'accounts:key', 'accounts:key_setup'}
+KEY_PAGES = {'accounts:key', 'accounts:key_setup', 'accounts:key_recover'}
 
 
 class ContentSecurityPolicyMiddleware:

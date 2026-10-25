@@ -4,7 +4,7 @@ Every page here also needs a verified second factor in this session; without one
 person is sent to set it up or to enter a code (accounts.two_factor).
 
 Every lawyer page is wrapped in lawyer_required and every admin page in admin_required, and
-the personal key pages in applicant_required or key_holder_required (keys.views), outermost, so that nobody else learns anything from them, not even which methods a
+the personal key pages in key_holder_required (keys.views), outermost, so that nobody else learns anything from them, not even which methods a
 page accepts. The role is read from the database on every request: a suspension or a
 revocation applies at once, also to an open session. No response from these pages, a
 refusal included, is kept in a browser's cache.
@@ -79,6 +79,6 @@ def _required(*allowed):
 lawyer_required = _required(Role.LAWYER)
 admin_required = _required(Role.ADMIN)
 # An applicant sets up their personal key before admission, and unlocks it to read its
-# safety number to the admin; a lawyer unlocks it to use the vault (docs/m5-encryption-design.md §4, §5.1).
-applicant_required = _required(Role.APPLICANT)
+# safety number to the admin; a lawyer unlocks it to use the vault, and sets up a new one after
+# a key reset (docs/m5-encryption-design.md §4, §5.1, §5.6).
 key_holder_required = _required(Role.APPLICANT, Role.LAWYER)
