@@ -19,7 +19,8 @@ from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from keys import grants
 from keys.models import ENCRYPTED_PRIVATE_KEY_BYTES, SALT_BYTES, GroupKey, KeyGrant, LawyerKey
-from tests.conftest import log_in_with_second_factor, make_key
+from cases import labels
+from tests.conftest import log_in_with_second_factor, make_case, make_key
 
 pytestmark = pytest.mark.django_db
 
@@ -92,6 +93,8 @@ def test_a_new_passphrase_replaces_only_the_copy_it_opens():
     assert b64(key.passphrase_salt) == sent['passphrase_salt']
     assert b64(key.private_key_under_passphrase) == sent['private_key_under_passphrase']
     assert grants.reads_vault(profile)
+    # The browser opened and checked the key, as an unlock does: it counts for rotation draws.
+    assert key.last_unlocked_on == timezone.localdate()
     entry = AuditEntry.objects.get(action=Action.PASSPHRASE_REPLACEMENT)
     assert entry.lawyer_profile == profile and entry.lawyer_key == key
 
@@ -125,16 +128,48 @@ def test_a_key_reset_retires_the_key_and_its_grants():
     group_key = GroupKey.objects.create(public_key=os.urandom(32))
     give(group_key, profile, colleague)
     key = grants.current_key(profile)
+    case = make_case(profile, 'Filmed near the station')
     client = client_for(profile)
-    assert client.post(reverse('accounts:key_reset')).status_code == 400
-    response = client.post(reverse('accounts:key_reset'), {'lost_both': 'on'})
+    assert client.post(reverse('accounts:key_reset'), {'key': key.pk}).status_code == 400
+    response = client.post(reverse('accounts:key_reset'), {'key': key.pk, 'lost_both': 'on'})
     assert response.url == reverse('accounts:key_setup')
     key.refresh_from_db()
+    # What was sealed only to it is lost (design §5.6).
+    case.refresh_from_db()
+    assert labels.unreadable(case) and labels.for_page(case) == ''
     assert key.retired_at is not None and bytes(key.private_key_under_passphrase) == b''
     assert not KeyGrant.objects.filter(lawyer_key=key).exists()
     assert not grants.reads_vault(profile) and grants.reads_vault(colleague)
     entry = AuditEntry.objects.get(action=Action.KEY_RESET)
     assert entry.lawyer_profile == profile and entry.lawyer_key == key and entry.admin is None
+
+
+def test_a_reset_page_shown_before_another_reset_resets_nothing():
+    """Open in two tabs: reset in one, a new key set up; the other's form must not reset it."""
+    profile = lawyer()
+    client = client_for(profile)
+    old = grants.current_key(profile)
+    client.post(reverse('accounts:key_reset'), {'key': old.pk, 'lost_both': 'on'})
+    new = make_key(profile)
+    response = client.post(reverse('accounts:key_reset'), {'key': old.pk, 'lost_both': 'on'})
+    assert response.url == reverse('accounts:key')
+    new.refresh_from_db()
+    assert new.retired_at is None and AuditEntry.objects.filter(action=Action.KEY_RESET).count() == 1
+
+
+def test_setting_up_never_replaces_a_lawyers_key_without_a_reset():
+    """Not even one the admin has not confirmed yet: case labels may be sealed to it, and only
+    a key reset, which the audit log records, may lose them."""
+    profile = lawyer(confirmed=False)
+    key = grants.current_key(profile)
+    client = client_for(profile)
+    assert client.get(reverse('accounts:key_setup')).url == reverse('accounts:key')
+    sent = {name: b64(os.urandom(size)) for name, size in [
+        ('public_key', 32), ('passphrase_salt', SALT_BYTES), ('private_key_under_passphrase', ENCRYPTED_PRIVATE_KEY_BYTES),
+        ('private_key_under_recovery_key', ENCRYPTED_PRIVATE_KEY_BYTES),
+    ]}
+    assert client.post(reverse('accounts:key_setup'), sent).url == reverse('accounts:key')
+    assert list(LawyerKey.objects.current().filter(lawyer_profile=profile)) == [key]
 
 
 def test_the_reset_page_warns_the_last_holder(settings):
@@ -151,7 +186,7 @@ def test_after_a_reset_the_new_key_waits_for_the_admin_then_a_grant(admin_client
     group_key = GroupKey.objects.create(public_key=os.urandom(32))
     give(group_key, profile, colleague)
     client = client_for(profile)
-    client.post(reverse('accounts:key_reset'), {'lost_both': 'on'})
+    client.post(reverse('accounts:key_reset'), {'key': grants.current_key(profile).pk, 'lost_both': 'on'})
     new = make_key(profile)
     assert grants.waiting() == []
     assert reverse('manage:confirm_key', args=[profile.pk]) in admin_client.get(reverse('manage:home')).content.decode()

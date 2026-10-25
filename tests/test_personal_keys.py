@@ -165,6 +165,7 @@ def test_a_lawyer_cannot_replace_a_confirmed_key_outside_a_key_reset():
     key.admin_confirmed_at = timezone.now()
     key.save()
     client = log_in_with_second_factor(Client(), lawyer.user)
+    assert client.get(reverse('accounts:key_setup')).url == reverse('accounts:key')
     assert client.post(reverse('accounts:key_setup'), as_form(sent_key())).url == reverse('accounts:key')
     assert list(LawyerKey.objects.current()) == [key]
 

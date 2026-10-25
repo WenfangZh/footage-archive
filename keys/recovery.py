@@ -13,7 +13,7 @@ from django.utils import timezone
 from accounts.models import LawyerProfile
 from audit.models import Action, record
 
-from . import grants
+from . import grants, rotation
 from .models import MEMLIMIT, OPSLIMIT, KeyGrant, LawyerKey
 
 
@@ -31,22 +31,27 @@ def replace_passphrase(profile, public_key, passphrase_salt, private_key_under_p
             raise Refused
         key.passphrase_salt, key.private_key_under_passphrase = passphrase_salt, private_key_under_passphrase
         key.opslimit, key.memlimit = OPSLIMIT, MEMLIMIT
-        key.save(update_fields=['passphrase_salt', 'private_key_under_passphrase', 'opslimit', 'memlimit'])
+        # The browser opened the key and checked it, as an unlock does (design §5.5's draws).
+        key.last_unlocked_on = timezone.localdate()
+        key.save(update_fields=['passphrase_salt', 'private_key_under_passphrase', 'opslimit', 'memlimit', 'last_unlocked_on'])
         record(Action.PASSPHRASE_REPLACEMENT, profile, lawyer_key=key)
 
 
-def reset(profile):
-    """A lawyer who lost both their key passphrase and their recovery key: their key is retired
-    and its grants deleted. They set up a new key, which the admin confirms and a lawyer grants
-    the group key to, as for a newcomer."""
+def reset(profile, key_id):
+    """A lawyer who lost both their key passphrase and their recovery key: their key `key_id` is
+    retired and its grants deleted, and they lose any role in a running rotation. They set up a
+    new key, which the admin confirms and a lawyer grants the group key to, as for a newcomer.
+    Refused if `key_id` is no longer their current key: a page shown before a reset in another
+    tab must not reset the key set up since."""
     with transaction.atomic():
         grants.lock()
         profile = LawyerProfile.objects.select_for_update().get(pk=profile.pk)
         key = grants.current_key(profile)
-        if profile.status != LawyerProfile.Status.LAWYER or key is None:
+        if profile.status != LawyerProfile.Status.LAWYER or key is None or key.pk != key_id:
             raise Refused
         KeyGrant.objects.filter(lawyer_key=key).delete()
         key.retire()
+        rotation.key_reset(profile)
         record(Action.KEY_RESET, profile, lawyer_key=key)
 
 

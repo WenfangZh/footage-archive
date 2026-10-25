@@ -21,7 +21,7 @@ from alerts.models import Alert
 from audit.models import Action, AuditEntry
 from clips import vault
 from clips.models import Clip, SealedKey
-from keys import grants, rotation
+from keys import grants, recovery, rotation
 from keys.models import GroupKey, KeyGrant, Rotation, RotationAttempt, RotationCheck
 from tests.conftest import log_in_with_second_factor, make_key, with_code_holder_key
 
@@ -356,6 +356,30 @@ def test_a_suspended_rotator_still_resealing_abandons_the_attempt(world):
         rotation.suspended(running.rotator)
     running.refresh_from_db()
     assert (running.outcome, running.abandoned_because) == ('abandoned', Because.ROTATOR_SUSPENDED)
+
+
+def test_a_rotator_who_resets_their_key_abandons_the_attempt(world):
+    """They hold the group key no more: the attempt does not wait for their time to run out, and
+    the next is drawn among the others (design §5.5, §5.6)."""
+    request_rotation(world)
+    running = attempt()
+    make_new_key(running)
+    rotator = running.rotator
+    recovery.reset(rotator, grants.current_key(rotator).pk)
+    running.refresh_from_db()
+    assert (running.outcome, running.abandoned_because) == ('abandoned', Because.ROTATOR_KEY_RESET)
+    assert Alert.objects.filter(kind=Alert.Kind.ROTATION_ABANDONED).exists()
+    following = attempt()
+    assert following.pk != running.pk and following.rotator != rotator
+
+
+def test_a_checker_who_resets_their_key_loses_their_slot(world):
+    running = ready_for_checks(world)
+    checker = slot_holder(running, Slot.FIRST)
+    recovery.reset(checker, grants.current_key(checker).pk)
+    assert slot_holder(running, Slot.FIRST) != checker
+    running.refresh_from_db()
+    assert running.ended_at is None
 
 
 def test_a_revocation_during_a_rotation_abandons_the_running_attempt(world):

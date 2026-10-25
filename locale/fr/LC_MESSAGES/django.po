@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-25 23:18+0100\n"
+"POT-Creation-Date: 2026-10-25 23:50+0100\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -46,7 +46,7 @@ msgstr ""
 msgid "A trusted defence organisation or an admitted lawyer."
 msgstr "Une organisation de défense de confiance, ou un·e avocat·e admis·e."
 
-#: accounts/admission.py:44 keys/forms.py:64
+#: accounts/admission.py:44 keys/forms.py:66
 msgid ""
 "I compared this safety number with them, through the bar directory's contact "
 "details."
@@ -62,7 +62,7 @@ msgstr ""
 "La personne pourra être admise une fois son mot de passe, sa double "
 "authentification et sa clé personnelle mis en place."
 
-#: accounts/admission.py:103 keys/views.py:172
+#: accounts/admission.py:103 keys/views.py:181
 msgid ""
 "They have made a new key since this page was shown. Compare its safety "
 "number with them again."
@@ -654,10 +654,12 @@ msgstr "Un renouvellement de la clé commune a échoué aux vérifications"
 
 #: alerts/models.py:31
 msgid ""
-"A rotation attempt was given up: a new request, or its rotator suspended"
+"A rotation attempt was given up: a new request, or its rotator suspended or "
+"their key reset"
 msgstr ""
 "Une tentative de renouvellement a été abandonnée : une nouvelle demande, ou "
-"la suspension de la personne qui renouvelle la clé commune"
+"la suspension de la personne qui renouvelle la clé commune, ou la "
+"réinitialisation de sa clé"
 
 #: alerts/models.py:32
 msgid ""
@@ -2019,17 +2021,17 @@ msgstr "Français"
 msgid "English"
 msgstr "Anglais"
 
-#: keys/forms.py:34 keys/forms.py:36 keys/forms.py:80 keys/forms.py:84
-#: keys/forms.py:103 keys/forms.py:115 keys/forms.py:142 keys/forms.py:167
-#: keys/forms.py:171
+#: keys/forms.py:34 keys/forms.py:36 keys/forms.py:82 keys/forms.py:86
+#: keys/forms.py:105 keys/forms.py:117 keys/forms.py:144 keys/forms.py:169
+#: keys/forms.py:173
 msgid "The key could not be read."
 msgstr "La clé n'a pas pu être lue."
 
-#: keys/forms.py:57
+#: keys/forms.py:59
 msgid "I have lost both my key passphrase and my recovery key."
 msgstr "J'ai perdu à la fois ma phrase secrète et ma clé de récupération."
 
-#: keys/forms.py:122
+#: keys/forms.py:124
 msgid "I compared this safety number with them, by phone or in person."
 msgstr ""
 "J'ai comparé ce numéro de sécurité avec la personne, par téléphone ou de "
@@ -2443,18 +2445,18 @@ msgstr "parrainage : %(vouched_by)s"
 msgid "No one is waiting for the group key."
 msgstr "Personne n'attend la clé commune."
 
-#: keys/views.py:59
+#: keys/views.py:60
 msgid "Your key is set up. Unlock it once to check your key passphrase."
 msgstr ""
 "Votre clé est créée. Déverrouillez-la une fois pour vérifier votre phrase "
 "secrète."
 
-#: keys/views.py:128
+#: keys/views.py:135 keys/views.py:160
 msgid "Your key changed while this page was open. Please try again."
 msgstr ""
 "Votre clé a changé pendant que cette page était ouverte. Veuillez réessayer."
 
-#: keys/views.py:130
+#: keys/views.py:137
 msgid ""
 "Your new key passphrase is saved. Your key and its safety number stay the "
 "same."
@@ -2462,11 +2464,11 @@ msgstr ""
 "Votre nouvelle phrase secrète est enregistrée. Votre clé et son numéro de "
 "sécurité restent les mêmes."
 
-#: keys/views.py:153
+#: keys/views.py:162
 msgid "Your key is reset. Set up a new one."
 msgstr "Votre clé est réinitialisée. Créez-en une nouvelle."
 
-#: keys/views.py:174
+#: keys/views.py:183
 #, python-format
 msgid ""
 "%(name)s's new key is confirmed. A lawyer can now give them the group key."
@@ -2474,12 +2476,12 @@ msgstr ""
 "La nouvelle clé de %(name)s est confirmée. Un·e avocat·e peut maintenant lui "
 "remettre la clé commune."
 
-#: keys/views.py:266
+#: keys/views.py:275
 msgid "The keys changed while this page was open. Please try again."
 msgstr ""
 "Les clés ont changé pendant que cette page était ouverte. Veuillez réessayer."
 
-#: keys/views.py:268
+#: keys/views.py:277
 #, python-format
 msgid "%(name)s now holds the group key."
 msgstr "%(name)s a maintenant la clé commune."

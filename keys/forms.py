@@ -54,6 +54,8 @@ class NewPassphraseForm(forms.Form):
 
 
 class KeyResetForm(forms.Form):
+    # The key the page offered to reset: one set up since, in another tab, is not.
+    key = forms.IntegerField(widget=forms.HiddenInput)
     lost_both = forms.BooleanField(label=_('I have lost both my key passphrase and my recovery key.'))
 
 

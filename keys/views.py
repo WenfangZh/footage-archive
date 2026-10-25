@@ -38,8 +38,10 @@ def login_id(request):
     return request.session.setdefault('key_login_id', secrets.token_hex(16))
 
 
-# An applicant before admission, or a lawyer after a key reset (design §5.6). A key the admin
-# confirmed is replaced only through a key reset, which the audit log records.
+# An applicant before admission, or a lawyer without a key, after a key reset (design §5.6).
+# An applicant may replace a key the admin has not confirmed; a lawyer's key, confirmed or not,
+# is replaced only through a key reset, which the audit log records, since case labels may be
+# sealed to it.
 @key_holder_required
 @require_http_methods(['GET', 'POST'])
 def setup(request):
@@ -48,10 +50,9 @@ def setup(request):
     if request.method == 'POST' and form.is_valid():
         with transaction.atomic():
             # Locked, so that two setups at once cannot both become current.
-            LawyerProfile.objects.select_for_update().get(pk=profile.pk)
+            profile = LawyerProfile.objects.select_for_update().get(pk=profile.pk)
             existing = current_key(profile)
-            if existing is not None and existing.admin_confirmed_at is not None:
-                # A key the admin confirmed is replaced only by a key reset (design §5.6).
+            if existing is not None and not replaceable(existing):
                 return redirect('accounts:key')
             if existing is not None:
                 existing.retire()
@@ -59,11 +60,17 @@ def setup(request):
         messages.success(request, _('Your key is set up. Unlock it once to check your key passphrase.'))
         return redirect('accounts:key')
     existing = current_key(profile)
-    if existing is not None and existing.admin_confirmed_at is not None:
+    if existing is not None and not replaceable(existing):
         return redirect('accounts:key')
     return render(request, 'keys/setup.html', {
         'form': form, 'replacing': existing is not None, 'opslimit': OPSLIMIT, 'memlimit': MEMLIMIT,
     })
+
+
+def replaceable(key):
+    """Whether setting up a new key may retire `key`: only an applicant's, before the admin
+    confirmed it."""
+    return key.admin_confirmed_at is None and key.lawyer_profile.status == LawyerProfile.Status.APPLICANT
 
 
 @key_holder_required
@@ -142,14 +149,16 @@ def reset(request):
     """Both the key passphrase and the recovery key lost (design §5.6): the key is retired, and
     the lawyer sets up a new one."""
     profile = request.user.lawyer_profile
-    if current_key(profile) is None:
+    key = current_key(profile)
+    if key is None:
         return redirect('accounts:key_setup')
-    form = KeyResetForm(request.POST if request.method == 'POST' else None)
+    form = KeyResetForm(request.POST if request.method == 'POST' else None, initial={'key': key.pk})
     if request.method == 'POST' and form.is_valid():
         try:
-            recovery.reset(profile)
+            recovery.reset(profile, form.cleaned_data['key'])
         except recovery.Refused:
-            raise Http404 from None
+            messages.error(request, _('Your key changed while this page was open. Please try again.'))
+            return redirect('accounts:key')
         messages.success(request, _('Your key is reset. Set up a new one.'))
         return redirect('accounts:key_setup')
     return render(request, 'keys/reset.html', {
