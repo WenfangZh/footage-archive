@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-24 14:21+0200\n"
+"POT-Creation-Date: 2026-10-24 14:28+0200\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -1088,11 +1088,11 @@ msgstr ""
 
 #: cases/templates/cases/clip.html:30
 msgid ""
-"This clip's files could not be opened with your key. Reload the page; if it "
-"happens again, tell the admin."
+"Some of this clip's contents could not be opened with your key. Reload the "
+"page; if it happens again, tell the admin."
 msgstr ""
-"Les fichiers de ce clip n'ont pas pu être ouverts avec votre clé. Rechargez "
-"la page ; si cela se reproduit, prévenez l'administrateur·rice."
+"Une partie du contenu de ce clip n'a pas pu être ouverte avec votre clé. "
+"Rechargez la page ; si cela se reproduit, prévenez l'administrateur·rice."
 
 #: cases/templates/cases/clip.html:33
 msgid "A low-resolution preview. Watching it is recorded in the audit log."
@@ -1135,7 +1135,7 @@ msgstr[1] ""
 msgid "Time"
 msgstr "Heure"
 
-#: cases/templates/cases/clip.html:48 clips/models.py:180
+#: cases/templates/cases/clip.html:48 clips/models.py:184
 msgid "Stated time"
 msgstr "Heure indiquée"
 
@@ -1166,11 +1166,11 @@ msgstr "%(seconds)s s"
 msgid "Place"
 msgstr "Lieu"
 
-#: cases/templates/cases/clip.html:56 clips/models.py:181
+#: cases/templates/cases/clip.html:56 clips/models.py:185
 msgid "Stated location"
 msgstr "Lieu indiqué"
 
-#: cases/templates/cases/clip.html:57 clips/models.py:185
+#: cases/templates/cases/clip.html:57 clips/models.py:189
 msgid "Metadata location"
 msgstr "Lieu des métadonnées"
 
@@ -1178,7 +1178,7 @@ msgstr "Lieu des métadonnées"
 msgid "Stated location as uploaded"
 msgstr "Lieu indiqué tel qu'uploadé"
 
-#: cases/templates/cases/clip.html:61 clips/models.py:182
+#: cases/templates/cases/clip.html:61 clips/models.py:186
 msgid "Tags"
 msgstr "Étiquettes"
 
@@ -1190,16 +1190,16 @@ msgstr "Aucune étiquette."
 msgid "Tags as uploaded:"
 msgstr "Étiquettes telles qu'uploadées :"
 
-#: cases/templates/cases/clip.html:68 clips/forms.py:69 clips/models.py:183
-#: clips/models.py:228
+#: cases/templates/cases/clip.html:69 clips/forms.py:69 clips/models.py:187
+#: clips/models.py:234
 msgid "Context"
 msgstr "Contexte"
 
-#: cases/templates/cases/clip.html:73 clips/models.py:184 clips/models.py:229
+#: cases/templates/cases/clip.html:74 clips/models.py:188 clips/models.py:235
 msgid "Contact details"
 msgstr "Moyen de contact"
 
-#: cases/templates/cases/clip.html:75
+#: cases/templates/cases/clip.html:76
 msgid ""
 "The code holder chose to leave these, knowing they could be used against "
 "them. Use them only for this case, and keep them out of anything you share."
@@ -1208,16 +1208,16 @@ msgstr ""
 "pourrait être utilisé contre elle. Ne l'utilisez que pour ce dossier de "
 "recherche, et ne le faites figurer dans rien de ce que vous partagez."
 
-#: cases/templates/cases/clip.html:78
+#: cases/templates/cases/clip.html:79
 msgid "Edits since upload"
 msgstr "Modifications depuis l'upload"
 
-#: cases/templates/cases/clip.html:80
+#: cases/templates/cases/clip.html:81
 #, python-format
 msgid "%(field)s: %(day)s, in the four hours from %(start)s"
 msgstr "%(field)s : %(day)s, dans les quatre heures à partir de %(start)s"
 
-#: cases/templates/cases/clip.html:81
+#: cases/templates/cases/clip.html:82
 msgid "None."
 msgstr "Aucun."
 
@@ -1496,19 +1496,19 @@ msgstr "Prêt"
 msgid "Failed"
 msgstr "Échec de la préparation"
 
-#: clips/models.py:152
+#: clips/models.py:156
 msgid "code holder"
 msgstr "personne qui détient le code"
 
-#: clips/models.py:153
+#: clips/models.py:157
 msgid "lawyer"
 msgstr "avocat·e"
 
-#: clips/models.py:268
+#: clips/models.py:287
 msgid "Evidence copy"
 msgstr "Copie de preuve"
 
-#: clips/models.py:269
+#: clips/models.py:288
 msgid "Proxy"
 msgstr "Version de prévisualisation"
 

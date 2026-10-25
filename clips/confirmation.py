@@ -23,6 +23,8 @@ def confirm_upload(original, read, cleaned):
     code = upload_codes.generate()
     clip = Clip(
         code_hash=upload_codes.keyed_hash(code),
+        # The texts below are sealed to it, for the code holder (docs/m5-encryption-design.md §7.2).
+        code_holder_public_key=bytes(vault.code_holder_key(code).public_key),
         metadata_time=read.metadata_time,
         stated_time=cleaned['stated_time'],
         as_uploaded_stated_time=cleaned['stated_time'],

@@ -96,6 +96,22 @@
     }
   }
 
+  // A text a lawyer's browser opens (design §7.1): a 24-byte nonce, then the padded text
+  // encrypted with XChaCha20-Poly1305; null if it does not open.
+  const TEXT_BLOCK = 256;
+
+  function openText(encrypted, dataKey, additionalData) {
+    const split = sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES;
+    try {
+      const padded = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
+        null, encrypted.subarray(split), additionalData, encrypted.subarray(0, split), dataKey,
+      );
+      return sodium.to_string(sodium.unpad(padded, TEXT_BLOCK));
+    } catch (error) {
+      return null;
+    }
+  }
+
   // The group private key a grant holds, or null if it does not open or does not give the
   // group key's public half (design §4).
   function openGrant(sealed, personalPrivateKey, groupPublicKey) {
@@ -151,7 +167,7 @@
 
   globalThis.ArchiveKeys = {
     PASSPHRASE_LENGTH, RECOVERY_KEY_LENGTH, WrongSecret, KeyMismatch, b64, randomCode, display, normalise,
-    passphraseKey, recoveryWrappingKey, encryptPrivateKey, decryptPrivateKey, sealGroupKey, openSealed, openGrant, safetyNumber,
+    passphraseKey, recoveryWrappingKey, encryptPrivateKey, decryptPrivateKey, sealGroupKey, openSealed, openGrant, openText, safetyNumber,
     remember, recall, forget,
   };
 }());
