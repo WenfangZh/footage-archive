@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{% translate "Replace a key that may have been seen" %}{% endblock %}
+
+{% block head %}
+  <script src="{% static 'core/vendor/libsodium/libsodium-sumo.js' %}" defer></script>
+  <script src="{% static 'core/vendor/libsodium/libsodium-wrappers.js' %}" defer></script>
+  <script src="{% static 'keys/keys.js' %}" defer></script>
+  <script src="{% static 'keys/unlock.js' %}" defer></script>
+  <script src="{% static 'keys/exposure.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Replace a key that may have been seen" %}</h1>
+  <p>{% translate "If someone else may have seen your key passphrase or your recovery key, replace your key here. Your browser makes a new key, with a new key passphrase and recovery key, and moves your case labels to it. Your old key stops working, and a rotation of the group key is requested. Until the admin has compared your new key's safety number with you and a lawyer has given you the group key again, you get nothing from the vault." %}</p>
+  {% if not reads_vault %}
+    <p>{% translate "You can report this only while your key holds the group key. If your new key is waiting for the admin or for a lawyer, there is nothing more to do here." %}</p>
+  {% elif not another_can_grant %}
+    <p role="alert">{% translate "You are the last lawyer, admitted and not suspended, who holds the group key: no one could give it to your new key. Give the group key to another lawyer first." %}</p>
+  {% else %}
+    {% include "keys/unlock.html" %}
+    <noscript><p>{% translate "Replacing your key needs JavaScript." %}</p></noscript>
+    {# The new passphrase and recovery key are typed back in fields with no name: they are never sent. #}
+    <form id="exposure" data-public-key="{{ unlock_public_key }}" data-opslimit="{{ opslimit }}" data-memlimit="{{ memlimit }}"
+      data-labels-url="{% url 'accounts:own_labels' %}" data-report-url="{% url 'accounts:key_exposure' %}"
+      data-done-url="{% url 'accounts:key' %}" hidden>
+      <h2>{% translate "Your new key passphrase" %}</h2>
+      <p>{% translate "You type it to unlock your key, once in each browser tab. It is not your login password. Keep it where you can type it: in your memory, on paper or in a password manager." %}</p>
+      <p><output id="passphrase"></output></p>
+      <h2>{% translate "Your new recovery key" %}</h2>
+      <p>{% translate "It unlocks your key if you forget your key passphrase. Write it down, and keep it with your two-factor recovery codes." %}</p>
+      <p><output id="recovery-key"></output></p>
+      <p><strong>{% translate "Save both now. They are shown only once, and no one, not even the admin, can recover them for you." %}</strong></p>
+      <p><label for="typed-passphrase">{% translate "Type your new key passphrase again:" %}</label>
+        <input id="typed-passphrase" autocomplete="off" required></p>
+      <p><label for="typed-recovery-key">{% translate "Type your new recovery key again:" %}</label>
+        <input id="typed-recovery-key" autocomplete="off" required></p>
+      <p><label for="exposure-password">{% translate "Your login password:" %}</label>
+        <input id="exposure-password" name="password" type="password" autocomplete="current-password" required></p>
+      <p id="typed-mismatch" role="alert" hidden>{% translate "What you typed does not match. Compare it with what is shown above." %}</p>
+      <p id="wrong-password" role="alert" hidden>{% translate "That is not your login password." %}</p>
+      <p id="last-holder" role="alert" hidden>{% translate "You are the last lawyer, admitted and not suspended, who holds the group key: no one could give it to your new key. Give the group key to another lawyer first." %}</p>
+      <p id="too-many" role="alert" hidden>{% translate "There have been too many attempts to log in. Try again in an hour." %}</p>
+      <p id="exposure-failed" role="alert" hidden>{% translate "Your key could not be replaced. Reload the page; if it happens again, tell the admin." %}</p>
+      <button type="submit">{% translate "Replace my key" %}</button>
+    </form>
+  {% endif %}
+{% endblock %}

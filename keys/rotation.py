@@ -34,7 +34,7 @@ from audit.models import Action, record
 from clips import vault
 
 from . import grants
-from .models import GroupKey, KeyGrant, LawyerKey, Rotation, RotationAttempt, RotationCheck
+from .models import ESTABLISHED, GroupKey, KeyGrant, LawyerKey, Rotation, RotationAttempt, RotationCheck
 
 logger = logging.getLogger(__name__)
 Status = GroupKey.Status
@@ -44,7 +44,6 @@ Because = RotationAttempt.AbandonedBecause
 # Enough for a rotator and two checkers (design §5.5).
 MIN_ELIGIBLE = 3
 # The key in use before any rotation running, or being replaced by one.
-ESTABLISHED = [Status.CURRENT, Status.ROTATION_REQUESTED, Status.RETIRING]
 
 
 class Refused(Exception):

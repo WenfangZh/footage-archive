@@ -49,6 +49,26 @@ def for_page(case):
     })
 
 
+def sealed_to(lawyer_key):
+    """The labels sealed to `lawyer_key`, for its lawyer's browser to reseal to a new key (design
+    §5.6): each case's id, its label's sealed data key and its key check value."""
+    from .models import Case  # Here: cases.models imports this module.
+    return [
+        {'id': case.pk, 'sealed_key': bytes(case.label_sealed_key), 'key_check': bytes(case.label_key_check)}
+        for case in Case.objects.filter(label_key=lawyer_key).order_by('pk')
+    ]
+
+
+def reseal(old_key, new_key, resealed):
+    """Store the labels' data keys the browser resealed to `new_key`, by case id; the labels
+    themselves stay as they are. Call under the group key lock, which case creation takes too,
+    after checking `resealed` covers the labels sealed to `old_key`."""
+    from .models import Case  # Here: cases.models imports this module.
+    for case in Case.objects.filter(label_key=old_key, pk__in=resealed):
+        case.label_sealed_key, case.label_key = resealed[case.pk], new_key
+        case.save(update_fields=['label_sealed_key', 'label_key'])
+
+
 def unreadable(case):
     """Whether the label is sealed to a personal key since retired (design §5.6)."""
     return case.label_ciphertext is not None and case.label_key.retired_at is not None

@@ -28,6 +28,7 @@
       {% endif %}
     </div>
   {% if lawyer %}
+    <p><a href="{% url 'accounts:key_exposure' %}">{% translate "Has someone else seen your key passphrase or your recovery key?" %}</a></p>
     <p><a href="{% url 'accounts:key_reset' %}">{% translate "Lost both your key passphrase and your recovery key?" %}</a></p>
   {% endif %}
 {% endblock %}
