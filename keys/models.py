@@ -130,6 +130,9 @@ class GroupKey(models.Model):
 
 # Keys that ingest seals to and lawyers read with (design §3.3, §5.5).
 IN_USE = [GroupKey.Status.CURRENT, GroupKey.Status.ROTATION_REQUESTED, GroupKey.Status.CHECKING, GroupKey.Status.RETIRING]
+# The key in use before any rotation running, which an abandoned or rejected attempt leaves in
+# place: unlike its `checking` successor, it outlasts a rotation request.
+ESTABLISHED = [GroupKey.Status.CURRENT, GroupKey.Status.ROTATION_REQUESTED, GroupKey.Status.RETIRING]
 
 
 class KeyGrant(models.Model):

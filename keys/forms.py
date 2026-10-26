@@ -14,7 +14,7 @@ from django.utils.translation import gettext_lazy as _
 
 from clips.models import SEALED_DATA_KEY_BYTES
 
-from .models import ENCRYPTED_PRIVATE_KEY_BYTES, PUBLIC_KEY_BYTES, SALT_BYTES, SEALED_GROUP_KEY_BYTES
+from .models import ENCRYPTED_PRIVATE_KEY_BYTES, PUBLIC_KEY_BYTES, SALT_BYTES, SEALED_GROUP_KEY_BYTES, LawyerKey
 
 
 class Base64BytesField(forms.CharField):
@@ -43,6 +43,14 @@ class KeySetupForm(forms.Form):
     private_key_under_passphrase = Base64BytesField(ENCRYPTED_PRIVATE_KEY_BYTES)
     private_key_under_recovery_key = Base64BytesField(ENCRYPTED_PRIVATE_KEY_BYTES)
 
+    def clean_public_key(self):
+        # One the server can seal case labels to, and a key no one in the archive has had: the
+        # safety number the admin compares then names one person's key only.
+        public_key = sealable(self.cleaned_data['public_key'])
+        if LawyerKey.objects.filter(public_key=public_key).exists():
+            raise forms.ValidationError(_('The key could not be read.'))
+        return public_key
+
 
 class NewPassphraseForm(forms.Form):
     """The private key encrypted under a new key passphrase, which the browser set after opening
@@ -53,11 +61,10 @@ class NewPassphraseForm(forms.Form):
     private_key_under_passphrase = Base64BytesField(ENCRYPTED_PRIVATE_KEY_BYTES)
 
 
-class KeyResetForm(forms.Form):
-    # The key the page offered to reset: one set up since, in another tab, is not.
-    key = forms.IntegerField(widget=forms.HiddenInput)
-    lost_both = forms.BooleanField(label=_('I have lost both my key passphrase and my recovery key.'))
-    # Asked again, since a reset cannot be undone: a session left open is not enough.
+class LoginPasswordForm(forms.Form):
+    """Asks for the login password again, before what cannot be undone: a session left open is
+    not enough. Checked with keys.views.password_checked, under the login's limits."""
+
     password = forms.CharField(
         label=_('Your login password:'), strip=False,
         widget=forms.PasswordInput(attrs={'autocomplete': 'current-password'}),
@@ -72,6 +79,13 @@ class KeyResetForm(forms.Form):
         if not self.user.check_password(self.cleaned_data['password']):
             raise forms.ValidationError(_('That is not your login password.'))
         return ''
+
+
+class KeyResetForm(LoginPasswordForm):
+    # The key the page offered to reset: one set up since, in another tab, is not.
+    key = forms.IntegerField(widget=forms.HiddenInput)
+    lost_both = forms.BooleanField(label=_('I have lost both my key passphrase and my recovery key.'))
+    field_order = ['key', 'lost_both', 'password']
 
 
 class KeyConfirmationForm(forms.Form):
@@ -207,3 +221,17 @@ class CheckResultForm(forms.Form):
     def clean_failed_items(self):
         return item_ids(self.cleaned_data['failed_items'])
 
+
+class ExposureReportForm(LoginPasswordForm, KeySetupForm):
+    """A report that the key passphrase or recovery key may have been seen (design §5.6): the new
+    key the browser made, as at setup; the old key's public half, naming the key it replaces;
+    each label's data key resealed to the new key, by case id; and the ids of the labels it
+    could not open."""
+
+    old_public_key = Base64BytesField(PUBLIC_KEY_BYTES)
+    # Optional only so that a lawyer without labels can send an empty object.
+    resealed_labels = SealedByIdField(SEALED_DATA_KEY_BYTES, limit=10_000, required=False)
+    unreadable_labels = forms.CharField(required=False, widget=forms.HiddenInput)
+
+    def clean_unreadable_labels(self):
+        return item_ids(self.cleaned_data['unreadable_labels'])

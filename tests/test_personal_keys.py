@@ -13,6 +13,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
+from nacl.public import PrivateKey
 
 from accounts.models import LawyerProfile
 from keys.models import ENCRYPTED_PRIVATE_KEY_BYTES, MEMLIMIT, OPSLIMIT, PUBLIC_KEY_BYTES, SALT_BYTES, LawyerKey, safety_number
@@ -27,7 +28,8 @@ Status = LawyerProfile.Status
 def sent_key():
     """What a browser sends once it has made a key: random bytes stand in for the parts."""
     return {
-        'public_key': os.urandom(PUBLIC_KEY_BYTES), 'passphrase_salt': os.urandom(SALT_BYTES),
+        # A real key: the form refuses what is not one.
+        'public_key': bytes(PrivateKey.generate().public_key), 'passphrase_salt': os.urandom(SALT_BYTES),
         'private_key_under_passphrase': os.urandom(ENCRYPTED_PRIVATE_KEY_BYTES),
         'private_key_under_recovery_key': os.urandom(ENCRYPTED_PRIVATE_KEY_BYTES),
     }
@@ -75,11 +77,22 @@ def test_an_applicant_stores_the_key_their_browser_made(applicant, applicant_cli
     ('passphrase_salt', base64.b64encode(os.urandom(SALT_BYTES + 1)).decode()),
     ('private_key_under_passphrase', 'not base64!'),
     ('private_key_under_recovery_key', ''),
+    # A point of small order: the server could seal no case label to it.
+    ('public_key', base64.b64encode(bytes(PUBLIC_KEY_BYTES)).decode()),
 ])
 def test_a_key_that_cannot_be_one_is_refused(applicant, applicant_client, name, value):
     response = applicant_client.post(reverse('accounts:key_setup'), {**as_form(sent_key()), name: value})
     assert response.status_code == 200
     assert not LawyerKey.objects.exists()
+
+
+def test_a_key_someone_in_the_archive_has_had_is_refused(applicant, applicant_client):
+    """Its safety number would name two people's keys, or an old one."""
+    other = make_key(person(email='someone.else@example.org'), PrivateKey.generate())
+    other.retire()
+    sent = as_form(sent_key()) | {'public_key': base64.b64encode(bytes(other.public_key)).decode()}
+    assert applicant_client.post(reverse('accounts:key_setup'), sent).status_code == 200
+    assert not LawyerKey.objects.filter(lawyer_profile=applicant).exists()
 
 
 def test_a_new_key_replaces_one_the_admin_has_not_confirmed_and_erases_it(applicant, applicant_client):
@@ -139,7 +152,7 @@ def test_nobody_but_an_applicant_or_lawyer_reaches_the_key_pages(kind):
         make_key(profile)
         log_in_with_second_factor(client, profile.user)
     expected = 302 if kind == 'logged out' else 403  # To the login page, or refused.
-    for name in ['accounts:key', 'accounts:key_setup', 'accounts:key_recover', 'accounts:key_reset', 'accounts:encrypted_key', 'accounts:own_grants']:
+    for name in ['accounts:key', 'accounts:key_setup', 'accounts:key_recover', 'accounts:key_reset', 'accounts:key_exposure', 'accounts:own_labels', 'accounts:encrypted_key', 'accounts:own_grants']:
         assert client.get(reverse(name)).status_code == expected, name
     for name in ['accounts:key_unlocked', 'accounts:grant_checked', 'accounts:start_group_key']:
         assert client.post(reverse(name)).status_code == expected, name

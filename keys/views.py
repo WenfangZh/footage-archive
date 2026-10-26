@@ -18,6 +18,7 @@ from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
@@ -28,8 +29,8 @@ from clips import rate_limits
 
 from . import grants, recovery, rotation
 from .forms import (
-    Base64BytesField, CheckResultForm, GrantForm, GroupKeyForm, ItemIdsForm, KeyConfirmationForm, KeyResetForm,
-    KeySetupForm, NewGroupKeyForm, NewPassphraseForm, ResealedForm,
+    Base64BytesField, CheckResultForm, ExposureReportForm, GrantForm, GroupKeyForm, ItemIdsForm, KeyConfirmationForm,
+    KeyResetForm, KeySetupForm, NewGroupKeyForm, NewPassphraseForm, ResealedForm,
 )
 from .grants import current_key
 from .models import IN_USE, MEMLIMIT, OPSLIMIT, PUBLIC_KEY_BYTES, KeyGrant, LawyerKey, RotationCheck
@@ -194,6 +195,67 @@ def reset(request):
     return render(request, 'keys/reset.html', {
         'form': form, 'last_holder': grants.last_holder(profile),
     }, status=400 if form.errors else 200)
+
+
+@lawyer_required
+@sensitive_post_parameters('password')
+@require_http_methods(['GET', 'POST'])
+def exposure(request):
+    """A key passphrase or recovery key that may have been seen (design §5.6): the browser makes
+    a new key and reseals the lawyer's labels to it, then sends both here, by fetch, so that it
+    can try again when a case made meanwhile changed the labels."""
+    profile = request.user.lawyer_profile
+    key = current_key(profile)
+    if key is None:
+        return redirect('accounts:key_setup')
+    if request.method == 'GET':
+        return render(request, 'keys/exposure.html', {
+            'reads_vault': grants.reads_vault(profile), 'another_can_grant': grants.another_can_grant(profile),
+            'opslimit': OPSLIMIT, 'memlimit': MEMLIMIT, **unlock_context(request, key),
+        })
+    form = ExposureReportForm(request.user, request.POST)
+    try:
+        if not password_checked(request, form):
+            return JsonResponse({'wrong_password': form.has_error('password')}, status=400)
+    except RateLimited:
+        return rate_limits.too_many(request, 'accounts/login_limited.html')
+    data = form.cleaned_data
+    new_key = {name: data[name] for name in KeySetupForm.base_fields}
+    try:
+        recovery.report_exposure(profile, data['old_public_key'], new_key, data['resealed_labels'], data['unreadable_labels'])
+    except recovery.LabelsChanged:
+        return HttpResponse(status=409)
+    except recovery.Refused as refusal:
+        return JsonResponse({'last_holder': isinstance(refusal, recovery.LastHolder)}, status=403)
+    messages.success(request, _(
+        'Your new key is set up, and a rotation of the group key is requested. The admin will compare '
+        'its safety number with you, then a lawyer will give you the group key again.'
+    ))
+    if data['unreadable_labels']:
+        lost = len(data['unreadable_labels'])
+        messages.warning(request, ngettext(
+            'The label of %(count)d case could not be opened, so could not be moved to your new key: it is lost.',
+            'The labels of %(count)d cases could not be opened, so could not be moved to your new key: they are lost.',
+            lost,
+        ) % {'count': lost})
+    response = HttpResponse(status=201)
+    # The old key, unlocked in this browser's tabs, is retired: forget it, as at logout.
+    response['Clear-Site-Data'] = '"storage"'
+    return response
+
+
+@lawyer_required
+@require_GET
+def own_labels(request):
+    """The labels sealed to the lawyer's current key, for their browser to reseal (design §5.6)."""
+    key = current_key(request.user.lawyer_profile)
+    if key is None:
+        raise Http404
+    from cases import labels  # Here: cases.labels imports this module.
+    return JsonResponse({'public_key': b64(key.public_key), 'labels': [
+        {'id': label['id'], 'sealed_key': b64(label['sealed_key']), 'key_check': b64(label['key_check'])}
+        for label in labels.sealed_to(key)
+    ]})
 
 
 @admin_required

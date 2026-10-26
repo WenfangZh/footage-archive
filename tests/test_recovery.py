@@ -6,6 +6,7 @@ the browser sends; the browser's part is checked by hand in a browser.
 """
 
 import base64
+import json
 import os
 import re
 
@@ -15,14 +16,16 @@ from django.core.cache import cache
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
+from nacl.public import PrivateKey, SealedBox
 
 from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from cases import labels
+from cases.models import Case
 from clips import rate_limits
 from keys import grants
 from keys.models import ENCRYPTED_PRIVATE_KEY_BYTES, SALT_BYTES, GroupKey, KeyGrant, LawyerKey
-from tests.conftest import log_in_with_second_factor, make_case, make_key
+from tests.conftest import log_in_with_second_factor, make_case, make_key, open_label
 
 pytestmark = pytest.mark.django_db
 
@@ -260,3 +263,125 @@ def test_the_confirmation_page_is_for_a_lawyers_unconfirmed_key_only(admin_clien
     unconfirmed = lawyer('new@example.org', confirmed=False)
     # Only the admin: a lawyer cannot confirm their own key, nor a colleague's.
     assert client_for(confirmed).get(reverse('manage:confirm_key', args=[unconfirmed.pk])).status_code == 403
+
+
+# A key passphrase or recovery key that may have been seen.
+
+def lawyer_with_key(email):
+    """A lawyer holding the group key, whose personal key's private half the test knows."""
+    profile = lawyer(email, confirmed=False)
+    grants.current_key(profile).retire()
+    private_key = PrivateKey.generate()
+    key = make_key(profile, private_key)
+    key.admin_confirmed_at = timezone.now()
+    key.save()
+    return profile, private_key
+
+
+@pytest.fixture
+def exposed():
+    """A lawyer with two labelled cases, and a colleague who could grant the group key."""
+    group_key = GroupKey.objects.create(public_key=bytes(PrivateKey.generate().public_key))
+    profile, private_key = lawyer_with_key('lawyer@example.org')
+    colleague, _ = lawyer_with_key('colleague@example.org')
+    give(group_key, profile, colleague)
+    cases = [make_case(profile, 'Filmed near the station'), make_case(profile, 'Second case')]
+    return {'profile': profile, 'private_key': private_key, 'cases': cases, 'group_key': group_key}
+
+
+def report(profile, private_key, new_private_key, resealed=None, unreadable=(), **changes):
+    """What the browser sends (keys/static/keys/exposure.js): each label's data key, opened with
+    the old key and sealed to the new one, unless `resealed` says otherwise."""
+    old = grants.current_key(profile)
+    if resealed is None:
+        resealed = {
+            case.pk: SealedBox(new_private_key.public_key).encrypt(SealedBox(private_key).decrypt(bytes(case.label_sealed_key)))
+            for case in Case.objects.filter(label_key=old) if case.pk not in unreadable
+        }
+    fields = {
+        'public_key': b64(new_private_key.public_key), 'passphrase_salt': b64(os.urandom(SALT_BYTES)),
+        'private_key_under_passphrase': b64(os.urandom(ENCRYPTED_PRIVATE_KEY_BYTES)),
+        'private_key_under_recovery_key': b64(os.urandom(ENCRYPTED_PRIVATE_KEY_BYTES)),
+        'old_public_key': b64(old.public_key), 'password': PASSWORD,
+        'resealed_labels': json.dumps({str(pk): b64(sealed) for pk, sealed in resealed.items()}),
+        'unreadable_labels': json.dumps(list(unreadable)),
+    } | changes
+    return client_for(profile).post(reverse('accounts:key_exposure'), fields)
+
+
+def test_an_exposure_report_replaces_the_key_keeps_the_labels_and_requests_a_rotation(exposed):
+    profile, cases = exposed['profile'], exposed['cases']
+    old = grants.current_key(profile)
+    new_private_key = PrivateKey.generate()
+    response = report(profile, exposed['private_key'], new_private_key)
+    assert response.status_code == 201 and response['Clear-Site-Data'] == '"storage"'
+    old.refresh_from_db()
+    new = grants.current_key(profile)
+    assert old.retired_at is not None and bytes(new.public_key) == bytes(new_private_key.public_key)
+    # Waiting for the admin's comparison and a lawyer's grant, like a newcomer's (§5.2, §5.3).
+    assert new.admin_confirmed_at is None and not KeyGrant.objects.filter(lawyer_key__in=[old, new]).exists()
+    assert not grants.reads_vault(profile)
+    for case, label in zip(cases, ['Filmed near the station', 'Second case']):
+        case.refresh_from_db()
+        assert open_label(case, new_private_key) == label
+    exposed['group_key'].refresh_from_db()
+    assert exposed['group_key'].status == GroupKey.Status.ROTATION_REQUESTED
+    entry = AuditEntry.objects.get(action=Action.KEY_EXPOSURE_REPORT)
+    assert entry.lawyer_profile == profile and entry.lawyer_key == old
+    assert AuditEntry.objects.filter(action=Action.ROTATION_REQUEST, lawyer_profile=profile).exists()
+    # Not again before the new key holds the group key: reports cannot keep abandoning rotations.
+    assert report(profile, new_private_key, PrivateKey.generate()).status_code == 403
+
+
+def test_a_report_missing_a_label_made_meanwhile_is_refused_and_changes_nothing(exposed):
+    profile = exposed['profile']
+    old = grants.current_key(profile)
+    new_private_key = PrivateKey.generate()
+    missing = exposed['cases'][1]
+    resealed = {exposed['cases'][0].pk: SealedBox(new_private_key.public_key).encrypt(os.urandom(32))}
+    assert report(profile, exposed['private_key'], new_private_key, resealed=resealed).status_code == 409
+    old.refresh_from_db()
+    missing.refresh_from_db()
+    assert old.retired_at is None and missing.label_key == old and grants.reads_vault(profile)
+    assert not AuditEntry.objects.filter(action=Action.KEY_EXPOSURE_REPORT).exists()
+
+
+def test_a_label_the_browser_could_not_open_stays_with_the_old_key(exposed):
+    profile = exposed['profile']
+    unopened = exposed['cases'][1]
+    assert report(profile, exposed['private_key'], PrivateKey.generate(), unreadable=(unopened.pk,)).status_code == 201
+    unopened.refresh_from_db()
+    assert labels.unreadable(unopened)
+
+
+def test_the_last_lawyer_who_could_grant_cannot_report(exposed):
+    """A suspended colleague's grant does not count: they could not give the group key."""
+    colleague = LawyerProfile.objects.get(user__email='colleague@example.org')
+    colleague.change_status(Status.SUSPENDED)
+    profile = exposed['profile']
+    page = client_for(profile).get(reverse('accounts:key_exposure'))
+    assert not page.context['another_can_grant'] and 'id="exposure"' not in page.content.decode()
+    assert report(profile, exposed['private_key'], PrivateKey.generate()).status_code == 403
+    assert grants.current_key(profile).retired_at is None and grants.reads_vault(profile)
+
+
+@pytest.mark.parametrize('change', ['wrong password', 'the same key'])
+def test_a_report_without_the_password_or_a_new_key_is_refused(exposed, change):
+    profile, private_key = exposed['profile'], exposed['private_key']
+    if change == 'wrong password':
+        response = report(profile, private_key, PrivateKey.generate(), password='not the password')
+        assert response.status_code == 400 and response.json() == {'wrong_password': True}
+    else:
+        # Refused where it enters, as is any key the archive has had.
+        assert report(profile, private_key, private_key).status_code == 400
+    assert grants.current_key(profile).retired_at is None
+
+
+def test_the_labels_a_browser_reseals_are_its_own_on_its_current_key(exposed):
+    profile = exposed['profile']
+    colleague = LawyerProfile.objects.get(user__email='colleague@example.org')
+    make_case(colleague, 'Not theirs')
+    sent = client_for(profile).get(reverse('accounts:own_labels')).json()
+    assert sent['public_key'] == b64(grants.current_key(profile).public_key)
+    assert [label['id'] for label in sent['labels']] == [case.pk for case in exposed['cases']]
+    assert all(label['key_check'] == b64(Case.objects.get(pk=label['id']).label_key_check) for label in sent['labels'])
