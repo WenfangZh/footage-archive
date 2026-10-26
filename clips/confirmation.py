@@ -18,7 +18,7 @@ def confirm_upload(original, read, cleaned):
 
     `read` is the server's own quick read of the original: the metadata time and GPS
     come from it, never from the form. The code is returned once, to be shown on the
-    code card, and only its keyed hash is stored.
+    code card. Only its keyed hash and its code holder public key are stored (ADR 0001).
     """
     code = upload_codes.generate()
     clip = Clip(
