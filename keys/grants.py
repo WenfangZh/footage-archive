@@ -74,6 +74,16 @@ def last_holder(profile):
     ).exists()
 
 
+def another_can_grant(profile):
+    """Whether a lawyer other than `profile`, admitted and not suspended, holds a grant on the
+    newest group key in use: someone who could give the group key to a new key of theirs. A
+    suspended holder could not, and might be revoked (design §5.6)."""
+    newest = in_use().order_by('-made_at', '-pk').first()
+    return newest is not None and held().filter(
+        group_key=newest, lawyer_key__lawyer_profile__status=Status.LAWYER,
+    ).exclude(lawyer_key__lawyer_profile=profile).exists()
+
+
 def may_start(profile):
     """Whether this lawyer's browser should make a new group key: no one who is not revoked
     holds a grant on any group key, and they are a lawyer with a confirmed key (design §5.3, §5.7)."""

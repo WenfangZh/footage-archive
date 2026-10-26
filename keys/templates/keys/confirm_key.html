@@ -7,7 +7,7 @@
   {% with profile=key.lawyer_profile %}
   <h1>{% blocktranslate with name=profile.user.get_full_name %}New key of {{ name }}{% endblocktranslate %}</h1>
   <p>{% translate "Bar:" %} {{ profile.bar }}</p>
-  <p>{% translate "They reset their key, having lost both its key passphrase and its recovery key, and set up a new one." %}</p>
+  <p>{% translate "They set up a new key: after a key reset, having lost both their key passphrase and their recovery key, or after reporting that one of them may have been seen." %}</p>
   <p>{% translate "Safety number of their new key:" %} <strong>{{ key.safety_number }}</strong></p>
   <p>{% translate "Contact them through the bar directory's contact details, never those they gave, and ask them to read the safety number shown on their key page. Confirm only if it is the same as this one." %}</p>
   <form method="post" action="{% url 'manage:confirm_key' profile.pk %}">

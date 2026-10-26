@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 11:11+0100\n"
+"POT-Creation-Date: 2026-10-26 11:20+0100\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -46,7 +46,7 @@ msgstr ""
 msgid "A trusted defence organisation or an admitted lawyer."
 msgstr "Une organisation de défense de confiance, ou un·e avocat·e admis·e."
 
-#: accounts/admission.py:44 keys/forms.py:81
+#: accounts/admission.py:44 keys/forms.py:87
 msgid ""
 "I compared this safety number with them, through the bar directory's contact "
 "details."
@@ -62,7 +62,7 @@ msgstr ""
 "La personne pourra être admise une fois son mot de passe, sa double "
 "authentification et sa clé personnelle mis en place."
 
-#: accounts/admission.py:103 keys/views.py:211
+#: accounts/admission.py:103 keys/views.py:265
 msgid ""
 "They have made a new key since this page was shown. Compare its safety "
 "number with them again."
@@ -382,6 +382,7 @@ msgid "Too many attempts"
 msgstr "Trop de tentatives"
 
 #: accounts/templates/accounts/login_limited.html:9
+#: keys/templates/keys/exposure.html:43
 msgid "There have been too many attempts to log in. Try again in an hour."
 msgstr "Il y a eu trop de tentatives de connexion. Réessayez dans une heure."
 
@@ -835,47 +836,53 @@ msgctxt "audit log action"
 msgid "Key reset"
 msgstr "Réinitialisation de la clé"
 
-#: audit/models.py:61
+#: audit/models.py:62
+msgctxt "audit log action"
+msgid "Report of a key passphrase or recovery key that may have been seen"
+msgstr ""
+"Signalement d'une phrase secrète ou d'une clé de récupération peut-être vue"
+
+#: audit/models.py:64
 msgctxt "audit log action"
 msgid "Confirmation of a lawyer's new key"
 msgstr "Confirmation de la nouvelle clé d'un·e avocat·e"
 
-#: audit/models.py:63
+#: audit/models.py:66
 msgctxt "audit log action"
 msgid "Request for a rotation of the group key"
 msgstr "Demande de renouvellement de la clé commune"
 
-#: audit/models.py:64
+#: audit/models.py:67
 msgctxt "audit log action"
 msgid "Drawing of a rotator"
 msgstr "Tirage au sort de la personne qui renouvelle la clé commune"
 
-#: audit/models.py:65
+#: audit/models.py:68
 msgctxt "audit log action"
 msgid "New group key from a rotator"
 msgstr "Nouvelle clé commune, de la personne qui la renouvelle"
 
-#: audit/models.py:66
+#: audit/models.py:69
 msgctxt "audit log action"
 msgid "Check of a rotation, passed"
 msgstr "Vérification d'un renouvellement, réussie"
 
-#: audit/models.py:67
+#: audit/models.py:70
 msgctxt "audit log action"
 msgid "Check of a rotation, failed"
 msgstr "Vérification d'un renouvellement, échouée"
 
-#: audit/models.py:68
+#: audit/models.py:71
 msgctxt "audit log action"
 msgid "Rejection of a rotation attempt"
 msgstr "Rejet d'une tentative de renouvellement"
 
-#: audit/models.py:69
+#: audit/models.py:72
 msgctxt "audit log action"
 msgid "Abandoning of a rotation attempt"
 msgstr "Abandon d'une tentative de renouvellement"
 
-#: audit/models.py:70
+#: audit/models.py:73
 msgctxt "audit log action"
 msgid "End of a rotation"
 msgstr "Fin d'un renouvellement"
@@ -2019,25 +2026,25 @@ msgstr "Français"
 msgid "English"
 msgstr "Anglais"
 
-#: keys/forms.py:34 keys/forms.py:36 keys/forms.py:97 keys/forms.py:101
-#: keys/forms.py:120 keys/forms.py:132 keys/forms.py:159 keys/forms.py:184
-#: keys/forms.py:188
+#: keys/forms.py:34 keys/forms.py:36 keys/forms.py:103 keys/forms.py:107
+#: keys/forms.py:126 keys/forms.py:138 keys/forms.py:165 keys/forms.py:190
+#: keys/forms.py:194
 msgid "The key could not be read."
 msgstr "La clé n'a pas pu être lue."
 
-#: keys/forms.py:59
-msgid "I have lost both my key passphrase and my recovery key."
-msgstr "J'ai perdu à la fois ma phrase secrète et ma clé de récupération."
-
-#: keys/forms.py:62
+#: keys/forms.py:61 keys/templates/keys/exposure.html:39
 msgid "Your login password:"
 msgstr "Votre mot de passe de connexion :"
 
-#: keys/forms.py:73
+#: keys/forms.py:72 keys/templates/keys/exposure.html:42
 msgid "That is not your login password."
 msgstr "Ce n'est pas votre mot de passe de connexion."
 
-#: keys/forms.py:139
+#: keys/forms.py:79
+msgid "I have lost both my key passphrase and my recovery key."
+msgstr "J'ai perdu à la fois ma phrase secrète et ma clé de récupération."
+
+#: keys/forms.py:145
 msgid "I compared this safety number with them, by phone or in person."
 msgstr ""
 "J'ai comparé ce numéro de sécurité avec la personne, par téléphone ou de "
@@ -2054,11 +2061,13 @@ msgstr "Nouvelle clé de %(name)s"
 
 #: keys/templates/keys/confirm_key.html:10
 msgid ""
-"They reset their key, having lost both its key passphrase and its recovery "
-"key, and set up a new one."
+"They set up a new key: after a key reset, having lost both their key "
+"passphrase and their recovery key, or after reporting that one of them may "
+"have been seen."
 msgstr ""
-"Cette personne a réinitialisé sa clé, ayant perdu à la fois sa phrase "
-"secrète et sa clé de récupération, et en a créé une nouvelle."
+"Cette personne a créé une nouvelle clé : après une réinitialisation de la "
+"clé, ayant perdu à la fois sa phrase secrète et sa clé de récupération, ou "
+"après avoir signalé que l'une d'elles a peut-être été vue."
 
 #: keys/templates/keys/confirm_key.html:11
 msgid "Safety number of their new key:"
@@ -2073,6 +2082,115 @@ msgstr ""
 "Contactez la personne par les coordonnées de l'annuaire du barreau, jamais "
 "par celles qu'elle a données, et demandez-lui de lire le numéro de sécurité "
 "affiché sur sa page de clé. Ne confirmez que s'il est identique à celui-ci."
+
+#: keys/templates/keys/exposure.html:4 keys/templates/keys/exposure.html:15
+msgid "Replace a key that may have been seen"
+msgstr "Remplacer une clé peut-être vue"
+
+#: keys/templates/keys/exposure.html:16
+msgid ""
+"If someone else may have seen your key passphrase or your recovery key, "
+"replace your key here. Your browser makes a new key, with a new key "
+"passphrase and recovery key, and moves your case labels to it. Your old key "
+"stops working, and a rotation of the group key is requested. Until the admin "
+"has compared your new key's safety number with you and a lawyer has given "
+"you the group key again, you get nothing from the vault."
+msgstr ""
+"Si quelqu'un d'autre a peut-être vu votre phrase secrète ou votre clé de "
+"récupération, remplacez votre clé ici. Votre navigateur crée une nouvelle "
+"clé, avec une nouvelle phrase secrète et une nouvelle clé de récupération, "
+"et y transfère les libellés de vos dossiers de recherche. Votre ancienne clé "
+"cesse de fonctionner, et un renouvellement de la clé commune est demandé. "
+"Tant que l'administrateur·rice n'a pas comparé avec vous le numéro de "
+"sécurité de votre nouvelle clé et qu'un·e avocat·e ne vous a pas remis à "
+"nouveau la clé commune, vous n'avez accès à rien dans le coffre."
+
+#: keys/templates/keys/exposure.html:18
+msgid ""
+"You can report this only while your key holds the group key. If your new key "
+"is waiting for the admin or for a lawyer, there is nothing more to do here."
+msgstr ""
+"Vous ne pouvez le signaler que tant que votre clé détient la clé commune. Si "
+"votre nouvelle clé attend l'administrateur·rice ou un·e avocat·e, il n'y a "
+"rien de plus à faire ici."
+
+#: keys/templates/keys/exposure.html:20
+msgid ""
+"You are the last lawyer, admitted and not suspended, who holds the group "
+"key: no one could give it to your new key. Give the group key to another "
+"lawyer first."
+msgstr ""
+"Vous êtes la dernière personne avocate, admise et non suspendue, à détenir "
+"la clé commune : personne ne pourrait la remettre à votre nouvelle clé. "
+"Remettez d'abord la clé commune à un·e autre avocat·e."
+
+#: keys/templates/keys/exposure.html:23
+msgid "Replacing your key needs JavaScript."
+msgstr "Remplacer votre clé nécessite JavaScript."
+
+#: keys/templates/keys/exposure.html:28 keys/templates/keys/recover.html:32
+msgid "Your new key passphrase"
+msgstr "Votre nouvelle phrase secrète"
+
+#: keys/templates/keys/exposure.html:29 keys/templates/keys/recover.html:33
+#: keys/templates/keys/setup.html:29
+msgid ""
+"You type it to unlock your key, once in each browser tab. It is not your "
+"login password. Keep it where you can type it: in your memory, on paper or "
+"in a password manager."
+msgstr ""
+"Vous la tapez pour déverrouiller votre clé, une fois dans chaque onglet du "
+"navigateur. Ce n'est pas votre mot de passe de connexion. Gardez-la là où "
+"vous pourrez la retrouver pour la taper : de mémoire, sur papier ou dans un "
+"gestionnaire de mots de passe."
+
+#: keys/templates/keys/exposure.html:31
+msgid "Your new recovery key"
+msgstr "Votre nouvelle clé de récupération"
+
+#: keys/templates/keys/exposure.html:32 keys/templates/keys/setup.html:33
+msgid ""
+"It unlocks your key if you forget your key passphrase. Write it down, and "
+"keep it with your two-factor recovery codes."
+msgstr ""
+"Elle déverrouille votre clé si vous oubliez votre phrase secrète. Notez-la "
+"et gardez-la avec vos codes de secours de double authentification."
+
+#: keys/templates/keys/exposure.html:34 keys/templates/keys/setup.html:36
+msgid ""
+"Save both now. They are shown only once, and no one, not even the admin, can "
+"recover them for you."
+msgstr ""
+"Conservez-les toutes les deux dès maintenant. Elles ne s'affichent qu'une "
+"fois, et personne, pas même l'administrateur·rice, ne pourra les retrouver "
+"pour vous."
+
+#: keys/templates/keys/exposure.html:35 keys/templates/keys/recover.html:36
+msgid "Type your new key passphrase again:"
+msgstr "Tapez à nouveau votre nouvelle phrase secrète :"
+
+#: keys/templates/keys/exposure.html:37
+msgid "Type your new recovery key again:"
+msgstr "Tapez à nouveau votre nouvelle clé de récupération :"
+
+#: keys/templates/keys/exposure.html:41 keys/templates/keys/recover.html:38
+#: keys/templates/keys/setup.html:42
+msgid "What you typed does not match. Compare it with what is shown above."
+msgstr ""
+"Ce que vous avez tapé ne correspond pas. Comparez-le avec ce qui est affiché "
+"ci-dessus."
+
+#: keys/templates/keys/exposure.html:44
+msgid ""
+"Your key could not be replaced. Reload the page; if it happens again, tell "
+"the admin."
+msgstr ""
+"Votre clé n'a pas pu être remplacée. Rechargez la page ; si cela se "
+"reproduit, prévenez l'administrateur·rice."
+
+#: keys/templates/keys/exposure.html:45
+msgid "Replace my key"
+msgstr "Remplacer ma clé"
 
 #: keys/templates/keys/grant.html:4 keys/templates/keys/grant.html:30
 msgid "Give the group key"
@@ -2163,6 +2281,12 @@ msgstr ""
 "remettra."
 
 #: keys/templates/keys/key.html:31
+msgid "Has someone else seen your key passphrase or your recovery key?"
+msgstr ""
+"Quelqu'un d'autre a-t-il vu votre phrase secrète ou votre clé de "
+"récupération ?"
+
+#: keys/templates/keys/key.html:32
 msgid "Lost both your key passphrase and your recovery key?"
 msgstr ""
 "Vous avez perdu à la fois votre phrase secrète et votre clé de récupération ?"
@@ -2211,21 +2335,6 @@ msgid "The new key passphrase could not be saved. Please try again."
 msgstr ""
 "La nouvelle phrase secrète n'a pas pu être enregistrée. Veuillez réessayer."
 
-#: keys/templates/keys/recover.html:32
-msgid "Your new key passphrase"
-msgstr "Votre nouvelle phrase secrète"
-
-#: keys/templates/keys/recover.html:33 keys/templates/keys/setup.html:29
-msgid ""
-"You type it to unlock your key, once in each browser tab. It is not your "
-"login password. Keep it where you can type it: in your memory, on paper or "
-"in a password manager."
-msgstr ""
-"Vous la tapez pour déverrouiller votre clé, une fois dans chaque onglet du "
-"navigateur. Ce n'est pas votre mot de passe de connexion. Gardez-la là où "
-"vous pourrez la retrouver pour la taper : de mémoire, sur papier ou dans un "
-"gestionnaire de mots de passe."
-
 #: keys/templates/keys/recover.html:35
 msgid ""
 "Save it now. It is shown only once, and no one, not even the admin, can "
@@ -2233,16 +2342,6 @@ msgid ""
 msgstr ""
 "Conservez-la dès maintenant. Elle ne s'affiche qu'une fois, et personne, pas "
 "même l'administrateur·rice, ne pourra la retrouver pour vous."
-
-#: keys/templates/keys/recover.html:36
-msgid "Type your new key passphrase again:"
-msgstr "Tapez à nouveau votre nouvelle phrase secrète :"
-
-#: keys/templates/keys/recover.html:38 keys/templates/keys/setup.html:42
-msgid "What you typed does not match. Compare it with what is shown above."
-msgstr ""
-"Ce que vous avez tapé ne correspond pas. Comparez-le avec ce qui est affiché "
-"ci-dessus."
 
 #: keys/templates/keys/recover.html:39
 msgid "Save my new key passphrase"
@@ -2374,23 +2473,6 @@ msgstr "Votre phrase secrète"
 msgid "Your recovery key"
 msgstr "Votre clé de récupération"
 
-#: keys/templates/keys/setup.html:33
-msgid ""
-"It unlocks your key if you forget your key passphrase. Write it down, and "
-"keep it with your two-factor recovery codes."
-msgstr ""
-"Elle déverrouille votre clé si vous oubliez votre phrase secrète. Notez-la "
-"et gardez-la avec vos codes de secours de double authentification."
-
-#: keys/templates/keys/setup.html:36
-msgid ""
-"Save both now. They are shown only once, and no one, not even the admin, can "
-"recover them for you."
-msgstr ""
-"Conservez-les toutes les deux dès maintenant. Elles ne s'affichent qu'une "
-"fois, et personne, pas même l'administrateur·rice, ne pourra les retrouver "
-"pour vous."
-
 #: keys/templates/keys/setup.html:38
 msgid "Type your key passphrase again:"
 msgstr "Tapez à nouveau votre phrase secrète :"
@@ -2474,7 +2556,17 @@ msgstr ""
 msgid "Your key is reset. Set up a new one."
 msgstr "Votre clé est réinitialisée. Créez-en une nouvelle."
 
-#: keys/views.py:213
+#: keys/views.py:230
+msgid ""
+"Your new key is set up, and a rotation of the group key is requested. The "
+"admin will compare its safety number with you, then a lawyer will give you "
+"the group key again."
+msgstr ""
+"Votre nouvelle clé est créée, et un renouvellement de la clé commune est "
+"demandé. L'administrateur·rice comparera son numéro de sécurité avec vous, "
+"puis un·e avocat·e vous remettra à nouveau la clé commune."
+
+#: keys/views.py:267
 #, python-format
 msgid ""
 "%(name)s's new key is confirmed. A lawyer can now give them the group key."
@@ -2482,12 +2574,12 @@ msgstr ""
 "La nouvelle clé de %(name)s est confirmée. Un·e avocat·e peut maintenant lui "
 "remettre la clé commune."
 
-#: keys/views.py:305
+#: keys/views.py:359
 msgid "The keys changed while this page was open. Please try again."
 msgstr ""
 "Les clés ont changé pendant que cette page était ouverte. Veuillez réessayer."
 
-#: keys/views.py:307
+#: keys/views.py:361
 #, python-format
 msgid "%(name)s now holds the group key."
 msgstr "%(name)s a maintenant la clé commune."

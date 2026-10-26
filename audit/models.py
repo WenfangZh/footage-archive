@@ -58,6 +58,9 @@ class Action(models.TextChoices):
         'audit log action', 'New key passphrase, set with the recovery key',
     )
     KEY_RESET = 'key_reset', pgettext_lazy('audit log action', 'Key reset')
+    KEY_EXPOSURE_REPORT = 'key_exposure_report', pgettext_lazy(
+        'audit log action', 'Report of a key passphrase or recovery key that may have been seen',
+    )
     KEY_CONFIRMATION = 'key_confirmation', pgettext_lazy('audit log action', "Confirmation of a lawyer's new key")
     # Rotations of the group key (docs/m5-encryption-design.md §5.5).
     ROTATION_REQUEST = 'rotation_request', pgettext_lazy('audit log action', 'Request for a rotation of the group key')
@@ -88,7 +91,9 @@ COUNT_ACTIONS = [Action.SEARCH]
 # Entries about the archive itself, which name no applicant or lawyer.
 ARCHIVE_ACTIONS = [Action.LIMITS_CHANGE]
 # Entries that name the personal key the action was about.
-KEY_ACTIONS = [Action.KEY_GRANT, Action.PASSPHRASE_REPLACEMENT, Action.KEY_RESET, Action.KEY_CONFIRMATION]
+KEY_ACTIONS = [
+    Action.KEY_GRANT, Action.PASSPHRASE_REPLACEMENT, Action.KEY_RESET, Action.KEY_CONFIRMATION, Action.KEY_EXPOSURE_REPORT,
+]
 # Entries about a rotation, and about one of its attempts. The lawyer named is the one whose
 # revocation or report requested it, the rotator, or the lawyer who checked.
 ROTATION_ACTIONS = [Action.ROTATION_REQUEST]

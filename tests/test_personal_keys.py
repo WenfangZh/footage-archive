@@ -139,7 +139,7 @@ def test_nobody_but_an_applicant_or_lawyer_reaches_the_key_pages(kind):
         make_key(profile)
         log_in_with_second_factor(client, profile.user)
     expected = 302 if kind == 'logged out' else 403  # To the login page, or refused.
-    for name in ['accounts:key', 'accounts:key_setup', 'accounts:key_recover', 'accounts:key_reset', 'accounts:encrypted_key', 'accounts:own_grants']:
+    for name in ['accounts:key', 'accounts:key_setup', 'accounts:key_recover', 'accounts:key_reset', 'accounts:key_exposure', 'accounts:own_labels', 'accounts:encrypted_key', 'accounts:own_grants']:
         assert client.get(reverse(name)).status_code == expected, name
     for name in ['accounts:key_unlocked', 'accounts:grant_checked', 'accounts:start_group_key']:
         assert client.post(reverse(name)).status_code == expected, name

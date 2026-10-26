@@ -57,7 +57,7 @@ def test_no_other_page_may_run_webassembly(client_for, client, kind):
         assert WASM not in policy.get('script-src', []), url
 
 
-def test_the_pages_where_an_applicant_sets_up_or_unlocks_a_key_may_run_webassembly(client, django_user_model):
+def test_the_pages_where_a_key_is_set_up_unlocked_or_replaced_may_run_webassembly(client, django_user_model):
     user = django_user_model.objects.create_user('applicant@example.org', 'a long test passphrase')
     make_key(LawyerProfile.objects.create(user=user, bar='Paris'))
     log_in_with_second_factor(client, user)
@@ -68,6 +68,14 @@ def test_the_pages_where_an_applicant_sets_up_or_unlocks_a_key_may_run_webassemb
         policy = directives(response, url)
         assert_strict(policy, url)
         assert policy['script-src'] == ["'self'", WASM], url
+    # A lawyer's only: replacing a key that may have been seen.
+    profile = user.lawyer_profile
+    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
+    profile.save()
+    profile.change_status(LawyerProfile.Status.LAWYER)
+    url = reverse('accounts:key_exposure')
+    response = client.get(url)
+    assert response.status_code == 200 and directives(response, url)['script-src'] == ["'self'", WASM]
 
 
 def test_a_lawyer_url_seen_by_someone_else_gets_the_policy_too(client):
