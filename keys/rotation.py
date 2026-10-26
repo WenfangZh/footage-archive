@@ -89,7 +89,7 @@ def draw(pool):
 # Requests (step 1).
 
 def request(lawyer_profile):
-    """A revocation of `lawyer_profile`, or their report of an exposed key, requests a rotation of
+    """A revocation of `lawyer_profile`, their key reset, or their report of an exposed key, requests a rotation of
     the group key in use; during a rotation, the attempt running is abandoned, since they may
     already hold its new key. Call under the lock."""
     established = GroupKey.objects.filter(status__in=ESTABLISHED).first()
@@ -372,7 +372,7 @@ def abandon(attempt, because):
         raise_alert(Alert.Kind.ROTATOR_TIME, attempt.rotator.user)
     elif because == Because.NO_ONE_ELIGIBLE:
         raise_alert(Alert.Kind.ROTATION_NO_ONE_ELIGIBLE)
-    elif because in (Because.NEW_REQUEST, Because.ROTATOR_SUSPENDED, Because.ROTATOR_KEY_RESET):
+    elif because in (Because.NEW_REQUEST, Because.ROTATOR_SUSPENDED):
         raise_alert(Alert.Kind.ROTATION_ABANDONED, attempt.rotator.user)
     if because not in (Because.STARTED_OVER, Because.NEW_REQUEST):
         start(attempt.rotation)
@@ -411,28 +411,17 @@ def replace(attempt, check, also_excluding=(), now=None):
     return draw_slot(attempt, check.slot, failed_items, also_excluding=also_excluding, now=now)
 
 
-# Suspension (step 4), key resets (§5.6) and starting over (§5.7).
+# Suspension (step 4) and starting over (§5.7).
 
 def suspended(profile):
     """A lawyer just suspended loses every role they hold in the running attempt: a checker's or
     confirmer's slot is drawn again, even if they passed; a rotator still resealing abandons it.
     Call under the lock."""
-    _drop_roles(profile, Because.ROTATOR_SUSPENDED)
-
-
-def key_reset(profile):
-    """A lawyer who just reset their key holds the group key no more: they lose their roles as
-    a suspended lawyer does, rather than holding up the attempt until their time runs out.
-    Call under the lock."""
-    _drop_roles(profile, Because.ROTATOR_KEY_RESET)
-
-
-def _drop_roles(profile, because):
     attempt = running_attempt()
     if attempt is None:
         return
     if attempt.rotator_id == profile.pk and attempt.resealed_at is None:
-        abandon(attempt, because)
+        abandon(attempt, Because.ROTATOR_SUSPENDED)
         return
     for check in attempt.checks.filter(lawyer_profile=profile, replaced_at__isnull=True):
         if not replace(attempt, check):

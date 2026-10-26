@@ -181,9 +181,6 @@ class RotationAttempt(models.Model):
         STARTED_OVER = 'started_over'
         # The rotator was suspended before resealing was done (design §5.5, step 4).
         ROTATOR_SUSPENDED = 'rotator_suspended'
-        # The rotator reset their key before resealing was done, so holds the group key no more
-        # (design §5.6).
-        ROTATOR_KEY_RESET = 'rotator_key_reset'
 
     rotation = models.ForeignKey(Rotation, on_delete=models.PROTECT, related_name='attempts')
     rotator = models.ForeignKey(LawyerProfile, on_delete=models.PROTECT, related_name='+')

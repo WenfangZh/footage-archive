@@ -18,10 +18,13 @@ from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from accounts.models import LawyerProfile
 from accounts.roles import admin_required, key_holder_required, lawyer_required
+from alerts.checks import failed_login
+from clips import rate_limits
 
 from . import grants, recovery, rotation
 from .forms import (
@@ -143,17 +146,44 @@ def recover(request):
     }, status=400 if form.errors else 200)
 
 
+def password_checked(request, form):
+    """Whether `form`, which asks for the login password again, is valid. Each attempt counts as
+    a failed login until it succeeds, under the login's own limits and alert (accounts.views),
+    so that a session left open cannot be used to guess the password. Raises RateLimited when
+    over a limit, before the password is checked."""
+    email = request.user.email
+    counted = [(rate_limits.FAILED_LOGINS, None), (rate_limits.FAILED_LOGINS_FOR_ACCOUNT, email)]
+    if any(rate_limits.count(request, action, account=account) > rate_limits.limit(action) for action, account in counted):
+        raise RateLimited
+    valid = form.is_valid()
+    if valid or not form.has_error('password'):
+        for action, account in counted:
+            rate_limits.uncount(request, action, account=account)
+    else:
+        failed_login(request, email)
+    return valid
+
+
+class RateLimited(Exception):
+    pass
+
+
 @lawyer_required
+@sensitive_post_parameters('password')
 @require_http_methods(['GET', 'POST'])
 def reset(request):
-    """Both the key passphrase and the recovery key lost (design §5.6): the key is retired, and
-    the lawyer sets up a new one."""
+    """Both the key passphrase and the recovery key lost (design §5.6): the key is retired, a
+    rotation is requested, and the lawyer sets up a new key."""
     profile = request.user.lawyer_profile
     key = current_key(profile)
     if key is None:
         return redirect('accounts:key_setup')
-    form = KeyResetForm(request.POST if request.method == 'POST' else None, initial={'key': key.pk})
-    if request.method == 'POST' and form.is_valid():
+    form = KeyResetForm(request.user, request.POST if request.method == 'POST' else None, initial={'key': key.pk})
+    try:
+        confirmed = request.method == 'POST' and password_checked(request, form)
+    except RateLimited:
+        return rate_limits.too_many(request, 'accounts/login_limited.html')
+    if confirmed:
         try:
             recovery.reset(profile, form.cleaned_data['key'])
         except recovery.Refused:

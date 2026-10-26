@@ -57,6 +57,21 @@ class KeyResetForm(forms.Form):
     # The key the page offered to reset: one set up since, in another tab, is not.
     key = forms.IntegerField(widget=forms.HiddenInput)
     lost_both = forms.BooleanField(label=_('I have lost both my key passphrase and my recovery key.'))
+    # Asked again, since a reset cannot be undone: a session left open is not enough.
+    password = forms.CharField(
+        label=_('Your login password:'), strip=False,
+        widget=forms.PasswordInput(attrs={'autocomplete': 'current-password'}),
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_password(self):
+        # Django's own check, as at login.
+        if not self.user.check_password(self.cleaned_data['password']):
+            raise forms.ValidationError(_('That is not your login password.'))
+        return ''
 
 
 class KeyConfirmationForm(forms.Form):

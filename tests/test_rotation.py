@@ -358,28 +358,27 @@ def test_a_suspended_rotator_still_resealing_abandons_the_attempt(world):
     assert (running.outcome, running.abandoned_because) == ('abandoned', Because.ROTATOR_SUSPENDED)
 
 
-def test_a_rotator_who_resets_their_key_abandons_the_attempt(world):
-    """They hold the group key no more: the attempt does not wait for their time to run out, and
-    the next is drawn among the others (design §5.5, §5.6)."""
-    request_rotation(world)
-    running = attempt()
-    make_new_key(running)
-    rotator = running.rotator
-    recovery.reset(rotator, grants.current_key(rotator).pk)
-    running.refresh_from_db()
-    assert (running.outcome, running.abandoned_because) == ('abandoned', Because.ROTATOR_KEY_RESET)
-    assert Alert.objects.filter(kind=Alert.Kind.ROTATION_ABANDONED).exists()
-    following = attempt()
-    assert following.pk != running.pk and following.rotator != rotator
+def test_a_key_reset_requests_a_rotation(world):
+    """Lost paper may be found: with an older copy of the database, the recovery key opens the
+    key, its grant and the group key (design §5.6)."""
+    profile = world['lawyers'][0]
+    recovery.reset(profile, grants.current_key(profile).pk)
+    world['key'].refresh_from_db()
+    assert world['key'].status == KeyStatus.ROTATION_REQUESTED
+    assert AuditEntry.objects.filter(action=Action.ROTATION_REQUEST, lawyer_profile=profile).exists()
+    assert attempt().rotator != profile
 
 
-def test_a_checker_who_resets_their_key_loses_their_slot(world):
+@pytest.mark.parametrize('role', ['rotator', 'checker'])
+def test_a_reset_during_a_rotation_starts_a_new_attempt_without_them(world, role):
+    """As for a revocation: they may hold the new key, or a role they can no longer carry out."""
     running = ready_for_checks(world)
-    checker = slot_holder(running, Slot.FIRST)
-    recovery.reset(checker, grants.current_key(checker).pk)
-    assert slot_holder(running, Slot.FIRST) != checker
+    profile = running.rotator if role == 'rotator' else slot_holder(running, Slot.FIRST)
+    recovery.reset(profile, grants.current_key(profile).pk)
     running.refresh_from_db()
-    assert running.ended_at is None
+    assert (running.outcome, running.abandoned_because) == ('abandoned', Because.NEW_REQUEST)
+    following = attempt()
+    assert following.pk != running.pk and following.rotator != profile
 
 
 def test_a_revocation_during_a_rotation_abandons_the_running_attempt(world):

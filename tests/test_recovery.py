@@ -11,15 +11,17 @@ import re
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
+from cases import labels
+from clips import rate_limits
 from keys import grants
 from keys.models import ENCRYPTED_PRIVATE_KEY_BYTES, SALT_BYTES, GroupKey, KeyGrant, LawyerKey
-from cases import labels
 from tests.conftest import log_in_with_second_factor, make_case, make_key
 
 pytestmark = pytest.mark.django_db
@@ -28,12 +30,19 @@ User = get_user_model()
 Status = LawyerProfile.Status
 
 
+def cache_count(request, action, account=None):
+    return cache.get(rate_limits.cache_key(request, action, account), 0)
+
+
 def b64(value):
     return base64.b64encode(bytes(value)).decode()
 
 
+PASSWORD = 'a long test passphrase'
+
+
 def lawyer(email='lawyer@example.org', confirmed=True):
-    profile = LawyerProfile.objects.create(user=User.objects.create_user(email, 'a long test passphrase'), bar='Paris')
+    profile = LawyerProfile.objects.create(user=User.objects.create_user(email, PASSWORD), bar='Paris')
     profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
     profile.save()
     profile.change_status(Status.LAWYER)
@@ -130,8 +139,8 @@ def test_a_key_reset_retires_the_key_and_its_grants():
     key = grants.current_key(profile)
     case = make_case(profile, 'Filmed near the station')
     client = client_for(profile)
-    assert client.post(reverse('accounts:key_reset'), {'key': key.pk}).status_code == 400
-    response = client.post(reverse('accounts:key_reset'), {'key': key.pk, 'lost_both': 'on'})
+    assert client.post(reverse('accounts:key_reset'), {'key': key.pk, 'password': PASSWORD}).status_code == 400
+    response = client.post(reverse('accounts:key_reset'), {'key': key.pk, 'lost_both': 'on', 'password': PASSWORD})
     assert response.url == reverse('accounts:key_setup')
     key.refresh_from_db()
     # What was sealed only to it is lost (design §5.6).
@@ -144,14 +153,40 @@ def test_a_key_reset_retires_the_key_and_its_grants():
     assert entry.lawyer_profile == profile and entry.lawyer_key == key and entry.admin is None
 
 
+def test_a_reset_needs_the_login_password_and_counts_wrong_ones_as_failed_logins(settings):
+    """A session left open is not enough, nor a way to guess the password (design §5.6)."""
+    settings.RATE_LIMIT_FAILED_LOGINS_FOR_ACCOUNT = 3
+    profile = lawyer()
+    key = grants.current_key(profile)
+    client = client_for(profile)
+    wrong = {'key': key.pk, 'lost_both': 'on', 'password': 'not the password'}
+    for _ in range(3):
+        assert client.post(reverse('accounts:key_reset'), wrong).status_code == 400
+    # Over the login's limit: refused before the password is checked, even the right one.
+    right = wrong | {'password': PASSWORD}
+    assert client.post(reverse('accounts:key_reset'), right).status_code == 429
+    key.refresh_from_db()
+    assert key.retired_at is None
+
+
+def test_a_right_password_takes_back_its_count():
+    """Each attempt is counted in advance, as at login: one that succeeds is taken back."""
+    profile = lawyer()
+    client = client_for(profile)
+    page = client.post(reverse('accounts:key_reset'), {'key': grants.current_key(profile).pk, 'password': PASSWORD})
+    # The checkbox is missing, but the password was right: not a failed login.
+    assert page.status_code == 400 and 'password' not in page.context['form'].errors
+    assert cache_count(page.wsgi_request, rate_limits.FAILED_LOGINS) == 0
+
+
 def test_a_reset_page_shown_before_another_reset_resets_nothing():
     """Open in two tabs: reset in one, a new key set up; the other's form must not reset it."""
     profile = lawyer()
     client = client_for(profile)
     old = grants.current_key(profile)
-    client.post(reverse('accounts:key_reset'), {'key': old.pk, 'lost_both': 'on'})
+    client.post(reverse('accounts:key_reset'), {'key': old.pk, 'lost_both': 'on', 'password': PASSWORD})
     new = make_key(profile)
-    response = client.post(reverse('accounts:key_reset'), {'key': old.pk, 'lost_both': 'on'})
+    response = client.post(reverse('accounts:key_reset'), {'key': old.pk, 'lost_both': 'on', 'password': PASSWORD})
     assert response.url == reverse('accounts:key')
     new.refresh_from_db()
     assert new.retired_at is None and AuditEntry.objects.filter(action=Action.KEY_RESET).count() == 1
@@ -186,7 +221,7 @@ def test_after_a_reset_the_new_key_waits_for_the_admin_then_a_grant(admin_client
     group_key = GroupKey.objects.create(public_key=os.urandom(32))
     give(group_key, profile, colleague)
     client = client_for(profile)
-    client.post(reverse('accounts:key_reset'), {'key': grants.current_key(profile).pk, 'lost_both': 'on'})
+    client.post(reverse('accounts:key_reset'), {'key': grants.current_key(profile).pk, 'lost_both': 'on', 'password': PASSWORD})
     new = make_key(profile)
     assert grants.waiting() == []
     assert reverse('manage:confirm_key', args=[profile.pk]) in admin_client.get(reverse('manage:home')).content.decode()

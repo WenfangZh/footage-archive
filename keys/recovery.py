@@ -39,10 +39,12 @@ def replace_passphrase(profile, public_key, passphrase_salt, private_key_under_p
 
 def reset(profile, key_id):
     """A lawyer who lost both their key passphrase and their recovery key: their key `key_id` is
-    retired and its grants deleted, and they lose any role in a running rotation. They set up a
-    new key, which the admin confirms and a lawyer grants the group key to, as for a newcomer.
-    Refused if `key_id` is no longer their current key: a page shown before a reset in another
-    tab must not reset the key set up since."""
+    retired and its grants deleted, and a rotation is requested, as for a revocation: lost paper
+    may be found, and with any older copy of the database it opens the key, its grant and the
+    group key (design §5.6). A running attempt is abandoned, since they may hold its new key or
+    a role in it. They set up a new key, which the admin confirms and a lawyer grants the group
+    key to, as for a newcomer. Refused if `key_id` is no longer their current key: a page shown
+    before a reset in another tab must not reset the key set up since."""
     with transaction.atomic():
         grants.lock()
         profile = LawyerProfile.objects.select_for_update().get(pk=profile.pk)
@@ -51,8 +53,8 @@ def reset(profile, key_id):
             raise Refused
         KeyGrant.objects.filter(lawyer_key=key).delete()
         key.retire()
-        rotation.key_reset(profile)
         record(Action.KEY_RESET, profile, lawyer_key=key)
+        rotation.request(profile)
 
 
 def unconfirmed_key(profile_id):
