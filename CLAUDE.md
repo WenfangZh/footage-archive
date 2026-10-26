@@ -59,7 +59,7 @@ Taken from the principles of pstack's poteto-mode, without its process (no deleg
 - The audit log is append-only: no code path updates or deletes its entries.
 - Never persist IP addresses, user agents or fields supplied by uploaders or code holders in logs. The audit log holds keys and identifiers, not such text.
 - No location is stored more precisely than the grid; precise GPS is discarded at ingest (ADR 0002).
-- Upload codes are stored only as a keyed hash, and each covers exactly one clip (ADR 0001). The card label is never stored on the server.
+- Upload codes are stored only as a keyed hash, and each covers exactly one clip (ADR 0001). The one other value stored that comes from a code is its clip's code holder public key (ADR 0001, addendum of 2026-10-25). The card label is never stored on the server.
 - The metadata time is never modified.
 - No face recognition or other automated identification of people. The only exception: identifiers that can only belong to police or other public officials acting as such (an officer's RIO number, a police armband) may be read automatically, for lawyers only. Anything a civilian could also carry or wear is never identified automatically (SPEC.md §4).
 - Configuration comes from environment variables; `.env` is gitignored.

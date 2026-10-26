@@ -10,3 +10,7 @@ Each upload code covers exactly one clip, and codes cannot be linked to each oth
 ## Addendum (2026-10-17): codes have 140 random bits
 
 Upload codes were built with 140 random bits, not 128: 28 characters in Crockford's base32, at 5 bits each (SPEC.md §5, `clips/upload_codes.py`). The spec asked for at least 128 bits when this ADR was written. Collisions are still not a concern.
+
+## Addendum (2026-10-25): a code also gives its clip's code holder key
+
+Since M5, the server derives a key pair from each upload code (BLAKE2b with the label `fa-codeholder-v1`) and stores its public half on the clip, so that code holders can read the clip's encrypted context, contact details and messages without an account (docs/m5-encryption-design.md §7.2). The keyed hash stays the only way a code is looked up. The public key is a second check of the code that needs no server secret: a copy of the database can test a guessed code against it, which 140 random bits make harmless. Each public key comes from one clip's code alone, so it links no clips together.
