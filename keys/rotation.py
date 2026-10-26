@@ -89,7 +89,7 @@ def draw(pool):
 # Requests (step 1).
 
 def request(lawyer_profile):
-    """A revocation of `lawyer_profile`, or their report of an exposed key, requests a rotation of
+    """A revocation of `lawyer_profile`, their key reset, or their report of an exposed key, requests a rotation of
     the group key in use; during a rotation, the attempt running is abandoned, since they may
     already hold its new key. Call under the lock."""
     established = GroupKey.objects.filter(status__in=ESTABLISHED).first()

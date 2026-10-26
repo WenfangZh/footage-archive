@@ -44,6 +44,44 @@ class KeySetupForm(forms.Form):
     private_key_under_recovery_key = Base64BytesField(ENCRYPTED_PRIVATE_KEY_BYTES)
 
 
+class NewPassphraseForm(forms.Form):
+    """The private key encrypted under a new key passphrase, which the browser set after opening
+    the key with the recovery key (design §5.6); the public key names which key it is for."""
+
+    public_key = Base64BytesField(PUBLIC_KEY_BYTES)
+    passphrase_salt = Base64BytesField(SALT_BYTES)
+    private_key_under_passphrase = Base64BytesField(ENCRYPTED_PRIVATE_KEY_BYTES)
+
+
+class KeyResetForm(forms.Form):
+    # The key the page offered to reset: one set up since, in another tab, is not.
+    key = forms.IntegerField(widget=forms.HiddenInput)
+    lost_both = forms.BooleanField(label=_('I have lost both my key passphrase and my recovery key.'))
+    # Asked again, since a reset cannot be undone: a session left open is not enough.
+    password = forms.CharField(
+        label=_('Your login password:'), strip=False,
+        widget=forms.PasswordInput(attrs={'autocomplete': 'current-password'}),
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_password(self):
+        # Django's own check, as at login.
+        if not self.user.check_password(self.cleaned_data['password']):
+            raise forms.ValidationError(_('That is not your login password.'))
+        return ''
+
+
+class KeyConfirmationForm(forms.Form):
+    # The key whose safety number the page showed: one made since was not the one compared.
+    key = forms.IntegerField(widget=forms.HiddenInput)
+    key_confirmed = forms.BooleanField(
+        label=_("I compared this safety number with them, through the bar directory's contact details."),
+    )
+
+
 # X25519 public keys are numbers below 2**255 - 19, written in 32 bytes, little-endian.
 CURVE_PRIME = 2 ** 255 - 19
 

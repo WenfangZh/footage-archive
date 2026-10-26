@@ -53,6 +53,7 @@ manage_patterns = [
     path('lawyers/<int:profile_id>/suspend/', access.suspend, name='suspend'),
     path('lawyers/<int:profile_id>/reinstate/', access.reinstate, name='reinstate'),
     path('lawyers/<int:profile_id>/revoke/', access.revoke, name='revoke'),
+    path('lawyers/<int:profile_id>/key/', key_views.confirm_key, name='confirm_key'),
     path('alerts/<int:alert_id>/seen/', alert_views.mark_seen, name='alert_seen'),
     path('lawyers/<int:profile_id>/alert-limit/', alert_views.raise_limit, name='raise_limit'),
     path('cases/', case_approval.case_requests, name='case_requests'),
@@ -70,6 +71,8 @@ urlpatterns = [
     # tests/test_personal_keys.py checks who reaches them.
     path('account/key/', key_views.key_page, name='key'),
     path('account/key/setup/', key_views.setup, name='key_setup'),
+    path('account/key/recover/', key_views.recover, name='key_recover'),
+    path('account/key/reset/', key_views.reset, name='key_reset'),
     path('account/key/encrypted.json', key_views.encrypted_key, name='encrypted_key'),
     path('account/key/unlocked/', key_views.unlocked, name='key_unlocked'),
     path('account/key/grants.json', key_views.own_grants, name='own_grants'),

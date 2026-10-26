@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{% translate "Set a new key passphrase" %}{% endblock %}
+
+{% block head %}
+  <script src="{% static 'core/vendor/libsodium/libsodium-sumo.js' %}" defer></script>
+  <script src="{% static 'core/vendor/libsodium/libsodium-wrappers.js' %}" defer></script>
+  <script src="{% static 'keys/keys.js' %}" defer></script>
+  <script src="{% static 'keys/recover.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Set a new key passphrase" %}</h1>
+  <p>{% translate "If you have forgotten your key passphrase, your recovery key opens your key, here in your browser, and you get a new key passphrase. Your key, its safety number and your access stay the same; your recovery key stays valid." %}</p>
+  <noscript><p>{% translate "Setting a new key passphrase needs JavaScript." %}</p></noscript>
+
+  {# The recovery key field has no name: it is never sent (keys/static/keys/recover.js). #}
+  <form id="recover" data-public-key="{{ unlock_public_key }}" data-login-id="{{ login_id }}"
+    data-recovery-copy="{{ recovery_copy }}" hidden>
+    <p><label for="recovery-key">{% translate "Your recovery key:" %}</label>
+      <input id="recovery-key" autocomplete="off" required></p>
+    <button type="submit">{% translate "Open my key" %}</button>
+    <p id="wrong-recovery-key" role="alert" hidden>{% translate "That recovery key does not open your key." %}</p>
+    <p id="key-mismatch" role="alert" hidden>{% translate "Your key does not match the one the archive shows for you. Do not go on: tell the admin, by phone." %}</p>
+  </form>
+
+  <form id="new-passphrase" method="post" action="{% url 'accounts:key_recover' %}" data-opslimit="{{ opslimit }}" data-memlimit="{{ memlimit }}" hidden>
+    {% csrf_token %}
+    {% for field in form %}{{ field.as_hidden }}{% endfor %}
+    {% if form.errors %}<p role="alert">{% translate "The new key passphrase could not be saved. Please try again." %}</p>{% endif %}
+    <h2>{% translate "Your new key passphrase" %}</h2>
+    <p>{% translate "You type it to unlock your key, once in each browser tab. It is not your login password. Keep it where you can type it: in your memory, on paper or in a password manager." %}</p>
+    <p><output id="passphrase"></output></p>
+    <p><strong>{% translate "Save it now. It is shown only once, and no one, not even the admin, can recover it for you." %}</strong></p>
+    <p><label for="typed-passphrase">{% translate "Type your new key passphrase again:" %}</label>
+      <input id="typed-passphrase" autocomplete="off" required></p>
+    <p id="typed-mismatch" role="alert" hidden>{% translate "What you typed does not match. Compare it with what is shown above." %}</p>
+    <button type="submit">{% translate "Save my new key passphrase" %}</button>
+  </form>
+{% endblock %}

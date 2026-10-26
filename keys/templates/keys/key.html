@@ -13,20 +13,21 @@
 
 {% block content %}
   <h1>{% translate "Your personal key" %}</h1>
-  {% if not key %}
-    <p>{% translate "Your account has no personal key. Keys are set up before admission: ask the admin what to do." %}</p>
-  {% else %}
-    {% include "keys/unlock.html" %}
+  {% include "keys/unlock.html" %}
 
     <div id="unlocked" hidden>
       <p>{% translate "Your key is unlocked in this browser tab until you log out." %}</p>
       <p>{% translate "Your safety number:" %} <output id="safety-number"></output></p>
-      {% if not key.admin_confirmed_at %}
+      {% if not key.admin_confirmed_at and lawyer %}
+        <p>{% translate "The admin will compare it with you before a lawyer can give you the group key again. Read it to them when they contact you, and only then." %}</p>
+      {% elif not key.admin_confirmed_at %}
         <p>{% translate "The admin will compare it with you before admitting you. Read it to them when they contact you, and only then." %}</p>
       {% else %}
         <p id="holds-group-key" hidden>{% translate "You hold the group key: you can read what the archive holds for lawyers." %}</p>
         <p id="no-group-key" hidden>{% translate "You do not hold the group key yet. A lawyer who holds it will compare your safety number with you, by phone or in person, and then give it to you." %}</p>
       {% endif %}
     </div>
+  {% if lawyer %}
+    <p><a href="{% url 'accounts:key_reset' %}">{% translate "Lost both your key passphrase and your recovery key?" %}</a></p>
   {% endif %}
 {% endblock %}

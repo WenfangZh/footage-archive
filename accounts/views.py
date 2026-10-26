@@ -112,4 +112,10 @@ def manage_home(request):
         status__in=[LawyerProfile.Status.LAWYER, LawyerProfile.Status.SUSPENDED],
     ).select_related('user').order_by('user__last_name', 'user__first_name')
     alerts = Alert.objects.filter(seen_at__isnull=True).select_related('account').order_by('-raised_at')
-    return render(request, 'accounts/manage_home.html', {'alerts': alerts, 'applicants': applicants, 'lawyers': lawyers})
+    # Lawyers who set up a new key after a key reset, waiting for the admin to confirm it.
+    unconfirmed_keys = set(LawyerKey.objects.current().filter(
+        admin_confirmed_at__isnull=True, lawyer_profile__status=LawyerProfile.Status.LAWYER,
+    ).values_list('lawyer_profile_id', flat=True))
+    return render(request, 'accounts/manage_home.html', {
+        'alerts': alerts, 'applicants': applicants, 'lawyers': lawyers, 'unconfirmed_keys': unconfirmed_keys,
+    })

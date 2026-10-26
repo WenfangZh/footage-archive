@@ -60,6 +60,7 @@
           </form>
           {% endif %}
           <a href="{% url 'manage:revoke' profile.pk %}">{% translate "Revoke access" %}</a>
+          {% if profile.pk in unconfirmed_keys %}<a href="{% url 'manage:confirm_key' profile.pk %}">{% translate "Confirm their new key" %}</a>{% endif %}
           {% if profile.status == 'lawyer' %}<a href="{% url 'manage:raise_limit' profile.pk %}">{% translate "Raise an alert limit" %}</a>{% endif %}
         </li>
       {% endfor %}

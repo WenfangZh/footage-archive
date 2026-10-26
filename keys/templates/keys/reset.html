@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Reset your key" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Reset your key" %}</h1>
+  <p>{% translate "Only if you have lost both your key passphrase and your recovery key. With your recovery key, set a new key passphrase instead:" %}
+    <a href="{% url 'accounts:key_recover' %}">{% translate "I have my recovery key" %}</a></p>
+  <p>{% translate "Your key stops working at once, and cannot be brought back. What was sealed only to it is lost: your case labels will show as their numbers. You then set up a new key; the admin compares its safety number with you, and a lawyer who holds the group key gives it to you again." %}</p>
+  {% if last_holder %}
+    <p role="alert"><strong>{% translate "You are the last lawyer holding the group key. Once your key is reset, no one can read what the vault holds now, and the archive starts over with a new group key." %}</strong></p>
+  {% endif %}
+  <form method="post" action="{% url 'accounts:key_reset' %}">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <button type="submit">{% translate "Reset my key" %}</button>
+  </form>
+{% endblock %}

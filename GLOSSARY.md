@@ -384,6 +384,12 @@ _French_: clé de récupération
 _Avoid_: Recovery code (a single-use code for logging in), backup key
 _Avoid in French_: clé de secours, too close to code de secours
 
+**Key reset**:
+Retiring a lawyer's personal key when they have lost both its key passphrase and its recovery key, started from their own account. They then set up a new key, which the admin confirms and a lawyer grants the group key to, as for a newcomer; what was sealed only to the old key, such as case labels, is lost.
+_French_: réinitialisation de la clé
+_Avoid_: Recovery (which keeps the key), rotation (the group key's)
+_Avoid in French_: renouvellement (the group key's rotation)
+
 **Safety number**:
 A short series of digits computed from a personal key, which two people compare by phone or in person to check that the key the archive shows is the one the lawyer made.
 _French_: numéro de sécurité

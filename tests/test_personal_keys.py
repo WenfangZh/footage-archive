@@ -139,7 +139,7 @@ def test_nobody_but_an_applicant_or_lawyer_reaches_the_key_pages(kind):
         make_key(profile)
         log_in_with_second_factor(client, profile.user)
     expected = 302 if kind == 'logged out' else 403  # To the login page, or refused.
-    for name in ['accounts:key', 'accounts:key_setup', 'accounts:encrypted_key', 'accounts:own_grants']:
+    for name in ['accounts:key', 'accounts:key_setup', 'accounts:key_recover', 'accounts:key_reset', 'accounts:encrypted_key', 'accounts:own_grants']:
         assert client.get(reverse(name)).status_code == expected, name
     for name in ['accounts:key_unlocked', 'accounts:grant_checked', 'accounts:start_group_key']:
         assert client.post(reverse(name)).status_code == expected, name
@@ -148,16 +148,26 @@ def test_nobody_but_an_applicant_or_lawyer_reaches_the_key_pages(kind):
     assert LawyerKey.objects.count() == (0 if kind in ('logged out', 'admin', 'neither') else 1)
 
 
-def test_a_lawyer_cannot_set_up_or_replace_a_key_outside_a_key_reset():
+def test_a_lawyer_without_a_key_sets_one_up_which_starts_unconfirmed():
+    """After a key reset (design §5.6), or admitted before keys existed: the admin confirms the
+    new key before a lawyer can grant the group key to it."""
     lawyer = person(Status.LAWYER)
     client = log_in_with_second_factor(Client(), lawyer.user)
-    assert client.post(reverse('accounts:key_setup'), as_form(sent_key())).status_code == 403
-    assert not LawyerKey.objects.exists()
-    # A lawyer admitted before keys existed is told so, and has nothing to unlock.
-    page = client.get(reverse('accounts:key'))
-    assert page.status_code == 200 and page.context['key'] is None
-    assert 'id="unlock"' not in page.content.decode()
-    assert client.get(reverse('accounts:encrypted_key')).status_code == 404
+    assert client.get(reverse('accounts:key')).url == reverse('accounts:key_setup')
+    assert client.post(reverse('accounts:key_setup'), as_form(sent_key())).status_code == 302
+    key = LawyerKey.objects.get(lawyer_profile=lawyer)
+    assert key.admin_confirmed_at is None and key.retired_at is None
+
+
+def test_a_lawyer_cannot_replace_a_confirmed_key_outside_a_key_reset():
+    lawyer = person(Status.LAWYER)
+    key = make_key(lawyer)
+    key.admin_confirmed_at = timezone.now()
+    key.save()
+    client = log_in_with_second_factor(Client(), lawyer.user)
+    assert client.get(reverse('accounts:key_setup')).url == reverse('accounts:key')
+    assert client.post(reverse('accounts:key_setup'), as_form(sent_key())).url == reverse('accounts:key')
+    assert list(LawyerKey.objects.current()) == [key]
 
 
 def test_the_setup_page_sends_only_the_public_key_and_the_encrypted_copies(applicant_client):

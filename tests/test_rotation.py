@@ -21,7 +21,7 @@ from alerts.models import Alert
 from audit.models import Action, AuditEntry
 from clips import vault
 from clips.models import Clip, SealedKey
-from keys import grants, rotation
+from keys import grants, recovery, rotation
 from keys.models import GroupKey, KeyGrant, Rotation, RotationAttempt, RotationCheck
 from tests.conftest import log_in_with_second_factor, make_key, with_code_holder_key
 
@@ -356,6 +356,29 @@ def test_a_suspended_rotator_still_resealing_abandons_the_attempt(world):
         rotation.suspended(running.rotator)
     running.refresh_from_db()
     assert (running.outcome, running.abandoned_because) == ('abandoned', Because.ROTATOR_SUSPENDED)
+
+
+def test_a_key_reset_requests_a_rotation(world):
+    """Lost paper may be found: with an older copy of the database, the recovery key opens the
+    key, its grant and the group key (design §5.6)."""
+    profile = world['lawyers'][0]
+    recovery.reset(profile, grants.current_key(profile).pk)
+    world['key'].refresh_from_db()
+    assert world['key'].status == KeyStatus.ROTATION_REQUESTED
+    assert AuditEntry.objects.filter(action=Action.ROTATION_REQUEST, lawyer_profile=profile).exists()
+    assert attempt().rotator != profile
+
+
+@pytest.mark.parametrize('role', ['rotator', 'checker'])
+def test_a_reset_during_a_rotation_starts_a_new_attempt_without_them(world, role):
+    """As for a revocation: they may hold the new key, or a role they can no longer carry out."""
+    running = ready_for_checks(world)
+    profile = running.rotator if role == 'rotator' else slot_holder(running, Slot.FIRST)
+    recovery.reset(profile, grants.current_key(profile).pk)
+    running.refresh_from_db()
+    assert (running.outcome, running.abandoned_because) == ('abandoned', Because.NEW_REQUEST)
+    following = attempt()
+    assert following.pk != running.pk and following.rotator != profile
 
 
 def test_a_revocation_during_a_rotation_abandons_the_running_attempt(world):

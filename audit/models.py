@@ -53,6 +53,12 @@ class Action(models.TextChoices):
     GROUP_KEY_CREATION = 'group_key_creation', pgettext_lazy('audit log action', 'Making the first group key')
     STARTING_OVER = 'starting_over', pgettext_lazy('audit log action', 'Starting over with a new group key')
     KEY_GRANT = 'key_grant', pgettext_lazy('audit log action', 'Key grant')
+    # Recovery (docs/m5-encryption-design.md §5.6).
+    PASSPHRASE_REPLACEMENT = 'passphrase_replacement', pgettext_lazy(
+        'audit log action', 'New key passphrase, set with the recovery key',
+    )
+    KEY_RESET = 'key_reset', pgettext_lazy('audit log action', 'Key reset')
+    KEY_CONFIRMATION = 'key_confirmation', pgettext_lazy('audit log action', "Confirmation of a lawyer's new key")
     # Rotations of the group key (docs/m5-encryption-design.md §5.5).
     ROTATION_REQUEST = 'rotation_request', pgettext_lazy('audit log action', 'Request for a rotation of the group key')
     ROTATION_ATTEMPT = 'rotation_attempt', pgettext_lazy('audit log action', 'Drawing of a rotator')
@@ -68,6 +74,7 @@ class Action(models.TextChoices):
 ADMIN_ACTIONS = [
     Action.INVITATION, Action.DECLINING, Action.ADMISSION, Action.SUSPENSION,
     Action.REINSTATEMENT, Action.REVOCATION, Action.CASE_APPROVAL, Action.CASE_REFUSAL, Action.ALERT_LIMIT_RAISE,
+    Action.KEY_CONFIRMATION,
 ]
 # The admin's decisions on a lawyer's case.
 ADMIN_CASE_ACTIONS = [Action.CASE_APPROVAL, Action.CASE_REFUSAL]
@@ -81,7 +88,7 @@ COUNT_ACTIONS = [Action.SEARCH]
 # Entries about the archive itself, which name no applicant or lawyer.
 ARCHIVE_ACTIONS = [Action.LIMITS_CHANGE]
 # Entries that name the personal key the action was about.
-KEY_ACTIONS = [Action.KEY_GRANT]
+KEY_ACTIONS = [Action.KEY_GRANT, Action.PASSPHRASE_REPLACEMENT, Action.KEY_RESET, Action.KEY_CONFIRMATION]
 # Entries about a rotation, and about one of its attempts. The lawyer named is the one whose
 # revocation or report requested it, the rotator, or the lawyer who checked.
 ROTATION_ACTIONS = [Action.ROTATION_REQUEST]
