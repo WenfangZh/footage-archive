@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 11:20+0100\n"
+"POT-Creation-Date: 2026-10-26 11:38+0100\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -46,7 +46,7 @@ msgstr ""
 msgid "A trusted defence organisation or an admitted lawyer."
 msgstr "Une organisation de défense de confiance, ou un·e avocat·e admis·e."
 
-#: accounts/admission.py:44 keys/forms.py:87
+#: accounts/admission.py:44 keys/forms.py:95
 msgid ""
 "I compared this safety number with them, through the bar directory's contact "
 "details."
@@ -62,7 +62,7 @@ msgstr ""
 "La personne pourra être admise une fois son mot de passe, sa double "
 "authentification et sa clé personnelle mis en place."
 
-#: accounts/admission.py:103 keys/views.py:265
+#: accounts/admission.py:103 keys/views.py:273
 msgid ""
 "They have made a new key since this page was shown. Compare its safety "
 "number with them again."
@@ -382,7 +382,7 @@ msgid "Too many attempts"
 msgstr "Trop de tentatives"
 
 #: accounts/templates/accounts/login_limited.html:9
-#: keys/templates/keys/exposure.html:43
+#: keys/templates/keys/exposure.html:44
 msgid "There have been too many attempts to log in. Try again in an hour."
 msgstr "Il y a eu trop de tentatives de connexion. Réessayez dans une heure."
 
@@ -2026,25 +2026,25 @@ msgstr "Français"
 msgid "English"
 msgstr "Anglais"
 
-#: keys/forms.py:34 keys/forms.py:36 keys/forms.py:103 keys/forms.py:107
-#: keys/forms.py:126 keys/forms.py:138 keys/forms.py:165 keys/forms.py:190
-#: keys/forms.py:194
+#: keys/forms.py:34 keys/forms.py:36 keys/forms.py:51 keys/forms.py:111
+#: keys/forms.py:115 keys/forms.py:134 keys/forms.py:146 keys/forms.py:173
+#: keys/forms.py:198 keys/forms.py:202
 msgid "The key could not be read."
 msgstr "La clé n'a pas pu être lue."
 
-#: keys/forms.py:61 keys/templates/keys/exposure.html:39
+#: keys/forms.py:69 keys/templates/keys/exposure.html:39
 msgid "Your login password:"
 msgstr "Votre mot de passe de connexion :"
 
-#: keys/forms.py:72 keys/templates/keys/exposure.html:42
+#: keys/forms.py:80 keys/templates/keys/exposure.html:42
 msgid "That is not your login password."
 msgstr "Ce n'est pas votre mot de passe de connexion."
 
-#: keys/forms.py:79
+#: keys/forms.py:87
 msgid "I have lost both my key passphrase and my recovery key."
 msgstr "J'ai perdu à la fois ma phrase secrète et ma clé de récupération."
 
-#: keys/forms.py:145
+#: keys/forms.py:153
 msgid "I compared this safety number with them, by phone or in person."
 msgstr ""
 "J'ai comparé ce numéro de sécurité avec la personne, par téléphone ou de "
@@ -2114,7 +2114,7 @@ msgstr ""
 "votre nouvelle clé attend l'administrateur·rice ou un·e avocat·e, il n'y a "
 "rien de plus à faire ici."
 
-#: keys/templates/keys/exposure.html:20
+#: keys/templates/keys/exposure.html:20 keys/templates/keys/exposure.html:43
 msgid ""
 "You are the last lawyer, admitted and not suspended, who holds the group "
 "key: no one could give it to your new key. Give the group key to another "
@@ -2180,7 +2180,7 @@ msgstr ""
 "Ce que vous avez tapé ne correspond pas. Comparez-le avec ce qui est affiché "
 "ci-dessus."
 
-#: keys/templates/keys/exposure.html:44
+#: keys/templates/keys/exposure.html:45
 msgid ""
 "Your key could not be replaced. Reload the page; if it happens again, tell "
 "the admin."
@@ -2188,7 +2188,7 @@ msgstr ""
 "Votre clé n'a pas pu être remplacée. Rechargez la page ; si cela se "
 "reproduit, prévenez l'administrateur·rice."
 
-#: keys/templates/keys/exposure.html:45
+#: keys/templates/keys/exposure.html:46
 msgid "Replace my key"
 msgstr "Remplacer ma clé"
 
@@ -2533,18 +2533,18 @@ msgstr "parrainage : %(vouched_by)s"
 msgid "No one is waiting for the group key."
 msgstr "Personne n'attend la clé commune."
 
-#: keys/views.py:63
+#: keys/views.py:64
 msgid "Your key is set up. Unlock it once to check your key passphrase."
 msgstr ""
 "Votre clé est créée. Déverrouillez-la une fois pour vérifier votre phrase "
 "secrète."
 
-#: keys/views.py:138 keys/views.py:190
+#: keys/views.py:139 keys/views.py:191
 msgid "Your key changed while this page was open. Please try again."
 msgstr ""
 "Votre clé a changé pendant que cette page était ouverte. Veuillez réessayer."
 
-#: keys/views.py:140
+#: keys/views.py:141
 msgid ""
 "Your new key passphrase is saved. Your key and its safety number stay the "
 "same."
@@ -2552,11 +2552,11 @@ msgstr ""
 "Votre nouvelle phrase secrète est enregistrée. Votre clé et son numéro de "
 "sécurité restent les mêmes."
 
-#: keys/views.py:192
+#: keys/views.py:193
 msgid "Your key is reset. Set up a new one."
 msgstr "Votre clé est réinitialisée. Créez-en une nouvelle."
 
-#: keys/views.py:230
+#: keys/views.py:231
 msgid ""
 "Your new key is set up, and a rotation of the group key is requested. The "
 "admin will compare its safety number with you, then a lawyer will give you "
@@ -2566,7 +2566,22 @@ msgstr ""
 "demandé. L'administrateur·rice comparera son numéro de sécurité avec vous, "
 "puis un·e avocat·e vous remettra à nouveau la clé commune."
 
-#: keys/views.py:267
+#: keys/views.py:237
+#, python-format
+msgid ""
+"The label of %(count)d case could not be opened, so could not be moved to "
+"your new key: it is lost."
+msgid_plural ""
+"The labels of %(count)d cases could not be opened, so could not be moved to "
+"your new key: they are lost."
+msgstr[0] ""
+"Le libellé de %(count)d dossier de recherche n'a pas pu être ouvert, et donc "
+"pas être transféré à votre nouvelle clé : il est perdu."
+msgstr[1] ""
+"Les libellés de %(count)d dossiers de recherche n'ont pas pu être ouverts, "
+"et donc pas être transférés à votre nouvelle clé : ils sont perdus."
+
+#: keys/views.py:275
 #, python-format
 msgid ""
 "%(name)s's new key is confirmed. A lawyer can now give them the group key."
@@ -2574,12 +2589,12 @@ msgstr ""
 "La nouvelle clé de %(name)s est confirmée. Un·e avocat·e peut maintenant lui "
 "remettre la clé commune."
 
-#: keys/views.py:359
+#: keys/views.py:367
 msgid "The keys changed while this page was open. Please try again."
 msgstr ""
 "Les clés ont changé pendant que cette page était ouverte. Veuillez réessayer."
 
-#: keys/views.py:361
+#: keys/views.py:369
 #, python-format
 msgid "%(name)s now holds the group key."
 msgstr "%(name)s a maintenant la clé commune."

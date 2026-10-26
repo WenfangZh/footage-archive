@@ -45,16 +45,32 @@ if (exposureForm) {
       return { resealed_labels: JSON.stringify(resealed), unreadable_labels: JSON.stringify(unreadable) };
     }
 
+    const button = exposureForm.querySelector('button[type=submit]');
+
     exposureForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       for (const message of exposureForm.querySelectorAll('[role=alert]')) {
         message.hidden = true;
       }
+      // One report at a time: a second, sent while the first replaces the key, would be refused.
+      button.disabled = true;
+      try {
+        const shown = await report();
+        if (shown) {
+          show(shown);
+        }
+      } catch (error) {
+        show('exposure-failed');
+      }
+      button.disabled = false;
+    });
+
+    // Sends the report; returns the id of the message to show, or nothing once the page is left.
+    async function report() {
       const typedPassphrase = keys.normalise(document.getElementById('typed-passphrase').value, keys.PASSPHRASE_LENGTH);
       const typedRecoveryKey = keys.normalise(document.getElementById('typed-recovery-key').value, keys.RECOVERY_KEY_LENGTH);
       if (typedPassphrase !== passphrase || typedRecoveryKey !== recoveryKey) {
-        show('typed-mismatch');
-        return;
+        return 'typed-mismatch';
       }
       const salt = sodium.randombytes_buf(16);
       const limits = [Number(exposureForm.dataset.opslimit), Number(exposureForm.dataset.memlimit)];
@@ -78,21 +94,22 @@ if (exposureForm) {
           // new passphrase, which shows it was saved.
           keys.forget();
           window.location.href = exposureForm.dataset.doneUrl;
-          return;
+          return null;
         }
         if (response.status === 400 && (await response.json()).wrong_password) {
-          show('wrong-password');
-          return;
+          return 'wrong-password';
+        }
+        if (response.status === 403 && (await response.json()).last_holder) {
+          return 'last-holder';
         }
         if (response.status === 429) {
-          show('too-many');
-          return;
+          return 'too-many';
         }
         if (response.status !== 409) {
           break;
         }
       }
-      show('exposure-failed');
-    });
+      return 'exposure-failed';
+    }
   });
 }

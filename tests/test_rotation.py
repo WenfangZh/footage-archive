@@ -381,6 +381,26 @@ def test_a_reset_during_a_rotation_starts_a_new_attempt_without_them(world, role
     assert following.pk != running.pk and following.rotator != profile
 
 
+def test_holders_of_a_rotations_new_key_alone_do_not_count_as_holding_the_group_key(world):
+    """Revoking, resetting or reporting abandons the attempt and deletes the grants on its new key:
+    a colleague holding only that one would be left with nothing, and so would the vault."""
+    running = ready_for_checks(world)
+    reporter = world['lawyers'][0]
+    KeyGrant.objects.filter(group_key=world['key']).exclude(lawyer_key=grants.current_key(reporter)).delete()
+    assert KeyGrant.objects.filter(group_key=rotation.new_key_of(running)).exclude(
+        lawyer_key=grants.current_key(reporter),
+    ).exists()
+    assert grants.last_holder(reporter) and not grants.another_can_grant(reporter)
+    old = grants.current_key(reporter)
+    new_key = {
+        'public_key': bytes(PrivateKey.generate().public_key), 'passphrase_salt': os.urandom(16),
+        'private_key_under_passphrase': os.urandom(72), 'private_key_under_recovery_key': os.urandom(72),
+    }
+    with pytest.raises(recovery.LastHolder):
+        recovery.report_exposure(reporter, bytes(old.public_key), new_key, {}, [])
+    assert grants.current_key(reporter) == old and grants.held().filter(group_key=world['key']).exists()
+
+
 def test_a_revocation_during_a_rotation_abandons_the_running_attempt(world):
     running = ready_for_checks(world)
     request_rotation(world, by=world['lawyers'][4])

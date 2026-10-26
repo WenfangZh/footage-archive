@@ -82,8 +82,6 @@ def report_exposure(profile, old_public_key, new_key, resealed, unreadable):
         # before the new key is confirmed and granted, to keep abandoning rotations.
         if old is None or bytes(old.public_key) != old_public_key or not grants.reads_vault(profile):
             raise Refused
-        if bytes(new_key['public_key']) == old_public_key:
-            raise Refused
         if not grants.another_can_grant(profile):
             raise LastHolder
         sealed = {label['id'] for label in labels.sealed_to(old)}

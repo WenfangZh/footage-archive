@@ -17,7 +17,7 @@ from alerts.checks import raise_alert
 from alerts.models import Alert
 from audit.models import Action, record
 
-from .models import IN_USE, GroupKey, KeyGrant, LawyerKey
+from .models import ESTABLISHED, IN_USE, GroupKey, KeyGrant, LawyerKey
 
 Status = LawyerProfile.Status
 
@@ -64,23 +64,29 @@ def uploads_open():
     return newest is not None and held().filter(group_key=newest).exists()
 
 
+def on_established():
+    """Grants held on the established group key. A revocation, a key reset and an exposure report
+    each request a rotation, which abandons any attempt running and deletes the grants on its
+    new key: only those on the established key are sure to last (design §5.5)."""
+    established = GroupKey.objects.filter(status__in=ESTABLISHED).first()
+    return held().filter(group_key=established) if established else KeyGrant.objects.none()
+
+
 def last_holder(profile):
-    """Whether `profile` is the last lawyer who is not revoked holding a grant on the newest group
-    key in use: revoking them would leave what the vault holds unreadable for good (design §5.7)."""
-    newest = in_use().order_by('-made_at', '-pk').first()
-    on_newest = held().filter(group_key=newest) if newest else KeyGrant.objects.none()
-    return on_newest.filter(lawyer_key__lawyer_profile=profile).exists() and not on_newest.exclude(
+    """Whether `profile` is the last lawyer who is not revoked holding the group key: revoking them,
+    or a reset of their key, would leave what the vault holds unreadable for good (design §5.7)."""
+    holders = on_established()
+    return holders.filter(lawyer_key__lawyer_profile=profile).exists() and not holders.exclude(
         lawyer_key__lawyer_profile=profile,
     ).exists()
 
 
 def another_can_grant(profile):
-    """Whether a lawyer other than `profile`, admitted and not suspended, holds a grant on the
-    newest group key in use: someone who could give the group key to a new key of theirs. A
-    suspended holder could not, and might be revoked (design §5.6)."""
-    newest = in_use().order_by('-made_at', '-pk').first()
-    return newest is not None and held().filter(
-        group_key=newest, lawyer_key__lawyer_profile__status=Status.LAWYER,
+    """Whether a lawyer other than `profile`, admitted and not suspended, holds the group key:
+    someone who could give it to a new key of theirs. A suspended holder could not, and might be
+    revoked (design §5.6)."""
+    return on_established().filter(
+        lawyer_key__lawyer_profile__status=Status.LAWYER,
     ).exclude(lawyer_key__lawyer_profile=profile).exists()
 
 

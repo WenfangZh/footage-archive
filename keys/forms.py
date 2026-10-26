@@ -14,7 +14,7 @@ from django.utils.translation import gettext_lazy as _
 
 from clips.models import SEALED_DATA_KEY_BYTES
 
-from .models import ENCRYPTED_PRIVATE_KEY_BYTES, PUBLIC_KEY_BYTES, SALT_BYTES, SEALED_GROUP_KEY_BYTES
+from .models import ENCRYPTED_PRIVATE_KEY_BYTES, PUBLIC_KEY_BYTES, SALT_BYTES, SEALED_GROUP_KEY_BYTES, LawyerKey
 
 
 class Base64BytesField(forms.CharField):
@@ -42,6 +42,14 @@ class KeySetupForm(forms.Form):
     passphrase_salt = Base64BytesField(SALT_BYTES)
     private_key_under_passphrase = Base64BytesField(ENCRYPTED_PRIVATE_KEY_BYTES)
     private_key_under_recovery_key = Base64BytesField(ENCRYPTED_PRIVATE_KEY_BYTES)
+
+    def clean_public_key(self):
+        # One the server can seal case labels to, and a key no one in the archive has had: the
+        # safety number the admin compares then names one person's key only.
+        public_key = sealable(self.cleaned_data['public_key'])
+        if LawyerKey.objects.filter(public_key=public_key).exists():
+            raise forms.ValidationError(_('The key could not be read.'))
+        return public_key
 
 
 class NewPassphraseForm(forms.Form):

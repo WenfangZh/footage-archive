@@ -372,7 +372,8 @@ def test_a_report_without_the_password_or_a_new_key_is_refused(exposed, change):
         response = report(profile, private_key, PrivateKey.generate(), password='not the password')
         assert response.status_code == 400 and response.json() == {'wrong_password': True}
     else:
-        assert report(profile, private_key, private_key).status_code == 403
+        # Refused where it enters, as is any key the archive has had.
+        assert report(profile, private_key, private_key).status_code == 400
     assert grants.current_key(profile).retired_at is None
 
 

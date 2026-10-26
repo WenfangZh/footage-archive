@@ -18,6 +18,7 @@ from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
@@ -217,19 +218,26 @@ def exposure(request):
         if not password_checked(request, form):
             return JsonResponse({'wrong_password': form.has_error('password')}, status=400)
     except RateLimited:
-        return HttpResponse(status=429)
+        return rate_limits.too_many(request, 'accounts/login_limited.html')
     data = form.cleaned_data
     new_key = {name: data[name] for name in KeySetupForm.base_fields}
     try:
         recovery.report_exposure(profile, data['old_public_key'], new_key, data['resealed_labels'], data['unreadable_labels'])
     except recovery.LabelsChanged:
         return HttpResponse(status=409)
-    except recovery.Refused:
-        return HttpResponse(status=403)
+    except recovery.Refused as refusal:
+        return JsonResponse({'last_holder': isinstance(refusal, recovery.LastHolder)}, status=403)
     messages.success(request, _(
         'Your new key is set up, and a rotation of the group key is requested. The admin will compare '
         'its safety number with you, then a lawyer will give you the group key again.'
     ))
+    if data['unreadable_labels']:
+        lost = len(data['unreadable_labels'])
+        messages.warning(request, ngettext(
+            'The label of %(count)d case could not be opened, so could not be moved to your new key: it is lost.',
+            'The labels of %(count)d cases could not be opened, so could not be moved to your new key: they are lost.',
+            lost,
+        ) % {'count': lost})
     response = HttpResponse(status=201)
     # The old key, unlocked in this browser's tabs, is retired: forget it, as at logout.
     response['Clear-Site-Data'] = '"storage"'
