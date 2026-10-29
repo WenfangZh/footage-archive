@@ -126,6 +126,9 @@ def test_the_same_text_typed_another_way_is_the_same_tag(lawyers, clip):
     # custom tag of the code holder's, typed composed, and a lawyer's, decomposed.
     ClipTag.objects.create(clip=clip, custom_name='Rue de l\u2019Épée', source=ClipTag.Source.CODE_HOLDER)
     lawyers[0].add(clip, custom_name='rue de l\u2019E\u0301pe\u0301e')
+    # And the other way: the code holder's stored decomposed, as typed.
+    ClipTag.objects.create(clip=clip, custom_name='Place de l\u2019Ope\u0301ra', source=ClipTag.Source.CODE_HOLDER)
+    lawyers[0].add(clip, custom_name='place de l\u2019Opéra')
     lawyers[0].add(clip, custom_name='\u200b')
     assert not ClipTag.objects.filter(source=ClipTag.Source.LAWYER).exists()
 

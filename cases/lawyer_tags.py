@@ -7,6 +7,8 @@ text. Removal is for lawyers only: the code holder's own view and the as-uploade
 untouched (clips.editing keeps a kept tag's row, and with it its state).
 """
 
+import unicodedata
+
 from django.db import transaction
 from django.utils import translation
 
@@ -41,7 +43,9 @@ def _names_of_default_tags():
 
 
 def _same(name):
-    return name.strip().casefold()
+    # Composed before and after casefold, so that the same text typed or pasted another way,
+    # including a code holder's custom tag stored as typed, compares alike.
+    return unicodedata.normalize('NFC', unicodedata.normalize('NFC', name.strip()).casefold())
 
 
 def identity(key, custom_name, default_names):

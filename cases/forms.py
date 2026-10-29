@@ -257,6 +257,8 @@ class LawyerTagForm(forms.Form):
 
     def clean(self):
         cleaned = super().clean()
+        if 'custom_name' in self.errors:
+            return cleaned
         if bool(cleaned.get('key')) == bool(cleaned.get('custom_name')):
             raise forms.ValidationError(_('Choose a default tag or write your own, not both.'))
         return cleaned

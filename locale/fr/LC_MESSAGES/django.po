@@ -1142,7 +1142,7 @@ msgstr "Ou votre propre étiquette"
 msgid ""
 "Every lawyer whose case matches this clip will see it. Write only what can "
 "be seen, nothing about your case."
-msgstr "Chaque avocat·e dont le dossier de recherche correspond à ce clip la verra. N'écrivez que ce qu'on voit, rien sur votre dossier."
+msgstr "Chaque avocat·e dont le dossier de recherche correspond à ce clip la verra. N'écrivez que ce qu'on voit, rien sur votre dossier de recherche."
 
 #: cases/forms.py:255
 msgid "A tag needs at least one letter or digit."
