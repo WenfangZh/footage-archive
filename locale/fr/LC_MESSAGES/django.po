@@ -351,7 +351,7 @@ msgid "Default margin"
 msgstr "Marge par défaut"
 
 #: accounts/templates/accounts/lawyer_home.html:21
-#: cases/templates/cases/clip.html:19 keys/templates/keys/key.html:4
+#: cases/templates/cases/clip.html:20 keys/templates/keys/key.html:4
 #: keys/templates/keys/key.html:15
 msgid "Your personal key"
 msgstr "Votre clé personnelle"
@@ -1146,6 +1146,38 @@ msgstr "Clos après une longue période sans usage"
 msgid "Closed when the admin refused it"
 msgstr "Clos au refus de l'administrateur·rice"
 
+#: cases/tag_pages.py:27
+msgid "Default tag"
+msgstr "Étiquette prédéfinie"
+
+#: cases/tag_pages.py:30
+msgid "Or your own tag"
+msgstr "Ou votre propre étiquette"
+
+#: cases/tag_pages.py:32
+msgid ""
+"Every lawyer whose case finds this clip will see it. Write only what can be "
+"seen, nothing about your case."
+msgstr "Chaque avocat·e dont le dossier trouve ce clip la verra. N'écrivez que ce qu'on voit, rien sur votre dossier."
+
+#: cases/tag_pages.py:39
+msgid "Choose a default tag or write your own, not both."
+msgstr "Choisissez une étiquette prédéfinie ou écrivez la vôtre, pas les deux."
+
+#: cases/tag_pages.py:58
+msgid ""
+"This clip already has this tag, or lawyers have removed it: propose "
+"restoring it instead."
+msgstr "Ce clip a déjà cette étiquette, ou des avocat·es l'ont écartée : proposez plutôt de la rétablir."
+
+#: cases/tag_pages.py:70
+msgid "You have already made a proposal on this tag."
+msgstr "Vous avez déjà fait une proposition sur cette étiquette."
+
+#: cases/tag_pages.py:82
+msgid "You have no open proposal on this tag."
+msgstr "Vous n'avez pas de proposition en cours sur cette étiquette."
+
 #: cases/templates/cases/case.html:11
 #, python-format
 msgid "%(because)s, on %(closed_at)s."
@@ -1268,21 +1300,21 @@ msgstr "Décider"
 msgid "No requests are waiting."
 msgstr "Aucune demande en attente."
 
-#: cases/templates/cases/clip.html:4 cases/templates/cases/clip.html:12
+#: cases/templates/cases/clip.html:4 cases/templates/cases/clip.html:13
 msgid "Clip"
 msgstr "Clip"
 
-#: cases/templates/cases/clip.html:13
+#: cases/templates/cases/clip.html:14
 msgid "Core match for this case."
 msgstr "Correspondance centrale pour ce dossier de recherche."
 
-#: cases/templates/cases/clip.html:13
+#: cases/templates/cases/clip.html:14
 msgid "Margin match for this case: just outside its time window or area."
 msgstr ""
 "Correspondance de marge pour ce dossier de recherche : juste en dehors de sa "
 "plage horaire ou de son périmètre."
 
-#: cases/templates/cases/clip.html:18
+#: cases/templates/cases/clip.html:19
 msgid ""
 "You do not hold the group key yet, so the archive shows you only this clip's "
 "index data: no preview, evidence copy, context or contact details."
@@ -1291,7 +1323,7 @@ msgstr ""
 "données d'index de ce clip, sans version de prévisualisation, copie de "
 "preuve, contexte ni moyen de contact."
 
-#: cases/templates/cases/clip.html:25
+#: cases/templates/cases/clip.html:26
 msgid ""
 "Some of this clip's contents could not be opened with your key. Reload the "
 "page; if it happens again, tell the admin."
@@ -1299,21 +1331,21 @@ msgstr ""
 "Une partie du contenu de ce clip n'a pas pu être ouverte avec votre clé. "
 "Rechargez la page ; si cela se reproduit, prévenez l'administrateur·rice."
 
-#: cases/templates/cases/clip.html:28
+#: cases/templates/cases/clip.html:29
 msgid "A low-resolution preview. Watching it is recorded in the audit log."
 msgstr ""
 "Une version de prévisualisation en basse résolution. La regarder est inscrit "
 "au journal d'audit."
 
-#: cases/templates/cases/clip.html:33
+#: cases/templates/cases/clip.html:34
 msgid "Download the evidence copy"
 msgstr "Télécharger la copie de preuve"
 
-#: cases/templates/cases/clip.html:34
+#: cases/templates/cases/clip.html:35
 msgid "Download its hash record"
 msgstr "Télécharger les empreintes numériques (hash)"
 
-#: cases/templates/cases/clip.html:35
+#: cases/templates/cases/clip.html:36
 msgid ""
 "The evidence copy holds the clip's video and audio streams unchanged, never "
 "re-encoded, in a new container without the file's own metadata; its hash "
@@ -1325,7 +1357,7 @@ msgstr ""
 "fichier ; ses empreintes numériques (hash) montrent que les images n'ont pas "
 "été modifiées. Chaque téléchargement est inscrit au journal d'audit."
 
-#: cases/templates/cases/clip.html:38
+#: cases/templates/cases/clip.html:39
 #, python-format
 msgid "The stated time is %(minutes)s minute away from the metadata time."
 msgid_plural ""
@@ -1335,76 +1367,110 @@ msgstr[0] ""
 msgstr[1] ""
 "L'heure indiquée est à %(minutes)s minutes de l'heure des métadonnées."
 
-#: cases/templates/cases/clip.html:41 clips/templates/clips/clip.html:34
+#: cases/templates/cases/clip.html:42 clips/templates/clips/clip.html:34
 #: clips/templates/clips/confirm.html:15
 msgid "Time"
 msgstr "Heure"
 
-#: cases/templates/cases/clip.html:43 clips/models.py:184
+#: cases/templates/cases/clip.html:44 clips/models.py:207
 msgid "Stated time"
 msgstr "Heure indiquée"
 
-#: cases/templates/cases/clip.html:44
+#: cases/templates/cases/clip.html:45
 msgid "Metadata time"
 msgstr "Heure des métadonnées"
 
-#: cases/templates/cases/clip.html:44 cases/templates/cases/clip.html:45
-#: cases/templates/cases/clip.html:60 cases/templates/cases/place.html:1
+#: cases/templates/cases/clip.html:45 cases/templates/cases/clip.html:46
+#: cases/templates/cases/clip.html:87 cases/templates/cases/place.html:1
 msgid "not given"
 msgstr "non renseigné"
 
-#: cases/templates/cases/clip.html:45
+#: cases/templates/cases/clip.html:46
 msgid "Stated time as uploaded"
 msgstr "Heure indiquée telle qu'uploadée"
 
-#: cases/templates/cases/clip.html:46
+#: cases/templates/cases/clip.html:47
 msgid "Duration"
 msgstr "Durée"
 
-#: cases/templates/cases/clip.html:46 cases/templates/cases/matches.html:5
+#: cases/templates/cases/clip.html:47 cases/templates/cases/matches.html:5
 #, python-format
 msgid "%(seconds)s s"
 msgstr "%(seconds)s s"
 
-#: cases/templates/cases/clip.html:49 clips/templates/clips/clip.html:39
+#: cases/templates/cases/clip.html:50 clips/templates/clips/clip.html:39
 #: clips/templates/clips/confirm.html:25
 msgid "Place"
 msgstr "Lieu"
 
-#: cases/templates/cases/clip.html:51 clips/models.py:185
+#: cases/templates/cases/clip.html:52 clips/models.py:208
 msgid "Stated location"
 msgstr "Lieu indiqué"
 
-#: cases/templates/cases/clip.html:52 clips/models.py:189
+#: cases/templates/cases/clip.html:53 clips/models.py:212
 msgid "Metadata location"
 msgstr "Lieu des métadonnées"
 
-#: cases/templates/cases/clip.html:53
+#: cases/templates/cases/clip.html:54
 msgid "Stated location as uploaded"
 msgstr "Lieu indiqué tel qu'uploadé"
 
-#: cases/templates/cases/clip.html:56 clips/models.py:186
+#: cases/templates/cases/clip.html:57 clips/models.py:209
 msgid "Tags"
 msgstr "Étiquettes"
 
-#: cases/templates/cases/clip.html:59
+#: cases/templates/cases/clip.html:62
+msgid "you proposed removing it"
+msgstr "vous avez proposé de l'écarter"
+
+#: cases/templates/cases/clip.html:63 cases/templates/cases/clip.html:76
+msgid "Cancel my proposal"
+msgstr "Annuler ma proposition"
+
+#: cases/templates/cases/clip.html:65
+msgid "Propose removing it"
+msgstr "Proposer de l'écarter"
+
+#: cases/templates/cases/clip.html:68
 msgid "No tags."
 msgstr "Aucune étiquette."
 
-#: cases/templates/cases/clip.html:60
+#: cases/templates/cases/clip.html:69
+msgid ""
+"Proposals from three different lawyers remove a tag for lawyers; the code "
+"holder still sees their own tags."
+msgstr "Les propositions de trois avocat·es différent·es écartent une étiquette pour les avocat·es ; la personne qui détient le code voit toujours ses propres étiquettes."
+
+#: cases/templates/cases/clip.html:71
+msgid "Tags removed by lawyers"
+msgstr "Étiquettes écartées par des avocat·es"
+
+#: cases/templates/cases/clip.html:75
+msgid "you proposed restoring it"
+msgstr "vous avez proposé de la rétablir"
+
+#: cases/templates/cases/clip.html:78
+msgid "Propose restoring it"
+msgstr "Proposer de la rétablir"
+
+#: cases/templates/cases/clip.html:85
+msgid "Add the tag"
+msgstr "Ajouter l'étiquette"
+
+#: cases/templates/cases/clip.html:87
 msgid "Tags as uploaded:"
 msgstr "Étiquettes telles qu'uploadées :"
 
-#: cases/templates/cases/clip.html:64 clips/forms.py:69 clips/models.py:187
-#: clips/models.py:234
+#: cases/templates/cases/clip.html:91 clips/forms.py:69 clips/models.py:210
+#: clips/models.py:257
 msgid "Context"
 msgstr "Contexte"
 
-#: cases/templates/cases/clip.html:69 clips/models.py:188 clips/models.py:235
+#: cases/templates/cases/clip.html:96 clips/models.py:211 clips/models.py:258
 msgid "Contact details"
 msgstr "Moyen de contact"
 
-#: cases/templates/cases/clip.html:71
+#: cases/templates/cases/clip.html:98
 msgid ""
 "The code holder chose to leave these, knowing they could be used against "
 "them. Use them only for this case, and keep them out of anything you share."
@@ -1413,16 +1479,16 @@ msgstr ""
 "pourrait être utilisé contre elle. Ne l'utilisez que pour ce dossier de "
 "recherche, et ne le faites figurer dans rien de ce que vous partagez."
 
-#: cases/templates/cases/clip.html:74
+#: cases/templates/cases/clip.html:101
 msgid "Edits since upload"
 msgstr "Modifications depuis l'upload"
 
-#: cases/templates/cases/clip.html:76
+#: cases/templates/cases/clip.html:103
 #, python-format
 msgid "%(field)s: %(day)s, in the four hours from %(start)s"
 msgstr "%(field)s : %(day)s, dans les quatre heures à partir de %(start)s"
 
-#: cases/templates/cases/clip.html:77
+#: cases/templates/cases/clip.html:104
 msgid "None."
 msgstr "Aucun."
 
@@ -1762,19 +1828,19 @@ msgstr "Prêt"
 msgid "Failed"
 msgstr "Échec de la préparation"
 
-#: clips/models.py:156
+#: clips/models.py:160
 msgid "code holder"
 msgstr "personne qui détient le code"
 
-#: clips/models.py:157
+#: clips/models.py:161
 msgid "lawyer"
 msgstr "avocat·e"
 
-#: clips/models.py:287
+#: clips/models.py:310
 msgid "Evidence copy"
 msgstr "Copie de preuve"
 
-#: clips/models.py:288
+#: clips/models.py:311
 msgid "Proxy"
 msgstr "Version de prévisualisation"
 
@@ -2144,11 +2210,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:376
+#: config/settings.py:389
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:377
+#: config/settings.py:390
 msgid "English"
 msgstr "Anglais"
 

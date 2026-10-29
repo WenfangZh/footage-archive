@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+import re
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
@@ -45,6 +46,14 @@ def env_bool(name, default=False):
 
 def env_list(name):
     return [item.strip() for item in os.environ.get(name, '').split(',') if item.strip()]
+
+
+def env_colour(name, default):
+    """A colour as #rrggbb, checked here since it goes into a stylesheet."""
+    value = os.environ.get(name) or default
+    if not re.fullmatch(r'#[0-9a-fA-F]{6}', value):
+        raise ImproperlyConfigured(f'{name} must be a colour written #rrggbb, not {value!r}.')
+    return value.lower()
 
 
 def env_int(name, default, minimum=None, maximum=None):
@@ -306,6 +315,10 @@ ROTATION_START_ALERT_DAYS = env_int('ROTATION_START_ALERT_DAYS', default=7, mini
 # A stated time more than this many minutes from the metadata time is highlighted to
 # lawyers (SPEC.md §7).
 TIME_MISMATCH_MINUTES = env_int('TIME_MISMATCH_MINUTES', default=15, minimum=1)
+# The colours that show lawyers each tag's source, with a word too (SPEC.md §7): by default
+# blue and orange from the Okabe-Ito palette, which stay apart for colour-blind readers.
+TAG_COLOUR_CODE_HOLDER = env_colour('TAG_COLOUR_CODE_HOLDER', '#0072b2')
+TAG_COLOUR_LAWYER = env_colour('TAG_COLOUR_LAWYER', '#e69f00')
 
 
 # Accounts log in with an email address (accounts.models).
