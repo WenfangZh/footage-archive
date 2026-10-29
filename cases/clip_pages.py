@@ -45,6 +45,7 @@ from keys.forms import Base64BytesField
 from keys.grants import reads_vault
 from keys.views import b64
 
+from .forms import LawyerTagForm
 from .models import Case
 from .search import match_of
 
@@ -102,8 +103,6 @@ def record_once_in_a_while(action, case, clip):
 @lawyer_required
 @require_GET
 def clip_page(request, case_id, clip_id):
-    from . import tag_pages  # Here: tag_pages imports this module.
-
     case, clip, match = case_and_clip(request, case_id, clip_id)
     # What the page shows (context, tags, times and places) is access too: logged, but
     # not again within two hours, like the preview.
@@ -130,7 +129,7 @@ def clip_page(request, case_id, clip_id):
         # Which lawyer added a tag, and how many proposals one has, are never shown (SPEC.md §7).
         'tags': [tag for tag in shown_tags if not tag['removed']],
         'removed_tags': [tag for tag in shown_tags if tag['removed']],
-        'tag_form': tag_pages.LawyerTagForm(),
+        'tag_form': LawyerTagForm(),
         'uploaded_tags': tag_names(uploaded.get('default', []), uploaded.get('custom', [])),
         'edits': clip.edits.order_by('edited_at', 'pk'),
         'reads_vault': reads,

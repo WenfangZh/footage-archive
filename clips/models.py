@@ -189,9 +189,8 @@ class TagProposal(models.Model):
     removes or restores the tag and closes the proposals that made it (lawyer_tags)."""
 
     tag = models.ForeignKey(ClipTag, on_delete=models.CASCADE, related_name='proposals')
+    # Made through a usable case of theirs that matched the clip: the audit entry names it.
     lawyer_profile = models.ForeignKey('accounts.LawyerProfile', on_delete=models.PROTECT, related_name='+')
-    # The usable case of theirs that matched the clip when they proposed it (SPEC.md §7).
-    case = models.ForeignKey('cases.Case', on_delete=models.PROTECT, related_name='+')
 
     class Meta:
         constraints = [

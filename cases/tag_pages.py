@@ -3,41 +3,19 @@ propose removing or restoring one, or cancel their own proposal. Each goes throu
 lawyer's own usable cases that the clip matches, as the page itself does.
 """
 
-from django import forms
 from django.conf import settings
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_lazy
 from django.views.decorators.http import require_GET, require_POST
 
 from accounts.roles import lawyer_required
 from clips.models import ClipTag
-from clips.tags import CUSTOM_TAG_MAX_LENGTH, DEFAULT_TAGS
 
 from . import lawyer_tags
 from .clip_pages import case_and_clip
-
-
-class LawyerTagForm(forms.Form):
-    """One tag: a default tag, or a custom one."""
-
-    key = forms.ChoiceField(
-        label=gettext_lazy('Default tag'), required=False, choices=[('', '—'), *DEFAULT_TAGS.items()],
-    )
-    custom_name = forms.CharField(
-        label=gettext_lazy('Or your own tag'), required=False, max_length=CUSTOM_TAG_MAX_LENGTH,
-        help_text=gettext_lazy(
-            'Every lawyer whose case finds this clip will see it. Write only what can be seen, nothing about your case.'
-        ),
-    )
-
-    def clean(self):
-        cleaned = super().clean()
-        if bool(cleaned.get('key')) == bool((cleaned.get('custom_name') or '').strip()):
-            raise forms.ValidationError(_('Choose a default tag or write your own, not both.'))
-        return cleaned
+from .forms import LawyerTagForm
 
 
 def back_to_clip(case, clip):
@@ -56,6 +34,8 @@ def add_tag(request, case_id, clip_id):
         lawyer_tags.add(case, clip, form.cleaned_data['key'], form.cleaned_data['custom_name'])
     except lawyer_tags.Refused:
         messages.error(request, _('This clip already has this tag, or lawyers have removed it: propose restoring it instead.'))
+    except lawyer_tags.Gone:
+        raise Http404 from None
     return back_to_clip(case, clip)
 
 
@@ -64,10 +44,19 @@ def add_tag(request, case_id, clip_id):
 def propose(request, case_id, clip_id, tag_id):
     case, clip, _match = case_and_clip(request, case_id, clip_id)
     tag = get_object_or_404(ClipTag, pk=tag_id, clip=clip)
+    # What the lawyer clicked, so that a page shown before the tag changed casts no vote the
+    # other way.
+    restore = {'remove': False, 'restore': True}.get(request.POST.get('direction'))
+    if restore is None:
+        return HttpResponse(status=400)
     try:
-        lawyer_tags.propose(case, clip, tag)
+        lawyer_tags.propose(case, clip, tag, restore)
+    except lawyer_tags.Changed:
+        messages.error(request, _('Lawyers have removed or restored this tag since the page was shown: look again.'))
     except lawyer_tags.Refused:
         messages.error(request, _('You have already made a proposal on this tag.'))
+    except lawyer_tags.Gone:
+        raise Http404 from None
     return back_to_clip(case, clip)
 
 
@@ -80,6 +69,8 @@ def cancel(request, case_id, clip_id, tag_id):
         lawyer_tags.cancel(case, clip, tag)
     except lawyer_tags.Refused:
         messages.error(request, _('You have no open proposal on this tag.'))
+    except lawyer_tags.Gone:
+        raise Http404 from None
     return back_to_clip(case, clip)
 
 

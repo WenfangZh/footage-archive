@@ -42,8 +42,11 @@ class Lawyer:
     def add(self, clip, **fields):
         return self.client.post(self.url('add_tag', clip), {'key': '', 'custom_name': '', **fields}, headers=ENGLISH)
 
-    def propose(self, clip, tag):
-        return self.client.post(self.url('propose_tag', clip, tag_id=tag.pk))
+    def propose(self, clip, tag, direction=None):
+        """As the page's button does: towards the other state of the tag as shown."""
+        if direction is None:
+            direction = 'restore' if ClipTag.objects.get(pk=tag.pk).removed else 'remove'
+        return self.client.post(self.url('propose_tag', clip, tag_id=tag.pk), {'direction': direction})
 
     def cancel(self, clip, tag):
         return self.client.post(self.url('cancel_tag', clip, tag_id=tag.pk))
@@ -90,8 +93,10 @@ def test_a_lawyer_adds_a_tag_that_other_lawyers_see_as_a_lawyers_and_the_code_ho
     page = other.page(clip).content.decode()
     assert 'Officer with a shield <small>(lawyer)</small>' in page
     assert 'class="tag-source-lawyer">Kettling' in page and 'class="tag-source-code_holder">Arrest' in page
-    # Never which lawyer.
-    assert 'lawyer0' not in page
+    # Never which lawyer: not even the lawyer's own name, which the account holds.
+    first.profile.user.first_name = 'Camille'
+    first.profile.user.save()
+    assert 'Camille' not in other.page(clip).content.decode()
     holder = code_holder_page(clip)
     assert 'Officer with a shield' not in holder
     assert code_holder_tags(holder) == (['arrest'], 'Barricade')
@@ -113,6 +118,15 @@ def test_a_tag_is_added_only_through_a_usable_case_the_clip_matches(lawyers, cli
 ])
 def test_a_tag_the_clip_already_has_cannot_be_added(lawyers, clip, fields):
     lawyers[0].add(clip, **fields)
+    assert not ClipTag.objects.filter(source=ClipTag.Source.LAWYER).exists()
+
+
+def test_the_same_text_typed_another_way_is_the_same_tag(lawyers, clip):
+    # 'Barricade' with a combining accent would differ only in how it is encoded: here a
+    # custom tag of the code holder's, typed composed, and a lawyer's, decomposed.
+    ClipTag.objects.create(clip=clip, custom_name='Rue de l\u2019Épée', source=ClipTag.Source.CODE_HOLDER)
+    lawyers[0].add(clip, custom_name='rue de l\u2019E\u0301pe\u0301e')
+    lawyers[0].add(clip, custom_name='\u200b')
     assert not ClipTag.objects.filter(source=ClipTag.Source.LAWYER).exists()
 
 
@@ -155,6 +169,16 @@ def test_a_lawyers_proposals_count_once_and_a_cancelled_one_not_at_all(lawyers, 
     assert ClipTag.objects.get(pk=arrest.pk).removed
 
 
+def test_a_page_shown_before_the_tag_changed_casts_no_vote_the_other_way(lawyers, clip):
+    arrest = ClipTag.objects.get(key='arrest')
+    for lawyer in lawyers[:3]:
+        lawyer.propose(clip, arrest)
+    # Lawyer 3's page still offered to remove it.
+    lawyers[3].propose(clip, arrest, direction='remove')
+    assert not ClipTag.objects.get(pk=arrest.pk).proposals.exists()
+    assert not AuditEntry.objects.filter(action=Action.TAG_RESTORATION_PROPOSAL).exists()
+
+
 def test_a_suspended_lawyers_proposal_does_not_count(lawyers, clip):
     arrest = ClipTag.objects.get(key='arrest')
     for lawyer in lawyers[:2]:
@@ -193,6 +217,10 @@ def test_each_action_on_a_tag_is_logged_by_its_id_never_its_text(lawyers, clip):
         Action.TAG_RESTORATION,
     ]
     assert all(entry.case.lawyer_profile == entry.lawyer_profile and entry.clip_id == clip.pk for entry in entries)
+    # The removal and the restoration name the lawyer whose proposal was the third.
+    assert [entry.lawyer_profile for entry in entries if entry.action in (Action.TAG_REMOVAL, Action.TAG_RESTORATION)] == [
+        lawyers[2].profile, lawyers[2].profile,
+    ]
     assert 'shield' not in repr(list(AuditEntry.objects.values()))
 
 
@@ -202,7 +230,9 @@ def test_a_tag_of_another_clip_is_not_found(lawyers, clip):
     assert lawyers[0].propose(clip, other_tag).status_code == 404
 
 
-def test_the_tag_colours_come_from_the_settings(lawyers, settings):
+def test_the_tag_colours_come_from_the_settings_for_lawyers_only(lawyers, settings):
+    settings.TAG_COLOUR_LAWYER = '#123456'
     css = lawyers[0].client.get(reverse('lawyer:tag_colours')).content.decode()
     assert '.tag-source-code_holder { border-left: 0.5em solid #0072b2' in css
-    assert '.tag-source-lawyer { border-left: 0.5em solid #e69f00' in css
+    assert '.tag-source-lawyer { border-left: 0.5em solid #123456' in css
+    assert Client().get(reverse('lawyer:tag_colours')).status_code == 302

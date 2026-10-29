@@ -1,1 +1,1 @@
-{% load i18n %}<form method="post" action="{% url action case_id=case.pk clip_id=clip.pk tag_id=tag.id %}">{% csrf_token %}<button type="submit">{{ label }}</button></form>
+<form method="post" action="{% url action case_id=case.pk clip_id=clip.pk tag_id=tag.id %}">{% csrf_token %}{% if direction %}<input type="hidden" name="direction" value="{{ direction }}">{% endif %}<button type="submit">{{ label }}</button></form>

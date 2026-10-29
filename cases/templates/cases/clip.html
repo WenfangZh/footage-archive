@@ -62,7 +62,7 @@
           · {% translate "you proposed removing it" %}
           {% include "cases/tag_button.html" with action="lawyer:cancel_tag" label=_("Cancel my proposal") %}
         {% else %}
-          {% include "cases/tag_button.html" with action="lawyer:propose_tag" label=_("Propose removing it") %}
+          {% include "cases/tag_button.html" with action="lawyer:propose_tag" direction="remove" label=_("Propose removing it") %}
         {% endif %}
       </li>{% endfor %}</ul>
   {% else %}<p>{% translate "No tags." %}</p>{% endif %}
@@ -75,7 +75,7 @@
           · {% translate "you proposed restoring it" %}
           {% include "cases/tag_button.html" with action="lawyer:cancel_tag" label=_("Cancel my proposal") %}
         {% else %}
-          {% include "cases/tag_button.html" with action="lawyer:propose_tag" label=_("Propose restoring it") %}
+          {% include "cases/tag_button.html" with action="lawyer:propose_tag" direction="restore" label=_("Propose restoring it") %}
         {% endif %}
       </li>{% endfor %}</ul>
   {% endif %}

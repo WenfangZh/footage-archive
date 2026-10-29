@@ -23,6 +23,14 @@ class Refused(Exception):
     """The tag is already there, or the proposal already made or not open."""
 
 
+class Changed(Refused):
+    """The tag was removed or restored since the lawyer chose which way to propose."""
+
+
+class Gone(Exception):
+    """The tag or the clip was deleted, or the clip is no longer ready, since the request found it."""
+
+
 def _names_of_default_tags():
     """Each default tag's key, by its name in French and in English, compared as `_same`."""
     names = {}
@@ -36,22 +44,31 @@ def _same(name):
     return name.strip().casefold()
 
 
-def identity(key, custom_name):
+def identity(key, custom_name, default_names):
     """What makes two tags the same (SPEC.md §7): the same default tag, or the same custom text
-    ignoring case and surrounding spaces; a custom tag named like a default tag is that tag."""
+    ignoring case and surrounding spaces; a custom tag named like a default tag is that tag.
+    `default_names` is _names_of_default_tags(), made once by the caller."""
     if key:
         return ('default', key)
-    named = _names_of_default_tags().get(_same(custom_name))
+    named = default_names.get(_same(custom_name))
     return ('default', named) if named else ('custom', _same(custom_name))
+
+
+def _locked(queryset, **lookup):
+    try:
+        return queryset.select_for_update().get(**lookup)
+    except queryset.model.DoesNotExist:
+        raise Gone from None
 
 
 def add(case, clip, key='', custom_name=''):
     """Add a lawyer's tag to the clip, unless it already has the same one, shown or removed."""
-    wanted = identity(key, custom_name)
+    default_names = _names_of_default_tags()
+    wanted = identity(key, custom_name, default_names)
     with transaction.atomic():
         # Locked, so that two lawyers adding the same tag at once add it once.
-        Clip.objects.select_for_update().get(pk=clip.pk)
-        if any(identity(tag.key, tag.custom_name) == wanted for tag in clip.tags.all()):
+        _locked(Clip.objects, pk=clip.pk, status=Clip.Status.READY)
+        if any(identity(tag.key, tag.custom_name, default_names) == wanted for tag in clip.tags.all()):
             raise Refused
         kind, value = wanted
         tag = ClipTag.objects.create(
@@ -62,15 +79,18 @@ def add(case, clip, key='', custom_name=''):
     return tag
 
 
-def propose(case, clip, tag):
-    """Propose removing the tag, or restoring it if removed. The proposal that brings those of
-    admitted, unsuspended lawyers to PROPOSALS_NEEDED removes or restores it, and closes them all."""
+def propose(case, clip, tag, restore):
+    """Propose removing the tag, or restoring it if `restore`; refused (Changed) if the tag is not
+    in the state that undoes. The proposal that brings those of admitted, unsuspended lawyers to
+    PROPOSALS_NEEDED removes or restores it, and closes them all."""
     profile = case.lawyer_profile
     with transaction.atomic():
-        tag = ClipTag.objects.select_for_update().get(pk=tag.pk, clip=clip)
+        tag = _locked(ClipTag.objects, pk=tag.pk, clip=clip, clip__status=Clip.Status.READY)
+        if tag.removed != restore:
+            raise Changed
         if tag.proposals.filter(lawyer_profile=profile).exists():
             raise Refused
-        TagProposal.objects.create(tag=tag, lawyer_profile=profile, case=case)
+        TagProposal.objects.create(tag=tag, lawyer_profile=profile)
         proposal = Action.TAG_RESTORATION_PROPOSAL if tag.removed else Action.TAG_REMOVAL_PROPOSAL
         record(proposal, profile, case=case, clip=clip, clip_tag=tag)
         if tag.proposals.filter(lawyer_profile__status=LawyerProfile.Status.LAWYER).count() >= PROPOSALS_NEEDED:
@@ -86,7 +106,7 @@ def cancel(case, clip, tag):
     """Cancel the lawyer's own open proposal on the tag."""
     profile = case.lawyer_profile
     with transaction.atomic():
-        tag = ClipTag.objects.select_for_update().get(pk=tag.pk, clip=clip)
+        tag = _locked(ClipTag.objects, pk=tag.pk, clip=clip, clip__status=Clip.Status.READY)
         deleted, _ = tag.proposals.filter(lawyer_profile=profile).delete()
         if not deleted:
             raise Refused
