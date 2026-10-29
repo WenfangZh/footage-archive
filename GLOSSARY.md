@@ -151,6 +151,11 @@ Where an original waits, from the moment it is uploaded until ingest ends. It is
 _French_: quarantaine
 _Avoid_: Inbox, staging, temp
 
+**Partial upload**:
+A file still arriving in pieces, which can resume after a lost connection; once its last piece arrives it becomes an original. It waits in quarantine and is deleted if not finished in time.
+_French_: envoi partiel
+_Avoid_: Draft, pending clip, chunk (for the whole file)
+
 ### What a clip says about itself
 
 **Metadata time**:
@@ -196,6 +201,12 @@ _Avoid in French_: origine (already in fichier d'origine)
 The admin's view of every tag added, proposed for removal and removed on one clip, with who and when.
 _French_: historique des étiquettes
 _Avoid_: Tag log, tag audit
+
+**Removed tag**:
+A tag that three lawyers have proposed removing, so that lawyers no longer see it; the code holder still does. It comes back once three lawyers propose restoring it. A lawyer can **cancel** their own open proposal.
+_French_: étiquette écartée (proposition d'écarter, proposition de rétablir, annuler)
+_Avoid_: Deleted tag, hidden tag, withdraw (a proposal)
+_Avoid in French_: retirée (a withdrawn clip is retiré), supprimée (deletion is for real)
 
 **Context**:
 Free text about a clip from the uploader or code holder: what happened, and anything a lawyer should know.
@@ -316,11 +327,21 @@ A note between a lawyer and the code holder of a clip, carried by the archive. T
 _French_: message
 _Avoid_: Contact request, chat
 
+**Thread**:
+All the messages between one lawyer and the code holder of one clip. It is deleted a set time after its last message.
+_French_: fil de messages
+_Avoid_: Conversation, chat, inbox
+
+**Notification**:
+An email telling a lawyer that something is waiting for them in the archive, and nothing more: never the message, the clip or who sent it.
+_French_: notification
+_Avoid_: Alert (that is the admin's), reminder
+
 **Report**:
-A lawyer's concern about a specific clip: wrong time or place, doubtful authenticity, or inappropriate content.
+A lawyer's concern about a specific clip: wrong time or place, doubtful authenticity, or inappropriate content. A lawyer can **cancel** a doubt, and a report of inappropriate content until the clip is withdrawn.
 _French_: signalement de clip
-_Avoid_: Flag, complaint
-_Avoid in French_: signalement alone (also a suspect's description, or a report to the authorities)
+_Avoid_: Flag, complaint, withdraw (a report)
+_Avoid in French_: retirer (a report; use annuler), signalement alone (also a suspect's description, or a report to the authorities)
 
 **Doubt marker**:
 A neutral notice shown to lawyers on a clip whose authenticity a lawyer has doubted, with no reason given and no verdict.
@@ -333,7 +354,7 @@ _French_: avertissement de contenu
 _Avoid_: Flag, strike
 
 **Withdrawn**:
-The state of a clip reported as inappropriate by two lawyers holding different cases: hidden from all search, pending the admin's decision to delete it.
+The state of a clip reported as inappropriate by two different lawyers: gone from every search, clip page, preview and download, with no way back, until the admin deletes it. Only a clip is withdrawn: a lawyer cancels a report or proposal, and lawyers remove a tag.
 _French_: retiré
 _Avoid_: Hidden, removed, banned, suspended
 
@@ -349,7 +370,7 @@ _Avoid_: Thresholds (alone), triggers
 _Avoid in French_: seuil alone (also the gap between the metadata time and stated time that is highlighted)
 
 **Audit log**:
-The permanent record of every action a lawyer takes in the archive, of the admin's actions on applicants' and lawyers' accounts, decisions on larger cases and raises of a lawyer's alert limit, and of changes to the size caps and alert limits. It can only be added to.
+The permanent record of every action a lawyer takes in the archive, of the admin's actions on applicants' and lawyers' accounts, decisions on larger cases, raises of a lawyer's alert limit and deletions of withdrawn clips, and of changes to the size caps and alert limits. It can only be added to.
 _French_: journal d'audit
 _Avoid_: Access log, history
 
