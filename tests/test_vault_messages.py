@@ -23,11 +23,23 @@ FROM = Message.Direction.FROM_CODE_HOLDER
 TEXT = 'Could you tell me what happened just before the start of your video?'
 
 
-def make_lawyer(email):
+def make_lawyer(email, key=True):
+    """An admitted lawyer, with a personal key the admin confirmed unless `key` is False."""
     profile = LawyerProfile.objects.create(user=get_user_model().objects.create_user(email), bar='Paris')
-    private_key = PrivateKey.generate()
-    make_key(profile, private_key)
+    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
+    profile.save()
+    profile.change_status(LawyerProfile.Status.LAWYER)
+    private_key = PrivateKey.generate() if key else None
+    if key:
+        confirmed_key(profile, private_key)
     return profile, private_key
+
+
+def confirmed_key(profile, private_key):
+    lawyer_key = make_key(profile, private_key)
+    lawyer_key.admin_confirmed_at = timezone.now()
+    lawyer_key.save()
+    return lawyer_key
 
 
 @pytest.fixture
@@ -86,11 +98,11 @@ def test_no_other_key_opens_it(clip, lawyer):
             SealedBox(key).decrypt(bytes(message.lawyer_sealed_key))
         with pytest.raises(CryptoError):
             SealedBox(key).decrypt(bytes(message.code_holder_sealed_key))
-    with pytest.raises(CryptoError):
+    with pytest.raises(vault.WrongCode):
         vault.code_holder_messages(clip, '0' * len(TEST_CODE))
 
 
-def test_a_text_moved_to_another_message_or_kind_does_not_open(clip, lawyer):
+def test_a_text_moved_to_another_message_does_not_open(clip, lawyer):
     profile, private_key = lawyer
     first = vault.send_message(clip, profile, TO, TEXT)
     second = vault.send_message(clip, profile, TO, 'Another')
@@ -99,10 +111,19 @@ def test_a_text_moved_to_another_message_or_kind_does_not_open(clip, lawyer):
     second.save()
     with pytest.raises(CryptoError):
         opened_by_lawyer(second, private_key)
-    Message.objects.filter(pk=second.pk).delete()
-    Message.objects.filter(pk=first.pk).update(kind=Message.Kind.WRONG_TIME)
-    with pytest.raises(CryptoError):
-        vault.code_holder_messages(clip, TEST_CODE)
+    # Only the altered message is hidden from the code holder.
+    assert [text for _, text in vault.code_holder_messages(clip, TEST_CODE)] == [TEXT, None]
+
+
+@pytest.mark.parametrize('change', [
+    {'direction': FROM}, {'kind': Message.Kind.WRONG_TIME}, {'identified': True}, {'thread': True},
+])
+def test_a_text_whose_thread_direction_kind_or_naming_changes_does_not_open(clip, lawyer, change):
+    message = vault.send_message(clip, lawyer[0], TO, TEXT)
+    if change.pop('thread', False):
+        change = {'lawyer_profile': make_lawyer('other@example.org')[0]}
+    Message.objects.filter(pk=message.pk).update(**change)
+    assert vault.code_holder_messages(clip, TEST_CODE)[0][1] is None
 
 
 def test_a_report_without_a_note_holds_nothing_encrypted(clip, lawyer):
@@ -139,10 +160,16 @@ def test_the_time_is_kept_to_its_four_hour_block(clip, lawyer):
     assert message.sent_at == block
 
 
-def test_nothing_is_sent_without_a_lawyer_key_or_a_code_holder_key(clip):
-    keyless = LawyerProfile.objects.create(user=get_user_model().objects.create_user('keyless@example.org'), bar='Lyon')
-    with pytest.raises(vault.NoLawyerKey):
-        vault.send_message(clip, keyless, TO, TEXT)
+def test_nothing_is_sent_without_a_lawyer_key_the_admin_confirmed_or_a_code_holder_key(clip):
+    keyless = make_lawyer('keyless@example.org', key=False)[0]
+    for direction in (TO, FROM):
+        with pytest.raises(vault.NoLawyerKey):
+            vault.send_message(clip, keyless, direction, TEXT)
+    # As after someone took over the account and reset its key (design §5.6).
+    make_key(keyless, PrivateKey.generate())
+    for direction in (TO, FROM):
+        with pytest.raises(vault.NoLawyerKey):
+            vault.send_message(clip, keyless, direction, TEXT)
     profile, _ = make_lawyer('lawyer@example.org')
     old_clip = Clip.objects.create(code_hash='1' * 64)
     with pytest.raises(vault.NoCodeHolderKey):
@@ -164,10 +191,29 @@ def test_a_message_is_sealed_to_the_lawyers_current_key(clip, lawyer):
     profile_key = vault.send_message(clip, profile, TO, TEXT).lawyer_key
     profile_key.retire()
     new_private_key = PrivateKey.generate()
-    new_key = make_key(profile, new_private_key)
+    new_key = confirmed_key(profile, new_private_key)
     message = vault.send_message(clip, profile, TO, 'After the new key')
     assert message.lawyer_key == new_key
     assert opened_by_lawyer(message, new_private_key) == 'After the new key'
+
+
+@pytest.mark.parametrize('status', [LawyerProfile.Status.SUSPENDED, LawyerProfile.Status.REVOKED])
+def test_nothing_is_sent_to_or_from_a_suspended_or_revoked_lawyer(clip, lawyer, status):
+    profile, _ = lawyer
+    profile.change_status(status)
+    for direction in (TO, FROM):
+        with pytest.raises(vault.NotALawyer):
+            vault.send_message(clip, profile, direction, TEXT)
+    assert not Message.objects.exists()
+
+
+def test_the_database_refuses_an_unknown_direction_or_kind_and_half_encrypted_text(clip, lawyer):
+    message = vault.send_message(clip, lawyer[0], TO, TEXT)
+    for change in [{'direction': 'sideways'}, {'kind': 'bogus', 'ciphertext': None, 'code_holder_sealed_key': None,
+                                                 'lawyer_sealed_key': None, 'lawyer_key': None, 'key_check': None},
+                   {'lawyer_sealed_key': None}]:
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Message.objects.filter(pk=message.pk).update(**change)
 
 
 def test_deleting_the_clip_deletes_its_messages(clip, lawyer):

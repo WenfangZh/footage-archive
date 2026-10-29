@@ -165,9 +165,12 @@ def sealed_text(clip, kind):
 
 
 def message_additional_data(message):
-    """Bound to a message's text, so that it does not decrypt as another message's, or with
-    its direction or kind changed (design §7.3)."""
-    return f'fa-message-v1:{message.clip_id}:{message.pk}:{message.direction}:{message.kind}'.encode()
+    """Bound to a message's text, so that it does not decrypt as another message's, in another
+    thread, or with its direction, kind or naming changed (design §7.3)."""
+    return (
+        f'fa-message-v1:{message.clip_id}:{message.pk}:{message.lawyer_profile_id}:{message.direction}'
+        f':{message.kind}:{int(message.identified)}'
+    ).encode()
 
 
 @sensitive_variables('text', 'data_key')
@@ -176,14 +179,22 @@ def send_message(clip, lawyer_profile, direction, text, kind=Message.Kind.MESSAG
     it. Its text (optional on a report) is encrypted and sealed to the clip's code holder key and to
     the lawyer's current personal key (design §7.3). Under the group key lock, which an exposure
     report takes to move the lawyer's messages to a new key (§5.6), so that none is sealed to a key
-    being replaced. Who may send what is the caller's to check.
+    being replaced. Which case a lawyer sends through is the caller's to check.
 
-    Raises NoLawyerKey if the lawyer holds no personal key, and NoCodeHolderKey if the clip has no
-    code holder key (one confirmed before encryption, until its code holder saves an edit)."""
+    Raises NotALawyer unless the thread's lawyer is admitted and not suspended, NoLawyerKey unless
+    they hold a personal key the admin confirmed (otherwise someone who took over the account and
+    reset the key would read the code holder's replies, design §5.6), and NoCodeHolderKey if the
+    clip has no code holder key (one confirmed before encryption, until its code holder saves an
+    edit)."""
+    from accounts.models import LawyerProfile  # Here: accounts imports clips through its views.
+
     with transaction.atomic():
         grants.lock()
+        # Locked, so that a suspension committed meanwhile is seen (as grants.grant does).
+        if LawyerProfile.objects.select_for_update().get(pk=lawyer_profile.pk).status != LawyerProfile.Status.LAWYER:
+            raise NotALawyer
         lawyer_key = grants.current_key(lawyer_profile)
-        if lawyer_key is None:
+        if lawyer_key is None or lawyer_key.admin_confirmed_at is None:
             raise NoLawyerKey
         if clip.code_holder_public_key is None:
             raise NoCodeHolderKey
@@ -203,22 +214,30 @@ def send_message(clip, lawyer_profile, direction, text, kind=Message.Kind.MESSAG
     return message
 
 
-@sensitive_variables('code', 'private_key', 'data_key', 'padded')
+@sensitive_variables('code', 'private_key', 'data_key', 'padded', 'text', 'opened')
 def code_holder_messages(clip, code):
     """The clip's messages, thread by thread and in order, each with its text opened with the
-    normalised upload code `code` ('' for a report without a note). Raises CryptoError for a code
+    normalised upload code `code`: '' for a report without a note, None for one that fails to
+    decrypt (altered or moved), so that one bad row hides only itself. Raises WrongCode for a code
     that is not the clip's."""
     private_key = code_holder_key(code)
+    if clip.code_holder_public_key is None or not hmac.compare_digest(
+        bytes(private_key.public_key), bytes(clip.code_holder_public_key),
+    ):
+        raise WrongCode
     opened = []
     for message in Message.objects.filter(clip=clip).order_by('lawyer_profile_id', 'position'):
         text = ''
         if message.ciphertext is not None:
-            data_key = SealedBox(private_key).decrypt(bytes(message.code_holder_sealed_key))
-            encrypted = bytes(message.ciphertext)
-            padded = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
-                encrypted[NONCE_BYTES:], message_additional_data(message), encrypted[:NONCE_BYTES], data_key,
-            )
-            text = sodium.sodium_unpad(padded, TEXT_BLOCK).decode()
+            try:
+                data_key = SealedBox(private_key).decrypt(bytes(message.code_holder_sealed_key))
+                encrypted = bytes(message.ciphertext)
+                padded = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
+                    encrypted[NONCE_BYTES:], message_additional_data(message), encrypted[:NONCE_BYTES], data_key,
+                )
+                text = sodium.sodium_unpad(padded, TEXT_BLOCK).decode()
+            except (CryptoError, ValueError):  # ValueError: bad padding, or not UTF-8.
+                text = None
         opened.append((message, text))
     return opened
 
@@ -235,8 +254,16 @@ def sealed_message(message):
     }
 
 
+class NotALawyer(Exception):
+    """The thread's lawyer is not an admitted, unsuspended lawyer."""
+
+
 class NoLawyerKey(Exception):
-    """The thread's lawyer holds no personal key to seal a message to."""
+    """The thread's lawyer holds no personal key the admin confirmed, to seal a message to."""
+
+
+class WrongCode(Exception):
+    """An upload code that is not the clip's."""
 
 
 class NoCodeHolderKey(Exception):

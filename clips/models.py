@@ -369,10 +369,6 @@ class SealedKey(models.Model):
         ]
 
 
-# The longest text a message holds, in characters.
-MESSAGE_MAX_LENGTH = 2000
-
-
 class Message(models.Model):
     """A message in a thread: between one lawyer and the code holder of one clip (SPEC.md §7).
     Only clips.vault writes or reads its text.
@@ -424,6 +420,13 @@ class Message(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['clip', 'lawyer_profile', 'position'], name='one_message_per_place_in_thread'),
+            # Meta cannot see the choices classes above, so their values are spelled out.
+            models.CheckConstraint(
+                condition=Q(direction__in=['to_code_holder', 'from_code_holder']), name='known_message_direction',
+            ),
+            models.CheckConstraint(
+                condition=Q(kind__in=['message', 'wrong_time', 'wrong_place']), name='known_message_kind',
+            ),
             # Only lawyers report, and only lawyers choose whether to be named.
             models.CheckConstraint(
                 condition=Q(direction='to_code_holder') | Q(kind='message', identified=False),
