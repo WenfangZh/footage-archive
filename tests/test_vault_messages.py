@@ -116,9 +116,9 @@ def test_a_text_moved_to_another_message_does_not_open(clip, lawyer):
 
 
 @pytest.mark.parametrize('change', [
-    {'direction': FROM}, {'kind': Message.Kind.WRONG_TIME}, {'identified': True}, {'thread': True},
+    {'direction': FROM}, {'kind': Message.Kind.WRONG_TIME}, {'identified': True}, {'thread': True}, {'position': 5},
 ])
-def test_a_text_whose_thread_direction_kind_or_naming_changes_does_not_open(clip, lawyer, change):
+def test_a_text_whose_thread_place_direction_kind_or_naming_changes_does_not_open(clip, lawyer, change):
     message = vault.send_message(clip, lawyer[0], TO, TEXT)
     if change.pop('thread', False):
         change = {'lawyer_profile': make_lawyer('other@example.org')[0]}
@@ -214,6 +214,10 @@ def test_the_database_refuses_an_unknown_direction_or_kind_and_half_encrypted_te
                    {'lawyer_sealed_key': None}]:
         with pytest.raises(IntegrityError), transaction.atomic():
             Message.objects.filter(pk=message.pk).update(**change)
+
+
+def test_a_clip_without_a_code_holder_key_has_no_messages_and_no_wrong_code():
+    assert vault.code_holder_messages(Clip.objects.create(code_hash='1' * 64), TEST_CODE) == []
 
 
 def test_deleting_the_clip_deletes_its_messages(clip, lawyer):

@@ -166,10 +166,10 @@ def sealed_text(clip, kind):
 
 def message_additional_data(message):
     """Bound to a message's text, so that it does not decrypt as another message's, in another
-    thread, or with its direction, kind or naming changed (design §7.3)."""
+    thread or place in it, or with its direction, kind or naming changed (design §7.3)."""
     return (
-        f'fa-message-v1:{message.clip_id}:{message.pk}:{message.lawyer_profile_id}:{message.direction}'
-        f':{message.kind}:{int(message.identified)}'
+        f'fa-message-v1:{message.clip_id}:{message.pk}:{message.lawyer_profile_id}:{message.position}'
+        f':{message.direction}:{message.kind}:{int(message.identified)}'
     ).encode()
 
 
@@ -219,11 +219,12 @@ def code_holder_messages(clip, code):
     """The clip's messages, thread by thread and in order, each with its text opened with the
     normalised upload code `code`: '' for a report without a note, None for one that fails to
     decrypt (altered or moved), so that one bad row hides only itself. Raises WrongCode for a code
-    that is not the clip's."""
+    that is not the clip's. A clip confirmed before encryption has none: nothing is sent to it
+    until it has a code holder key."""
+    if clip.code_holder_public_key is None:
+        return []
     private_key = code_holder_key(code)
-    if clip.code_holder_public_key is None or not hmac.compare_digest(
-        bytes(private_key.public_key), bytes(clip.code_holder_public_key),
-    ):
+    if not hmac.compare_digest(bytes(private_key.public_key), bytes(clip.code_holder_public_key)):
         raise WrongCode
     opened = []
     for message in Message.objects.filter(clip=clip).order_by('lawyer_profile_id', 'position'):
@@ -236,7 +237,9 @@ def code_holder_messages(clip, code):
                     encrypted[NONCE_BYTES:], message_additional_data(message), encrypted[:NONCE_BYTES], data_key,
                 )
                 text = sodium.sodium_unpad(padded, TEXT_BLOCK).decode()
-            except (CryptoError, ValueError):  # ValueError: bad padding, or not UTF-8.
+            # ValueError: not UTF-8, or a ciphertext too short. Either is a message the server
+            # itself encrypted wrongly, since anything else fails to authenticate first.
+            except (CryptoError, ValueError):
                 text = None
         opened.append((message, text))
     return opened
