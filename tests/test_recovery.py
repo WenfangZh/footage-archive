@@ -22,10 +22,11 @@ from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from cases import labels
 from cases.models import Case
-from clips import rate_limits
+from clips import rate_limits, vault
+from clips.models import Clip, Message
 from keys import grants
 from keys.models import ENCRYPTED_PRIVATE_KEY_BYTES, SALT_BYTES, GroupKey, KeyGrant, LawyerKey
-from tests.conftest import log_in_with_second_factor, make_case, make_key, open_label
+from tests.conftest import TEST_CODE, log_in_with_second_factor, make_case, make_key, open_label, with_code_holder_key
 
 pytestmark = pytest.mark.django_db
 
@@ -280,23 +281,46 @@ def lawyer_with_key(email):
 
 @pytest.fixture
 def exposed():
-    """A lawyer with two labelled cases, and a colleague who could grant the group key."""
+    """A lawyer with two labelled cases and a thread of two messages, and a colleague who could
+    grant the group key."""
     group_key = GroupKey.objects.create(public_key=bytes(PrivateKey.generate().public_key))
     profile, private_key = lawyer_with_key('lawyer@example.org')
     colleague, _ = lawyer_with_key('colleague@example.org')
     give(group_key, profile, colleague)
     cases = [make_case(profile, 'Filmed near the station'), make_case(profile, 'Second case')]
-    return {'profile': profile, 'private_key': private_key, 'cases': cases, 'group_key': group_key}
+    clip = with_code_holder_key(Clip.objects.create(code_hash='0' * 64))
+    messages = [
+        vault.send_message(clip, profile, Message.Direction.TO_CODE_HOLDER, 'Were you near the station?'),
+        vault.send_message(clip, profile, Message.Direction.FROM_CODE_HOLDER, 'Yes, from the corner.'),
+    ]
+    vault.send_message(clip, colleague, Message.Direction.TO_CODE_HOLDER, 'Not theirs')
+    return {
+        'profile': profile, 'private_key': private_key, 'cases': cases, 'group_key': group_key,
+        'clip': clip, 'messages': messages,
+    }
 
 
-def report(profile, private_key, new_private_key, resealed=None, unreadable=(), **changes):
-    """What the browser sends (keys/static/keys/exposure.js): each label's data key, opened with
-    the old key and sealed to the new one, unless `resealed` says otherwise."""
+def resealed_to(new_private_key, private_key, sealed_key):
+    return SealedBox(new_private_key.public_key).encrypt(SealedBox(private_key).decrypt(bytes(sealed_key)))
+
+
+def report(
+    profile, private_key, new_private_key, resealed=None, unreadable=(), messages_resealed=None, messages_unreadable=(),
+    **changes,
+):
+    """What the browser sends (keys/static/keys/exposure.js): each label's and message's data key,
+    opened with the old key and sealed to the new one, unless `resealed` or `messages_resealed`
+    says otherwise."""
     old = grants.current_key(profile)
     if resealed is None:
         resealed = {
-            case.pk: SealedBox(new_private_key.public_key).encrypt(SealedBox(private_key).decrypt(bytes(case.label_sealed_key)))
+            case.pk: resealed_to(new_private_key, private_key, case.label_sealed_key)
             for case in Case.objects.filter(label_key=old) if case.pk not in unreadable
+        }
+    if messages_resealed is None:
+        messages_resealed = {
+            message.pk: resealed_to(new_private_key, private_key, message.lawyer_sealed_key)
+            for message in Message.objects.filter(lawyer_key=old) if message.pk not in messages_unreadable
         }
     fields = {
         'public_key': b64(new_private_key.public_key), 'passphrase_salt': b64(os.urandom(SALT_BYTES)),
@@ -305,6 +329,8 @@ def report(profile, private_key, new_private_key, resealed=None, unreadable=(), 
         'old_public_key': b64(old.public_key), 'password': PASSWORD,
         'resealed_labels': json.dumps({str(pk): b64(sealed) for pk, sealed in resealed.items()}),
         'unreadable_labels': json.dumps(list(unreadable)),
+        'resealed_messages': json.dumps({str(pk): b64(sealed) for pk, sealed in messages_resealed.items()}),
+        'unreadable_messages': json.dumps([str(pk) for pk in messages_unreadable]),
     } | changes
     return client_for(profile).post(reverse('accounts:key_exposure'), fields)
 
@@ -331,6 +357,62 @@ def test_an_exposure_report_replaces_the_key_keeps_the_labels_and_requests_a_rot
     assert AuditEntry.objects.filter(action=Action.ROTATION_REQUEST, lawyer_profile=profile).exists()
     # Not again before the new key holds the group key: reports cannot keep abandoning rotations.
     assert report(profile, new_private_key, PrivateKey.generate()).status_code == 403
+
+
+def opened_by_lawyer(message, private_key):
+    """A message's text as its lawyer's browser opens it."""
+    from nacl import bindings
+    sealed = vault.sealed_message(message)
+    data_key = SealedBox(private_key).decrypt(sealed['sealed_key'])
+    encrypted = sealed['ciphertext']
+    padded = bindings.crypto_aead_xchacha20poly1305_ietf_decrypt(
+        encrypted[vault.NONCE_BYTES:], sealed['additional_data'], encrypted[:vault.NONCE_BYTES], data_key,
+    )
+    return bindings.sodium_unpad(padded, vault.TEXT_BLOCK).decode()
+
+
+def test_an_exposure_report_moves_the_lawyers_messages_to_the_new_key(exposed):
+    profile, clip = exposed['profile'], exposed['clip']
+    new_private_key = PrivateKey.generate()
+    assert report(profile, exposed['private_key'], new_private_key).status_code == 201
+    new = grants.current_key(profile)
+    for message, text in zip(exposed['messages'], ['Were you near the station?', 'Yes, from the corner.']):
+        message.refresh_from_db()
+        assert message.lawyer_key == new and opened_by_lawyer(message, new_private_key) == text
+    # The code holder's copies, and the colleague's thread, are untouched.
+    assert [text for _, text in vault.code_holder_messages(clip, TEST_CODE)] == [
+        'Were you near the station?', 'Yes, from the corner.', 'Not theirs',
+    ]
+    assert Message.objects.filter(lawyer_profile__user__email='colleague@example.org').get().lawyer_key != new
+
+
+def test_a_report_missing_a_message_sent_meanwhile_is_refused_and_changes_nothing(exposed):
+    profile = exposed['profile']
+    old = grants.current_key(profile)
+    new_private_key = PrivateKey.generate()
+    first, missing = exposed['messages']
+    resealed = {first.pk: resealed_to(new_private_key, exposed['private_key'], first.lawyer_sealed_key)}
+    assert report(profile, exposed['private_key'], new_private_key, messages_resealed=resealed).status_code == 409
+    old.refresh_from_db()
+    missing.refresh_from_db()
+    assert old.retired_at is None and missing.lawyer_key == old
+
+
+def test_a_message_the_browser_could_not_open_stays_with_the_old_key(exposed):
+    profile = exposed['profile']
+    unopened = exposed['messages'][1]
+    response = report(profile, exposed['private_key'], PrivateKey.generate(), messages_unreadable=(unopened.pk,))
+    assert response.status_code == 201
+    unopened.refresh_from_db()
+    assert vault.sealed_message(unopened) is None
+    assert vault.code_holder_messages(exposed['clip'], TEST_CODE)[1][1] == 'Yes, from the corner.'
+
+
+@pytest.mark.parametrize('value', ['{"1": "AAAA"}', '{"7c9e6679-7425-40de-944b-E07FC1F90AE7": "AAAA"}', '[]'])
+def test_resealed_messages_are_keyed_by_message_id(exposed, value):
+    response = report(exposed['profile'], exposed['private_key'], PrivateKey.generate(), resealed_messages=value)
+    assert response.status_code == 400
+    assert grants.current_key(exposed['profile']).retired_at is None
 
 
 def test_a_report_missing_a_label_made_meanwhile_is_refused_and_changes_nothing(exposed):
@@ -381,7 +463,11 @@ def test_the_labels_a_browser_reseals_are_its_own_on_its_current_key(exposed):
     profile = exposed['profile']
     colleague = LawyerProfile.objects.get(user__email='colleague@example.org')
     make_case(colleague, 'Not theirs')
-    sent = client_for(profile).get(reverse('accounts:own_labels')).json()
+    sent = client_for(profile).get(reverse('accounts:own_sealed')).json()
     assert sent['public_key'] == b64(grants.current_key(profile).public_key)
     assert [label['id'] for label in sent['labels']] == [case.pk for case in exposed['cases']]
     assert all(label['key_check'] == b64(Case.objects.get(pk=label['id']).label_key_check) for label in sent['labels'])
+    assert sorted(message['id'] for message in sent['messages']) == sorted(str(message.pk) for message in exposed['messages'])
+    assert all(
+        message['key_check'] == b64(Message.objects.get(pk=message['id']).key_check) for message in sent['messages']
+    )

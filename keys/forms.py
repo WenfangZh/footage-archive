@@ -8,6 +8,7 @@ browser. A group key's private half arrives only sealed to a lawyer's personal k
 import base64
 import binascii
 import json
+import uuid
 
 from django import forms
 from django.utils.translation import gettext_lazy as _
@@ -156,22 +157,30 @@ class GrantForm(forms.Form):
 
 class SealedByIdField(forms.JSONField):
     """{id: a key sealed to something, `length` bytes in base64}, as a JSON object of at most
-    `limit` entries."""
+    `limit` entries. Ids are whole numbers, or with `uuid_ids` a message's UUIDs."""
 
     widget = forms.HiddenInput
 
-    def __init__(self, length, limit, **kwargs):
-        self.length, self.limit = length, limit
+    def __init__(self, length, limit, uuid_ids=False, **kwargs):
+        self.length, self.limit, self.uuid_ids = length, limit, uuid_ids
         super().__init__(**kwargs)
 
     def to_python(self, value):
         value = json_value(super().to_python, value)
         sealed = Base64BytesField(self.length)
-        if not isinstance(value, dict) or len(value) > self.limit or not all(
-            key.isascii() and key.isdigit() and len(key) <= 18 for key in value
-        ):
+        valid_id = uuid_id if self.uuid_ids else lambda key: key.isascii() and key.isdigit() and len(key) <= 18
+        if not isinstance(value, dict) or len(value) > self.limit or not all(valid_id(key) for key in value):
             raise forms.ValidationError(_('The key could not be read.'))
-        return {int(key): sealed.clean(item) for key, item in value.items()}
+        to_id = uuid.UUID if self.uuid_ids else int
+        return {to_id(key): sealed.clean(item) for key, item in value.items()}
+
+
+def uuid_id(value):
+    """Whether `value` is a UUID as Django writes one in JSON: 36 characters, lower case."""
+    try:
+        return isinstance(value, str) and str(uuid.UUID(value)) == value
+    except ValueError:
+        return False
 
 
 class NewGroupKeyForm(forms.Form):
@@ -225,13 +234,24 @@ class CheckResultForm(forms.Form):
 class ExposureReportForm(LoginPasswordForm, KeySetupForm):
     """A report that the key passphrase or recovery key may have been seen (design §5.6): the new
     key the browser made, as at setup; the old key's public half, naming the key it replaces;
-    each label's data key resealed to the new key, by case id; and the ids of the labels it
-    could not open."""
+    each label's data key resealed to the new key, by case id, and each message's, by message id;
+    and the ids of the labels and messages it could not open."""
 
     old_public_key = Base64BytesField(PUBLIC_KEY_BYTES)
-    # Optional only so that a lawyer without labels can send an empty object.
+    # Optional only so that a lawyer without labels or messages can send an empty object.
     resealed_labels = SealedByIdField(SEALED_DATA_KEY_BYTES, limit=10_000, required=False)
     unreadable_labels = forms.CharField(required=False, widget=forms.HiddenInput)
+    resealed_messages = SealedByIdField(SEALED_DATA_KEY_BYTES, limit=100_000, uuid_ids=True, required=False)
+    unreadable_messages = forms.CharField(required=False, widget=forms.HiddenInput)
 
     def clean_unreadable_labels(self):
         return item_ids(self.cleaned_data['unreadable_labels'])
+
+    def clean_unreadable_messages(self):
+        try:
+            items = json.loads(self.cleaned_data['unreadable_messages'] or '[]')
+        except (ValueError, RecursionError):
+            raise forms.ValidationError(_('The key could not be read.')) from None
+        if not isinstance(items, list) or len(items) > 100_000 or not all(uuid_id(item) for item in items):
+            raise forms.ValidationError(_('The key could not be read.'))
+        return [uuid.UUID(item) for item in items]

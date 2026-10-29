@@ -257,6 +257,24 @@ def sealed_message(message):
     }
 
 
+def messages_sealed_to(lawyer_key):
+    """The messages whose text is sealed to `lawyer_key`, for its lawyer's browser to reseal to a
+    new key (design §5.6, §7.3): each one's id, its sealed data key and its key check value."""
+    return [
+        {'id': message.pk, 'sealed_key': bytes(message.lawyer_sealed_key), 'key_check': bytes(message.key_check)}
+        for message in Message.objects.filter(lawyer_key=lawyer_key).order_by('pk')
+    ]
+
+
+def reseal_messages(old_key, new_key, resealed):
+    """Store the data keys the browser resealed to `new_key`, by message id; the texts stay as
+    they are. Call under the group key lock, which send_message takes too, after checking that
+    `resealed` covers the messages sealed to `old_key`."""
+    for message in Message.objects.filter(lawyer_key=old_key, pk__in=resealed):
+        message.lawyer_sealed_key, message.lawyer_key = resealed[message.pk], new_key
+        message.save(update_fields=['lawyer_sealed_key', 'lawyer_key'])
+
+
 class NotALawyer(Exception):
     """The thread's lawyer is not an admitted, unsuspended lawyer."""
 
