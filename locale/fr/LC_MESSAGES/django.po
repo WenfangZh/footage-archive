@@ -1865,6 +1865,26 @@ msgstr "Copie de preuve"
 msgid "Proxy"
 msgstr "Version de prévisualisation"
 
+#: clips/models.py:366
+msgid "To the code holder"
+msgstr "À la personne qui détient le code"
+
+#: clips/models.py:367
+msgid "From the code holder"
+msgstr "De la personne qui détient le code"
+
+#: clips/models.py:370
+msgid "Message"
+msgstr "Message"
+
+#: clips/models.py:371
+msgid "Report of a wrong time"
+msgstr "Signalement de clip : heure erronée"
+
+#: clips/models.py:372
+msgid "Report of a wrong place"
+msgstr "Signalement de clip : lieu erroné"
+
 #: clips/tags.py:10
 msgid "Arrest"
 msgstr "Interpellation"

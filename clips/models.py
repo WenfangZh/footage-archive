@@ -369,6 +369,79 @@ class SealedKey(models.Model):
         ]
 
 
+# The longest text a message holds, in characters.
+MESSAGE_MAX_LENGTH = 2000
+
+
+class Message(models.Model):
+    """A message in a thread: between one lawyer and the code holder of one clip (SPEC.md §7).
+    Only clips.vault writes or reads its text.
+
+    The text is padded and encrypted with its own data key, sealed to the clip's code holder key
+    and to the personal key the thread's lawyer held when it was sent (docs/m5-encryption-design.md
+    §7.3), never to a group key: no other lawyer and no rotation reaches it. A report of a wrong
+    time or place reaches the code holder as a message of that kind, whose note is optional. Like
+    VaultText, it has no readable __str__.
+    """
+
+    class Direction(models.TextChoices):
+        TO_CODE_HOLDER = 'to_code_holder', _('To the code holder')
+        FROM_CODE_HOLDER = 'from_code_holder', _('From the code holder')
+
+    class Kind(models.TextChoices):
+        MESSAGE = 'message', _('Message')
+        WRONG_TIME = 'wrong_time', _('Report of a wrong time')
+        WRONG_PLACE = 'wrong_place', _('Report of a wrong place')
+
+    # Random, like a clip's, and known before the message is saved: the text's additional data
+    # names it.
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    clip = models.ForeignKey(Clip, on_delete=models.CASCADE, related_name='messages')
+    # The thread's lawyer, whichever way the message goes.
+    lawyer_profile = models.ForeignKey('accounts.LawyerProfile', on_delete=models.PROTECT, related_name='+')
+    # Its place in the thread, from 0: times are kept only to their 4-hour block (SPEC.md §6),
+    # too coarse to put messages in order.
+    position = models.PositiveIntegerField()
+    direction = models.CharField(max_length=20, choices=Direction.choices)
+    kind = models.CharField(max_length=20, choices=Kind.choices, default=Kind.MESSAGE)
+    # Whether the lawyer chose to be named on it (their name and bar, from their account).
+    identified = models.BooleanField(default=False)
+    sent_at = FourHourBlockField(default=timezone.now)
+    # Whether its recipient has been shown it: the code holder's "new" mark, and what a lawyer's
+    # notification waits on. Never shown to the sender (SPEC.md §7: no read receipts).
+    seen = models.BooleanField(default=False)
+    # A 24-byte nonce, then the padded text encrypted with XChaCha20-Poly1305; empty, with the
+    # four fields after it, only on a report sent without a note.
+    ciphertext = models.BinaryField(null=True, blank=True)
+    code_holder_sealed_key = models.BinaryField(max_length=SEALED_DATA_KEY_BYTES, null=True, blank=True)
+    lawyer_sealed_key = models.BinaryField(max_length=SEALED_DATA_KEY_BYTES, null=True, blank=True)
+    # The personal key `lawyer_sealed_key` is sealed to: once it is retired, the lawyer can no
+    # longer read the text, which the code holder still can (design §5.6).
+    lawyer_key = models.ForeignKey('keys.LawyerKey', null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    # As VaultFile.key_check, so that a data key a browser reseals can be checked (design §5.6).
+    key_check = models.BinaryField(max_length=32, null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['clip', 'lawyer_profile', 'position'], name='one_message_per_place_in_thread'),
+            # Only lawyers report, and only lawyers choose whether to be named.
+            models.CheckConstraint(
+                condition=Q(direction='to_code_holder') | Q(kind='message', identified=False),
+                name='reports_and_names_from_lawyers_only',
+            ),
+            models.CheckConstraint(
+                condition=Q(
+                    ciphertext__isnull=False, code_holder_sealed_key__isnull=False, lawyer_sealed_key__isnull=False,
+                    lawyer_key__isnull=False, key_check__isnull=False,
+                ) | (~Q(kind='message') & Q(
+                    ciphertext__isnull=True, code_holder_sealed_key__isnull=True, lawyer_sealed_key__isnull=True,
+                    lawyer_key__isnull=True, key_check__isnull=True,
+                )),
+                name='message_text_encrypted_and_sealed_to_both',
+            ),
+        ]
+
+
 def quarantine_storage():
     # Never served over the web: nothing routes to this folder (SPEC.md §8).
     return FileSystemStorage(location=settings.QUARANTINE_DIR)
