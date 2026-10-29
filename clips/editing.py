@@ -86,11 +86,18 @@ def apply_edits(clip, cleaned, code):
             raise NotEditable
         clip.save(update_fields=EDITED_FIELDS)
         if tags_changed:
-            ClipTag.objects.filter(clip=clip, source=ClipTag.Source.CODE_HOLDER).delete()
+            # Only the tags dropped or added change: a tag kept keeps its row, and with it what
+            # lawyers did to it, such as removing it for lawyers (SPEC.md §7). A default tag's
+            # custom name is empty, and a custom tag's key, so each exclude spares one kind.
+            ClipTag.objects.filter(clip=clip, source=ClipTag.Source.CODE_HOLDER).exclude(
+                key__in=new_tags[0],
+            ).exclude(custom_name__in=new_tags[1]).delete()
+            kept_keys, kept_custom = code_holder_tags(clip)
             ClipTag.objects.bulk_create(
-                [ClipTag(clip=clip, key=key, source=ClipTag.Source.CODE_HOLDER) for key in new_tags[0]]
+                [ClipTag(clip=clip, key=key, source=ClipTag.Source.CODE_HOLDER)
+                 for key in new_tags[0] if key not in kept_keys]
                 + [ClipTag(clip=clip, custom_name=name, source=ClipTag.Source.CODE_HOLDER)
-                   for name in new_tags[1]]
+                   for name in new_tags[1] if name not in kept_custom]
             )
         for field, text in new_texts.items():
             vault.put_text(clip, texts[field], text)

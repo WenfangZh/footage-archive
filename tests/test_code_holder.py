@@ -227,6 +227,21 @@ def test_tags_can_change_and_lawyer_tags_stay(client, uploaded):
     assert list(Edit.objects.values_list('field', flat=True)) == ['tags']
 
 
+def test_a_tag_the_code_holder_keeps_keeps_its_row(client, uploaded):
+    # What lawyers did to a tag (removing it for lawyers, proposals) is held on its row, so an
+    # edit that keeps the tag must keep the row (SPEC.md §7).
+    clip, code = uploaded
+    kept = {(tag.key, tag.custom_name): tag.pk for tag in ClipTag.objects.filter(clip=clip)}
+    edit(client, code, tags=['arrest', 'kettling'], custom_tags='Barricade, Pont Neuf')
+    after = {(tag.key, tag.custom_name): tag.pk for tag in ClipTag.objects.filter(clip=clip)}
+    assert after[('arrest', '')] == kept[('arrest', '')]
+    assert after[('', 'Barricade')] == kept[('', 'Barricade')]
+    assert set(after) == {('arrest', ''), ('kettling', ''), ('', 'Barricade'), ('', 'Pont Neuf')}
+    edit(client, code, tags=['kettling'], custom_tags='Pont Neuf')
+    assert set(ClipTag.objects.values_list('key', 'custom_name')) == {('kettling', ''), ('', 'Pont Neuf')}
+    assert ClipTag.objects.get(key='kettling').pk == after[('kettling', '')]
+
+
 def test_an_edit_with_a_wrong_code_changes_nothing(client, uploaded):
     clip, code = uploaded
     values = form_values(open_clip(client, code).content.decode())
