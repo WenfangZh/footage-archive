@@ -241,7 +241,9 @@ class ExposureReportForm(LoginPasswordForm, KeySetupForm):
     # Optional only so that a lawyer without labels or messages can send an empty object.
     resealed_labels = SealedByIdField(SEALED_DATA_KEY_BYTES, limit=10_000, required=False)
     unreadable_labels = forms.CharField(required=False, widget=forms.HiddenInput)
-    resealed_messages = SealedByIdField(SEALED_DATA_KEY_BYTES, limit=100_000, uuid_ids=True, required=False)
+    # As many as one request carries: Django refuses a body over DATA_UPLOAD_MAX_MEMORY_SIZE
+    # (2.5 MB), about 14,000 resealed messages, fewer with labels.
+    resealed_messages = SealedByIdField(SEALED_DATA_KEY_BYTES, limit=10_000, uuid_ids=True, required=False)
     unreadable_messages = forms.CharField(required=False, widget=forms.HiddenInput)
 
     def clean_unreadable_labels(self):
@@ -252,6 +254,6 @@ class ExposureReportForm(LoginPasswordForm, KeySetupForm):
             items = json.loads(self.cleaned_data['unreadable_messages'] or '[]')
         except (ValueError, RecursionError):
             raise forms.ValidationError(_('The key could not be read.')) from None
-        if not isinstance(items, list) or len(items) > 100_000 or not all(uuid_id(item) for item in items):
+        if not isinstance(items, list) or len(items) > 10_000 or not all(uuid_id(item) for item in items):
             raise forms.ValidationError(_('The key could not be read.'))
         return [uuid.UUID(item) for item in items]

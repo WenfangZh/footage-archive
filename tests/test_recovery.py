@@ -13,6 +13,7 @@ import re
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.contrib.messages import get_messages
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
@@ -403,12 +404,22 @@ def test_a_message_the_browser_could_not_open_stays_with_the_old_key(exposed):
     unopened = exposed['messages'][1]
     response = report(profile, exposed['private_key'], PrivateKey.generate(), messages_unreadable=(unopened.pk,))
     assert response.status_code == 201
+    shown = [str(message) for message in get_messages(response.wsgi_request)]
+    # In the request's language: '1 message could not…' or '1 message n'a pas…'.
+    assert any(message.startswith('1 message ') for message in shown)
     unopened.refresh_from_db()
     assert vault.sealed_message(unopened) is None
     assert vault.code_holder_messages(exposed['clip'], TEST_CODE)[1][1] == 'Yes, from the corner.'
 
 
-@pytest.mark.parametrize('value', ['{"1": "AAAA"}', '{"7c9e6679-7425-40de-944b-E07FC1F90AE7": "AAAA"}', '[]'])
+# A sealed key of the right length, so that only the id can be refused.
+SEALED = b64(os.urandom(80))
+
+
+@pytest.mark.parametrize('value', [
+    f'{{"1": "{SEALED}"}}', f'{{"7c9e6679-7425-40de-944b-E07FC1F90AE7": "{SEALED}"}}',
+    f'{{"7c9e6679742540de944be07fc1f90ae7": "{SEALED}"}}', '[]',
+])
 def test_resealed_messages_are_keyed_by_message_id(exposed, value):
     response = report(exposed['profile'], exposed['private_key'], PrivateKey.generate(), resealed_messages=value)
     assert response.status_code == 400

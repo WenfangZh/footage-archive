@@ -241,6 +241,13 @@ def exposure(request):
             'The labels of %(count)d cases could not be opened, so could not be moved to your new key: they are lost.',
             lost,
         ) % {'count': lost})
+    if data['unreadable_messages']:
+        lost = len(data['unreadable_messages'])
+        messages.warning(request, ngettext(
+            '%(count)d message could not be opened, so could not be moved to your new key: you can no longer read it.',
+            '%(count)d messages could not be opened, so could not be moved to your new key: you can no longer read them.',
+            lost,
+        ) % {'count': lost})
     response = HttpResponse(status=201)
     # The old key, unlocked in this browser's tabs, is retired: forget it, as at logout.
     response['Clear-Site-Data'] = '"storage"'
