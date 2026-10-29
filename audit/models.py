@@ -10,7 +10,7 @@ Each entry names the applicant or lawyer concerned and, on the admin's actions, 
 A lawyer's own actions also name their case and, where there is one, the clip: as a plain
 id, so that deleting a clip never deletes or changes an entry. A search records how many
 clips it found instead (SPEC.md §7). The admin's decision on a larger case names the case.
-One entry names nobody: a change of the size caps or alert limits found when the archive
+One entry names no person: a change of the size caps or alert limits found when the archive
 starts, with the numbers before and after (audit.limits). The admin's temporary raise of
 one lawyer's alert limit records the limit before and after too. A key grant names the
 lawyer who granted and the personal key it was granted to, which names its lawyer
@@ -187,12 +187,12 @@ class AuditEntryQuerySet(models.QuerySet):
 class AuditEntry(models.Model):
     """One action in the audit log: what was done, about whom, by the admin or not, and when.
 
-    A lawyer's actions also record the case, and the clip or the number of clips found.
+    A lawyer's actions also record the case, and the clip (and tag) or the number of clips found.
     """
 
     action = models.CharField(max_length=30, choices=Action.choices)
     # The applicant or lawyer the entry is about: the lawyer who acted, or the person
-    # whose account or case the admin decided on. Empty only on entries about the archive.
+    # whose account or case the admin decided on. Empty only on NO_LAWYER_ACTIONS.
     lawyer_profile = models.ForeignKey(
         LawyerProfile, null=True, blank=True, on_delete=models.PROTECT, related_name='+',
     )

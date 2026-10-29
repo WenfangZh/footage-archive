@@ -950,17 +950,17 @@ msgstr "Signalement de clip : contenu inapproprié"
 #: audit/models.py:102
 msgctxt "audit log action"
 msgid "Cancelling of a doubt"
-msgstr "Annulation d'un doute sur l'authenticité"
+msgstr "Annulation d'un signalement de clip : doute sur l'authenticité"
 
 #: audit/models.py:104
 msgctxt "audit log action"
 msgid "Cancelling of a report of inappropriate content"
-msgstr "Annulation d'un signalement de contenu inapproprié"
+msgstr "Annulation d'un signalement de clip : contenu inapproprié"
 
 #: audit/models.py:106
 msgctxt "audit log action"
 msgid "Withdrawal of a clip, after a second report"
-msgstr "Retrait d'un clip après un second signalement"
+msgstr "Retrait d'un clip après un second signalement de clip"
 
 #: audit/models.py:108
 msgctxt "audit log action"
