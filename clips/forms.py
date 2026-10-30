@@ -158,6 +158,7 @@ class EditForm(ClipFieldsForm):
         return cleaned
 
 
+# A message's or reply's length, either way: lawyers' (cases.forms) and the code holder's.
 MESSAGE_MAX_LENGTH = 4000
 
 

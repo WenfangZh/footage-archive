@@ -13,6 +13,7 @@ from django.utils.translation import gettext_lazy as _
 
 from accounts.models import LawyerProfile
 from clips import grid
+from clips.forms import MESSAGE_MAX_LENGTH
 from clips.tags import CUSTOM_TAG_MAX_LENGTH, DEFAULT_TAGS
 
 from . import size
@@ -262,9 +263,6 @@ class LawyerTagForm(forms.Form):
         if bool(cleaned.get('key')) == bool(cleaned.get('custom_name')):
             raise forms.ValidationError(_('Choose a default tag or write your own, not both.'))
         return cleaned
-
-
-MESSAGE_MAX_LENGTH = 4000
 
 
 class MessageForm(forms.Form):
