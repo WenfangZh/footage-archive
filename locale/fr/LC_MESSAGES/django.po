@@ -2227,8 +2227,11 @@ msgstr ""
 "revenir."
 
 #: clips/templates/clips/clip.html:22
-msgid "You can still delete it."
-msgstr "Vous pouvez encore le supprimer."
+msgid ""
+"You can still delete it, and read and answer lawyers' messages about it."
+msgstr ""
+"Vous pouvez encore le supprimer, et lire les messages des avocat·es à son "
+"sujet et y répondre."
 
 #: clips/templates/clips/clip.html:25 clips/templates/clips/confirm.html:17
 msgid "Time found in the video:"

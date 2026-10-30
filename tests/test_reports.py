@@ -10,13 +10,15 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import LawyerProfile
 from audit.models import REPORT_ACTIONS, Action, AuditEntry
 from cases import clip_pages
 from cases.models import Case
 from clips import grid, upload_codes, vault
-from clips.models import Clip, ClipTag, Precision, Report
+from clips.models import Clip, ClipTag, Message, Precision, Report
+from keys.models import LawyerKey
 from tests.conftest import BASTILLE, TEST_CODE, log_in_with_second_factor, make_case, with_code_holder_key
 
 pytestmark = pytest.mark.django_db
@@ -186,6 +188,22 @@ def test_the_code_holder_sees_the_withdrawal_and_can_only_delete_the_clip(lawyer
     assert 'Your clip was withdrawn' in page
     assert f'action="{reverse("clips:edit")}"' not in page and f'action="{reverse("clips:delete")}"' in page
     assert refused.status_code == 409 and not clip.edits.exists()
+
+
+def test_a_withdrawn_clips_threads_can_still_be_read_and_answered_on_both_sides(lawyers, clip):
+    lawyer = lawyers[2]
+    LawyerKey.objects.filter(lawyer_profile=lawyer.profile).update(admin_confirmed_at=timezone.now())
+    first = vault.send_message(clip, lawyer.profile, Message.Direction.TO_CODE_HOLDER, 'Were you near the station?')
+    lawyers[0].report(clip, INAPPROPRIATE)
+    lawyers[1].report(clip, INAPPROPRIATE, confirm_withdrawal='yes')
+
+    page = Client().post(reverse('clips:code_holder'), {'code': TEST_CODE}, headers=ENGLISH).content.decode()
+    answered = Client().post(reverse('clips:reply'), {'code': TEST_CODE, 'thread': first.pk, 'text': 'Yes.'}, headers=ENGLISH)
+    replied = lawyer.client.post(reverse('lawyer:reply', kwargs={'clip_id': clip.pk}), {'text': 'Thank you.'}, headers=ENGLISH)
+
+    assert 'Were you near the station?' in page and 'read and answer' in page
+    assert answered.status_code == 200 and replied.status_code == 302
+    assert [text for _message, text in vault.code_holder_messages(clip, TEST_CODE)] == ['Were you near the station?', 'Yes.', 'Thank you.']
 
 
 def test_a_cancelled_doubt_or_first_report_stops_counting_and_is_logged(lawyers, clip):
