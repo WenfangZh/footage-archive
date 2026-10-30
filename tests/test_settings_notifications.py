@@ -11,7 +11,7 @@ from django.urls import reverse
 
 from accounts.models import LawyerProfile
 from cases import notifications
-from clips import vault
+from clips import threads, vault
 from clips.models import Message
 from tests.test_lawyer_messages import ENGLISH, Lawyer, clip, lawyer  # noqa: F401 (fixtures)
 
@@ -76,6 +76,8 @@ def test_one_email_at_the_end_of_the_block_saying_only_that_something_is_waiting
     assert email.to == [lawyer.profile.user.email]
     assert 'Something is waiting for you' in email.body and "Quelque chose vous attend" in email.body
     assert str(clip.pk) not in email.subject + email.body and 'pushed' not in email.body
+    # A link to log in, which says nothing more either.
+    assert 'https://archive.example.org/login/' in email.body
 
 
 def test_no_other_email_until_the_lawyer_opens_their_messages(lawyer, clip, mailoutbox):  # noqa: F811
@@ -112,14 +114,30 @@ def test_a_lawyer_with_notifications_off_or_no_longer_admitted_gets_none(lawyer,
     assert not mailoutbox
 
 
-def test_an_email_that_could_not_be_sent_is_tried_again(lawyer, clip, mailoutbox, monkeypatch):  # noqa: F811
+@pytest.mark.parametrize('error', [OSError('The mail server is down.'), ValueError('A header the backend refuses.')])
+def test_an_email_that_could_not_be_sent_is_tried_again(lawyer, clip, mailoutbox, monkeypatch, error):  # noqa: F811
     lawyer.send(clip)
     arrives(clip, lawyer)
 
     def refuse(*args, **kwargs):
-        raise OSError('The mail server is down.')
+        raise error
 
     monkeypatch.setattr(notifications, 'send_mail', refuse)
     assert notifications.send_notifications(now=NEXT_BLOCK) == 0
     monkeypatch.undo()
     assert notifications.send_notifications(now=NEXT_BLOCK) == 1
+
+
+def test_a_lawyer_whose_unopened_thread_was_deleted_is_told_of_the_next_message(lawyer, clip, mailoutbox, settings):  # noqa: F811
+    settings.THREAD_LIFETIME_DAYS = 1
+    lawyer.send(clip)
+    Message.objects.update(sent_at=BLOCK)
+    arrives(clip, lawyer)
+    notifications.send_notifications(now=NEXT_BLOCK)
+    threads.delete_expired_threads(now=NEXT_BLOCK + datetime.timedelta(days=2))
+
+    lawyer.send(clip)
+    arrives(clip, lawyer, at=NEXT_BLOCK + datetime.timedelta(days=2))
+
+    assert notifications.send_notifications(now=NEXT_BLOCK + datetime.timedelta(days=3)) == 1
+    assert len(mailoutbox) == 2

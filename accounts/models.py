@@ -155,8 +155,10 @@ class LawyerProfile(models.Model):
     identified_by_default = models.BooleanField(default=False)
     # Whether an email says when something starts waiting for them (cases.notifications).
     notifications = models.BooleanField(default=True)
-    # An email has said so, and they have not opened their messages since: no other until then.
-    notified = models.BooleanField(default=False)
+    # An email told them of a code holder's messages sent before this time (a 4-hour block's
+    # start), and they have not opened their messages since: no other email until they do, or
+    # until none of those messages is left unopened (deleted with its thread or clip).
+    notified_before = models.DateTimeField(null=True, blank=True)
 
     objects = LawyerProfileQuerySet.as_manager()
 

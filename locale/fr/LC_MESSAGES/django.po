@@ -1246,7 +1246,7 @@ msgstr "Clos après une longue période sans usage"
 msgid "Closed when the admin refused it"
 msgstr "Clos au refus de l'administrateur·rice"
 
-#: cases/notifications.py:29
+#: cases/notifications.py:33
 msgid "Something is waiting for you in the footage archive"
 msgstr "Quelque chose vous attend dans l'archive de vidéos"
 
@@ -2700,11 +2700,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:391
+#: config/settings.py:396
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:392
+#: config/settings.py:397
 msgid "English"
 msgstr "Anglais"
 

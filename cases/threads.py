@@ -126,7 +126,7 @@ def messages_page(request):
     Message.objects.filter(
         pk__in=[item['message'].pk for thread in threads.values() for item in thread if item['new']],
     ).update(seen=True)
-    LawyerProfile.objects.filter(pk=profile.pk, notified=True).update(notified=False)
+    LawyerProfile.objects.filter(pk=profile.pk, notified_before__isnull=False).update(notified_before=None)
     return render(request, 'cases/messages.html', {
         'threads': [
             # Its own field ids, so that a label never ticks another thread's box.
