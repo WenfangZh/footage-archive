@@ -45,6 +45,7 @@ from keys.forms import Base64BytesField
 from keys.grants import reads_vault
 from keys.views import b64
 
+from . import reports
 from .forms import LawyerTagForm, MessageForm
 from .models import Case
 from .search import match_of
@@ -134,6 +135,8 @@ def clip_page(request, case_id, clip_id):
         'has_thread': Message.objects.filter(clip=clip, lawyer_profile=case.lawyer_profile).exists(),
         'uploaded_tags': tag_names(uploaded.get('default', []), uploaded.get('custom', [])),
         'edits': clip.edits.order_by('edited_at', 'pk'),
+        # Never who reported, nor how many (SPEC.md §7).
+        **reports.shown(clip, case.lawyer_profile),
         'reads_vault': reads,
         'context': reads and sealed_text_json(clip, vault.CONTEXT),
         # Left by the code holder on purpose, despite the risk, so that a lawyer can reach them.

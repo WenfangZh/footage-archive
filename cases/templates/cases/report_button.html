@@ -1,0 +1,1 @@
+{% load i18n %}<form method="post" action="{% url action case_id=case.pk clip_id=clip.pk kind=kind %}">{% csrf_token %}{% if withdraws %}<label><input type="checkbox" name="confirm_withdrawal" value="yes" required> {% translate "I understand that this withdraws the clip for good." %}</label> {% endif %}<button type="submit">{{ label }}</button></form>

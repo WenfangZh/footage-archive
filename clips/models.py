@@ -52,6 +52,9 @@ class Clip(models.Model):
         READY = 'ready', _('Ready')
         # Ingest failed for good: the original is deleted, and the code holder can upload again.
         FAILED = 'failed', _('Failed')
+        # Reported as inappropriate by two different lawyers (Report): gone from every search,
+        # clip page, preview and download, for good, until deleted (SPEC.md §7).
+        WITHDRAWN = 'withdrawn', _('Withdrawn')
 
     # Random, so that ids say nothing about upload order.
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -196,6 +199,30 @@ class TagProposal(models.Model):
         constraints = [
             # A lawyer's proposals count once.
             models.UniqueConstraint(fields=['tag', 'lawyer_profile'], name='one_proposal_per_lawyer_and_tag'),
+        ]
+
+
+class Report(models.Model):
+    """A lawyer's report that counts (SPEC.md §7, cases.reports): a doubt about authenticity,
+    which shows other lawyers a doubt marker, or a report of inappropriate content, which shows
+    them a content warning, and withdraws the clip once a second lawyer makes one. A report of a
+    wrong time or place is a Message instead, of that kind: it counts for nothing. Cancelling
+    deletes the row; the audit log keeps both."""
+
+    class Kind(models.TextChoices):
+        DOUBT = 'doubt', _('Doubt about authenticity')
+        INAPPROPRIATE = 'inappropriate', _('Inappropriate content')
+
+    clip = models.ForeignKey(Clip, on_delete=models.CASCADE, related_name='reports')
+    # Made through a usable case of theirs that matched the clip: the audit entry names it.
+    lawyer_profile = models.ForeignKey('accounts.LawyerProfile', on_delete=models.PROTECT, related_name='+')
+    kind = models.CharField(max_length=20, choices=Kind.choices)
+
+    class Meta:
+        constraints = [
+            # A lawyer's report of each kind counts once.
+            models.UniqueConstraint(fields=['clip', 'lawyer_profile', 'kind'], name='one_report_per_lawyer_and_kind'),
+            models.CheckConstraint(condition=Q(kind__in=['doubt', 'inappropriate']), name='known_report_kind'),
         ]
 
 

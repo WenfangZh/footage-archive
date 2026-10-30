@@ -14,7 +14,7 @@ from keys.grants import uploads_open
 
 from . import grid, probe, rate_limits, vault
 from .confirmation import AlreadyConfirmed, confirm_upload
-from .editing import NotEditable, apply_edits, clip_for_code, code_holder_tags, delete_clip
+from .editing import EDITABLE, NotEditable, apply_edits, clip_for_code, code_holder_tags, delete_clip
 from .forms import MESSAGE_MAX_LENGTH, METADATA_PRECISIONS, ConfirmForm, EditForm, FileForm, ReplyForm
 from .models import Clip, Message, Original, Precision
 from .tags import DEFAULT_TAGS
@@ -154,8 +154,7 @@ def edit(request):
     clip, refusal = clip_or_refusal(request, typed)
     if refusal:
         return refusal
-    if clip.status == Clip.Status.FAILED:
-        # Nothing is left to describe: the code holder uploads again instead.
+    if clip.status not in EDITABLE:
         return render_clip(request, clip, edit_form(clip, code=typed), status=409)
     form = edit_form(clip, data=request.POST)
     if not form.is_valid():
@@ -163,7 +162,7 @@ def edit(request):
     try:
         changed = apply_edits(clip, form.cleaned_data, normalise(typed))
     except NotEditable:
-        # Failed or deleted meanwhile: shown as it is now.
+        # Failed, withdrawn or deleted meanwhile: shown as it is now.
         clip = clip_for_code(typed)
         if clip is None:
             return render(request, 'clips/code_entry.html', {'wrong_code': True}, status=404)
@@ -268,6 +267,8 @@ def render_clip(request, clip, form, status=200, **flags):
         'threads': code_holder_threads(clip, normalise(code)),
         'reply_max_length': MESSAGE_MAX_LENGTH,
         'failed': clip.status == Clip.Status.FAILED,
+        'withdrawn': clip.status == Clip.Status.WITHDRAWN,
+        'editable': clip.status in EDITABLE,
         'metadata_size': METADATA_SIZES.get(grid.resolution(clip.metadata_cell)) if clip.metadata_cell else None,
         'can_coarsen': 'metadata_precision' in form.fields,
         **flags,
