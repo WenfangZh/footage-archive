@@ -102,4 +102,12 @@
   {% if edits %}
     <ul>{% for edit in edits %}<li>{% blocktranslate with field=edit.get_field_display day=edit.edited_at|date:"j F Y" start=edit.edited_at|date:"H:i" %}{{ field }}: {{ day }}, in the four hours from {{ start }}{% endblocktranslate %}</li>{% endfor %}</ul>
   {% else %}<p>{% translate "None." %}</p>{% endif %}
+
+  <h2>{% translate "Message to the code holder" %}</h2>
+  {% if has_thread %}<p><a href="{% url 'lawyer:messages' %}#thread-{{ clip.pk }}">{% translate "Your thread with this clip's code holder" %}</a></p>{% endif %}
+  <form method="post" action="{% url 'lawyer:send_message' case_id=case.pk clip_id=clip.pk %}">
+    {% csrf_token %}
+    {{ message_form.as_p }}
+    <button type="submit">{% translate "Send" %}</button>
+  </form>
 {% endblock %}
