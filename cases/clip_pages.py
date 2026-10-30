@@ -38,13 +38,14 @@ from alerts.checks import check_activity
 from alerts.models import AlertLimitRaise
 from audit.models import Action, AuditEntry, record
 from clips import grid, vault
-from clips.models import Clip, HashRecord
+from clips.models import Clip, HashRecord, TagProposal
 from clips.streaming import file_response, requested_range
 from clips.tags import DEFAULT_TAGS
 from keys.forms import Base64BytesField
 from keys.grants import reads_vault
 from keys.views import b64
 
+from .forms import LawyerTagForm
 from .models import Case
 from .search import match_of
 
@@ -112,6 +113,12 @@ def clip_page(request, case_id, clip_id):
         if gap > datetime.timedelta(minutes=settings.TIME_MISMATCH_MINUTES):
             mismatch = round(gap.total_seconds() / 60)
     tags = clip.tags.order_by('source', 'key', 'custom_name')
+    proposed = set(TagProposal.objects.filter(tag__clip=clip, lawyer_profile=case.lawyer_profile).values_list('tag', flat=True))
+    shown_tags = [
+        {'id': tag.pk, 'name': tag.get_key_display() or tag.custom_name, 'source': tag.source,
+         'source_name': tag.get_source_display(), 'proposed': tag.pk in proposed, 'removed': tag.removed}
+        for tag in tags
+    ]
     reads = reads_vault(case.lawyer_profile)
     uploaded = clip.as_uploaded_tags or {}
     return render(request, 'cases/clip.html', {
@@ -119,7 +126,10 @@ def clip_page(request, case_id, clip_id):
         'stated_place': place(clip.stated_cell, clip.get_stated_precision_display()),
         'metadata_place': place(clip.metadata_cell),
         'uploaded_place': place(clip.as_uploaded_stated_cell, clip.get_as_uploaded_stated_precision_display()),
-        'tags': [(tag.get_key_display() or tag.custom_name, tag.get_source_display()) for tag in tags],
+        # Which lawyer added a tag, and how many proposals one has, are never shown (SPEC.md §7).
+        'tags': [tag for tag in shown_tags if not tag['removed']],
+        'removed_tags': [tag for tag in shown_tags if tag['removed']],
+        'tag_form': LawyerTagForm(),
         'uploaded_tags': tag_names(uploaded.get('default', []), uploaded.get('custom', [])),
         'edits': clip.edits.order_by('edited_at', 'pk'),
         'reads_vault': reads,

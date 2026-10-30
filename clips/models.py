@@ -150,7 +150,11 @@ class Clip(models.Model):
 
 
 class ClipTag(models.Model):
-    """A tag on a clip: a default tag (by key) or a custom tag (as typed)."""
+    """A tag on a clip: a default tag (by key) or a custom tag (as typed).
+
+    Lawyers can remove a tag of either source for lawyers, and restore it, by three proposals
+    (TagProposal, SPEC.md §7); which lawyer added a lawyer's tag is only in the audit log.
+    """
 
     class Source(models.TextChoices):
         CODE_HOLDER = 'code_holder', _('code holder')
@@ -160,6 +164,8 @@ class ClipTag(models.Model):
     key = models.CharField(max_length=40, choices=list(DEFAULT_TAGS.items()), blank=True)
     custom_name = models.CharField(max_length=CUSTOM_TAG_MAX_LENGTH, blank=True)
     source = models.CharField(max_length=20, choices=Source.choices)
+    # Removed for lawyers by three proposals; the code holder still sees their own tag.
+    removed = models.BooleanField(default=False)
 
     class Meta:
         constraints = [
@@ -174,6 +180,22 @@ class ClipTag(models.Model):
                 fields=['clip', 'source', 'custom_name'], condition=~Q(custom_name=''),
                 name='unique_custom_tag',
             ),
+        ]
+
+
+class TagProposal(models.Model):
+    """A lawyer's open proposal to remove a tag, or to restore a removed one: always towards the
+    other state, so it needs no direction of its own. The third, from three different lawyers,
+    removes or restores the tag and closes the proposals that made it (lawyer_tags)."""
+
+    tag = models.ForeignKey(ClipTag, on_delete=models.CASCADE, related_name='proposals')
+    # Made through a usable case of theirs that matched the clip: the audit entry names it.
+    lawyer_profile = models.ForeignKey('accounts.LawyerProfile', on_delete=models.PROTECT, related_name='+')
+
+    class Meta:
+        constraints = [
+            # A lawyer's proposals count once.
+            models.UniqueConstraint(fields=['tag', 'lawyer_profile'], name='one_proposal_per_lawyer_and_tag'),
         ]
 
 

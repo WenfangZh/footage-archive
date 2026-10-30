@@ -1,6 +1,7 @@
 import datetime
 import math
 import re
+import unicodedata
 import zoneinfo
 
 from django import forms
@@ -12,6 +13,7 @@ from django.utils.translation import gettext_lazy as _
 
 from accounts.models import LawyerProfile
 from clips import grid
+from clips.tags import CUSTOM_TAG_MAX_LENGTH, DEFAULT_TAGS
 
 from . import size
 from .models import ADMIN_NOTE_MAX_LENGTH, REASON_MAX_LENGTH
@@ -231,3 +233,32 @@ class DecisionForm(forms.Form):
         label=_('Your note to the lawyer (optional)'), required=False, max_length=ADMIN_NOTE_MAX_LENGTH,
         widget=forms.Textarea, help_text=_("Kept with the case, which its lawyer can see. Never a client's name."),
     )
+
+
+class LawyerTagForm(forms.Form):
+    """One tag: a default tag, or a custom one."""
+
+    key = forms.ChoiceField(
+        label=_('Default tag'), required=False, choices=[('', '—'), *DEFAULT_TAGS.items()],
+    )
+    custom_name = forms.CharField(
+        label=_('Or your own tag'), required=False, max_length=CUSTOM_TAG_MAX_LENGTH,
+        help_text=_(
+            'Every lawyer whose case matches this clip will see it. Write only what can be seen, nothing about your case.'
+        ),
+    )
+
+    def clean_custom_name(self):
+        # Composed, so that the same text typed or pasted another way is the same tag.
+        name = unicodedata.normalize('NFC', self.cleaned_data['custom_name']).strip()
+        if name and not any(character.isalnum() for character in name):
+            raise forms.ValidationError(_('A tag needs at least one letter or digit.'))
+        return name
+
+    def clean(self):
+        cleaned = super().clean()
+        if 'custom_name' in self.errors:
+            return cleaned
+        if bool(cleaned.get('key')) == bool(cleaned.get('custom_name')):
+            raise forms.ValidationError(_('Choose a default tag or write your own, not both.'))
+        return cleaned

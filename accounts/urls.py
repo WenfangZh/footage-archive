@@ -2,7 +2,7 @@ from django.urls import path
 
 from alerts import views as alert_views
 from cases import approval as case_approval
-from cases import clip_pages, tag_history
+from cases import clip_pages, tag_history, tag_pages
 from cases import views as case_views
 from keys import views as key_views
 from maps import views as map_views
@@ -27,6 +27,10 @@ lawyer_patterns = [
     # Under the clip's own path: the data key cookie it sets is sent nowhere else (cases.clip_pages).
     path('cases/<int:case_id>/clips/<uuid:clip_id>/data-key/<str:file>/', clip_pages.data_key, name='data_key'),
     path('cases/<int:case_id>/clips/<uuid:clip_id>/hash-record/', clip_pages.hash_record, name='hash_record'),
+    path('cases/<int:case_id>/clips/<uuid:clip_id>/tags/', tag_pages.add_tag, name='add_tag'),
+    path('cases/<int:case_id>/clips/<uuid:clip_id>/tags/<int:tag_id>/propose/', tag_pages.propose, name='propose_tag'),
+    path('cases/<int:case_id>/clips/<uuid:clip_id>/tags/<int:tag_id>/cancel/', tag_pages.cancel, name='cancel_tag'),
+    path('tags.css', tag_pages.tag_colours, name='tag_colours'),
     path('margin/', case_views.default_margin, name='default_margin'),
     # Handing over the group key (keys.views).
     path('keys/', key_views.waiting, name='waiting'),

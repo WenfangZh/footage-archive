@@ -13,7 +13,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
 from django.db import connection
 
-from config.settings import env_bool, env_int, env_list
+from config.settings import env_bool, env_colour, env_int, env_list
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -175,7 +175,8 @@ def test_env_int_enforces_bounds(monkeypatch, value, message):
 
 def variables_read_by_settings():
     source = (BASE_DIR / 'config' / 'settings.py').read_text()
-    pattern = r"(?:env_required|env_bool|env_list|env_int|os\.environ\.get|os\.getenv)\(\s*'([A-Z0-9_]+)'"
+    # Every env_* helper, so that a new one is not missed.
+    pattern = r"(?:env_[a-z]+|os\.environ\.get|os\.getenv)\(\s*'([A-Z0-9_]+)'"
     return set(re.findall(pattern, source))
 
 
@@ -198,3 +199,11 @@ def test_env_example_holds_no_keys():
     lines = (BASE_DIR / '.env.example').read_text().splitlines()
     assert 'DJANGO_SECRET_KEY=' in lines
     assert 'UPLOAD_CODE_KEY=' in lines
+
+
+@pytest.mark.parametrize('value', ['red', '#e69f0', '#e69f00; } body { display: none', 'url(x)'])
+def test_a_tag_colour_must_be_rrggbb(monkeypatch, value):
+    # It goes into a stylesheet, so nothing else may get in.
+    monkeypatch.setenv('SOME_COLOUR', value)
+    with pytest.raises(ImproperlyConfigured, match='#rrggbb'):
+        env_colour('SOME_COLOUR', '#0072b2')

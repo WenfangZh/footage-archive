@@ -4,6 +4,7 @@
 {% block title %}{% translate "Clip" %}{% endblock %}
 
 {% block head %}
+  <link rel="stylesheet" href="{% url 'lawyer:tag_colours' %}">
   {% include "keys/scripts.html" %}
   {% if reads_vault %}<script src="{% static 'keys/clip_keys.js' %}" defer></script>{% endif %}
 {% endblock %}
@@ -55,8 +56,34 @@
 
   <h2>{% translate "Tags" %}</h2>
   {% if tags %}
-    <ul>{% for name, source in tags %}<li>{{ name }} <small>({{ source }})</small></li>{% endfor %}</ul>
+    <ul>{% for tag in tags %}
+      <li class="tag-source-{{ tag.source }}">{{ tag.name }} <small>({{ tag.source_name }})</small>
+        {% if tag.proposed %}
+          · {% translate "you proposed removing it" %}
+          {% include "cases/tag_button.html" with action="lawyer:cancel_tag" label=_("Cancel my proposal") %}
+        {% else %}
+          {% include "cases/tag_button.html" with action="lawyer:propose_tag" direction="remove" label=_("Propose removing it") %}
+        {% endif %}
+      </li>{% endfor %}</ul>
   {% else %}<p>{% translate "No tags." %}</p>{% endif %}
+  <p>{% translate "Proposals from three different lawyers remove a tag for lawyers; the code holder still sees their own tags." %}</p>
+  {% if removed_tags %}
+    <h3>{% translate "Tags removed by lawyers" %}</h3>
+    <ul>{% for tag in removed_tags %}
+      <li class="tag-source-{{ tag.source }}">{{ tag.name }} <small>({{ tag.source_name }})</small>
+        {% if tag.proposed %}
+          · {% translate "you proposed restoring it" %}
+          {% include "cases/tag_button.html" with action="lawyer:cancel_tag" label=_("Cancel my proposal") %}
+        {% else %}
+          {% include "cases/tag_button.html" with action="lawyer:propose_tag" direction="restore" label=_("Propose restoring it") %}
+        {% endif %}
+      </li>{% endfor %}</ul>
+  {% endif %}
+  <form method="post" action="{% url 'lawyer:add_tag' case_id=case.pk clip_id=clip.pk %}">
+    {% csrf_token %}
+    {{ tag_form.as_p }}
+    <button type="submit">{% translate "Add the tag" %}</button>
+  </form>
   <p>{% translate "Tags as uploaded:" %} {{ uploaded_tags|join:", "|default:_("not given") }}</p>
 
   {# Encrypted: the page's script opens them with the group key and fills them in (keys/static/keys/clip_keys.js). #}
