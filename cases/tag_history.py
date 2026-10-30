@@ -29,8 +29,10 @@ class Event:
 
 
 def events(clip_id):
-    entries = AuditEntry.objects.filter(clip_id=clip_id, action__in=TAG_ACTIONS).select_related('lawyer_profile__user')
-    tags = ClipTag.objects.in_bulk({entry.clip_tag_id for entry in entries})
+    entries = AuditEntry.objects.filter(clip_id=clip_id, action__in=TAG_ACTIONS).select_related(
+        'lawyer_profile__user',
+    ).order_by('at', 'pk')
+    tags = ClipTag.objects.filter(clip_id=clip_id).in_bulk({entry.clip_tag_id for entry in entries})
     history = [Event(entry.at, entry, entry.lawyer_profile, tags.get(entry.clip_tag_id)) for entry in entries]
     history += [
         Event(edit.edited_at, None, None, None)

@@ -1631,7 +1631,7 @@ msgstr ""
 
 #: cases/templates/cases/tag_history.html:29
 msgid "Nothing has happened to this clip's tags since upload."
-msgstr "Rien n'est arrivé aux étiquettes de ce clip depuis l'upload."
+msgstr "Aucune modification des étiquettes de ce clip depuis l'upload."
 
 #: cases/templatetags/case_labels.py:17 cases/templatetags/case_labels.py:28
 #, python-format
