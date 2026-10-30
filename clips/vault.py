@@ -7,7 +7,8 @@ it. Reading a file takes its data key, which only a lawyer's browser can open an
 back (docs/m5-encryption-design.md §6). Each text is padded and encrypted with its own data
 key, sealed to the group keys and to the clip's code holder key, which only the upload code
 gives (§7): lawyers' browsers decrypt texts, and the server does only for a code holder,
-during their request. M6 adds messages.
+during their request. A message is encrypted the same way, but sealed to the code holder key
+and to the thread's lawyer's personal key alone (§7.3).
 
 Nothing here logs content. A new value replaces the old one in place, and an empty
 value removes it: old values of context and contact details are never kept (SPEC.md §5).
@@ -29,6 +30,7 @@ from pathlib import PurePath
 
 from django.core.files import File
 from django.db import transaction
+from django.db.models import Max
 from django.utils import timezone
 from django.views.decorators.debug import sensitive_variables
 from nacl import bindings as sodium
@@ -40,7 +42,7 @@ from nacl.utils import random
 
 from keys import grants
 
-from .models import SealedKey, VaultFile, VaultText, vault_storage
+from .models import Message, SealedKey, VaultFile, VaultText, vault_storage
 
 logger = logging.getLogger(__name__)
 
@@ -160,6 +162,115 @@ def sealed_text(clip, kind):
             for sealed in vault_text.sealed_keys.filter(group_key__status__in=grants.IN_USE).select_related('group_key')
         ],
     }
+
+
+def message_additional_data(message):
+    """Bound to a message's text, so that it does not decrypt as another message's, in another
+    thread or place in it, or with its direction, kind or naming changed (design §7.3)."""
+    return (
+        f'fa-message-v1:{message.clip_id}:{message.pk}:{message.lawyer_profile_id}:{message.position}'
+        f':{message.direction}:{message.kind}:{int(message.identified)}'
+    ).encode()
+
+
+@sensitive_variables('text', 'data_key')
+def send_message(clip, lawyer_profile, direction, text, kind=Message.Kind.MESSAGE, identified=False):
+    """Add a message to the thread between `lawyer_profile` and the clip's code holder, and return
+    it. Its text (optional on a report) is encrypted and sealed to the clip's code holder key and to
+    the lawyer's current personal key (design §7.3). Under the group key lock, which an exposure
+    report takes to move the lawyer's messages to a new key (§5.6), so that none is sealed to a key
+    being replaced. Which case a lawyer sends through is the caller's to check.
+
+    Raises NotALawyer unless the thread's lawyer is admitted and not suspended, NoLawyerKey unless
+    they hold a personal key the admin confirmed (otherwise someone who took over the account and
+    reset the key would read the code holder's replies, design §5.6), and NoCodeHolderKey if the
+    clip has no code holder key (one confirmed before encryption, until its code holder saves an
+    edit)."""
+    from accounts.models import LawyerProfile  # Here: accounts imports clips through its views.
+
+    with transaction.atomic():
+        grants.lock()
+        # Locked, so that a suspension committed meanwhile is seen (as grants.grant does).
+        if LawyerProfile.objects.select_for_update().get(pk=lawyer_profile.pk).status != LawyerProfile.Status.LAWYER:
+            raise NotALawyer
+        lawyer_key = grants.current_key(lawyer_profile)
+        if lawyer_key is None or lawyer_key.admin_confirmed_at is None:
+            raise NoLawyerKey
+        if clip.code_holder_public_key is None:
+            raise NoCodeHolderKey
+        last = Message.objects.filter(clip=clip, lawyer_profile=lawyer_profile).aggregate(Max('position'))['position__max']
+        message = Message(
+            clip=clip, lawyer_profile=lawyer_profile, position=0 if last is None else last + 1,
+            direction=direction, kind=kind, identified=identified,
+        )
+        if text:
+            data_key = random(DATA_KEY_BYTES)
+            message.ciphertext = encrypt_text(text, data_key, message_additional_data(message))
+            message.code_holder_sealed_key = SealedBox(PublicKey(bytes(clip.code_holder_public_key))).encrypt(data_key)
+            message.lawyer_sealed_key = SealedBox(PublicKey(bytes(lawyer_key.public_key))).encrypt(data_key)
+            message.lawyer_key = lawyer_key
+            message.key_check = key_check(data_key)
+        message.save(force_insert=True)
+    return message
+
+
+@sensitive_variables('code', 'private_key', 'data_key', 'padded', 'text', 'opened')
+def code_holder_messages(clip, code):
+    """The clip's messages, thread by thread and in order, each with its text opened with the
+    normalised upload code `code`: '' for a report without a note, None for one that fails to
+    decrypt (altered or moved), so that one bad row hides only itself. Raises WrongCode for a code
+    that is not the clip's. A clip confirmed before encryption has none: nothing is sent to it
+    until it has a code holder key."""
+    if clip.code_holder_public_key is None:
+        return []
+    private_key = code_holder_key(code)
+    if not hmac.compare_digest(bytes(private_key.public_key), bytes(clip.code_holder_public_key)):
+        raise WrongCode
+    opened = []
+    for message in Message.objects.filter(clip=clip).order_by('lawyer_profile_id', 'position'):
+        text = ''
+        if message.ciphertext is not None:
+            try:
+                data_key = SealedBox(private_key).decrypt(bytes(message.code_holder_sealed_key))
+                encrypted = bytes(message.ciphertext)
+                padded = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
+                    encrypted[NONCE_BYTES:], message_additional_data(message), encrypted[:NONCE_BYTES], data_key,
+                )
+                text = sodium.sodium_unpad(padded, TEXT_BLOCK).decode()
+            # ValueError: not UTF-8, or a ciphertext too short. Either is a message the server
+            # itself encrypted wrongly, since anything else fails to authenticate first.
+            except (CryptoError, ValueError):
+                text = None
+        opened.append((message, text))
+    return opened
+
+
+def sealed_message(message):
+    """A message's text as its lawyer's browser opens it, with their personal key; None if it has
+    none, or none they can open (sealed to a key since retired, design §5.6)."""
+    if message.ciphertext is None or message.lawyer_key.retired_at is not None:
+        return None
+    return {
+        'ciphertext': bytes(message.ciphertext),
+        'additional_data': message_additional_data(message),
+        'sealed_key': bytes(message.lawyer_sealed_key),
+    }
+
+
+class NotALawyer(Exception):
+    """The thread's lawyer is not an admitted, unsuspended lawyer."""
+
+
+class NoLawyerKey(Exception):
+    """The thread's lawyer holds no personal key the admin confirmed, to seal a message to."""
+
+
+class WrongCode(Exception):
+    """An upload code that is not the clip's."""
+
+
+class NoCodeHolderKey(Exception):
+    """The clip has no code holder key to seal a message to."""
 
 
 def store_file(clip, kind, source_path, extension):
