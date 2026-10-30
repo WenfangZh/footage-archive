@@ -150,6 +150,13 @@ class LawyerProfile(models.Model):
     # window, and rings of the grid's finest cells around its area.
     default_margin_minutes = models.PositiveSmallIntegerField(default=10)
     default_margin_rings = models.PositiveSmallIntegerField(default=1)
+    # Whether the code holder sees the lawyer's name and bar on their messages by default, rather
+    # than "a verified defence lawyer"; each message can say otherwise (SPEC.md §7).
+    identified_by_default = models.BooleanField(default=False)
+    # Whether an email says when something starts waiting for them (cases.notifications).
+    notifications = models.BooleanField(default=True)
+    # An email has said so, and they have not opened their messages since: no other until then.
+    notified = models.BooleanField(default=False)
 
     objects = LawyerProfileQuerySet.as_manager()
 
