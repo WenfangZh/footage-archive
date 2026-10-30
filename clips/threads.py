@@ -4,6 +4,7 @@ and the code holder's replies. Opened with the upload code, during the request o
 """
 
 import datetime
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.db import transaction
@@ -98,8 +99,13 @@ def code_holder_threads(clip, code):
 
 def deletion_time(last_sent_at):
     """When a thread whose last message was sent in the 4-hour block starting `last_sent_at` is
-    deleted (SPEC.md §7): the set time after the end of that block, so never early."""
-    return last_sent_at + datetime.timedelta(hours=BLOCK_HOURS, days=settings.THREAD_LIFETIME_DAYS)
+    deleted (SPEC.md §7): the set time after the end of that block, so never early. Counted in
+    the archive's time zone, whose blocks they are: a block can last 3 or 5 hours when the clocks
+    change, and the days are calendar days."""
+    local = last_sent_at.astimezone(ZoneInfo(settings.TIME_ZONE))
+    # Added in local time, which counts wall-clock hours: a block ends at 04h, 08h…, never in an
+    # hour the clocks skip.
+    return (local + datetime.timedelta(hours=BLOCK_HOURS, days=settings.THREAD_LIFETIME_DAYS)).astimezone(datetime.UTC)
 
 
 def delete_expired_threads(now=None):

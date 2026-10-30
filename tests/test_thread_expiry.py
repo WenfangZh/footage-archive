@@ -52,17 +52,29 @@ def test_a_thread_is_deleted_the_set_time_after_its_last_message_and_not_before(
     assert AuditEntry.objects.filter(action=Action.MESSAGE, lawyer_profile=quiet).exists()
 
 
+def test_a_thread_whose_last_block_is_the_long_one_when_the_clocks_go_back_is_not_deleted_early(clip):  # noqa: F811
+    profile, _ = make_lawyer('autumn@example.org')
+    # The 00h block of 25 October 2026 in Paris lasts five hours, to 04h winter time (03h UTC).
+    send(clip, profile, TO, 'Sent at 02h30 UTC, in that block', at=datetime.datetime(2026, 10, 24, 22, tzinfo=datetime.UTC))
+
+    due = datetime.datetime(2026, 11, 4, 3, tzinfo=datetime.UTC)
+    assert threads.delete_expired_threads(now=due - datetime.timedelta(minutes=1)) == 0
+    assert threads.delete_expired_threads(now=due) == 1
+
+
 def test_each_page_says_when_its_thread_is_deleted(clip):  # noqa: F811
     lawyer = Lawyer('reader@example.org')
-    send(clip, lawyer.profile, TO, 'Were you near the station?')
+    # The 20h block of 20 October 2026 in Paris ends at midnight; ten calendar days later the
+    # clocks have gone back, and midnight is an hour later in UTC.
+    send(clip, lawyer.profile, TO, 'Were you near the station?', at=datetime.datetime(2026, 10, 20, 18, tzinfo=datetime.UTC))
 
     lawyers_page = lawyer.client.get(reverse('lawyer:messages'), headers=ENGLISH).content.decode()
     code_holders_page = page(Client())
 
-    # 1 January 2026 08h in Paris, plus 4 hours and 10 days.
-    assert 'This thread will be deleted on 11 January 2026' in lawyers_page
+    # Ten days after the end of that block.
+    assert 'This thread will be deleted on 31 October 2026' in lawyers_page
     assert 'Save what you need into your own records.' in lawyers_page
-    assert 'These messages will be deleted on 11 January 2026' in section(code_holders_page, 'A')
+    assert 'These messages will be deleted on 31 October 2026' in section(code_holders_page, 'A')
 
 
 def test_no_letter_is_given_again_to_another_lawyer_once_a_thread_is_deleted(clip):  # noqa: F811
