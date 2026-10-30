@@ -1165,13 +1165,15 @@ msgstr "Message"
 
 #: cases/forms.py:275
 msgid ""
-"Only the code holder of this clip can read it, with their upload code, and "
-"you, with your personal key."
-msgstr "Seule la personne qui détient le code de ce clip peut le lire, avec son code d'upload, et vous, avec votre clé personnelle."
+"Stored so that only the code holder of this clip, with their upload code, "
+"and you, with your personal key, can read it."
+msgstr "Conservé de sorte que seules la personne qui détient le code de ce clip, avec son code d'upload, et vous, avec votre clé personnelle, puissiez le lire."
 
 #: cases/forms.py:278
 msgid "Show the code holder my name and bar on this message"
-msgstr "Montrer mon nom et mon barreau sur ce message à la personne qui détient le code"
+msgstr ""
+"Montrer mon nom et mon barreau sur ce message à la personne qui détient le "
+"code"
 
 #: cases/forms.py:279
 msgid "Otherwise they see only \"a verified defence lawyer\"."
@@ -1640,6 +1642,7 @@ msgid "The code holder"
 msgstr "La personne qui détient le code"
 
 #: cases/templates/cases/messages.html:21
+#, python-format
 msgid "%(day)s, in the four hours from %(start)s"
 msgstr "%(day)s, dans les quatre heures à partir de %(start)s"
 
@@ -1671,13 +1674,17 @@ msgstr "Déverrouillez votre clé personnelle pour lire ce message."
 msgid ""
 "You can no longer read this message: it was sealed to a personal key you "
 "have since replaced."
-msgstr "Vous ne pouvez plus lire ce message : il a été scellé pour une clé personnelle que vous avez remplacée depuis."
+msgstr ""
+"Vous ne pouvez plus lire ce message : il a été scellé pour une clé "
+"personnelle que vous avez remplacée depuis."
 
 #: cases/templates/cases/messages.html:47
 msgid ""
 "You have no messages yet. You can write to a clip's code holder from the "
 "clip's page."
-msgstr "Vous n'avez pas encore de messages. Vous pouvez écrire à la personne qui détient le code d'un clip depuis la page du clip."
+msgstr ""
+"Vous n'avez pas encore de messages. Vous pouvez écrire à la personne qui "
+"détient le code d'un clip depuis la page du clip."
 
 #: cases/templates/cases/new_case.html:16
 msgid ""
@@ -1817,19 +1824,24 @@ msgstr ""
 "Dossier de recherche nº %(number)s (libellé du dossier de recherche "
 "illisible)"
 
-#: cases/threads.py:46
+#: cases/threads.py:47
 msgid "You can send messages once the admin has confirmed your personal key."
-msgstr "Vous pourrez envoyer des messages une fois que l'administrateur·rice aura confirmé votre clé personnelle."
+msgstr ""
+"Vous pourrez envoyer des messages une fois que l'administrateur·rice aura "
+"confirmé votre clé personnelle."
 
-#: cases/threads.py:49
+#: cases/threads.py:50
 msgid "This clip's code holder cannot receive messages yet."
-msgstr "La personne qui détient le code de ce clip ne peut pas encore recevoir de messages."
+msgstr ""
+"La personne qui détient le code de ce clip ne peut pas encore recevoir de "
+"messages."
 
-#: cases/threads.py:73
+#: cases/threads.py:74
 msgid "Your message is sent. Its thread is on your messages page."
-msgstr "Votre message est envoyé. Son fil de messages est sur votre page de messages."
+msgstr ""
+"Votre message est envoyé. Son fil de messages est sur votre page de messages."
 
-#: cases/threads.py:121
+#: cases/threads.py:126
 msgid "Your message is sent."
 msgstr "Votre message est envoyé."
 

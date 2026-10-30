@@ -15,7 +15,7 @@ from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
-from django.views.decorators.debug import sensitive_post_parameters
+from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_GET, require_POST
 
 from accounts.roles import lawyer_required
@@ -28,6 +28,7 @@ from .clip_pages import case_and_clip
 from .forms import MessageForm
 
 
+@sensitive_variables('form')
 def _send(request, clip, form, case=None):
     """Send the form's message in the lawyer's thread on the clip, and log it: a message names the
     case it was sent through, a reply none. False, with a notice, if it cannot be sent now."""
@@ -95,13 +96,17 @@ def messages_page(request):
         })
     # The latest thread first; positions order a thread, times only to their 4-hour block.
     ordered = sorted(threads.items(), key=lambda thread: thread[1][-1]['message'].sent_at, reverse=True)
-    # Opened now: the "new" marks above are the last, and a notification may be sent again.
+    # Opened now: the "new" marks above are the last, and a notification may be sent again. Only
+    # those shown, not one that arrived since they were read.
     Message.objects.filter(
-        lawyer_profile=profile, direction=Message.Direction.FROM_CODE_HOLDER, seen=False,
+        pk__in=[item['message'].pk for thread in threads.values() for item in thread if item['new']],
     ).update(seen=True)
     return render(request, 'cases/messages.html', {
-        'threads': [{'clip_id': clip_id, 'messages': thread} for clip_id, thread in ordered],
-        'form': MessageForm(),
+        'threads': [
+            # Its own field ids, so that a label never ticks another thread's box.
+            {'clip_id': clip_id, 'messages': thread, 'form': MessageForm(auto_id=f'thread-{clip_id}-%s')}
+            for clip_id, thread in ordered
+        ],
     })
 
 

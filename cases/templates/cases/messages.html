@@ -38,7 +38,7 @@
         </ol>
         <form method="post" action="{% url 'lawyer:reply' thread.clip_id %}">
           {% csrf_token %}
-          {{ form.as_p }}
+          {{ thread.form.as_p }}
           <button type="submit">{% translate "Send" %}</button>
         </form>
       </section>

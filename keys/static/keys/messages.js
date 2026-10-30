@@ -13,13 +13,18 @@
     const keys = ArchiveKeys;
     const personalKey = await ArchiveUnlock.personalKey();
     for (const element of texts) {
-      const sealed = JSON.parse(element.dataset.sealed);
       const shown = element.dataset;
       const additionalData = sodium.from_string([
         'fa-message-v1', shown.clip, shown.id, shown.lawyer, shown.position, shown.direction, shown.kind, shown.identified,
       ].join(':'));
-      const dataKey = keys.openSealed(keys.b64.decode(sealed.sealed_key), personalKey);
-      const text = dataKey ? keys.openText(keys.b64.decode(sealed.ciphertext), dataKey, additionalData) : null;
+      let text = null;
+      try {
+        const sealed = JSON.parse(shown.sealed);
+        const dataKey = keys.openSealed(keys.b64.decode(sealed.sealed_key), personalKey);
+        text = dataKey ? keys.openText(keys.b64.decode(sealed.ciphertext), dataKey, additionalData) : null;
+      } catch (error) {
+        // A malformed attribute hides only its own message.
+      }
       if (text === null) {
         element.textContent = shown.unreadable;
         continue;

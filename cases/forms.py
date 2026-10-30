@@ -272,7 +272,7 @@ class MessageForm(forms.Form):
 
     text = forms.CharField(
         label=_('Message'), max_length=MESSAGE_MAX_LENGTH, widget=forms.Textarea,
-        help_text=_('Only the code holder of this clip can read it, with their upload code, and you, with your personal key.'),
+        help_text=_('Stored so that only the code holder of this clip, with their upload code, and you, with your personal key, can read it.'),
     )
     identified = forms.BooleanField(
         label=_('Show the code holder my name and bar on this message'), required=False,

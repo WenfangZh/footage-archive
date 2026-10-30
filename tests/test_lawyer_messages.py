@@ -195,3 +195,20 @@ def test_a_code_holders_message_is_new_until_the_lawyer_opens_their_messages(law
 
     assert '<strong>New</strong>' in lawyer.page().content.decode()
     assert '<strong>New</strong>' not in lawyer.page().content.decode()
+
+
+def test_each_threads_form_has_its_own_fields(lawyer, clip):
+    other_clip = Clip.objects.create(
+        code_hash=upload_codes.keyed_hash('another code'), status=Clip.Status.READY,
+        stated_time=START + datetime.timedelta(minutes=20), stated_cell=CENTRE, stated_precision=Precision.EXACT_SPOT,
+        as_uploaded_stated_time=START, as_uploaded_stated_cell=CENTRE, as_uploaded_stated_precision=Precision.EXACT_SPOT,
+    )
+    with_code_holder_key(other_clip, code='ANOTHERCODE')
+    lawyer.send(clip)
+    lawyer.send(other_clip)
+
+    ids = re.findall(r' id="([^"]+)"', lawyer.page().content.decode())
+
+    # A label for one thread's "name me" box never ticks another's.
+    assert len([found for found in ids if found.endswith('-identified')]) == 2
+    assert len(ids) == len(set(ids))
