@@ -1,6 +1,7 @@
 import datetime
 
 from django.conf import settings
+from django.db import transaction
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -10,6 +11,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_http_methods
 
+from keys import grants
 from keys.grants import uploads_open
 
 from . import grid, probe, rate_limits, vault
@@ -198,16 +200,24 @@ def reply(request):
     if refusal:
         return refusal
     form = ReplyForm(request.POST)
-    first = form.is_valid() and Message.objects.filter(
-        clip=clip, pk=form.cleaned_data['thread'],
-    ).select_related('lawyer_profile').first()
-    if not first:
-        return render_clip(request, clip, edit_form(clip, code=typed), reply_failed=form, status=400)
-    try:
-        vault.send_message(clip, first.lawyer_profile, Message.Direction.FROM_CODE_HOLDER, form.cleaned_data['text'])
-    except (vault.NotALawyer, vault.NoLawyerKey):
-        # Its lawyer changed since the page was shown.
-        return render_clip(request, clip, edit_form(clip, code=typed), reply_failed=form, status=409)
+    status = 200
+    with transaction.atomic():
+        # Under the lock that deleting expired threads takes, so that the thread is still there
+        # when the reply joins it, rather than the reply starting a thread of its own.
+        grants.lock()
+        first = form.is_valid() and Message.objects.filter(
+            clip=clip, pk=form.cleaned_data['thread'],
+        ).select_related('lawyer_profile').first()
+        if not first:
+            status = 400
+        else:
+            try:
+                vault.send_message(clip, first.lawyer_profile, Message.Direction.FROM_CODE_HOLDER, form.cleaned_data['text'])
+            except (vault.NotALawyer, vault.NoLawyerKey):
+                # Its lawyer changed since the page was shown.
+                status = 409
+    if status != 200:
+        return render_clip(request, clip, edit_form(clip, code=typed), reply_failed=form, status=status)
     return render_clip(request, clip, edit_form(clip, code=typed), replied=True)
 
 

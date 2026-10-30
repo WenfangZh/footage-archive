@@ -3,14 +3,22 @@ as lawyer A, B and so on, each sender "a verified defence lawyer" unless they ch
 and the code holder's replies. Opened with the upload code, during the request only.
 """
 
+import datetime
+from zoneinfo import ZoneInfo
+
+from django.conf import settings
 from django.db import transaction
+from django.db.models import Max
+from django.utils import timezone
 from django.views.decorators.debug import sensitive_variables
 
 from accounts.models import LawyerProfile
+from keys import grants
 from keys.models import LawyerKey
 
 from . import vault
 from .models import Clip, Message, ThreadLetter
+from .time_blocks import BLOCK_HOURS
 
 
 def letter(number):
@@ -80,9 +88,39 @@ def code_holder_threads(clip, code):
         status = profiles[profile_id].status
         shown.append({
             'letter': letter(numbers[profile_id]), 'messages': threads[profile_id],
+            'deleted_on': deletion_time(max(item['message'].sent_at for item in threads[profile_id])),
             # The first message's id names the thread in a reply, rather than the lawyer's.
             'reference': threads[profile_id][0]['message'].pk,
             'no_longer_has_access': status != LawyerProfile.Status.LAWYER,
             'answerable': status == LawyerProfile.Status.LAWYER and profile_id in confirmed,
         })
     return shown
+
+
+def deletion_time(last_sent_at):
+    """When a thread whose last message was sent in the 4-hour block starting `last_sent_at` is
+    deleted (SPEC.md §7): the set time after the end of that block, so never early. Counted in
+    the archive's time zone, whose blocks they are: a block can last 3 or 5 hours when the clocks
+    change, and the days are calendar days."""
+    local = last_sent_at.astimezone(ZoneInfo(settings.TIME_ZONE))
+    # Added in local time, which counts wall-clock hours: a block ends at 04h, 08h…, never in an
+    # hour the clocks skip.
+    return (local + datetime.timedelta(hours=BLOCK_HOURS, days=settings.THREAD_LIFETIME_DAYS)).astimezone(datetime.UTC)
+
+
+def delete_expired_threads(now=None):
+    """Delete the messages of every thread past its deletion time; returns how many threads. The
+    audit entries stay, and so do the threads' letters, so that no letter is given to another
+    lawyer on the clip."""
+    now = now or timezone.now()
+    with transaction.atomic():
+        # The lock sending a message takes, so that none joins a thread as it goes.
+        grants.lock()
+        expired = [
+            (thread['clip_id'], thread['lawyer_profile_id'])
+            for thread in Message.objects.values('clip_id', 'lawyer_profile_id').annotate(last=Max('sent_at'))
+            if deletion_time(thread['last']) <= now
+        ]
+        for clip_id, profile_id in expired:
+            Message.objects.filter(clip_id=clip_id, lawyer_profile_id=profile_id).delete()
+    return len(expired)

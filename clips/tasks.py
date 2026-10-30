@@ -13,6 +13,7 @@ clip's id, never anything read from a file or typed by an uploader.
 - Every 15 minutes, originals whose form was never confirmed are deleted (clips.cleanup),
   and a backed-up queue alerts the admin (alerts.checks).
 - Every hour, vault files left over from a crash are deleted (clips.vault).
+- Every hour, threads past their deletion time are deleted (clips.threads).
 """
 
 import logging
@@ -23,7 +24,7 @@ from huey.contrib.djhuey import db_periodic_task, db_task, lock_task, on_startup
 from alerts.checks import check_ingest_queue
 from audit import limits
 
-from . import cleanup, ingest, vault
+from . import cleanup, ingest, threads, vault
 from .models import Clip
 
 logger = logging.getLogger(__name__)
@@ -81,3 +82,11 @@ def delete_stray_vault_files():
     # A count only: file names say nothing useful and are better not logged.
     if deleted:
         logger.warning('Deleted %s vault files left over from a crash.', deleted)
+
+
+@db_periodic_task(crontab(minute='37'))
+def delete_expired_threads():
+    deleted = threads.delete_expired_threads()
+    # How many only: never which clips or lawyers.
+    if deleted:
+        logger.info('Deleted %s threads past their time.', deleted)

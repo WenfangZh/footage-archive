@@ -21,7 +21,9 @@ from django.views.decorators.http import require_GET, require_POST
 from accounts.roles import lawyer_required
 from audit.models import Action, record
 from clips import vault
+from keys import grants
 from clips.models import Message
+from clips.threads import deletion_time
 from keys.views import b64
 
 from .clip_pages import case_and_clip
@@ -126,7 +128,10 @@ def messages_page(request):
     return render(request, 'cases/messages.html', {
         'threads': [
             # Its own field ids, so that a label never ticks another thread's box.
-            {'clip_id': clip_id, 'messages': thread, 'form': MessageForm(auto_id=f'thread-{clip_id}-%s')}
+            {
+                'clip_id': clip_id, 'messages': thread, 'form': MessageForm(auto_id=f'thread-{clip_id}-%s'),
+                'deleted_on': deletion_time(max(item['message'].sent_at for item in thread)),
+            }
             for clip_id, thread in ordered
         ],
     })
@@ -138,12 +143,16 @@ def messages_page(request):
 def reply(request, clip_id):
     """A message in a thread the lawyer already has, whatever has become of their cases: also on a
     withdrawn clip, until the thread expires or the clip is deleted (SPEC.md §7)."""
-    first = Message.objects.filter(lawyer_profile=request.user.lawyer_profile, clip_id=clip_id).select_related('clip').first()
-    if first is None:
-        raise Http404
     form = MessageForm(request.POST)
-    if not form.is_valid():
-        _form_errors(request, form)
-    elif _send(request, first.clip, Action.REPLY, form.cleaned_data['text'], form.cleaned_data['identified']):
-        notices.success(request, _('Your message is sent.'))
+    with transaction.atomic():
+        # Under the lock that deleting expired threads takes, so that the thread is still there
+        # when the reply joins it, rather than the reply starting a thread of its own.
+        grants.lock()
+        first = Message.objects.filter(lawyer_profile=request.user.lawyer_profile, clip_id=clip_id).select_related('clip').first()
+        if first is None:
+            raise Http404
+        if not form.is_valid():
+            _form_errors(request, form)
+        elif _send(request, first.clip, Action.REPLY, form.cleaned_data['text'], form.cleaned_data['identified']):
+            notices.success(request, _('Your message is sent.'))
     return redirect(thread_url(clip_id))

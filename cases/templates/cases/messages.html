@@ -12,6 +12,7 @@
     {% for thread in threads %}
       <section id="thread-{{ thread.clip_id }}">
         <h2>{% blocktranslate with clip_id=thread.clip_id %}Clip {{ clip_id }}{% endblocktranslate %}</h2>
+        <p role="note">{% blocktranslate with day=thread.deleted_on|date:"j F Y" %}This thread will be deleted on {{ day }}, unless you or the code holder write again before then. Save what you need into your own records.{% endblocktranslate %}</p>
         <ol class="thread">
           {% for item in thread.messages %}
             {% with message=item.message %}

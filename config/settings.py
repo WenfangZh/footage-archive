@@ -303,6 +303,8 @@ CASE_AREA_CAP_METRES = env_int('CASE_AREA_CAP_METRES', default=2_000, minimum=1,
 # A case not used for this long (no search, preview or download since its creation or
 # its last use) closes on its own (SPEC.md §7).
 CASE_INACTIVITY_DAYS = env_int('CASE_INACTIVITY_DAYS', default=365, minimum=1, maximum=36_500)
+# A thread's messages are deleted this long after its last one (SPEC.md §7): about 6 months.
+THREAD_LIFETIME_DAYS = env_int('THREAD_LIFETIME_DAYS', default=183, minimum=1, maximum=36_500)
 
 # Rotations of the group key (docs/m5-encryption-design.md §5.5). A role in an attempt (the
 # rotator's resealing, a checker's or confirmer's check) has this many days before it is given
