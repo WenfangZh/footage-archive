@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('accounts', '0002_default_margin'),
-        ('clips', '0006_encrypted_vault_texts'),
+        ('clips', '0007_lawyer_tags'),
         ('keys', '0003_rotations'),
     ]
 
