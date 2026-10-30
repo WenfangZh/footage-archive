@@ -113,6 +113,9 @@ def delete_clip(clip):
     """Delete the clip, its tags, edits and vault contents, and its original if still there."""
     original = Original.objects.filter(clip=clip).first()
     with transaction.atomic():
+        # Locked first, as the admin's deletion of a withdrawn clip does, so that the two never
+        # deadlock, each holding rows the other waits for.
+        Clip.objects.select_for_update().filter(pk=clip.pk).exists()
         vault.delete_all(clip)
         clip.delete()
         if original is not None:

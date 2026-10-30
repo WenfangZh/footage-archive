@@ -417,48 +417,54 @@ msgstr "Demandes de dépassement des plafonds"
 msgid "Clips with disputed tags"
 msgstr "Clips aux étiquettes contestées"
 
-#: accounts/templates/accounts/manage_home.html:26
+#: accounts/templates/accounts/manage_home.html:25
+#: cases/templates/cases/withdrawn_clips.html:4
+#: cases/templates/cases/withdrawn_clips.html:7
+msgid "Withdrawn clips"
+msgstr "Clips retirés"
+
+#: accounts/templates/accounts/manage_home.html:27
 msgid "Applicants"
 msgstr "Candidat·es"
 
-#: accounts/templates/accounts/manage_home.html:35
+#: accounts/templates/accounts/manage_home.html:36
 msgid "Send a new invitation link"
 msgstr "Envoyer un nouveau lien d'invitation"
 
-#: accounts/templates/accounts/manage_home.html:42
+#: accounts/templates/accounts/manage_home.html:43
 msgid "No applicants."
 msgstr "Aucun·e candidat·e."
 
-#: accounts/templates/accounts/manage_home.html:45
+#: accounts/templates/accounts/manage_home.html:46
 msgid "Lawyers' access"
 msgstr "Accès des avocat·es"
 
-#: accounts/templates/accounts/manage_home.html:55
+#: accounts/templates/accounts/manage_home.html:56
 msgid "Suspend access"
 msgstr "Suspendre l'accès"
 
-#: accounts/templates/accounts/manage_home.html:60
+#: accounts/templates/accounts/manage_home.html:61
 msgid "Reinstate access"
 msgstr "Rétablir l'accès"
 
-#: accounts/templates/accounts/manage_home.html:63
+#: accounts/templates/accounts/manage_home.html:64
 #: accounts/templates/accounts/revoke.html:4
 #: accounts/templates/accounts/revoke.html:7
 msgid "Revoke access"
 msgstr "Révoquer l'accès"
 
-#: accounts/templates/accounts/manage_home.html:64
+#: accounts/templates/accounts/manage_home.html:65
 #: keys/templates/keys/confirm_key.html:16
 msgid "Confirm their new key"
 msgstr "Confirmer sa nouvelle clé"
 
-#: accounts/templates/accounts/manage_home.html:65
+#: accounts/templates/accounts/manage_home.html:66
 #: alerts/templates/alerts/raise_limit.html:4
 #: alerts/templates/alerts/raise_limit.html:7
 msgid "Raise an alert limit"
 msgstr "Relever un seuil d'alerte"
 
-#: accounts/templates/accounts/manage_home.html:70
+#: accounts/templates/accounts/manage_home.html:71
 msgid "No lawyers yet."
 msgstr "Aucun·e avocat·e pour l'instant."
 
@@ -1920,6 +1926,35 @@ msgstr ""
 msgid "Nothing has happened to this clip's tags since upload."
 msgstr "Aucune modification des étiquettes de ce clip depuis l'upload."
 
+#: cases/templates/cases/withdrawn_clips.html:8
+msgid ""
+"Clips that two different lawyers reported as inappropriate, latest "
+"withdrawal first. No lawyer can find or watch them any more. You may delete "
+"one; its hash record is kept, and so are the audit entries."
+msgstr ""
+"Les clips que deux avocat·es différent·es ont signalés comme inappropriés, "
+"le dernier retiré en premier. Plus aucun·e avocat·e ne peut les trouver ni "
+"les regarder. Vous pouvez en supprimer un : ses empreintes numériques (hash) "
+"sont conservées, ainsi que les entrées du journal d'audit."
+
+#: cases/templates/cases/withdrawn_clips.html:12
+#, python-format
+msgid "%(clip_id)s, withdrawn %(at)s"
+msgstr "%(clip_id)s, retiré le %(at)s"
+
+#: cases/templates/cases/withdrawn_clips.html:15
+msgid "Delete this clip for good"
+msgstr "Supprimer ce clip définitivement"
+
+#: cases/templates/cases/withdrawn_clips.html:16
+#: clips/templates/clips/clip.html:128
+msgid "Delete"
+msgstr "Supprimer"
+
+#: cases/templates/cases/withdrawn_clips.html:22
+msgid "No clip is withdrawn."
+msgstr "Aucun clip n'est retiré."
+
 #: cases/templatetags/case_labels.py:17 cases/templatetags/case_labels.py:28
 #, python-format
 msgid "Case no. %(number)s"
@@ -1968,6 +2003,19 @@ msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
 #: cases/views.py:100
 msgid "The case is closed."
 msgstr "Le dossier de recherche est clos."
+
+#: cases/withdrawn_clips.py:34 clips/templates/clips/clip.html:121
+msgid "Tick the box to confirm."
+msgstr "Cochez la case pour confirmer."
+
+#: cases/withdrawn_clips.py:40
+msgid "This clip is no longer here."
+msgstr "Ce clip n'est plus là."
+
+#: cases/withdrawn_clips.py:44
+msgid "The clip is deleted. Its hash record is kept."
+msgstr ""
+"Le clip est supprimé. Ses empreintes numériques (hash) sont conservées."
 
 #: clips/forms.py:14
 msgid "About 50 m"
@@ -2347,17 +2395,9 @@ msgstr "Votre réponse n'a pas été envoyée. La voici, pour la garder :"
 msgid "Delete this clip"
 msgstr "Supprimer ce clip"
 
-#: clips/templates/clips/clip.html:121
-msgid "Tick the box to confirm."
-msgstr "Cochez la case pour confirmer."
-
 #: clips/templates/clips/clip.html:125
 msgid "Yes, delete this clip and everything it holds, for good."
 msgstr "Oui, supprimer définitivement ce clip et tout ce qu'il contient."
-
-#: clips/templates/clips/clip.html:128
-msgid "Delete"
-msgstr "Supprimer"
 
 #: clips/templates/clips/code_card.html:4
 #: clips/templates/clips/code_card.html:10
@@ -3161,7 +3201,6 @@ msgstr ""
 #: templates/home.html:9
 msgid "Defence lawyers: log in"
 msgstr "Avocat·es de la défense : se connecter"
-
 
 #~ msgid "Invitation sent"
 #~ msgstr "Invitation envoyée"

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Withdrawn clips" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Withdrawn clips" %}</h1>
+  <p>{% translate "Clips that two different lawyers reported as inappropriate, latest withdrawal first. No lawyer can find or watch them any more. You may delete one; its hash record is kept, and so are the audit entries." %}</p>
+  {% if clips %}
+    <ul>
+      {% for clip in clips %}
+        <li>{% blocktranslate with clip_id=clip.clip_id at=clip.withdrawn_at|date:"DATETIME_FORMAT" %}{{ clip_id }}, withdrawn {{ at }}{% endblocktranslate %}
+          <form method="post" action="{% url 'manage:delete_withdrawn_clip' clip.clip_id %}">
+            {% csrf_token %}
+            <label><input type="checkbox" name="confirm_delete" value="yes" required> {% translate "Delete this clip for good" %}</label>
+            <button type="submit">{% translate "Delete" %}</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>{% translate "No clip is withdrawn." %}</p>
+  {% endif %}
+{% endblock %}
