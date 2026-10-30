@@ -30,6 +30,7 @@ lawyer_patterns = [
     path('cases/<int:case_id>/clips/<uuid:clip_id>/tags/', tag_pages.add_tag, name='add_tag'),
     path('cases/<int:case_id>/clips/<uuid:clip_id>/tags/<int:tag_id>/propose/', tag_pages.propose, name='propose_tag'),
     path('cases/<int:case_id>/clips/<uuid:clip_id>/tags/<int:tag_id>/cancel/', tag_pages.cancel, name='cancel_tag'),
+    path('cases/<int:case_id>/clips/<uuid:clip_id>/wrong-time-or-place/', threads.report_wrong, name='report_wrong'),
     path('cases/<int:case_id>/clips/<uuid:clip_id>/reports/<str:kind>/', report_pages.report, name='report'),
     path('cases/<int:case_id>/clips/<uuid:clip_id>/reports/<str:kind>/cancel/', report_pages.cancel, name='cancel_report'),
     path('tags.css', tag_pages.tag_colours, name='tag_colours'),
