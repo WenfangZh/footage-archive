@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Clips with disputed tags" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Clips with disputed tags" %}</h1>
+  <p>{% translate "Clips on which a lawyer proposed removing or restoring a tag, latest proposal first." %}</p>
+  {% if clips %}
+    <ul>
+      {% for clip in clips %}
+        <li><a href="{% url 'manage:tag_history' clip.clip_id %}">{{ clip.clip_id }}</a>, {% blocktranslate with at=clip.latest|date:"DATETIME_FORMAT" %}latest proposal {{ at }}{% endblocktranslate %}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>{% translate "No lawyer has proposed removing or restoring a tag." %}</p>
+  {% endif %}
+{% endblock %}
