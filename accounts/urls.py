@@ -2,7 +2,7 @@ from django.urls import path
 
 from alerts import views as alert_views
 from cases import approval as case_approval
-from cases import clip_pages, report_pages, tag_history, tag_pages, threads
+from cases import clip_pages, report_pages, tag_history, tag_pages, threads, withdrawn_clips
 from cases import views as case_views
 from keys import views as key_views
 from maps import views as map_views
@@ -70,6 +70,8 @@ manage_patterns = [
     path('cases/<int:case_id>/', case_approval.case_request, name='case_request'),
     path('clips/disputed-tags/', tag_history.disputed_tags, name='disputed_tags'),
     path('clips/<uuid:clip_id>/tags/', tag_history.tag_history, name='tag_history'),
+    path('clips/withdrawn/', withdrawn_clips.withdrawn_clips, name='withdrawn_clips'),
+    path('clips/withdrawn/<uuid:clip_id>/delete/', withdrawn_clips.delete_withdrawn_clip, name='delete_withdrawn_clip'),
 ]
 
 urlpatterns = [
