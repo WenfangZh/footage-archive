@@ -204,7 +204,7 @@ _French_: historique des étiquettes
 _Avoid_: Tag log, tag audit
 
 **Removed tag**:
-A tag that three different lawyers have proposed removing. Lawyers see it only in a list of removed tags, apart from the clip's tags; the code holder still sees it as before. It comes back once three different lawyers propose restoring it. A lawyer can cancel their own open proposal.
+A tag that three different lawyers have proposed removing. Lawyers see it only in a list of removed tags, apart from the clip's tags; the code holder still sees it as before. It comes back once three different lawyers propose restoring it. A lawyer can cancel their own open proposal. If the code holder deletes the tag, its removal goes with it: added again later, it is a new tag.
 _French_: étiquette écartée (proposition d'écarter, proposition de rétablir, annuler)
 _Avoid_: Deleted tag, hidden tag, withdraw (a proposal)
 _Avoid in French_: retirée (a withdrawn clip is retiré), supprimée (deletion is for real)
