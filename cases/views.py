@@ -16,7 +16,7 @@ from audit.models import Action, record
 from clips import grid
 
 from . import size
-from .forms import CaseForm, DefaultMarginForm, max_cells, too_large_message
+from .forms import CaseForm, SettingsForm, max_cells, too_large_message
 from .models import Case, CaseApproval, NoPersonalKey
 from .search import find
 
@@ -81,14 +81,14 @@ def case(request, case_id):
 
 
 @lawyer_required
-def default_margin(request):
-    form = DefaultMarginForm(request.POST if request.method == 'POST' else None, instance=own_profile(request))
+def lawyer_settings(request):
+    form = SettingsForm(request.POST if request.method == 'POST' else None, instance=own_profile(request))
     if request.method == 'POST' and form.is_valid():
-        # These two fields only: the rest of the profile may have changed since it was read.
-        form.instance.save(update_fields=['default_margin_minutes', 'default_margin_rings'])
-        messages.success(request, _('Your new cases will start with this margin.'))
+        # The form's fields only: the rest of the profile may have changed since it was read.
+        form.instance.save(update_fields=SettingsForm.Meta.fields)
+        messages.success(request, _('Your settings are saved.'))
         return redirect('lawyer:home')
-    return render(request, 'cases/default_margin.html', {'form': form}, status=400 if form.errors else 200)
+    return render(request, 'cases/settings.html', {'form': form}, status=400 if form.errors else 200)
 
 
 @lawyer_required

@@ -350,10 +350,9 @@ msgid "Closed cases"
 msgstr "Dossiers de recherche clos"
 
 #: accounts/templates/accounts/lawyer_home.html:21
-#: cases/templates/cases/default_margin.html:4
-#: cases/templates/cases/default_margin.html:7
-msgid "Default margin"
-msgstr "Marge par défaut"
+#: cases/templates/cases/settings.html:4 cases/templates/cases/settings.html:7
+msgid "Settings"
+msgstr "Réglages"
 
 #: accounts/templates/accounts/lawyer_home.html:22
 #: cases/templates/cases/clip.html:24 keys/templates/keys/key.html:4
@@ -1119,37 +1118,64 @@ msgstr ""
 "large. Pour demander cette validation, donnez votre justification dans le "
 "champ « Pourquoi ce dossier de recherche doit dépasser les plafonds »."
 
+#: cases/forms.py:227
+msgid "Show code holders my name and bar on my messages"
+msgstr ""
+"Montrer mon nom et mon barreau sur mes messages aux personnes qui détiennent "
+"le code"
+
+#: cases/forms.py:228
+msgid "Email me when something is waiting for me in the archive"
+msgstr "M'envoyer un e-mail quand quelque chose m'attend dans l'archive"
+
 #: cases/forms.py:231
+msgid ""
+"Otherwise they see only \"a verified defence lawyer\". You can still choose "
+"on each message."
+msgstr ""
+"Sinon, elles voient seulement « un·e avocat·e de la défense vérifié·e ». "
+"Vous pouvez encore choisir sur chaque message."
+
+#: cases/forms.py:232
+msgid ""
+"At most one email until you open your messages, saying only that something "
+"is waiting: never what, nor about which clip."
+msgstr ""
+"Au plus un e-mail jusqu'à ce que vous ouvriez vos messages, qui dit "
+"seulement que quelque chose vous attend : jamais quoi, ni à propos de quel "
+"clip."
+
+#: cases/forms.py:240
 msgid "Decision"
 msgstr "Décision"
 
-#: cases/forms.py:232
+#: cases/forms.py:241
 msgid "Approve the case"
 msgstr "Valider le dossier de recherche"
 
-#: cases/forms.py:232
+#: cases/forms.py:241
 msgid "Refuse the case: it is closed"
 msgstr "Refuser le dossier de recherche : il est clos"
 
-#: cases/forms.py:235
+#: cases/forms.py:244
 msgid "Your note to the lawyer (optional)"
 msgstr "Votre note à l'avocat·e (facultatif)"
 
-#: cases/forms.py:236
+#: cases/forms.py:245
 msgid "Kept with the case, which its lawyer can see. Never a client's name."
 msgstr ""
 "Gardée avec le dossier de recherche, et visible par son avocat·e. Jamais le "
 "nom d'un·e client·e."
 
-#: cases/forms.py:244
+#: cases/forms.py:253
 msgid "Default tag"
 msgstr "Étiquette prédéfinie"
 
-#: cases/forms.py:247
+#: cases/forms.py:256
 msgid "Or your own tag"
 msgstr "Ou votre propre étiquette"
 
-#: cases/forms.py:249
+#: cases/forms.py:258
 msgid ""
 "Every lawyer whose case matches this clip will see it. Write only what can "
 "be seen, nothing about your case."
@@ -1157,19 +1183,19 @@ msgstr ""
 "Chaque avocat·e dont le dossier de recherche correspond à ce clip la verra. "
 "N'écrivez que ce qu'on voit, rien sur votre dossier de recherche."
 
-#: cases/forms.py:257
+#: cases/forms.py:266
 msgid "A tag needs at least one letter or digit."
 msgstr "Une étiquette doit contenir au moins une lettre ou un chiffre."
 
-#: cases/forms.py:265
+#: cases/forms.py:274
 msgid "Choose a default tag or write your own, not both."
 msgstr "Choisissez une étiquette prédéfinie ou écrivez la vôtre, pas les deux."
 
-#: cases/forms.py:273 clips/models.py:415
+#: cases/forms.py:282 clips/models.py:415
 msgid "Message"
 msgstr "Message"
 
-#: cases/forms.py:274 cases/forms.py:292
+#: cases/forms.py:283 cases/forms.py:301
 msgid ""
 "Stored so that only the code holder of this clip, with their upload code, "
 "and you, with your personal key, can read it."
@@ -1178,29 +1204,29 @@ msgstr ""
 "avec son code d'upload, et vous, avec votre clé personnelle, puissiez le "
 "lire."
 
-#: cases/forms.py:277
+#: cases/forms.py:286
 msgid "Show the code holder my name and bar on this message"
 msgstr ""
 "Montrer mon nom et mon barreau sur ce message à la personne qui détient le "
 "code"
 
-#: cases/forms.py:278
+#: cases/forms.py:287
 msgid "Otherwise they see only \"a verified defence lawyer\"."
 msgstr "Sinon, elle voit seulement « un·e avocat·e de la défense vérifié·e »."
 
-#: cases/forms.py:287
+#: cases/forms.py:296
 msgid "What is wrong"
 msgstr "Ce qui est erroné"
 
-#: cases/forms.py:288
+#: cases/forms.py:297
 msgid "The time"
 msgstr "L'heure"
 
-#: cases/forms.py:288
+#: cases/forms.py:297
 msgid "The place"
 msgstr "Le lieu"
 
-#: cases/forms.py:291
+#: cases/forms.py:300
 msgid "Note (optional)"
 msgstr "Note (facultative)"
 
@@ -1219,6 +1245,10 @@ msgstr "Clos après une longue période sans usage"
 #: cases/models.py:131
 msgid "Closed when the admin refused it"
 msgstr "Clos au refus de l'administrateur·rice"
+
+#: cases/notifications.py:33
+msgid "Something is waiting for you in the footage archive"
+msgstr "Quelque chose vous attend dans l'archive de vidéos"
 
 #: cases/report_pages.py:34
 msgid ""
@@ -1735,22 +1765,6 @@ msgstr ""
 msgid "Back to the clip"
 msgstr "Retour au clip"
 
-#: cases/templates/cases/default_margin.html:8
-msgid ""
-"The margin widens a case's time window and area, to find clips just outside "
-"them; they are shown apart, as margin matches. Each new case starts with "
-"this margin, and you can change it there. Cases you already have keep theirs."
-msgstr ""
-"La marge élargit la plage horaire et le périmètre d'un dossier de recherche, "
-"pour trouver les clips juste à côté : ils sont présentés à part, comme "
-"correspondances de marge. Chaque nouveau dossier de recherche commence avec "
-"cette marge, que vous pouvez modifier en le créant. Vos dossiers de "
-"recherche existants gardent la leur."
-
-#: cases/templates/cases/default_margin.html:12
-msgid "Save"
-msgstr "Enregistrer"
-
 #: cases/templates/cases/disputed_tags.html:8
 msgid ""
 "Clips on which a lawyer proposed removing or restoring a tag, latest "
@@ -1906,6 +1920,19 @@ msgstr ""
 msgid "Create the case"
 msgstr "Créer le dossier de recherche"
 
+#: cases/templates/cases/notification_email.txt:1
+msgid ""
+"Something is waiting for you in the footage archive. Log in to see it.\n"
+"\n"
+"You will get no other email until you have opened your messages. You can "
+"turn these emails off in your settings."
+msgstr ""
+"Quelque chose vous attend dans l'archive de vidéos. Connectez-vous pour le "
+"voir.\n"
+"\n"
+"Vous ne recevrez pas d'autre e-mail avant d'avoir ouvert vos messages. Vous "
+"pouvez désactiver ces e-mails dans vos réglages."
+
 #: cases/templates/cases/place.html:1
 #, python-format
 msgid "the cell around %(latitude)s, %(longitude)s, about %(width)s m across"
@@ -1949,6 +1976,30 @@ msgid ""
 msgstr ""
 "Clips trouvés seulement dans la marge, juste en dehors de la plage horaire "
 "ou du périmètre."
+
+#: cases/templates/cases/settings.html:11
+msgid "Default margin"
+msgstr "Marge par défaut"
+
+#: cases/templates/cases/settings.html:12
+msgid ""
+"The margin widens a case's time window and area, to find clips just outside "
+"them; they are shown apart, as margin matches. Each new case starts with "
+"this margin, and you can change it there. Cases you already have keep theirs."
+msgstr ""
+"La marge élargit la plage horaire et le périmètre d'un dossier de recherche, "
+"pour trouver les clips juste à côté : ils sont présentés à part, comme "
+"correspondances de marge. Chaque nouveau dossier de recherche commence avec "
+"cette marge, que vous pouvez modifier en le créant. Vos dossiers de "
+"recherche existants gardent la leur."
+
+#: cases/templates/cases/settings.html:15
+msgid "Messages"
+msgstr "Messages"
+
+#: cases/templates/cases/settings.html:18
+msgid "Save"
+msgstr "Enregistrer"
 
 #: cases/templates/cases/tag_history.html:4
 #: cases/templates/cases/tag_history.html:7
@@ -2012,31 +2063,31 @@ msgstr ""
 "Dossier de recherche nº %(number)s (libellé du dossier de recherche "
 "illisible)"
 
-#: cases/threads.py:48
+#: cases/threads.py:50
 msgid "You can send messages once the admin has confirmed your personal key."
 msgstr ""
 "Vous pourrez envoyer des messages une fois que l'administrateur·rice aura "
 "confirmé votre clé personnelle."
 
-#: cases/threads.py:51
+#: cases/threads.py:53
 msgid "This clip's code holder cannot receive messages yet."
 msgstr ""
 "La personne qui détient le code de ce clip ne peut pas encore recevoir de "
 "messages."
 
-#: cases/threads.py:75
+#: cases/threads.py:77
 msgid "Your message is sent. Its thread is on your messages page."
 msgstr ""
 "Votre message est envoyé. Son fil de messages est sur votre page de messages."
 
-#: cases/threads.py:97
+#: cases/threads.py:99
 msgid ""
 "Your report is sent to the code holder. Its thread is on your messages page."
 msgstr ""
 "Votre signalement de clip est envoyé à la personne qui détient le code. Son "
 "fil de messages est sur votre page de messages."
 
-#: cases/threads.py:152
+#: cases/threads.py:160
 msgid "Your message is sent."
 msgstr "Votre message est envoyé."
 
@@ -2049,8 +2100,8 @@ msgstr ""
 "de recherche. Demandez à l'administrateur·rice comment faire."
 
 #: cases/views.py:89
-msgid "Your new cases will start with this margin."
-msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
+msgid "Your settings are saved."
+msgstr "Vos réglages sont enregistrés."
 
 #: cases/views.py:100
 msgid "The case is closed."
@@ -2649,11 +2700,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:391
+#: config/settings.py:396
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:392
+#: config/settings.py:397
 msgid "English"
 msgstr "Anglais"
 
@@ -3262,6 +3313,9 @@ msgstr ""
 #: templates/home.html:9
 msgid "Defence lawyers: log in"
 msgstr "Avocat·es de la défense : se connecter"
+
+#~ msgid "Your new cases will start with this margin."
+#~ msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
 
 #~ msgid "Invitation sent"
 #~ msgstr "Invitation envoyée"

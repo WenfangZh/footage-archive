@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import RedirectView
 
 from alerts import views as alert_views
 from cases import approval as case_approval
@@ -8,6 +9,7 @@ from keys import views as key_views
 from maps import views as map_views
 
 from . import access, admission, invitations, two_factor, views
+from .roles import lawyer_required
 
 app_name = 'accounts'
 
@@ -38,7 +40,9 @@ lawyer_patterns = [
     # A lawyer's threads, reached with no case (SPEC.md §7): each shows its clip by identifier only.
     path('messages/', threads.messages_page, name='messages'),
     path('messages/<uuid:clip_id>/reply/', threads.reply, name='reply'),
-    path('margin/', case_views.default_margin, name='default_margin'),
+    path('settings/', case_views.lawyer_settings, name='settings'),
+    # Where the margin was set before the settings page.
+    path('margin/', lawyer_required(RedirectView.as_view(pattern_name='lawyer:settings', permanent=True)), name='default_margin'),
     # Handing over the group key (keys.views).
     path('keys/', key_views.waiting, name='waiting'),
     path('keys/<int:lawyer_key_id>/', key_views.grant, name='grant'),

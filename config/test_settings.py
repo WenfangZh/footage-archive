@@ -14,6 +14,7 @@ os.environ['DJANGO_SECRET_KEY'] = 'test-only-not-secret'
 os.environ['UPLOAD_CODE_KEY'] = 'test-only-not-secret-test-only-not-secret'
 # Kept in memory (pytest-django does the same for each test).
 os.environ['EMAIL_BACKEND'] = 'django.core.mail.backends.locmem.EmailBackend'
+os.environ['ARCHIVE_URL'] = 'https://archive.example.org'
 
 _data_dir = tempfile.mkdtemp(prefix='footage-archive-tests-')
 atexit.register(shutil.rmtree, _data_dir, ignore_errors=True)

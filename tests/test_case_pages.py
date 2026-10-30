@@ -207,7 +207,7 @@ def test_a_case_page_shows_its_window_area_and_margin(lawyer, lawyer_client, set
 
 
 def test_a_lawyer_sets_their_default_margin(lawyer, lawyer_client):
-    response = lawyer_client.post(reverse('lawyer:default_margin'), {
+    response = lawyer_client.post(reverse('lawyer:settings'), {
         'default_margin_minutes': '5', 'default_margin_rings': '0',
     })
     assert response.status_code == 302
@@ -216,11 +216,11 @@ def test_a_lawyer_sets_their_default_margin(lawyer, lawyer_client):
 
 
 def test_an_empty_default_margin_is_refused(lawyer, lawyer_client):
-    assert lawyer_client.post(reverse('lawyer:default_margin'), {}).status_code == 400
+    assert lawyer_client.post(reverse('lawyer:settings'), {}).status_code == 400
 
 
 def test_a_default_margin_is_bounded(lawyer, lawyer_client):
-    response = lawyer_client.post(reverse('lawyer:default_margin'), {
+    response = lawyer_client.post(reverse('lawyer:settings'), {
         'default_margin_minutes': '10', 'default_margin_rings': '1000',
     })
     assert response.status_code == 400

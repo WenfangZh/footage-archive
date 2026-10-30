@@ -345,6 +345,11 @@ if EMAIL_BACKEND is None:
 # Seconds to wait for the mail server: an invitation is sent inside a database transaction.
 EMAIL_TIMEOUT = env_int('EMAIL_TIMEOUT', default=10, minimum=1)
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or 'archive@localhost'
+# The archive's own address, for links in emails sent outside a request, such as notifications
+# (cases.notifications): https anywhere but in development.
+ARCHIVE_URL = (os.environ.get('ARCHIVE_URL') or ('http://localhost:8000' if DEBUG else '')).rstrip('/')
+if not (ARCHIVE_URL.startswith('https://') or (DEBUG and ARCHIVE_URL.startswith('http://'))):
+    raise ImproperlyConfigured('Set ARCHIVE_URL to the https address of the archive (see .env.example).')
 
 # The name authenticator apps show next to the codes.
 OTP_TOTP_ISSUER = 'Footage archive'

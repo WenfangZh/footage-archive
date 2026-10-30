@@ -1,4 +1,5 @@
-"""Closing cases left unused (SPEC.md §7), once a day in the background worker."""
+"""Closing cases left unused (SPEC.md §7), once a day, and email notifications for lawyers,
+every hour, in the background worker."""
 
 import datetime
 import logging
@@ -9,6 +10,7 @@ from huey import crontab
 from huey.contrib.djhuey import db_periodic_task
 
 from .models import Case
+from .notifications import send_notifications
 
 logger = logging.getLogger(__name__)
 
@@ -28,3 +30,12 @@ def close_unused_cases_daily():
     if closed:
         # How many only: never which cases.
         logger.info('Closed %s cases left unused.', closed)
+
+
+# Every hour: a message's 4-hour block ends on the hour.
+@db_periodic_task(crontab(minute='2'))
+def send_notifications_hourly():
+    sent = send_notifications()
+    if sent:
+        # How many only: never to whom.
+        logger.info('Sent %s notification emails.', sent)

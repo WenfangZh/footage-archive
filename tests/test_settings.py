@@ -66,6 +66,14 @@ def test_short_upload_code_key_stops_startup():
     assert 'UPLOAD_CODE_KEY must be at least 32 characters' in result.stderr
 
 
+@pytest.mark.parametrize('value', ['', 'http://archive.example.org'])
+def test_an_archive_address_other_than_https_stops_startup_outside_development(value):
+    # Notification emails link to it (SPEC.md §7).
+    result = load_settings(ARCHIVE_URL=value, DJANGO_DEBUG='false')
+    assert result.returncode != 0
+    assert 'Set ARCHIVE_URL' in result.stderr
+
+
 def test_grid_finer_than_resolution_11_stops_startup():
     result = load_settings(GRID_H3_RESOLUTION='12')
     assert result.returncode != 0

@@ -214,14 +214,23 @@ def too_large_message(too_large):
     ) % {**measured, 'cap_minutes': settings.CASE_WINDOW_CAP_MINUTES, 'cap_metres': settings.CASE_AREA_CAP_METRES}
 
 
-class DefaultMarginForm(forms.ModelForm):
-    """The margin a lawyer's new cases start with."""
+class SettingsForm(forms.ModelForm):
+    """A lawyer's settings (SPEC.md §7): the margin their new cases start with, whether the code
+    holder sees their name on their messages by default, and email notifications."""
 
     default_margin_minutes, default_margin_rings = margin_fields()
 
     class Meta:
         model = LawyerProfile
-        fields = ['default_margin_minutes', 'default_margin_rings']
+        fields = ['default_margin_minutes', 'default_margin_rings', 'identified_by_default', 'notifications']
+        labels = {
+            'identified_by_default': _('Show code holders my name and bar on my messages'),
+            'notifications': _('Email me when something is waiting for me in the archive'),
+        }
+        help_texts = {
+            'identified_by_default': _('Otherwise they see only "a verified defence lawyer". You can still choose on each message.'),
+            'notifications': _('At most one email until you open your messages, saying only that something is waiting: never what, nor about which clip.'),
+        }
 
 
 class DecisionForm(forms.Form):

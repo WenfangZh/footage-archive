@@ -18,6 +18,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_GET, require_POST
 
+from accounts.models import LawyerProfile
 from accounts.roles import lawyer_required
 from audit.models import Action, record
 from clips import vault
@@ -125,11 +126,13 @@ def messages_page(request):
     Message.objects.filter(
         pk__in=[item['message'].pk for thread in threads.values() for item in thread if item['new']],
     ).update(seen=True)
+    LawyerProfile.objects.filter(pk=profile.pk, notified_before__isnull=False).update(notified_before=None)
     return render(request, 'cases/messages.html', {
         'threads': [
             # Its own field ids, so that a label never ticks another thread's box.
             {
-                'clip_id': clip_id, 'messages': thread, 'form': MessageForm(auto_id=f'thread-{clip_id}-%s'),
+                'clip_id': clip_id, 'messages': thread,
+                'form': MessageForm(auto_id=f'thread-{clip_id}-%s', initial={'identified': profile.identified_by_default}),
                 'deleted_on': deletion_time(max(item['message'].sent_at for item in thread)),
             }
             for clip_id, thread in ordered

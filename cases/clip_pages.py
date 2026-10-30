@@ -131,9 +131,10 @@ def clip_page(request, case_id, clip_id):
         'tags': [tag for tag in shown_tags if not tag['removed']],
         'removed_tags': [tag for tag in shown_tags if tag['removed']],
         'tag_form': LawyerTagForm(),
-        'message_form': MessageForm(),
+        # Ticked or not as the lawyer's setting says.
+        'message_form': MessageForm(initial={'identified': case.lawyer_profile.identified_by_default}),
         # Its own field ids: the message form has a "name me" box too.
-        'wrong_report_form': WrongReportForm(auto_id='wrong-%s'),
+        'wrong_report_form': WrongReportForm(auto_id='wrong-%s', initial={'identified': case.lawyer_profile.identified_by_default}),
         'has_thread': Message.objects.filter(clip=clip, lawyer_profile=case.lawyer_profile).exists(),
         'uploaded_tags': tag_names(uploaded.get('default', []), uploaded.get('custom', [])),
         'edits': clip.edits.order_by('edited_at', 'pk'),

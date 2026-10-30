@@ -1,0 +1,5 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate %}Something is waiting for you in the footage archive. Log in to see it.
+
+You will get no other email until you have opened your messages. You can turn these emails off in your settings.{% endblocktranslate %}
+
+{{ link }}{% endautoescape %}

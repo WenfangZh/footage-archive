@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Settings" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Settings" %}</h1>
+  <form method="post" action="{% url 'lawyer:settings' %}">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <h2>{% translate "Default margin" %}</h2>
+    <p>{% translate "The margin widens a case's time window and area, to find clips just outside them; they are shown apart, as margin matches. Each new case starts with this margin, and you can change it there. Cases you already have keep theirs." %}</p>
+    {{ form.default_margin_minutes.as_field_group }}
+    {{ form.default_margin_rings.as_field_group }}
+    <h2>{% translate "Messages" %}</h2>
+    {{ form.identified_by_default.as_field_group }}
+    {{ form.notifications.as_field_group }}
+    <button type="submit">{% translate "Save" %}</button>
+  </form>
+{% endblock %}
