@@ -108,6 +108,13 @@
       {% if content_warning %}{% translate "Another lawyer has already reported it: your report withdraws it from every search, clip page, preview and download, for good, and no one can cancel it." %}{% else %}{% translate "Your report puts a content warning on it for other lawyers, and a second report, from another lawyer, withdraws it for good." %}{% endif %}</p>
     {% include "cases/report_button.html" with action="lawyer:report" kind="inappropriate" withdraws=content_warning label=_("Report as inappropriate") %}
   {% endif %}
+  <h3>{% translate "A wrong time or place" %}</h3>
+  <p>{% translate "Your report reaches the code holder as a message in your thread, with your note if you write one, and they can answer it. It cannot be cancelled: to correct it, send another message." %}</p>
+  <form method="post" action="{% url 'lawyer:report_wrong' case_id=case.pk clip_id=clip.pk %}">
+    {% csrf_token %}
+    {{ wrong_report_form.as_p }}
+    <button type="submit">{% translate "Send the report" %}</button>
+  </form>
 
   {# Encrypted: the page's script opens them with the group key and fills them in (keys/static/keys/clip_keys.js). #}
   {% if context %}

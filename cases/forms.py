@@ -14,6 +14,7 @@ from django.utils.translation import gettext_lazy as _
 from accounts.models import LawyerProfile
 from clips import grid
 from clips.forms import MESSAGE_MAX_LENGTH
+from clips.models import Message
 from clips.tags import CUSTOM_TAG_MAX_LENGTH, DEFAULT_TAGS
 
 from . import size
@@ -276,3 +277,19 @@ class MessageForm(forms.Form):
         label=_('Show the code holder my name and bar on this message'), required=False,
         help_text=_('Otherwise they see only "a verified defence lawyer".'),
     )
+
+
+class WrongReportForm(forms.Form):
+    """A report that a clip's time or place is wrong: a message to its code holder, whose note is
+    optional (SPEC.md §7)."""
+
+    kind = forms.ChoiceField(
+        label=_('What is wrong'), widget=forms.RadioSelect,
+        choices=[(Message.Kind.WRONG_TIME, _('The time')), (Message.Kind.WRONG_PLACE, _('The place'))],
+    )
+    note = forms.CharField(
+        label=_('Note (optional)'), max_length=MESSAGE_MAX_LENGTH, widget=forms.Textarea, required=False,
+        help_text=_('Stored so that only the code holder of this clip, with their upload code, and you, with your personal key, can read it.'),
+    )
+    # The same choice as on a message.
+    identified = MessageForm.base_fields['identified']

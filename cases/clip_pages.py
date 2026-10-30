@@ -46,7 +46,7 @@ from keys.grants import reads_vault
 from keys.views import b64
 
 from . import reports
-from .forms import LawyerTagForm, MessageForm
+from .forms import LawyerTagForm, MessageForm, WrongReportForm
 from .models import Case
 from .search import match_of
 
@@ -132,6 +132,8 @@ def clip_page(request, case_id, clip_id):
         'removed_tags': [tag for tag in shown_tags if tag['removed']],
         'tag_form': LawyerTagForm(),
         'message_form': MessageForm(),
+        # Its own field ids: the message form has a "name me" box too.
+        'wrong_report_form': WrongReportForm(auto_id='wrong-%s'),
         'has_thread': Message.objects.filter(clip=clip, lawyer_profile=case.lawyer_profile).exists(),
         'uploaded_tags': tag_names(uploaded.get('default', []), uploaded.get('custom', [])),
         'edits': clip.edits.order_by('edited_at', 'pk'),

@@ -991,65 +991,65 @@ msgstr "Le dossier de recherche est validé."
 msgid "The case is refused and closed."
 msgstr "Le dossier de recherche est refusé et clos."
 
-#: cases/forms.py:28
+#: cases/forms.py:29
 msgid "Margin around the time window, in minutes"
 msgstr "Marge autour de la plage horaire, en minutes"
 
-#: cases/forms.py:32
+#: cases/forms.py:33
 msgid "Margin around the area, in rings of cells about 50 m wide"
 msgstr "Marge autour du périmètre, en anneaux de mailles d'environ 50 m"
 
-#: cases/forms.py:60
+#: cases/forms.py:61
 msgid "Enter the time without a time zone: it is read as French time."
 msgstr ""
 "Saisissez l'heure sans fuseau horaire : elle est lue en heure française."
 
-#: cases/forms.py:65
+#: cases/forms.py:66
 #, python-format
 msgid "Enter a date between %(first)s and next year."
 msgstr "Saisissez une date entre %(first)s et l'an prochain."
 
-#: cases/forms.py:99
+#: cases/forms.py:100
 msgid "The area picked on the map could not be read. Pick it again."
 msgstr ""
 "Le périmètre choisi sur la carte n'a pas pu être lu. Choisissez-le à nouveau."
 
-#: cases/forms.py:100
+#: cases/forms.py:101
 msgid "The area picked on the map has more cells than any case can hold."
 msgstr ""
 "Le périmètre choisi sur la carte compte plus de mailles qu'aucun dossier de "
 "recherche ne peut en contenir."
 
-#: cases/forms.py:129
+#: cases/forms.py:130
 msgid "Case label"
 msgstr "Libellé du dossier de recherche"
 
-#: cases/forms.py:130
+#: cases/forms.py:131
 msgid "Something to recognise the case by. Never a client's name."
 msgstr ""
 "De quoi reconnaître le dossier de recherche. Jamais le nom d'un·e client·e."
 
-#: cases/forms.py:133
+#: cases/forms.py:134
 msgid "Start of the time window"
 msgstr "Début de la plage horaire"
 
-#: cases/forms.py:133
+#: cases/forms.py:134
 msgid "French time, as in the police report."
 msgstr "Heure française, comme dans le procès-verbal."
 
-#: cases/forms.py:135
+#: cases/forms.py:136
 msgid "End of the time window"
 msgstr "Fin de la plage horaire"
 
-#: cases/forms.py:137 clips/forms.py:49
+#: cases/forms.py:138 clips/forms.py:49
 msgid "Latitude"
 msgstr "Latitude"
 
-#: cases/forms.py:141 clips/forms.py:53
+#: cases/forms.py:142 clips/forms.py:53
 msgid "Longitude"
 msgstr "Longitude"
 
-#: cases/forms.py:143
+#: cases/forms.py:144
 msgid ""
 "The place in the police report. Only the grid cells around it are kept, not "
 "the place itself."
@@ -1057,15 +1057,15 @@ msgstr ""
 "Le lieu indiqué dans le procès-verbal. Seules les mailles de la grille "
 "autour de ce lieu sont gardées, pas le lieu lui-même."
 
-#: cases/forms.py:146
+#: cases/forms.py:147
 msgid "Radius around that place, in metres"
 msgstr "Rayon autour de ce lieu, en mètres"
 
-#: cases/forms.py:152
+#: cases/forms.py:153
 msgid "Why this case needs to be larger than the size caps"
 msgstr "Pourquoi ce dossier de recherche doit dépasser les plafonds"
 
-#: cases/forms.py:155
+#: cases/forms.py:156
 msgid ""
 "Only for a case over the size caps: the admin reads your reason to decide, "
 "then it is deleted; for a case within them, it is not kept. Never a client's "
@@ -1076,17 +1076,17 @@ msgstr ""
 "supprimée ; pour un dossier dans les plafonds, elle n'est pas gardée. Jamais "
 "le nom d'un·e client·e."
 
-#: cases/forms.py:165
+#: cases/forms.py:166
 msgid "The time window must end after it starts."
 msgstr "La plage horaire doit se terminer après son début."
 
-#: cases/forms.py:186
+#: cases/forms.py:187
 msgid "Give the area either as a place and a radius or on the map, not both."
 msgstr ""
 "Donnez le périmètre soit par un lieu et un rayon, soit sur la carte, pas les "
 "deux."
 
-#: cases/forms.py:196
+#: cases/forms.py:197
 msgid ""
 "Give the place and radius from the police report, or pick the area on the "
 "map."
@@ -1094,7 +1094,7 @@ msgstr ""
 "Donnez le lieu et le rayon du procès-verbal, ou choisissez le périmètre sur "
 "la carte."
 
-#: cases/forms.py:203
+#: cases/forms.py:204
 #, python-format
 msgid ""
 "With its margin, this case lasts %(minutes)s minutes and is about %(metres)s "
@@ -1105,7 +1105,7 @@ msgstr ""
 "%(metres)s m de large. Aucun dossier de recherche ne peut dépasser "
 "%(ceiling_minutes)s minutes ni %(ceiling_metres)s m de large."
 
-#: cases/forms.py:210
+#: cases/forms.py:211
 #, python-format
 msgid ""
 "With its margin, this case lasts %(minutes)s minutes and is about %(metres)s "
@@ -1119,37 +1119,37 @@ msgstr ""
 "large. Pour demander cette validation, donnez votre justification dans le "
 "champ « Pourquoi ce dossier de recherche doit dépasser les plafonds »."
 
-#: cases/forms.py:230
+#: cases/forms.py:231
 msgid "Decision"
 msgstr "Décision"
 
-#: cases/forms.py:231
+#: cases/forms.py:232
 msgid "Approve the case"
 msgstr "Valider le dossier de recherche"
 
-#: cases/forms.py:231
+#: cases/forms.py:232
 msgid "Refuse the case: it is closed"
 msgstr "Refuser le dossier de recherche : il est clos"
 
-#: cases/forms.py:234
+#: cases/forms.py:235
 msgid "Your note to the lawyer (optional)"
 msgstr "Votre note à l'avocat·e (facultatif)"
 
-#: cases/forms.py:235
+#: cases/forms.py:236
 msgid "Kept with the case, which its lawyer can see. Never a client's name."
 msgstr ""
 "Gardée avec le dossier de recherche, et visible par son avocat·e. Jamais le "
 "nom d'un·e client·e."
 
-#: cases/forms.py:243
+#: cases/forms.py:244
 msgid "Default tag"
 msgstr "Étiquette prédéfinie"
 
-#: cases/forms.py:246
+#: cases/forms.py:247
 msgid "Or your own tag"
 msgstr "Ou votre propre étiquette"
 
-#: cases/forms.py:248
+#: cases/forms.py:249
 msgid ""
 "Every lawyer whose case matches this clip will see it. Write only what can "
 "be seen, nothing about your case."
@@ -1157,19 +1157,19 @@ msgstr ""
 "Chaque avocat·e dont le dossier de recherche correspond à ce clip la verra. "
 "N'écrivez que ce qu'on voit, rien sur votre dossier de recherche."
 
-#: cases/forms.py:256
+#: cases/forms.py:257
 msgid "A tag needs at least one letter or digit."
 msgstr "Une étiquette doit contenir au moins une lettre ou un chiffre."
 
-#: cases/forms.py:264
+#: cases/forms.py:265
 msgid "Choose a default tag or write your own, not both."
 msgstr "Choisissez une étiquette prédéfinie ou écrivez la vôtre, pas les deux."
 
-#: cases/forms.py:272 clips/models.py:415
+#: cases/forms.py:273 clips/models.py:415
 msgid "Message"
 msgstr "Message"
 
-#: cases/forms.py:273
+#: cases/forms.py:274 cases/forms.py:292
 msgid ""
 "Stored so that only the code holder of this clip, with their upload code, "
 "and you, with your personal key, can read it."
@@ -1178,15 +1178,31 @@ msgstr ""
 "avec son code d'upload, et vous, avec votre clé personnelle, puissiez le "
 "lire."
 
-#: cases/forms.py:276
+#: cases/forms.py:277
 msgid "Show the code holder my name and bar on this message"
 msgstr ""
 "Montrer mon nom et mon barreau sur ce message à la personne qui détient le "
 "code"
 
-#: cases/forms.py:277
+#: cases/forms.py:278
 msgid "Otherwise they see only \"a verified defence lawyer\"."
 msgstr "Sinon, elle voit seulement « un·e avocat·e de la défense vérifié·e »."
+
+#: cases/forms.py:287
+msgid "What is wrong"
+msgstr "Ce qui est erroné"
+
+#: cases/forms.py:288
+msgid "The time"
+msgstr "L'heure"
+
+#: cases/forms.py:288
+msgid "The place"
+msgstr "Le lieu"
+
+#: cases/forms.py:291
+msgid "Note (optional)"
+msgstr "Note (facultative)"
 
 #: cases/models.py:128
 msgid "Closed by its lawyer"
@@ -1615,16 +1631,35 @@ msgstr ""
 msgid "Report as inappropriate"
 msgstr "Signaler comme inapproprié"
 
-#: cases/templates/cases/clip.html:114 clips/forms.py:69 clips/models.py:236
+#: cases/templates/cases/clip.html:111
+msgid "A wrong time or place"
+msgstr "Une heure ou un lieu erroné"
+
+#: cases/templates/cases/clip.html:112
+msgid ""
+"Your report reaches the code holder as a message in your thread, with your "
+"note if you write one, and they can answer it. It cannot be cancelled: to "
+"correct it, send another message."
+msgstr ""
+"Votre signalement de clip parvient à la personne qui détient le code comme "
+"un message dans votre fil de messages, avec votre note si vous en écrivez "
+"une, et elle peut y répondre. Il ne peut pas être annulé : pour le corriger, "
+"envoyez un autre message."
+
+#: cases/templates/cases/clip.html:116
+msgid "Send the report"
+msgstr "Envoyer le signalement de clip"
+
+#: cases/templates/cases/clip.html:121 clips/forms.py:69 clips/models.py:236
 #: clips/models.py:283
 msgid "Context"
 msgstr "Contexte"
 
-#: cases/templates/cases/clip.html:119 clips/models.py:237 clips/models.py:284
+#: cases/templates/cases/clip.html:126 clips/models.py:237 clips/models.py:284
 msgid "Contact details"
 msgstr "Moyen de contact"
 
-#: cases/templates/cases/clip.html:121
+#: cases/templates/cases/clip.html:128
 msgid ""
 "The code holder chose to leave these, knowing they could be used against "
 "them. Use them only for this case, and keep them out of anything you share."
@@ -1633,28 +1668,28 @@ msgstr ""
 "pourrait être utilisé contre elle. Ne l'utilisez que pour ce dossier de "
 "recherche, et ne le faites figurer dans rien de ce que vous partagez."
 
-#: cases/templates/cases/clip.html:124
+#: cases/templates/cases/clip.html:131
 msgid "Edits since upload"
 msgstr "Modifications depuis l'upload"
 
-#: cases/templates/cases/clip.html:126
+#: cases/templates/cases/clip.html:133
 #, python-format
 msgid "%(field)s: %(day)s, in the four hours from %(start)s"
 msgstr "%(field)s : %(day)s, dans les quatre heures à partir de %(start)s"
 
-#: cases/templates/cases/clip.html:127
+#: cases/templates/cases/clip.html:134
 msgid "None."
 msgstr "Aucun."
 
-#: cases/templates/cases/clip.html:129
+#: cases/templates/cases/clip.html:136
 msgid "Message to the code holder"
 msgstr "Message à la personne qui détient le code"
 
-#: cases/templates/cases/clip.html:130
+#: cases/templates/cases/clip.html:137
 msgid "Your thread with this clip's code holder"
 msgstr "Votre fil de messages avec la personne qui détient le code de ce clip"
 
-#: cases/templates/cases/clip.html:134 cases/templates/cases/messages.html:42
+#: cases/templates/cases/clip.html:141 cases/templates/cases/messages.html:42
 #: clips/templates/clips/clip.html:106 clips/templates/clips/upload.html:26
 msgid "Send"
 msgstr "Envoyer"
@@ -1984,7 +2019,14 @@ msgid "Your message is sent. Its thread is on your messages page."
 msgstr ""
 "Votre message est envoyé. Son fil de messages est sur votre page de messages."
 
-#: cases/threads.py:126
+#: cases/threads.py:96
+msgid ""
+"Your report is sent to the code holder. Its thread is on your messages page."
+msgstr ""
+"Votre signalement de clip est envoyé à la personne qui détient le code. Son "
+"fil de messages est sur votre page de messages."
+
+#: cases/threads.py:148
 msgid "Your message is sent."
 msgstr "Votre message est envoyé."
 

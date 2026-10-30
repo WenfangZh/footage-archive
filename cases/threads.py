@@ -25,21 +25,21 @@ from clips.models import Message
 from keys.views import b64
 
 from .clip_pages import case_and_clip
-from .forms import MessageForm
+from .forms import MessageForm, WrongReportForm
 
 
-@sensitive_variables('form')
-def _send(request, clip, form, case=None):
-    """Send the form's message in the lawyer's thread on the clip, and log it: a message names the
-    case it was sent through, a reply none. False, with a notice, if it cannot be sent now."""
+@sensitive_variables('text')
+def _send(request, clip, action, text, identified, case=None, kind=Message.Kind.MESSAGE):
+    """Send `text` in the lawyer's thread on the clip, and log it as `action`: a message or report
+    names the case it was sent through, a reply none. False, with a notice, if it cannot be sent
+    now."""
     profile = request.user.lawyer_profile
     try:
         with transaction.atomic():
             message = vault.send_message(
-                clip, profile, Message.Direction.TO_CODE_HOLDER, form.cleaned_data['text'],
-                identified=form.cleaned_data['identified'],
+                clip, profile, Message.Direction.TO_CODE_HOLDER, text, kind=kind, identified=identified,
             )
-            record(Action.MESSAGE if case else Action.REPLY, profile, case=case, clip=clip)
+            record(action, profile, case=case, clip=clip)
     except vault.NotALawyer:
         # Suspended since the request began.
         raise Http404 from None
@@ -69,9 +69,31 @@ def send(request, case_id, clip_id):
     if not form.is_valid():
         _form_errors(request, form)
         return redirect('lawyer:clip', case_id=case.pk, clip_id=clip.pk)
-    if not _send(request, clip, form, case):
+    if not _send(request, clip, Action.MESSAGE, form.cleaned_data['text'], form.cleaned_data['identified'], case):
         return redirect('lawyer:clip', case_id=case.pk, clip_id=clip.pk)
     notices.success(request, _('Your message is sent. Its thread is on your messages page.'))
+    return redirect(thread_url(clip.pk))
+
+
+WRONG_REPORT_ACTIONS = {Message.Kind.WRONG_TIME: Action.REPORT_WRONG_TIME, Message.Kind.WRONG_PLACE: Action.REPORT_WRONG_PLACE}
+
+
+@lawyer_required
+@require_POST
+@sensitive_post_parameters('note')
+def report_wrong(request, case_id, clip_id):
+    """A report that the clip's time or place is wrong: a message of that kind in the lawyer's
+    thread, logged once, as the report. It cannot be cancelled, since the code holder has it
+    already: a correction is another message (SPEC.md §7)."""
+    case, clip, _match = case_and_clip(request, case_id, clip_id)
+    form = WrongReportForm(request.POST)
+    if not form.is_valid():
+        _form_errors(request, form)
+        return redirect('lawyer:clip', case_id=case.pk, clip_id=clip.pk)
+    kind = Message.Kind(form.cleaned_data['kind'])
+    if not _send(request, clip, WRONG_REPORT_ACTIONS[kind], form.cleaned_data['note'], form.cleaned_data['identified'], case, kind):
+        return redirect('lawyer:clip', case_id=case.pk, clip_id=clip.pk)
+    notices.success(request, _('Your report is sent to the code holder. Its thread is on your messages page.'))
     return redirect(thread_url(clip.pk))
 
 
@@ -122,6 +144,6 @@ def reply(request, clip_id):
     form = MessageForm(request.POST)
     if not form.is_valid():
         _form_errors(request, form)
-    elif _send(request, first.clip, form):
+    elif _send(request, first.clip, Action.REPLY, form.cleaned_data['text'], form.cleaned_data['identified']):
         notices.success(request, _('Your message is sent.'))
     return redirect(thread_url(clip_id))
