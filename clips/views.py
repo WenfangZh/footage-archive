@@ -15,9 +15,10 @@ from keys.grants import uploads_open
 from . import grid, probe, rate_limits, vault
 from .confirmation import AlreadyConfirmed, confirm_upload
 from .editing import NotEditable, apply_edits, clip_for_code, code_holder_tags, delete_clip
-from .forms import METADATA_PRECISIONS, ConfirmForm, EditForm, FileForm
-from .models import Clip, Original, Precision
+from .forms import MESSAGE_MAX_LENGTH, METADATA_PRECISIONS, ConfirmForm, EditForm, FileForm, ReplyForm
+from .models import Clip, Message, Original, Precision
 from .tags import DEFAULT_TAGS
+from .threads import code_holder_threads
 from .upload_codes import display, normalise
 from .uploads import size_limit_display
 
@@ -185,6 +186,32 @@ def delete(request):
     return render(request, 'clips/deleted.html')
 
 
+@never_cache
+@sensitive_post_parameters('code', 'text')
+@sensitive_variables('typed')
+@require_http_methods(['POST'])
+def reply(request):
+    """The code holder answers a lawyer's thread (SPEC.md §7). Refused, with the reply kept in its
+    box, while the lawyer cannot receive it: no longer admitted, suspended, or without a personal
+    key the admin confirmed; the notice for the last says only to try again later."""
+    typed = request.POST.get('code', '')
+    clip, refusal = clip_or_refusal(request, typed)
+    if refusal:
+        return refusal
+    form = ReplyForm(request.POST)
+    first = form.is_valid() and Message.objects.filter(
+        clip=clip, pk=form.cleaned_data['thread'],
+    ).select_related('lawyer_profile').first()
+    if not first:
+        return render_clip(request, clip, edit_form(clip, code=typed), reply_failed=form, status=400)
+    try:
+        vault.send_message(clip, first.lawyer_profile, Message.Direction.FROM_CODE_HOLDER, form.cleaned_data['text'])
+    except (vault.NotALawyer, vault.NoLawyerKey):
+        # Its lawyer changed since the page was shown.
+        return render_clip(request, clip, edit_form(clip, code=typed), reply_failed=form, status=409)
+    return render_clip(request, clip, edit_form(clip, code=typed), replied=True)
+
+
 def clip_or_refusal(request, typed):
     """The clip for the code sent, or the response refusing it (SPEC.md §5).
 
@@ -230,11 +257,16 @@ def edit_form(clip, code=None, data=None):
     return EditForm(initial=initial, **kwargs)
 
 
+@sensitive_variables('code')
 def render_clip(request, clip, form, status=200, **flags):
+    code = form['code'].value()
     return render(request, 'clips/clip.html', {
         'clip': clip,
         'form': form,
-        'code': form['code'].value(),
+        'code': code,
+        # Opened with the code, which found this clip (clip_or_refusal), during this request only.
+        'threads': code_holder_threads(clip, normalise(code)),
+        'reply_max_length': MESSAGE_MAX_LENGTH,
         'failed': clip.status == Clip.Status.FAILED,
         'metadata_size': METADATA_SIZES.get(grid.resolution(clip.metadata_cell)) if clip.metadata_cell else None,
         'can_coarsen': 'metadata_precision' in form.fields,

@@ -445,6 +445,22 @@ class Message(models.Model):
         ]
 
 
+class ThreadLetter(models.Model):
+    """The letter a thread's lawyer goes by on the clip's code holder page (lawyer A, B…, from
+    `number`), given the first time the code holder is shown their thread and never changed, so
+    that the code holder never answers, or names themselves to, the wrong lawyer."""
+
+    clip = models.ForeignKey(Clip, on_delete=models.CASCADE, related_name='+')
+    lawyer_profile = models.ForeignKey('accounts.LawyerProfile', on_delete=models.PROTECT, related_name='+')
+    number = models.PositiveIntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['clip', 'lawyer_profile'], name='one_letter_per_thread'),
+            models.UniqueConstraint(fields=['clip', 'number'], name='one_thread_per_letter'),
+        ]
+
+
 def quarantine_storage():
     # Never served over the web: nothing routes to this folder (SPEC.md §8).
     return FileSystemStorage(location=settings.QUARANTINE_DIR)

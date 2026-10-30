@@ -67,6 +67,50 @@
   </form>
   {% endif %}
 
+  {% if threads %}
+  <h2>{% translate "Messages from lawyers" %}</h2>
+  {% if replied %}<p role="status">{% translate "Your reply is sent." %}</p>{% endif %}
+  <p>{% translate "Only you, with your code, and the lawyer of each thread can read these messages. Lawyers are not told whether or when you read them. You decide whether to answer, and whether to say who you are." %}</p>
+  {% for thread in threads %}
+    <section>
+      <h3>{% blocktranslate with letter=thread.letter %}Lawyer {{ letter }}{% endblocktranslate %}</h3>
+      {% if thread.no_longer_has_access %}<p role="note">{% translate "This lawyer no longer has access." %}</p>{% endif %}
+      <ol>
+        {% for item in thread.messages %}
+          {% with message=item.message %}
+          <li>
+            <p>
+              {% if message.direction == "to_code_holder" %}{% if item.named %}{{ item.named }}{% else %}{% translate "A verified defence lawyer" %}{% endif %}{% else %}{% translate "You" %}{% endif %}{% if message.kind != "message" %}, {{ message.get_kind_display }}{% endif %},
+              {% blocktranslate with day=message.sent_at|date:"j F Y" start=message.sent_at|date:"H:i" %}{{ day }}, in the four hours from {{ start }}{% endblocktranslate %}
+              {% if item.new %}<strong>{% translate "New" %}</strong>{% endif %}
+            </p>
+            {% if item.text is None %}<p>{% translate "This message could not be opened." %}</p>{% elif item.text %}<p>{{ item.text|linebreaksbr }}</p>{% else %}<p>{% translate "No note." %}</p>{% endif %}
+          </li>
+          {% endwith %}
+        {% endfor %}
+      </ol>
+      {% with failed=reply_failed.data.thread %}
+      {% if thread.answerable %}
+        <form method="post" action="{% url 'clips:reply' %}" data-submit-once>
+          {% csrf_token %}
+          <input type="hidden" name="code" value="{{ code }}">
+          <input type="hidden" name="thread" value="{{ thread.reference }}">
+          {% if failed == thread.reference|stringformat:"s" %}<p role="alert">{% translate "Your reply could not be sent. Check it and try again." %}</p>{% endif %}
+          <p>
+            <label for="reply-{{ thread.reference }}">{% translate "Your reply" %}</label>
+            <textarea id="reply-{{ thread.reference }}" name="text" maxlength="{{ reply_max_length }}" required>{% if failed == thread.reference|stringformat:"s" %}{{ reply_failed.data.text }}{% endif %}</textarea>
+          </p>
+          <button type="submit">{% translate "Send" %}</button>
+        </form>
+      {% else %}
+        {% if not thread.no_longer_has_access %}<p>{% translate "You cannot answer this lawyer for now. Please try again later." %}</p>{% endif %}
+        {% if failed == thread.reference|stringformat:"s" %}<p role="alert">{% translate "Your reply was not sent. Here it is, to keep:" %}</p><p>{{ reply_failed.data.text|linebreaksbr }}</p>{% endif %}
+      {% endif %}
+      {% endwith %}
+    </section>
+  {% endfor %}
+  {% endif %}
+
   <h2>{% translate "Delete this clip" %}</h2>
   <form method="post" action="{% url 'clips:delete' %}">
     {% csrf_token %}
