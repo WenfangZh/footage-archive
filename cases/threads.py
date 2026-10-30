@@ -75,7 +75,7 @@ def send(request, case_id, clip_id):
     return redirect(thread_url(clip.pk))
 
 
-REPORT_ACTIONS = {Message.Kind.WRONG_TIME: Action.REPORT_WRONG_TIME, Message.Kind.WRONG_PLACE: Action.REPORT_WRONG_PLACE}
+WRONG_REPORT_ACTIONS = {Message.Kind.WRONG_TIME: Action.REPORT_WRONG_TIME, Message.Kind.WRONG_PLACE: Action.REPORT_WRONG_PLACE}
 
 
 @lawyer_required
@@ -91,7 +91,7 @@ def report_wrong(request, case_id, clip_id):
         _form_errors(request, form)
         return redirect('lawyer:clip', case_id=case.pk, clip_id=clip.pk)
     kind = Message.Kind(form.cleaned_data['kind'])
-    if not _send(request, clip, REPORT_ACTIONS[kind], form.cleaned_data['note'], form.cleaned_data['identified'], case, kind):
+    if not _send(request, clip, WRONG_REPORT_ACTIONS[kind], form.cleaned_data['note'], form.cleaned_data['identified'], case, kind):
         return redirect('lawyer:clip', case_id=case.pk, clip_id=clip.pk)
     notices.success(request, _('Your report is sent to the code holder. Its thread is on your messages page.'))
     return redirect(thread_url(clip.pk))
