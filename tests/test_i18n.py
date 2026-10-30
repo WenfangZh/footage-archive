@@ -61,3 +61,10 @@ def test_switching_to_english_and_back(client):
 def test_switch_beats_browser_preference(client):
     client.post(reverse('set_language'), {'language': 'fr', 'next': '/'})
     assert FRENCH_NOTICE in home_text(client, accept_language='en')
+
+
+def test_catalogues_carry_no_creation_date():
+    # The project's makemessages drops it: a time stamped by each run made any two branches
+    # that added translations conflict.
+    for po_file in LOCALE_DIR.glob('*/LC_MESSAGES/*.po'):
+        assert 'POT-Creation-Date' not in po_file.read_text(encoding='utf-8')
