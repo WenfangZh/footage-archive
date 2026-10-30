@@ -10,12 +10,18 @@ Each entry names the applicant or lawyer concerned and, on the admin's actions, 
 A lawyer's own actions also name their case and, where there is one, the clip: as a plain
 id, so that deleting a clip never deletes or changes an entry. A search records how many
 clips it found instead (SPEC.md §7). The admin's decision on a larger case names the case.
-One entry names nobody: a change of the size caps or alert limits found when the archive
+One entry names no person: a change of the size caps or alert limits found when the archive
 starts, with the numbers before and after (audit.limits). The admin's temporary raise of
 one lawyer's alert limit records the limit before and after too. A key grant names the
 lawyer who granted and the personal key it was granted to, which names its lawyer
 (docs/m5-encryption-design.md §5.3). A rotation's entries name the rotation or the attempt,
 whose rows record who held each role and why it ended (§5.5).
+
+A lawyer's actions on a clip's tags also name the tag, by its id alone, never its text
+(a custom tag is typed text): the history the admin reads is drawn from these entries
+(SPEC.md §7). A removal or restoration names the lawyer whose proposal was the third, and
+a withdrawal the lawyer whose report was the second. The admin's deletion of a withdrawn
+clip names the admin and the clip, and no lawyer.
 """
 
 from django.apps import apps
@@ -71,25 +77,69 @@ class Action(models.TextChoices):
     ROTATION_REJECTION = 'rotation_rejection', pgettext_lazy('audit log action', 'Rejection of a rotation attempt')
     ROTATION_ABANDON = 'rotation_abandon', pgettext_lazy('audit log action', 'Abandoning of a rotation attempt')
     ROTATION_END = 'rotation_end', pgettext_lazy('audit log action', 'End of a rotation')
+    # Lawyers' tags (SPEC.md §7).
+    TAG_ADDITION = 'tag_addition', pgettext_lazy('audit log action', 'Tag addition')
+    TAG_REMOVAL_PROPOSAL = 'tag_removal_proposal', pgettext_lazy('audit log action', 'Proposal to remove a tag')
+    TAG_RESTORATION_PROPOSAL = 'tag_restoration_proposal', pgettext_lazy(
+        'audit log action', 'Proposal to restore a tag',
+    )
+    TAG_PROPOSAL_CANCELLING = 'tag_proposal_cancelling', pgettext_lazy(
+        'audit log action', 'Cancelling of a proposal on a tag',
+    )
+    TAG_REMOVAL = 'tag_removal', pgettext_lazy('audit log action', 'Removal of a tag, after three proposals')
+    TAG_RESTORATION = 'tag_restoration', pgettext_lazy('audit log action', 'Restoration of a tag, after three proposals')
+    # Messages and reports (SPEC.md §7). A report of wrong time or place is itself a
+    # message, logged once, as the report. A reply, from the lawyer's messages page, needs
+    # no case (a closed case must not cut a thread off), so it names none.
+    MESSAGE = 'message', pgettext_lazy('audit log action', 'Message to a code holder')
+    REPLY = 'reply', pgettext_lazy('audit log action', 'Reply to a code holder')
+    REPORT_WRONG_TIME = 'report_wrong_time', pgettext_lazy('audit log action', 'Report of a wrong time')
+    REPORT_WRONG_PLACE = 'report_wrong_place', pgettext_lazy('audit log action', 'Report of a wrong place')
+    REPORT_DOUBT = 'report_doubt', pgettext_lazy('audit log action', 'Report of a doubt about authenticity')
+    REPORT_INAPPROPRIATE = 'report_inappropriate', pgettext_lazy(
+        'audit log action', 'Report of inappropriate content',
+    )
+    DOUBT_CANCELLING = 'doubt_cancelling', pgettext_lazy('audit log action', 'Cancelling of a doubt')
+    INAPPROPRIATE_CANCELLING = 'inappropriate_cancelling', pgettext_lazy(
+        'audit log action', 'Cancelling of a report of inappropriate content',
+    )
+    CLIP_WITHDRAWAL = 'clip_withdrawal', pgettext_lazy('audit log action', 'Withdrawal of a clip, after a second report')
+    WITHDRAWN_CLIP_DELETION = 'withdrawn_clip_deletion', pgettext_lazy(
+        'audit log action', 'Deletion of a withdrawn clip',
+    )
 
 
 # Actions the admin takes; every other action is a lawyer's own, or about the archive.
 ADMIN_ACTIONS = [
     Action.INVITATION, Action.DECLINING, Action.ADMISSION, Action.SUSPENSION,
     Action.REINSTATEMENT, Action.REVOCATION, Action.CASE_APPROVAL, Action.CASE_REFUSAL, Action.ALERT_LIMIT_RAISE,
-    Action.KEY_CONFIRMATION,
+    Action.KEY_CONFIRMATION, Action.WITHDRAWN_CLIP_DELETION,
 ]
 # The admin's decisions on a lawyer's case.
 ADMIN_CASE_ACTIONS = [Action.CASE_APPROVAL, Action.CASE_REFUSAL]
+# Lawyers' actions on a clip's tags, which name the tag.
+TAG_ACTIONS = [
+    Action.TAG_ADDITION, Action.TAG_REMOVAL_PROPOSAL, Action.TAG_RESTORATION_PROPOSAL, Action.TAG_PROPOSAL_CANCELLING,
+    Action.TAG_REMOVAL, Action.TAG_RESTORATION,
+]
+# Lawyers' messages and reports on a clip, and what reports cause.
+REPORT_ACTIONS = [
+    Action.MESSAGE, Action.REPORT_WRONG_TIME, Action.REPORT_WRONG_PLACE, Action.REPORT_DOUBT,
+    Action.REPORT_INAPPROPRIATE, Action.DOUBT_CANCELLING, Action.INAPPROPRIATE_CANCELLING, Action.CLIP_WITHDRAWAL,
+]
 # Lawyers' own actions on a case.
 CASE_ACTIONS = [
     Action.CASE_CREATION, Action.CASE_CLOSING, Action.LARGER_CASE_REQUEST, Action.SEARCH,
-    Action.PREVIEW, Action.DOWNLOAD, Action.CLIP_VIEW,
+    Action.PREVIEW, Action.DOWNLOAD, Action.CLIP_VIEW, *TAG_ACTIONS, *REPORT_ACTIONS,
 ]
-CLIP_ACTIONS = [Action.PREVIEW, Action.DOWNLOAD, Action.CLIP_VIEW]
+CLIP_ACTIONS = [
+    Action.PREVIEW, Action.DOWNLOAD, Action.CLIP_VIEW, *TAG_ACTIONS, *REPORT_ACTIONS, Action.REPLY,
+    Action.WITHDRAWN_CLIP_DELETION,
+]
 COUNT_ACTIONS = [Action.SEARCH]
-# Entries about the archive itself, which name no applicant or lawyer.
-ARCHIVE_ACTIONS = [Action.LIMITS_CHANGE]
+# Entries that name no applicant or lawyer: those about the archive itself, and the admin's
+# deletion of a withdrawn clip, whose reporters it would otherwise single out.
+NO_LAWYER_ACTIONS = [Action.LIMITS_CHANGE, Action.WITHDRAWN_CLIP_DELETION]
 # Entries that name the personal key the action was about.
 KEY_ACTIONS = [
     Action.KEY_GRANT, Action.PASSPHRASE_REPLACEMENT, Action.KEY_RESET, Action.KEY_CONFIRMATION, Action.KEY_EXPOSURE_REPORT,
@@ -137,12 +187,12 @@ class AuditEntryQuerySet(models.QuerySet):
 class AuditEntry(models.Model):
     """One action in the audit log: what was done, about whom, by the admin or not, and when.
 
-    A lawyer's actions also record the case, and the clip or the number of clips found.
+    A lawyer's actions also record the case, and the clip (and tag) or the number of clips found.
     """
 
     action = models.CharField(max_length=30, choices=Action.choices)
     # The applicant or lawyer the entry is about: the lawyer who acted, or the person
-    # whose account or case the admin decided on. Empty only on entries about the archive.
+    # whose account or case the admin decided on. Empty only on NO_LAWYER_ACTIONS.
     lawyer_profile = models.ForeignKey(
         LawyerProfile, null=True, blank=True, on_delete=models.PROTECT, related_name='+',
     )
@@ -154,9 +204,12 @@ class AuditEntry(models.Model):
     case = models.ForeignKey(
         'cases.Case', null=True, blank=True, on_delete=models.PROTECT, related_name='audit_entries',
     )
-    # The clip previewed or downloaded: its id alone, never a link that deleting the clip
+    # The clip acted on: its id alone, never a link that deleting the clip
     # would follow.
     clip_id = models.UUIDField(null=True, blank=True)
+    # The tag acted on: its id alone, so that the code holder deleting the tag, or the clip,
+    # never deletes or changes an entry.
+    clip_tag_id = models.BigIntegerField(null=True, blank=True)
     # A search's results: its core matches (in the case's area and time window) and its
     # margin matches (found only in the margin around them).
     core_count = models.PositiveIntegerField(null=True, blank=True)
@@ -192,9 +245,9 @@ class AuditEntry(models.Model):
                 name='admin_on_admin_actions_only',
             ),
             models.CheckConstraint(
-                condition=Q(action__in=ARCHIVE_ACTIONS, lawyer_profile__isnull=True)
-                | (~Q(action__in=ARCHIVE_ACTIONS) & Q(lawyer_profile__isnull=False)),
-                name='nobody_on_archive_actions_only',
+                condition=Q(action__in=NO_LAWYER_ACTIONS, lawyer_profile__isnull=True)
+                | (~Q(action__in=NO_LAWYER_ACTIONS) & Q(lawyer_profile__isnull=False)),
+                name='no_lawyer_on_no_lawyer_actions_only',
             ),
             models.CheckConstraint(
                 condition=Q(action__in=CASE_ACTIONS + ADMIN_CASE_ACTIONS, case__isnull=False)
@@ -205,6 +258,11 @@ class AuditEntry(models.Model):
                 condition=Q(action__in=CLIP_ACTIONS, clip_id__isnull=False)
                 | (~Q(action__in=CLIP_ACTIONS) & Q(clip_id__isnull=True)),
                 name='clip_on_clip_actions_only',
+            ),
+            models.CheckConstraint(
+                condition=Q(action__in=TAG_ACTIONS, clip_tag_id__isnull=False)
+                | (~Q(action__in=TAG_ACTIONS) & Q(clip_tag_id__isnull=True)),
+                name='tag_on_tag_actions_only',
             ),
             models.CheckConstraint(
                 condition=Q(action__in=COUNT_ACTIONS, core_count__isnull=False, margin_count__isnull=False)
@@ -248,6 +306,11 @@ class AuditEntry(models.Model):
             pk=self.case_id, lawyer_profile_id=self.lawyer_profile_id,
         ).exists():
             raise ValueError("An audit entry about a case names the case's lawyer.")
+        # The stored tag, as above, when it is named: on the clip the entry names.
+        if self.clip_tag_id is not None and not apps.get_model('clips', 'ClipTag').objects.filter(
+            pk=self.clip_tag_id, clip_id=self.clip_id,
+        ).exists():
+            raise ValueError("An audit entry about a tag names the tag's clip.")
         if self.action == Action.LIMITS_CHANGE and not _only_numbers_of_settings(self.limits):
             raise ValueError('A change of limits records setting names and whole numbers, nothing else.')
         if self.action == Action.ALERT_LIMIT_RAISE and not _a_raise(self.limits):
@@ -295,11 +358,12 @@ def _a_raise(limits):
 
 def record(
     action, lawyer_profile, admin=None, case=None, clip=None, core_count=None, margin_count=None, limits=None,
-    lawyer_key=None, rotation=None, rotation_attempt=None,
+    lawyer_key=None, rotation=None, rotation_attempt=None, clip_tag=None,
 ):
     """Add an entry to the audit log: the way every entry is meant to be written."""
     return AuditEntry.objects.create(
         action=action, lawyer_profile=lawyer_profile, admin=admin, case=case,
-        clip_id=clip.pk if clip is not None else None, core_count=core_count, margin_count=margin_count,
+        clip_id=clip.pk if clip is not None else None, clip_tag_id=clip_tag.pk if clip_tag is not None else None,
+        core_count=core_count, margin_count=margin_count,
         limits=limits, lawyer_key=lawyer_key, rotation=rotation, rotation_attempt=rotation_attempt,
     )

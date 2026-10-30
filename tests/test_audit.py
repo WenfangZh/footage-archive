@@ -8,10 +8,10 @@ from django.db.models import ProtectedError
 
 from accounts.models import LawyerProfile
 from audit.models import (
-    ADMIN_ACTIONS, ADMIN_CASE_ACTIONS, CASE_ACTIONS, CLIP_ACTIONS, Action, AppendOnly, AuditEntry, record,
+    ADMIN_ACTIONS, ADMIN_CASE_ACTIONS, CASE_ACTIONS, CLIP_ACTIONS, TAG_ACTIONS, Action, AppendOnly, AuditEntry, record,
 )
 from clips.editing import delete_clip
-from clips.models import Clip
+from clips.models import Clip, ClipTag
 from tests.conftest import make_case
 
 pytestmark = pytest.mark.django_db
@@ -64,7 +64,8 @@ def test_the_time_cannot_be_backdated(admin, applicant):
 
 
 @pytest.mark.parametrize('action', [
-    action for action in ADMIN_ACTIONS if action not in ADMIN_CASE_ACTIONS and action != Action.ALERT_LIMIT_RAISE
+    action for action in ADMIN_ACTIONS
+    if action not in ADMIN_CASE_ACTIONS and action not in (Action.ALERT_LIMIT_RAISE, Action.WITHDRAWN_CLIP_DELETION)
 ])
 def test_the_admin_actions_name_the_admin(action, applicant):
     with pytest.raises(IntegrityError), transaction.atomic():
@@ -210,8 +211,15 @@ def test_deleting_a_clip_leaves_its_entries_as_they_were(case, clip):
     assert AuditEntry.objects.get(pk=entry.pk).clip_id == clip_id
 
 
-def fields_taken_by(action, clip):
+@pytest.fixture
+def tag(clip):
+    return ClipTag.objects.create(clip=clip, key='arrest', source=ClipTag.Source.CODE_HOLDER)
+
+
+def fields_taken_by(action, clip, tag=None):
     """The fields other than the case that `action` takes, so that only the case is missing."""
+    if action in TAG_ACTIONS:
+        return {'clip': clip, 'clip_tag': tag}
     if action in CLIP_ACTIONS:
         return {'clip': clip}
     if action == Action.SEARCH:
@@ -220,16 +228,61 @@ def fields_taken_by(action, clip):
 
 
 @pytest.mark.parametrize('action', CASE_ACTIONS)
-def test_actions_on_a_case_name_it(action, case, clip):
+def test_actions_on_a_case_name_it(action, case, clip, tag):
     with pytest.raises(IntegrityError), transaction.atomic():
-        record(action, case.lawyer_profile, **fields_taken_by(action, clip))
-    record(action, case.lawyer_profile, case=case, **fields_taken_by(action, clip))
+        record(action, case.lawyer_profile, **fields_taken_by(action, clip, tag))
+    record(action, case.lawyer_profile, case=case, **fields_taken_by(action, clip, tag))
 
 
-@pytest.mark.parametrize('action', CLIP_ACTIONS)
-def test_previews_and_downloads_name_the_clip(action, case):
+@pytest.mark.parametrize('action', [action for action in CLIP_ACTIONS if action not in TAG_ACTIONS + ADMIN_ACTIONS])
+def test_actions_on_a_clip_name_it(action, case):
     with pytest.raises(IntegrityError), transaction.atomic():
         record(action, case.lawyer_profile, case=case)
+
+
+@pytest.mark.parametrize('action', TAG_ACTIONS)
+def test_actions_on_a_tag_name_the_tag_and_its_clip(action, case, clip, tag):
+    entry = record(action, case.lawyer_profile, case=case, clip=clip, clip_tag=tag)
+    stored = AuditEntry.objects.get(pk=entry.pk)
+    assert (stored.case, stored.clip_id, stored.clip_tag_id) == (case, clip.pk, tag.pk)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(action, case.lawyer_profile, case=case, clip=clip)
+    # A tag of another clip.
+    with pytest.raises(ValueError):
+        record(action, case.lawyer_profile, case=case, clip=Clip.objects.create(code_hash='1' * 64), clip_tag=tag)
+
+
+def test_a_reply_names_the_clip_and_no_case(case, clip):
+    entry = record(Action.REPLY, case.lawyer_profile, clip=clip)
+    stored = AuditEntry.objects.get(pk=entry.pk)
+    assert (stored.lawyer_profile, stored.clip_id, stored.case) == (case.lawyer_profile, clip.pk, None)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.REPLY, case.lawyer_profile, case=case, clip=clip)
+
+
+def test_only_actions_on_a_tag_name_one(case, clip, tag):
+    with pytest.raises(IntegrityError), transaction.atomic():
+        record(Action.PREVIEW, case.lawyer_profile, case=case, clip=clip, clip_tag=tag)
+
+
+def test_deleting_a_tag_leaves_its_entries_as_they_were(case, clip, tag):
+    entry = record(Action.TAG_REMOVAL_PROPOSAL, case.lawyer_profile, case=case, clip=clip, clip_tag=tag)
+    tag_id = tag.pk
+    tag.delete()
+    assert AuditEntry.objects.get(pk=entry.pk).clip_tag_id == tag_id
+
+
+def test_the_admins_deletion_of_a_withdrawn_clip_names_the_admin_and_the_clip_and_no_lawyer(admin, case, clip):
+    entry = record(Action.WITHDRAWN_CLIP_DELETION, None, admin=admin, clip=clip)
+    stored = AuditEntry.objects.get(pk=entry.pk)
+    assert (stored.admin, stored.clip_id, stored.lawyer_profile, stored.case) == (admin, clip.pk, None, None)
+    for given in [
+        {'lawyer_profile': case.lawyer_profile, 'admin': admin, 'clip': clip},
+        {'lawyer_profile': None, 'clip': clip},
+        {'lawyer_profile': None, 'admin': admin},
+    ]:
+        with pytest.raises(IntegrityError), transaction.atomic():
+            record(Action.WITHDRAWN_CLIP_DELETION, **given)
 
 
 def test_a_search_records_both_numbers(case):

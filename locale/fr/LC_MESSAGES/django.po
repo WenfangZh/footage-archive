@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: footage-archive\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 11:38+0100\n"
+"POT-Creation-Date: 2026-10-29 23:29+0100\n"
 "PO-Revision-Date: 2026-10-11 17:30+0200\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -732,160 +732,240 @@ msgstr "Au plus dix fois le seuil d'alerte habituel : %(limit)s."
 msgid "The alert limit is raised."
 msgstr "Le seuil d'alerte est relevé."
 
-#: audit/models.py:33
+#: audit/models.py:39
 msgid "Invitation"
 msgstr "Invitation"
 
-#: audit/models.py:34
+#: audit/models.py:40
 msgid "Declining"
 msgstr "Candidature non retenue"
 
-#: audit/models.py:35
+#: audit/models.py:41
 msgid "Admission"
 msgstr "Admission"
 
-#: audit/models.py:36
+#: audit/models.py:42
 msgid "Suspension"
 msgstr "Suspension de l'accès"
 
-#: audit/models.py:37
+#: audit/models.py:43
 msgid "Reinstatement"
 msgstr "Rétablissement de l'accès"
 
-#: audit/models.py:38
+#: audit/models.py:44
 msgid "Revocation"
 msgstr "Révocation de l'accès"
 
-#: audit/models.py:41
+#: audit/models.py:47
 msgctxt "audit log action"
 msgid "Case creation"
 msgstr "Création d'un dossier de recherche"
 
-#: audit/models.py:42
+#: audit/models.py:48
 msgctxt "audit log action"
 msgid "Case closing"
 msgstr "Clôture d'un dossier de recherche"
 
-#: audit/models.py:43
+#: audit/models.py:49
 msgctxt "audit log action"
 msgid "Request for a larger case"
 msgstr "Demande de dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:44
+#: audit/models.py:50
 msgctxt "audit log action"
 msgid "Search"
 msgstr "Recherche"
 
-#: audit/models.py:45
+#: audit/models.py:51
 msgctxt "audit log action"
 msgid "Preview"
 msgstr "Prévisualisation"
 
-#: audit/models.py:46
+#: audit/models.py:52
 msgctxt "audit log action"
 msgid "Download"
 msgstr "Téléchargement"
 
-#: audit/models.py:47
+#: audit/models.py:53
 msgctxt "audit log action"
 msgid "Viewing a clip's page"
 msgstr "Consultation de la page d'un clip"
 
-#: audit/models.py:48
+#: audit/models.py:54
 msgctxt "audit log action"
 msgid "Approval of a larger case"
 msgstr "Validation d'un dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:49
+#: audit/models.py:55
 msgctxt "audit log action"
 msgid "Refusal of a larger case"
 msgstr "Refus d'un dépassement des plafonds d'un dossier de recherche"
 
-#: audit/models.py:50
+#: audit/models.py:56
 msgctxt "audit log action"
 msgid "Change of the size caps and alert limits"
 msgstr "Changement des plafonds et des seuils d'alerte"
 
-#: audit/models.py:51
+#: audit/models.py:57
 msgctxt "audit log action"
 msgid "Temporary raise of a lawyer's alert limit"
 msgstr "Relèvement temporaire d'un seuil d'alerte pour un·e avocat·e"
 
-#: audit/models.py:53
+#: audit/models.py:59
 msgctxt "audit log action"
 msgid "Making the first group key"
 msgstr "Création de la première clé commune"
 
-#: audit/models.py:54
+#: audit/models.py:60
 msgctxt "audit log action"
 msgid "Starting over with a new group key"
 msgstr "Nouveau départ avec une nouvelle clé commune"
 
-#: audit/models.py:55
+#: audit/models.py:61
 msgctxt "audit log action"
 msgid "Key grant"
 msgstr "Remise de la clé commune"
 
-#: audit/models.py:58
+#: audit/models.py:64
 msgctxt "audit log action"
 msgid "New key passphrase, set with the recovery key"
 msgstr "Nouvelle phrase secrète, définie avec la clé de récupération"
 
-#: audit/models.py:60
+#: audit/models.py:66
 msgctxt "audit log action"
 msgid "Key reset"
 msgstr "Réinitialisation de la clé"
 
-#: audit/models.py:62
+#: audit/models.py:68
 msgctxt "audit log action"
 msgid "Report of a key passphrase or recovery key that may have been seen"
 msgstr ""
 "Signalement d'une phrase secrète ou d'une clé de récupération peut-être vue"
 
-#: audit/models.py:64
+#: audit/models.py:70
 msgctxt "audit log action"
 msgid "Confirmation of a lawyer's new key"
 msgstr "Confirmation de la nouvelle clé d'un·e avocat·e"
 
-#: audit/models.py:66
+#: audit/models.py:72
 msgctxt "audit log action"
 msgid "Request for a rotation of the group key"
 msgstr "Demande de renouvellement de la clé commune"
 
-#: audit/models.py:67
+#: audit/models.py:73
 msgctxt "audit log action"
 msgid "Drawing of a rotator"
 msgstr "Tirage au sort de la personne qui renouvelle la clé commune"
 
-#: audit/models.py:68
+#: audit/models.py:74
 msgctxt "audit log action"
 msgid "New group key from a rotator"
 msgstr "Nouvelle clé commune, de la personne qui la renouvelle"
 
-#: audit/models.py:69
+#: audit/models.py:75
 msgctxt "audit log action"
 msgid "Check of a rotation, passed"
 msgstr "Vérification d'un renouvellement, réussie"
 
-#: audit/models.py:70
+#: audit/models.py:76
 msgctxt "audit log action"
 msgid "Check of a rotation, failed"
 msgstr "Vérification d'un renouvellement, échouée"
 
-#: audit/models.py:71
+#: audit/models.py:77
 msgctxt "audit log action"
 msgid "Rejection of a rotation attempt"
 msgstr "Rejet d'une tentative de renouvellement"
 
-#: audit/models.py:72
+#: audit/models.py:78
 msgctxt "audit log action"
 msgid "Abandoning of a rotation attempt"
 msgstr "Abandon d'une tentative de renouvellement"
 
-#: audit/models.py:73
+#: audit/models.py:79
 msgctxt "audit log action"
 msgid "End of a rotation"
 msgstr "Fin d'un renouvellement"
+
+#: audit/models.py:81
+msgctxt "audit log action"
+msgid "Tag addition"
+msgstr "Ajout d'une étiquette"
+
+#: audit/models.py:82
+msgctxt "audit log action"
+msgid "Proposal to remove a tag"
+msgstr "Proposition d'écarter une étiquette"
+
+#: audit/models.py:84
+msgctxt "audit log action"
+msgid "Proposal to restore a tag"
+msgstr "Proposition de rétablir une étiquette"
+
+#: audit/models.py:87
+msgctxt "audit log action"
+msgid "Cancelling of a proposal on a tag"
+msgstr "Annulation d'une proposition sur une étiquette"
+
+#: audit/models.py:89
+msgctxt "audit log action"
+msgid "Removal of a tag, after three proposals"
+msgstr "Étiquette écartée après trois propositions"
+
+#: audit/models.py:90
+msgctxt "audit log action"
+msgid "Restoration of a tag, after three proposals"
+msgstr "Étiquette rétablie après trois propositions"
+
+#: audit/models.py:94
+msgctxt "audit log action"
+msgid "Message to a code holder"
+msgstr "Message à la personne qui détient le code"
+
+#: audit/models.py:95
+msgctxt "audit log action"
+msgid "Reply to a code holder"
+msgstr "Réponse à la personne qui détient le code"
+
+#: audit/models.py:96
+msgctxt "audit log action"
+msgid "Report of a wrong time"
+msgstr "Signalement de clip : heure erronée"
+
+#: audit/models.py:97
+msgctxt "audit log action"
+msgid "Report of a wrong place"
+msgstr "Signalement de clip : lieu erroné"
+
+#: audit/models.py:98
+msgctxt "audit log action"
+msgid "Report of a doubt about authenticity"
+msgstr "Signalement de clip : doute sur l'authenticité"
+
+#: audit/models.py:100
+msgctxt "audit log action"
+msgid "Report of inappropriate content"
+msgstr "Signalement de clip : contenu inapproprié"
+
+#: audit/models.py:102
+msgctxt "audit log action"
+msgid "Cancelling of a doubt"
+msgstr "Annulation d'un signalement de clip : doute sur l'authenticité"
+
+#: audit/models.py:104
+msgctxt "audit log action"
+msgid "Cancelling of a report of inappropriate content"
+msgstr "Annulation d'un signalement de clip : contenu inapproprié"
+
+#: audit/models.py:106
+msgctxt "audit log action"
+msgid "Withdrawal of a clip, after a second report"
+msgstr "Retrait d'un clip après un second signalement de clip"
+
+#: audit/models.py:108
+msgctxt "audit log action"
+msgid "Deletion of a withdrawn clip"
+msgstr "Suppression d'un clip retiré"
 
 #: cases/approval.py:39
 msgid "The case is approved."
