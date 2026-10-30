@@ -1142,13 +1142,15 @@ msgstr "Ou votre propre étiquette"
 msgid ""
 "Every lawyer whose case matches this clip will see it. Write only what can "
 "be seen, nothing about your case."
-msgstr "Chaque avocat·e dont le dossier de recherche correspond à ce clip la verra. N'écrivez que ce qu'on voit, rien sur votre dossier de recherche."
+msgstr ""
+"Chaque avocat·e dont le dossier de recherche correspond à ce clip la verra. "
+"N'écrivez que ce qu'on voit, rien sur votre dossier de recherche."
 
 #: cases/forms.py:255
 msgid "A tag needs at least one letter or digit."
 msgstr "Une étiquette doit contenir au moins une lettre ou un chiffre."
 
-#: cases/forms.py:261
+#: cases/forms.py:263
 msgid "Choose a default tag or write your own, not both."
 msgstr "Choisissez une étiquette prédéfinie ou écrivez la vôtre, pas les deux."
 
@@ -1180,7 +1182,9 @@ msgstr ""
 msgid ""
 "Lawyers have removed or restored this tag since the page was shown: look "
 "again."
-msgstr "Des avocat·es ont écarté ou rétabli cette étiquette depuis l'affichage de la page : regardez à nouveau."
+msgstr ""
+"Des avocat·es ont écarté ou rétabli cette étiquette depuis l'affichage de la "
+"page : regardez à nouveau."
 
 #: cases/tag_pages.py:57
 msgid "You have already made a proposal on this tag."
@@ -1568,7 +1572,9 @@ msgstr "Enregistrer"
 msgid ""
 "Clips on which a lawyer proposed removing or restoring a tag, latest "
 "proposal first."
-msgstr "Clips sur lesquels un·e avocat·e a proposé d'écarter ou de rétablir une étiquette, de la proposition la plus récente à la plus ancienne."
+msgstr ""
+"Clips sur lesquels un·e avocat·e a proposé d'écarter ou de rétablir une "
+"étiquette, de la proposition la plus récente à la plus ancienne."
 
 #: cases/templates/cases/disputed_tags.html:12
 #, python-format
