@@ -156,3 +156,15 @@ class EditForm(ClipFieldsForm):
         ):
             self.add_error('precision', _('To make the place more precise, give its new position.'))
         return cleaned
+
+
+MESSAGE_MAX_LENGTH = 4000
+
+
+class ReplyForm(forms.Form):
+    """The code holder's reply in one lawyer's thread. The code comes back with it."""
+
+    code = forms.CharField(widget=forms.HiddenInput)
+    # The thread's first message, which names it without naming its lawyer.
+    thread = forms.UUIDField(widget=forms.HiddenInput)
+    text = forms.CharField(label=_('Your reply'), max_length=MESSAGE_MAX_LENGTH, widget=forms.Textarea)

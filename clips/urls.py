@@ -10,4 +10,5 @@ urlpatterns = [
     path('clip/', views.code_holder, name='code_holder'),
     path('clip/edit/', views.edit, name='edit'),
     path('clip/delete/', views.delete, name='delete'),
+    path('clip/reply/', views.reply, name='reply'),
 ]
