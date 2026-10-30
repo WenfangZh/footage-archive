@@ -202,8 +202,8 @@ def reset(request):
 @require_http_methods(['GET', 'POST'])
 def exposure(request):
     """A key passphrase or recovery key that may have been seen (design §5.6): the browser makes
-    a new key and reseals the lawyer's labels to it, then sends both here, by fetch, so that it
-    can try again when a case made meanwhile changed the labels."""
+    a new key and reseals the lawyer's labels and messages to it, then sends them here, by fetch,
+    so that it can try again when a case made or a message sent meanwhile changed them."""
     profile = request.user.lawyer_profile
     key = current_key(profile)
     if key is None:
@@ -222,8 +222,11 @@ def exposure(request):
     data = form.cleaned_data
     new_key = {name: data[name] for name in KeySetupForm.base_fields}
     try:
-        recovery.report_exposure(profile, data['old_public_key'], new_key, data['resealed_labels'], data['unreadable_labels'])
-    except recovery.LabelsChanged:
+        recovery.report_exposure(
+            profile, data['old_public_key'], new_key, (data['resealed_labels'], data['unreadable_labels']),
+            (data['resealed_messages'], data['unreadable_messages']),
+        )
+    except recovery.SealedChanged:
         return HttpResponse(status=409)
     except recovery.Refused as refusal:
         return JsonResponse({'last_holder': isinstance(refusal, recovery.LastHolder)}, status=403)
@@ -238,6 +241,13 @@ def exposure(request):
             'The labels of %(count)d cases could not be opened, so could not be moved to your new key: they are lost.',
             lost,
         ) % {'count': lost})
+    if data['unreadable_messages']:
+        lost = len(data['unreadable_messages'])
+        messages.warning(request, ngettext(
+            '%(count)d message could not be opened, so could not be moved to your new key: you can no longer read it.',
+            '%(count)d messages could not be opened, so could not be moved to your new key: you can no longer read them.',
+            lost,
+        ) % {'count': lost})
     response = HttpResponse(status=201)
     # The old key, unlocked in this browser's tabs, is retired: forget it, as at logout.
     response['Clear-Site-Data'] = '"storage"'
@@ -246,16 +256,21 @@ def exposure(request):
 
 @lawyer_required
 @require_GET
-def own_labels(request):
-    """The labels sealed to the lawyer's current key, for their browser to reseal (design §5.6)."""
+def own_sealed(request):
+    """The labels and messages sealed to the lawyer's current key, for their browser to reseal
+    (design §5.6, §7.3)."""
     key = current_key(request.user.lawyer_profile)
     if key is None:
         raise Http404
     from cases import labels  # Here: cases.labels imports this module.
-    return JsonResponse({'public_key': b64(key.public_key), 'labels': [
-        {'id': label['id'], 'sealed_key': b64(label['sealed_key']), 'key_check': b64(label['key_check'])}
-        for label in labels.sealed_to(key)
-    ]})
+    from clips import vault  # Here: clips.vault imports keys.grants.
+    return JsonResponse({'public_key': b64(key.public_key), **{
+        name: [
+            {'id': item['id'], 'sealed_key': b64(item['sealed_key']), 'key_check': b64(item['key_check'])}
+            for item in items
+        ]
+        for name, items in [('labels', labels.sealed_to(key)), ('messages', vault.messages_sealed_to(key))]
+    }})
 
 
 @admin_required

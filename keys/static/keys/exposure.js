@@ -1,8 +1,9 @@
 // A key passphrase or recovery key that may have been seen (docs/m5-encryption-design.md
-// §5.6): with the old key unlocked, makes a new key as setup does, opens each case label's data
-// key with the old key, checks it against its key check value and seals it to the new key, and
-// sends the new key and the labels in one request. The server refuses it if a case made
-// meanwhile changed the labels; the labels are then fetched again, and it is sent again.
+// §5.6): with the old key unlocked, makes a new key as setup does, opens the data key of each
+// case label and message (§7.3) with the old key, checks it against its key check value and
+// seals it to the new key, and sends the new key, the labels and the messages in one request.
+// The server refuses it if a case made or a message sent meanwhile changed them; they are then
+// fetched again, and it is sent again.
 const exposureForm = document.getElementById('exposure');
 if (exposureForm) {
   sodium.ready.then(async () => {
@@ -21,28 +22,34 @@ if (exposureForm) {
       document.getElementById(id).hidden = false;
     }
 
-    // Each label's data key, resealed to the new key; the ids of those that did not open.
-    async function resealedLabels() {
-      const response = await fetch(exposureForm.dataset.labelsUrl, { credentials: 'same-origin' });
+    // Each label's and message's data key, resealed to the new key; the ids of those that did
+    // not open.
+    async function resealedItems() {
+      const response = await fetch(exposureForm.dataset.sealedUrl, { credentials: 'same-origin' });
       if (!response.ok) {
         return null;
       }
       const held = await response.json();
-      // A key replaced in another tab meanwhile: these labels are not this key's.
+      // A key replaced in another tab meanwhile: these are not this key's.
       if (held.public_key !== exposureForm.dataset.publicKey) {
         return null;
       }
-      const resealed = {};
-      const unreadable = [];
-      for (const label of held.labels) {
-        const dataKey = keys.openDataKey(decode(label.sealed_key), oldPrivateKey, decode(label.key_check));
-        if (dataKey) {
-          resealed[label.id] = encode(keys.seal(dataKey, pair.publicKey));
-        } else {
-          unreadable.push(label.id);
+      const fields = {};
+      for (const name of ['labels', 'messages']) {
+        const resealed = {};
+        const unreadable = [];
+        for (const item of held[name]) {
+          const dataKey = keys.openDataKey(decode(item.sealed_key), oldPrivateKey, decode(item.key_check));
+          if (dataKey) {
+            resealed[item.id] = encode(keys.seal(dataKey, pair.publicKey));
+          } else {
+            unreadable.push(item.id);
+          }
         }
+        fields[`resealed_${name}`] = JSON.stringify(resealed);
+        fields[`unreadable_${name}`] = JSON.stringify(unreadable);
       }
-      return { resealed_labels: JSON.stringify(resealed), unreadable_labels: JSON.stringify(unreadable) };
+      return fields;
     }
 
     const button = exposureForm.querySelector('button[type=submit]');
@@ -82,13 +89,14 @@ if (exposureForm) {
         old_public_key: exposureForm.dataset.publicKey,
         password: exposureForm.elements.password.value,
       };
-      // A few times at most: each try that the server refuses found a case made meanwhile.
+      // A few times at most: each try that the server refuses found a case made, or a message
+      // sent, meanwhile.
       for (let round = 0; round < 3; round += 1) {
-        const labels = await resealedLabels();
-        if (!labels) {
+        const items = await resealedItems();
+        if (!items) {
           break;
         }
-        const response = await ArchiveUnlock.post(exposureForm.dataset.reportUrl, { ...newKey, ...labels });
+        const response = await ArchiveUnlock.post(exposureForm.dataset.reportUrl, { ...newKey, ...items });
         if (response.status === 201) {
           // The old key is retired: forgotten here too, and the new one is unlocked with the
           // new passphrase, which shows it was saved.

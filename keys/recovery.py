@@ -61,19 +61,23 @@ class LastHolder(Refused):
     """No other admitted, unsuspended lawyer holds the group key to give it to the new key."""
 
 
-class LabelsChanged(Refused):
-    """The labels sealed to the old key are not the ones resealed: a case was made meanwhile."""
+class SealedChanged(Refused):
+    """The labels or messages sealed to the old key are not the ones resealed: a case was made,
+    or a message sent, meanwhile."""
 
 
-def report_exposure(profile, old_public_key, new_key, resealed, unreadable):
+def report_exposure(profile, old_public_key, new_key, labels_resealed, messages_resealed):
     """A lawyer whose key passphrase or recovery key may have been seen, and who still holds their
     key: their browser made a new key, `new_key` (as setup takes it), and resealed to it the data
-    key of each label sealed to the old one, `resealed` by case id; `unreadable` names the labels
-    it could not open, which stay sealed to the old key and are lost. The old key is retired and
-    its grants deleted, and a rotation is requested. Refused unless `resealed` and `unreadable`
-    cover exactly the labels sealed to the old key, under the lock case creation also takes, and
-    while no other lawyer could give the group key to the new key (design §5.6)."""
+    key of each label and message sealed to the old one. Each of `labels_resealed` (by case id)
+    and `messages_resealed` (by message id) is a pair: the resealed data keys, and the ids of the
+    items the browser could not open, which stay sealed to the old key and are lost to the lawyer.
+    The old key is retired and its grants deleted, and a rotation is requested. Refused unless
+    each pair covers exactly the items sealed to the old key, under the lock case creation and
+    sending a message also take, and while no other lawyer could give the group key to the new
+    key (design §5.6, §7.3)."""
     from cases import labels  # Here: cases.labels imports keys.views, which imports this module.
+    from clips import vault  # Here: clips.vault imports keys.grants.
     with transaction.atomic():
         grants.lock()
         profile = LawyerProfile.objects.select_for_update().get(pk=profile.pk)
@@ -84,13 +88,17 @@ def report_exposure(profile, old_public_key, new_key, resealed, unreadable):
             raise Refused
         if not grants.another_can_grant(profile):
             raise LastHolder
-        sealed = {label['id'] for label in labels.sealed_to(old)}
-        if set(resealed) & set(unreadable) or set(resealed) | set(unreadable) != sealed:
-            raise LabelsChanged
+        for (resealed, unreadable), sealed in [
+            (labels_resealed, {label['id'] for label in labels.sealed_to(old)}),
+            (messages_resealed, {message['id'] for message in vault.messages_sealed_to(old)}),
+        ]:
+            if set(resealed) & set(unreadable) or set(resealed) | set(unreadable) != sealed:
+                raise SealedChanged
         KeyGrant.objects.filter(lawyer_key=old).delete()
         old.retire()
         new = LawyerKey.objects.create(lawyer_profile=profile, opslimit=OPSLIMIT, memlimit=MEMLIMIT, **new_key)
-        labels.reseal(old, new, resealed)
+        labels.reseal(old, new, labels_resealed[0])
+        vault.reseal_messages(old, new, messages_resealed[0])
         record(Action.KEY_EXPOSURE_REPORT, profile, lawyer_key=old)
         rotation.request(profile)
     return new
