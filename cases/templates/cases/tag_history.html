@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Tag history" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Tag history" %}</h1>
+  <p>{% blocktranslate %}Clip {{ clip_id }}{% endblocktranslate %}</p>
+  {% if events %}
+    <ul>
+      {% for event in events %}
+        <li>
+          {% if event.entry %}
+            {{ event.at|date:"DATETIME_FORMAT" }}: {{ event.entry.get_action_display }},
+            {% if event.tag %}
+              {% if event.tag.key %}{{ event.tag.get_key_display }}{% else %}{{ event.tag.custom_name }}{% endif %}
+              ({{ event.tag.get_source_display }}),
+            {% else %}
+              {% translate "a tag since deleted" %},
+            {% endif %}
+            {{ event.lawyer.user.first_name }} {{ event.lawyer.user.last_name }}, {{ event.lawyer.bar }} ({{ event.lawyer.user.email|default:event.lawyer.user.former_email }})
+          {% else %}
+            {% blocktranslate with day=event.at|date:"j F Y" start=event.at|date:"H:i" %}{{ day }}, in the four hours from {{ start }}: the code holder changed their tags{% endblocktranslate %}
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>{% translate "Nothing has happened to this clip's tags since upload." %}</p>
+  {% endif %}
+{% endblock %}

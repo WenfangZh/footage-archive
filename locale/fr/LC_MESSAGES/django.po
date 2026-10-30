@@ -1586,6 +1586,28 @@ msgstr ""
 "Clips trouvés seulement dans la marge, juste en dehors de la plage horaire "
 "ou du périmètre."
 
+#: cases/templates/cases/tag_history.html:4
+#: cases/templates/cases/tag_history.html:7
+msgid "Tag history"
+msgstr "Historique des étiquettes"
+
+#: cases/templates/cases/tag_history.html:8
+msgid "Clip %(clip_id)s"
+msgstr "Clip %(clip_id)s"
+
+#: cases/templates/cases/tag_history.html:19
+msgid "a tag since deleted"
+msgstr "une étiquette supprimée depuis"
+
+#: cases/templates/cases/tag_history.html:23
+msgid ""
+"%(day)s, in the four hours from %(start)s: the code holder changed their tags"
+msgstr "%(day)s, dans les quatre heures à partir de %(start)s : la personne qui détient le code a modifié ses étiquettes"
+
+#: cases/templates/cases/tag_history.html:29
+msgid "Nothing has happened to this clip's tags since upload."
+msgstr "Rien n'est arrivé aux étiquettes de ce clip depuis l'upload."
+
 #: cases/templatetags/case_labels.py:17 cases/templatetags/case_labels.py:28
 #, python-format
 msgid "Case no. %(number)s"
