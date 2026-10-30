@@ -406,48 +406,54 @@ msgstr "Marquer comme vue"
 msgid "Requests for larger cases"
 msgstr "Demandes de dépassement des plafonds"
 
-#: accounts/templates/accounts/manage_home.html:25
+#: accounts/templates/accounts/manage_home.html:24
+#: cases/templates/cases/disputed_tags.html:4
+#: cases/templates/cases/disputed_tags.html:7
+msgid "Clips with disputed tags"
+msgstr "Clips aux étiquettes contestées"
+
+#: accounts/templates/accounts/manage_home.html:26
 msgid "Applicants"
 msgstr "Candidat·es"
 
-#: accounts/templates/accounts/manage_home.html:34
+#: accounts/templates/accounts/manage_home.html:35
 msgid "Send a new invitation link"
 msgstr "Envoyer un nouveau lien d'invitation"
 
-#: accounts/templates/accounts/manage_home.html:41
+#: accounts/templates/accounts/manage_home.html:42
 msgid "No applicants."
 msgstr "Aucun·e candidat·e."
 
-#: accounts/templates/accounts/manage_home.html:44
+#: accounts/templates/accounts/manage_home.html:45
 msgid "Lawyers' access"
 msgstr "Accès des avocat·es"
 
-#: accounts/templates/accounts/manage_home.html:54
+#: accounts/templates/accounts/manage_home.html:55
 msgid "Suspend access"
 msgstr "Suspendre l'accès"
 
-#: accounts/templates/accounts/manage_home.html:59
+#: accounts/templates/accounts/manage_home.html:60
 msgid "Reinstate access"
 msgstr "Rétablir l'accès"
 
-#: accounts/templates/accounts/manage_home.html:62
+#: accounts/templates/accounts/manage_home.html:63
 #: accounts/templates/accounts/revoke.html:4
 #: accounts/templates/accounts/revoke.html:7
 msgid "Revoke access"
 msgstr "Révoquer l'accès"
 
-#: accounts/templates/accounts/manage_home.html:63
+#: accounts/templates/accounts/manage_home.html:64
 #: keys/templates/keys/confirm_key.html:16
 msgid "Confirm their new key"
 msgstr "Confirmer sa nouvelle clé"
 
-#: accounts/templates/accounts/manage_home.html:64
+#: accounts/templates/accounts/manage_home.html:65
 #: alerts/templates/alerts/raise_limit.html:4
 #: alerts/templates/alerts/raise_limit.html:7
 msgid "Raise an alert limit"
 msgstr "Relever un seuil d'alerte"
 
-#: accounts/templates/accounts/manage_home.html:69
+#: accounts/templates/accounts/manage_home.html:70
 msgid "No lawyers yet."
 msgstr "Aucun·e avocat·e pour l'instant."
 
@@ -1477,6 +1483,21 @@ msgstr ""
 msgid "Save"
 msgstr "Enregistrer"
 
+#: cases/templates/cases/disputed_tags.html:8
+msgid ""
+"Clips on which a lawyer proposed removing or restoring a tag, latest "
+"proposal first."
+msgstr "Clips sur lesquels un·e avocat·e a proposé d'écarter ou de rétablir une étiquette, de la proposition la plus récente à la plus ancienne."
+
+#: cases/templates/cases/disputed_tags.html:12
+#, python-format
+msgid "latest proposal %(at)s"
+msgstr "dernière proposition : %(at)s"
+
+#: cases/templates/cases/disputed_tags.html:16
+msgid "No lawyer has proposed removing or restoring a tag."
+msgstr "Aucun·e avocat·e n'a proposé d'écarter ou de rétablir une étiquette."
+
 #: cases/templates/cases/matches.html:9
 msgid "No matches."
 msgstr "Aucune correspondance."
@@ -1592,6 +1613,7 @@ msgid "Tag history"
 msgstr "Historique des étiquettes"
 
 #: cases/templates/cases/tag_history.html:8
+#, python-format
 msgid "Clip %(clip_id)s"
 msgstr "Clip %(clip_id)s"
 
@@ -1600,9 +1622,12 @@ msgid "a tag since deleted"
 msgstr "une étiquette supprimée depuis"
 
 #: cases/templates/cases/tag_history.html:23
+#, python-format
 msgid ""
 "%(day)s, in the four hours from %(start)s: the code holder changed their tags"
-msgstr "%(day)s, dans les quatre heures à partir de %(start)s : la personne qui détient le code a modifié ses étiquettes"
+msgstr ""
+"%(day)s, dans les quatre heures à partir de %(start)s : la personne qui "
+"détient le code a modifié ses étiquettes"
 
 #: cases/templates/cases/tag_history.html:29
 msgid "Nothing has happened to this clip's tags since upload."

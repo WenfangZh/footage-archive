@@ -21,6 +21,7 @@
   {% endif %}
   <p><a href="{% url 'manage:invite' %}">{% translate "Send an invitation" %}</a></p>
   <p><a href="{% url 'manage:case_requests' %}">{% translate "Requests for larger cases" %}</a></p>
+  <p><a href="{% url 'manage:disputed_tags' %}">{% translate "Clips with disputed tags" %}</a></p>
 
   <h2>{% translate "Applicants" %}</h2>
   {% if applicants %}

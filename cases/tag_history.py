@@ -1,18 +1,19 @@
 """The admin's tag history of one clip (SPEC.md §7): what lawyers did to its tags, from the audit
 log, and when the code holder changed theirs, from the clip's edits. Nothing is kept for it
-apart from those two.
+apart from those two. And the list of clips with disputed tags, which leads to it.
 """
 
 from dataclasses import dataclass
 from datetime import datetime
 
+from django.db.models import Max
 from django.http import Http404
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
 
 from accounts.models import LawyerProfile
 from accounts.roles import admin_required
-from audit.models import TAG_ACTIONS, AuditEntry
+from audit.models import TAG_ACTIONS, Action, AuditEntry
 from clips.models import Clip, ClipTag, Edit
 
 
@@ -47,3 +48,14 @@ def tag_history(request, clip_id):
     if not history and not Clip.objects.filter(pk=clip_id).exists():
         raise Http404
     return render(request, 'cases/tag_history.html', {'clip_id': clip_id, 'events': history})
+
+
+@admin_required
+@require_GET
+def disputed_tags(request):
+    """Every clip on which a lawyer ever proposed removing or restoring a tag, by identifier
+    only, latest proposal first: from the audit log, so a settled dispute stays listed."""
+    clips = AuditEntry.objects.filter(
+        action__in=[Action.TAG_REMOVAL_PROPOSAL, Action.TAG_RESTORATION_PROPOSAL],
+    ).values('clip_id').annotate(latest=Max('at')).order_by('-latest')
+    return render(request, 'cases/disputed_tags.html', {'clips': clips})

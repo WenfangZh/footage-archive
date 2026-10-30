@@ -117,3 +117,31 @@ def test_no_lawyer_sees_the_tag_history(clip):
 
     assert response.status_code == 403
     assert 'Martin' not in response.content.decode()
+
+
+def test_the_disputed_list_shows_each_clip_with_a_proposal_by_identifier_latest_first(admin_client, clip):
+    quiet = Clip.objects.create(code_hash=upload_codes.keyed_hash('a quiet clip'), status=Clip.Status.READY)
+    added = ClipTag.objects.create(clip=quiet, custom_name='Water cannon', source=ClipTag.Source.LAWYER)
+    act(Action.TAG_ADDITION, lawyer('Martin'), quiet, added)
+    older = Clip.objects.create(code_hash=upload_codes.keyed_hash('an older clip'), status=Clip.Status.READY)
+    dropped = ClipTag.objects.create(clip=older, custom_name='Barricade', source=ClipTag.Source.CODE_HOLDER)
+    act(Action.TAG_REMOVAL_PROPOSAL, lawyer('Bernard'), older, dropped)
+    tag = ClipTag.objects.create(clip=clip, key='arrest', source=ClipTag.Source.CODE_HOLDER)
+    act(Action.TAG_RESTORATION_PROPOSAL, lawyer('Petit'), clip, tag)
+    # Still listed once the code holder has deleted the tag in dispute.
+    dropped.delete()
+
+    response = admin_client.get(reverse('manage:disputed_tags'), headers=ENGLISH)
+
+    assert response.status_code == 200
+    listed = items(response)
+    assert [str(clip.pk) in listed[0], str(older.pk) in listed[1]] == [True, True]
+    assert len(listed) == 2
+    assert reverse('manage:tag_history', kwargs={'clip_id': clip.pk}) in listed[0]
+    # By identifier only: no tag, and no lawyer.
+    assert not any(word in response.content.decode() for word in ['Barricade', 'Arrest', 'Bernard', 'Petit'])
+
+
+def test_no_lawyer_sees_the_disputed_list():
+    client = log_in_with_second_factor(Client(), lawyer('Martin').user)
+    assert client.get(reverse('manage:disputed_tags')).status_code == 403
