@@ -339,24 +339,29 @@ msgid "New case"
 msgstr "Nouveau dossier de recherche"
 
 #: accounts/templates/accounts/lawyer_home.html:19
+#: cases/templates/cases/messages.html:4 cases/templates/cases/messages.html:9
+msgid "Your messages"
+msgstr "Vos messages"
+
+#: accounts/templates/accounts/lawyer_home.html:20
 #: cases/templates/cases/closed_cases.html:4
 #: cases/templates/cases/closed_cases.html:9
 msgid "Closed cases"
 msgstr "Dossiers de recherche clos"
 
-#: accounts/templates/accounts/lawyer_home.html:20
+#: accounts/templates/accounts/lawyer_home.html:21
 #: cases/templates/cases/default_margin.html:4
 #: cases/templates/cases/default_margin.html:7
 msgid "Default margin"
 msgstr "Marge par défaut"
 
-#: accounts/templates/accounts/lawyer_home.html:21
+#: accounts/templates/accounts/lawyer_home.html:22
 #: cases/templates/cases/clip.html:20 keys/templates/keys/key.html:4
 #: keys/templates/keys/key.html:15
 msgid "Your personal key"
 msgstr "Votre clé personnelle"
 
-#: accounts/templates/accounts/lawyer_home.html:22
+#: accounts/templates/accounts/lawyer_home.html:23
 #: keys/templates/keys/waiting.html:4 keys/templates/keys/waiting.html:7
 msgid "Colleagues waiting for the group key"
 msgstr "Collègues en attente de la clé commune"
@@ -1154,6 +1159,24 @@ msgstr "Une étiquette doit contenir au moins une lettre ou un chiffre."
 msgid "Choose a default tag or write your own, not both."
 msgstr "Choisissez une étiquette prédéfinie ou écrivez la vôtre, pas les deux."
 
+#: cases/forms.py:274 clips/models.py:388
+msgid "Message"
+msgstr "Message"
+
+#: cases/forms.py:275
+msgid ""
+"Only the code holder of this clip can read it, with their upload code, and "
+"you, with your personal key."
+msgstr "Seule la personne qui détient le code de ce clip peut le lire, avec son code d'upload, et vous, avec votre clé personnelle."
+
+#: cases/forms.py:278
+msgid "Show the code holder my name and bar on this message"
+msgstr "Montrer mon nom et mon barreau sur ce message à la personne qui détient le code"
+
+#: cases/forms.py:279
+msgid "Otherwise they see only \"a verified defence lawyer\"."
+msgstr "Sinon, elle voit seulement « un·e avocat·e de la défense vérifié·e »."
+
 #: cases/models.py:128
 msgid "Closed by its lawyer"
 msgstr "Clos par son avocat·e"
@@ -1511,6 +1534,19 @@ msgstr "%(field)s : %(day)s, dans les quatre heures à partir de %(start)s"
 msgid "None."
 msgstr "Aucun."
 
+#: cases/templates/cases/clip.html:106
+msgid "Message to the code holder"
+msgstr "Message à la personne qui détient le code"
+
+#: cases/templates/cases/clip.html:107
+msgid "Your thread with this clip's code holder"
+msgstr "Votre fil de messages avec la personne qui détient le code de ce clip"
+
+#: cases/templates/cases/clip.html:111 cases/templates/cases/messages.html:42
+#: clips/templates/clips/upload.html:26
+msgid "Send"
+msgstr "Envoyer"
+
 #: cases/templates/cases/close_case.html:11
 #, python-format
 msgid ""
@@ -1588,6 +1624,60 @@ msgstr "Aucun·e avocat·e n'a proposé d'écarter ou de rétablir une étiquett
 #: cases/templates/cases/matches.html:9
 msgid "No matches."
 msgstr "Aucune correspondance."
+
+#: cases/templates/cases/messages.html:14
+#: cases/templates/cases/tag_history.html:8
+#, python-format
+msgid "Clip %(clip_id)s"
+msgstr "Clip %(clip_id)s"
+
+#: cases/templates/cases/messages.html:20
+msgid "You"
+msgstr "Vous"
+
+#: cases/templates/cases/messages.html:20
+msgid "The code holder"
+msgstr "La personne qui détient le code"
+
+#: cases/templates/cases/messages.html:21
+msgid "%(day)s, in the four hours from %(start)s"
+msgstr "%(day)s, dans les quatre heures à partir de %(start)s"
+
+#: cases/templates/cases/messages.html:22
+msgid "with your name and bar"
+msgstr "avec votre nom et votre barreau"
+
+#: cases/templates/cases/messages.html:22
+msgid "as a verified defence lawyer"
+msgstr "en tant qu'avocat·e de la défense vérifié·e"
+
+#: cases/templates/cases/messages.html:23
+msgid "New"
+msgstr "Nouveau"
+
+#: cases/templates/cases/messages.html:26
+msgid "No note."
+msgstr "Pas de note."
+
+#: cases/templates/cases/messages.html:31
+msgid "This message does not open: it may have been altered."
+msgstr "Ce message ne s'ouvre pas : il a peut-être été altéré."
+
+#: cases/templates/cases/messages.html:31
+msgid "Unlock your personal key to read this message."
+msgstr "Déverrouillez votre clé personnelle pour lire ce message."
+
+#: cases/templates/cases/messages.html:33
+msgid ""
+"You can no longer read this message: it was sealed to a personal key you "
+"have since replaced."
+msgstr "Vous ne pouvez plus lire ce message : il a été scellé pour une clé personnelle que vous avez remplacée depuis."
+
+#: cases/templates/cases/messages.html:47
+msgid ""
+"You have no messages yet. You can write to a clip's code holder from the "
+"clip's page."
+msgstr "Vous n'avez pas encore de messages. Vous pouvez écrire à la personne qui détient le code d'un clip depuis la page du clip."
 
 #: cases/templates/cases/new_case.html:16
 msgid ""
@@ -1699,11 +1789,6 @@ msgstr ""
 msgid "Tag history"
 msgstr "Historique des étiquettes"
 
-#: cases/templates/cases/tag_history.html:8
-#, python-format
-msgid "Clip %(clip_id)s"
-msgstr "Clip %(clip_id)s"
-
 #: cases/templates/cases/tag_history.html:19
 msgid "a tag since deleted"
 msgstr "une étiquette supprimée depuis"
@@ -1731,6 +1816,22 @@ msgid "Case no. %(number)s (case label unreadable)"
 msgstr ""
 "Dossier de recherche nº %(number)s (libellé du dossier de recherche "
 "illisible)"
+
+#: cases/threads.py:46
+msgid "You can send messages once the admin has confirmed your personal key."
+msgstr "Vous pourrez envoyer des messages une fois que l'administrateur·rice aura confirmé votre clé personnelle."
+
+#: cases/threads.py:49
+msgid "This clip's code holder cannot receive messages yet."
+msgstr "La personne qui détient le code de ce clip ne peut pas encore recevoir de messages."
+
+#: cases/threads.py:73
+msgid "Your message is sent. Its thread is on your messages page."
+msgstr "Votre message est envoyé. Son fil de messages est sur votre page de messages."
+
+#: cases/threads.py:121
+msgid "Your message is sent."
+msgstr "Votre message est envoyé."
 
 #: cases/views.py:56
 msgid ""
@@ -1865,23 +1966,19 @@ msgstr "Copie de preuve"
 msgid "Proxy"
 msgstr "Version de prévisualisation"
 
-#: clips/models.py:362
+#: clips/models.py:384
 msgid "To the code holder"
 msgstr "À la personne qui détient le code"
 
-#: clips/models.py:363
+#: clips/models.py:385
 msgid "From the code holder"
 msgstr "De la personne qui détient le code"
 
-#: clips/models.py:366
-msgid "Message"
-msgstr "Message"
-
-#: clips/models.py:367
+#: clips/models.py:389
 msgid "Report of a wrong time"
 msgstr "Signalement de clip : heure erronée"
 
-#: clips/models.py:368
+#: clips/models.py:390
 msgid "Report of a wrong place"
 msgstr "Signalement de clip : lieu erroné"
 
@@ -2217,10 +2314,6 @@ msgstr "Taille maximale : %(size_limit)s."
 #, python-format
 msgid "This file is larger than %(size_limit)s, so it cannot be sent."
 msgstr "Ce fichier dépasse %(size_limit)s : il ne peut pas être envoyé."
-
-#: clips/templates/clips/upload.html:26
-msgid "Send"
-msgstr "Envoyer"
 
 #: clips/templates/clips/uploads_closed.html:4
 #: clips/templates/clips/uploads_closed.html:7

@@ -262,3 +262,19 @@ class LawyerTagForm(forms.Form):
         if bool(cleaned.get('key')) == bool(cleaned.get('custom_name')):
             raise forms.ValidationError(_('Choose a default tag or write your own, not both.'))
         return cleaned
+
+
+MESSAGE_MAX_LENGTH = 4000
+
+
+class MessageForm(forms.Form):
+    """A message to a clip's code holder, or a reply in a thread."""
+
+    text = forms.CharField(
+        label=_('Message'), max_length=MESSAGE_MAX_LENGTH, widget=forms.Textarea,
+        help_text=_('Only the code holder of this clip can read it, with their upload code, and you, with your personal key.'),
+    )
+    identified = forms.BooleanField(
+        label=_('Show the code holder my name and bar on this message'), required=False,
+        help_text=_('Otherwise they see only "a verified defence lawyer".'),
+    )
