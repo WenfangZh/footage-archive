@@ -127,3 +127,42 @@ def test_no_messages_without_the_right_code(client, clip):
 
     assert response.status_code == 404
     assert 'station' not in response.content.decode()
+
+
+def test_a_lawyer_keeps_their_letter_when_a_new_thread_begins(client, clip):
+    # Made first, so with the lower id; writes second, in the same 4-hour block.
+    early_account, _ = named_lawyer('early@example.org', 'Early')
+    later_account, _ = named_lawyer('later@example.org', 'Later')
+    vault.send_message(clip, later_account, TO, 'The first thread', identified=True)
+    assert 'The first thread' in section(page(client), 'A')
+
+    vault.send_message(clip, early_account, TO, 'The second thread', identified=True)
+    content = page(client)
+
+    assert 'The first thread' in section(content, 'A') and 'The second thread' in section(content, 'B')
+
+
+def test_only_the_messages_shown_count_as_seen(client, clip, monkeypatch):
+    profile, _ = make_lawyer('lawyer@example.org')
+    vault.send_message(clip, profile, TO, 'Shown')
+    read = vault.code_holder_messages
+
+    def read_then_another_arrives(*args):
+        opened = read(*args)
+        vault.send_message(clip, profile, TO, 'Arrived meanwhile')
+        return opened
+
+    monkeypatch.setattr(vault, 'code_holder_messages', read_then_another_arrives)
+    page(client)
+
+    assert dict(Message.objects.values_list('position', 'seen')) == {0: True, 1: False}
+
+
+def test_a_reply_needs_the_clips_code(client, clip):
+    profile, _ = make_lawyer('lawyer@example.org')
+    first = vault.send_message(clip, profile, TO, 'Were you near the station?')
+
+    response = client.post(REPLY_URL, {'code': 'WRONGCODE', 'thread': first.pk, 'text': 'A reply'}, headers=ENGLISH)
+
+    assert response.status_code == 404
+    assert not Message.objects.filter(direction=FROM).exists()

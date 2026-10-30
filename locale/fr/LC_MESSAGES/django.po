@@ -2172,7 +2172,7 @@ msgid ""
 "messages. Lawyers are not told whether or when you read them. You decide "
 "whether to answer, and whether to say who you are."
 msgstr ""
-"Seul·es vous, avec votre code, et l'avocat·e de chaque fil de messages "
+"Vous seul·e, avec votre code, et l'avocat·e de chaque fil de messages "
 "pouvez lire ces messages. Les avocat·es ne savent pas si ni quand vous les "
 "lisez. Vous décidez de répondre ou non, et de dire qui vous êtes ou non."
 
