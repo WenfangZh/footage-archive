@@ -14,10 +14,12 @@ Field = Edit.EditableField
 # The clip's own fields a code holder edits: only these are saved, so that an edit never
 # overwrites what ingest recorded meanwhile (its status, duration, size).
 EDITED_FIELDS = ['stated_time', 'stated_cell', 'stated_precision', 'metadata_cell', 'code_holder_public_key']
+# A failed clip has nothing left to describe (SPEC.md §9), and a withdrawn one no one will see again (§7).
+EDITABLE = [Clip.Status.PROCESSING, Clip.Status.READY]
 
 
 class NotEditable(Exception):
-    """The clip failed or was deleted after the request found it."""
+    """The clip failed, was withdrawn or was deleted after the request found it."""
 
 
 def clip_for_code(typed):
@@ -42,8 +44,7 @@ def apply_edits(clip, cleaned, code):
     """Apply the code holder's form to the clip; returns the fields that changed. `code` is the
     normalised upload code, which opens the clip's texts (docs/m5-encryption-design.md §7.2).
 
-    Raises NotEditable if the clip failed or was deleted since it was loaded: a failed clip has
-    nothing left to describe (SPEC.md §9).
+    Raises NotEditable if the clip is no longer EDITABLE, or was deleted, since it was loaded.
     """
     changed = []
     if clip.code_holder_public_key is None:
@@ -81,8 +82,9 @@ def apply_edits(clip, cleaned, code):
     changed.extend(new_texts)
 
     with transaction.atomic():
-        # Again, locked: ingest may have finished or given up since the clip was loaded.
-        if not Clip.objects.select_for_update().filter(pk=clip.pk).exclude(status=Clip.Status.FAILED).exists():
+        # Again, locked: ingest may have finished or given up, or lawyers withdrawn the clip, since
+        # it was loaded.
+        if not Clip.objects.select_for_update().filter(pk=clip.pk, status__in=EDITABLE).exists():
             raise NotEditable
         clip.save(update_fields=EDITED_FIELDS)
         if tags_changed:

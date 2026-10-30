@@ -17,6 +17,9 @@
       {% translate "Please upload it again: you will get a new code. With this code, you can only delete what is left." %}
       <a href="{% url 'clips:upload' %}">{% translate "Upload again" %}</a>
     </p>
+  {% elif withdrawn %}
+    <p role="alert">{% translate "Your clip was withdrawn: two lawyers reported that its content is not protest footage, or should not be in the archive. No lawyer can find or watch it any more, and it cannot come back." %}</p>
+    <p>{% translate "You can still delete it, and read and answer lawyers' messages about it." %}</p>
   {% endif %}
   <p>
     {% translate "Time found in the video:" %}
@@ -24,7 +27,7 @@
   </p>
   <p>{% translate "It is kept as found, and nobody can change it." %}</p>
 
-  {% if not failed %}
+  {% if editable %}
   <form method="post" action="{% url 'clips:edit' %}" data-submit-once>
     {% csrf_token %}
     {{ form.code }}
