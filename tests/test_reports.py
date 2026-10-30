@@ -17,7 +17,7 @@ from audit.models import REPORT_ACTIONS, Action, AuditEntry
 from cases import clip_pages
 from cases.models import Case
 from clips import grid, upload_codes, vault
-from clips.models import Clip, ClipTag, Message, Precision, Report
+from clips.models import Clip, ClipTag, Message, Precision, Report, TagProposal
 from keys.models import LawyerKey
 from tests.conftest import BASTILLE, TEST_CODE, log_in_with_second_factor, make_case, with_code_holder_key
 
@@ -232,15 +232,23 @@ def test_the_reports_behind_a_withdrawal_cannot_be_cancelled(lawyers, clip):
     assert Clip.objects.get(pk=clip.pk).status == Clip.Status.WITHDRAWN
 
 
-def test_deleting_a_clip_deletes_its_reports_and_keeps_their_audit_entries(lawyers, clip):
-    lawyers[0].report(clip, DOUBT)
-    lawyers[1].report(clip, INAPPROPRIATE)
-    logged = actions()
+def test_deleting_a_clip_deletes_its_threads_reports_and_tag_proposals_and_keeps_their_audit_entries(lawyers, clip):
+    first, second, third = lawyers
+    first.report(clip, DOUBT)
+    second.report(clip, INAPPROPRIATE)
+    tag = ClipTag.objects.get(clip=clip)
+    first.client.post(first.url('propose_tag', clip, tag_id=tag.pk), {'direction': 'remove'})
+    LawyerKey.objects.filter(lawyer_profile=third.profile).update(admin_confirmed_at=timezone.now())
+    third.client.post(third.url('send_message', clip), {'text': 'Were you near the station?'})
+    assert Report.objects.count() == 2 and TagProposal.objects.count() == 1 and Message.objects.count() == 1
+    logged = list(AuditEntry.objects.filter(clip_id=clip.pk).values_list('pk', 'action'))
 
     Client().post(reverse('clips:delete'), {'code': TEST_CODE, 'confirm_delete': 'yes'})
 
-    assert not Clip.objects.exists() and not Report.objects.exists()
-    assert actions() == logged
+    assert not Clip.objects.exists()
+    assert not Report.objects.exists() and not TagProposal.objects.exists() and not Message.objects.exists()
+    assert {Action.REPORT_DOUBT, Action.REPORT_INAPPROPRIATE, Action.TAG_REMOVAL_PROPOSAL, Action.MESSAGE} <= {action for _pk, action in logged}
+    assert list(AuditEntry.objects.filter(clip_id=clip.pk).values_list('pk', 'action')) == logged
 
 
 def test_an_unknown_kind_of_report_is_not_found(lawyers, clip):
