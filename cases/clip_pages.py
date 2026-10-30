@@ -38,14 +38,14 @@ from alerts.checks import check_activity
 from alerts.models import AlertLimitRaise
 from audit.models import Action, AuditEntry, record
 from clips import grid, vault
-from clips.models import Clip, HashRecord, TagProposal
+from clips.models import Clip, HashRecord, Message, TagProposal
 from clips.streaming import file_response, requested_range
 from clips.tags import DEFAULT_TAGS
 from keys.forms import Base64BytesField
 from keys.grants import reads_vault
 from keys.views import b64
 
-from .forms import LawyerTagForm
+from .forms import LawyerTagForm, MessageForm
 from .models import Case
 from .search import match_of
 
@@ -130,6 +130,8 @@ def clip_page(request, case_id, clip_id):
         'tags': [tag for tag in shown_tags if not tag['removed']],
         'removed_tags': [tag for tag in shown_tags if tag['removed']],
         'tag_form': LawyerTagForm(),
+        'message_form': MessageForm(),
+        'has_thread': Message.objects.filter(clip=clip, lawyer_profile=case.lawyer_profile).exists(),
         'uploaded_tags': tag_names(uploaded.get('default', []), uploaded.get('custom', [])),
         'edits': clip.edits.order_by('edited_at', 'pk'),
         'reads_vault': reads,

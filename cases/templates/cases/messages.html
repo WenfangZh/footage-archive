@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load i18n static keys %}
+
+{% block title %}{% translate "Your messages" %}{% endblock %}
+
+{% block head %}{% include "keys/scripts.html" %}<script src="{% static 'keys/messages.js' %}" defer></script>{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Your messages" %}</h1>
+  {% unlock_form %}
+  {% if threads %}
+    {% for thread in threads %}
+      <section id="thread-{{ thread.clip_id }}">
+        <h2>{% blocktranslate with clip_id=thread.clip_id %}Clip {{ clip_id }}{% endblocktranslate %}</h2>
+        <ol class="thread">
+          {% for item in thread.messages %}
+            {% with message=item.message %}
+            <li>
+              <p>
+                {% if message.direction == "to_code_holder" %}{% translate "You" %}{% else %}{% translate "The code holder" %}{% endif %}{% if message.kind != "message" %}, {{ message.get_kind_display }}{% endif %},
+                {% blocktranslate with day=message.sent_at|date:"j F Y" start=message.sent_at|date:"H:i" %}{{ day }}, in the four hours from {{ start }}{% endblocktranslate %}{% if message.direction == "to_code_holder" %},
+                {% if message.identified %}{% translate "with your name and bar" %}{% else %}{% translate "as a verified defence lawyer" %}{% endif %}{% endif %}
+                {% if item.new %}<strong>{% translate "New" %}</strong>{% endif %}
+              </p>
+              {% if message.ciphertext is None %}
+                <p>{% translate "No note." %}</p>
+              {% elif item.sealed %}
+                <p class="message-text" data-sealed="{{ item.sealed }}" data-clip="{{ message.clip_id }}" data-id="{{ message.pk }}"
+                   data-lawyer="{{ message.lawyer_profile_id }}" data-position="{{ message.position }}" data-direction="{{ message.direction }}"
+                   data-kind="{{ message.kind }}" data-identified="{{ message.identified|yesno:'1,0' }}"
+                   data-unreadable="{% translate 'This message does not open: it may have been altered.' %}">{% translate "Unlock your personal key to read this message." %}</p>
+              {% else %}
+                <p>{% translate "You can no longer read this message: it was sealed to a personal key you have since replaced." %}</p>
+              {% endif %}
+            </li>
+            {% endwith %}
+          {% endfor %}
+        </ol>
+        <form method="post" action="{% url 'lawyer:reply' thread.clip_id %}">
+          {% csrf_token %}
+          {{ thread.form.as_p }}
+          <button type="submit">{% translate "Send" %}</button>
+        </form>
+      </section>
+    {% endfor %}
+  {% else %}
+    <p>{% translate "You have no messages yet. You can write to a clip's code holder from the clip's page." %}</p>
+  {% endif %}
+{% endblock %}

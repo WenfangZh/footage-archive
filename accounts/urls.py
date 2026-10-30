@@ -2,7 +2,7 @@ from django.urls import path
 
 from alerts import views as alert_views
 from cases import approval as case_approval
-from cases import clip_pages, tag_history, tag_pages
+from cases import clip_pages, tag_history, tag_pages, threads
 from cases import views as case_views
 from keys import views as key_views
 from maps import views as map_views
@@ -31,6 +31,10 @@ lawyer_patterns = [
     path('cases/<int:case_id>/clips/<uuid:clip_id>/tags/<int:tag_id>/propose/', tag_pages.propose, name='propose_tag'),
     path('cases/<int:case_id>/clips/<uuid:clip_id>/tags/<int:tag_id>/cancel/', tag_pages.cancel, name='cancel_tag'),
     path('tags.css', tag_pages.tag_colours, name='tag_colours'),
+    path('cases/<int:case_id>/clips/<uuid:clip_id>/message/', threads.send, name='send_message'),
+    # A lawyer's threads, reached with no case (SPEC.md §7): each shows its clip by identifier only.
+    path('messages/', threads.messages_page, name='messages'),
+    path('messages/<uuid:clip_id>/reply/', threads.reply, name='reply'),
     path('margin/', case_views.default_margin, name='default_margin'),
     # Handing over the group key (keys.views).
     path('keys/', key_views.waiting, name='waiting'),
