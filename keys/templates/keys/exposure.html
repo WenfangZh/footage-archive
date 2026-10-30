@@ -23,7 +23,7 @@
     <noscript><p>{% translate "Replacing your key needs JavaScript." %}</p></noscript>
     {# The new passphrase and recovery key are typed back in fields with no name: they are never sent. #}
     <form id="exposure" data-public-key="{{ unlock_public_key }}" data-opslimit="{{ opslimit }}" data-memlimit="{{ memlimit }}"
-      data-labels-url="{% url 'accounts:own_labels' %}" data-report-url="{% url 'accounts:key_exposure' %}"
+      data-sealed-url="{% url 'accounts:own_sealed' %}" data-report-url="{% url 'accounts:key_exposure' %}"
       data-done-url="{% url 'accounts:key' %}" hidden>
       <h2>{% translate "Your new key passphrase" %}</h2>
       <p>{% translate "You type it to unlock your key, once in each browser tab. It is not your login password. Keep it where you can type it: in your memory, on paper or in a password manager." %}</p>

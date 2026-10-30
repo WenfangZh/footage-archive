@@ -45,7 +45,7 @@ msgstr ""
 msgid "A trusted defence organisation or an admitted lawyer."
 msgstr "Une organisation de défense de confiance, ou un·e avocat·e admis·e."
 
-#: accounts/admission.py:44 keys/forms.py:95
+#: accounts/admission.py:44 keys/forms.py:96
 msgid ""
 "I compared this safety number with them, through the bar directory's contact "
 "details."
@@ -61,7 +61,7 @@ msgstr ""
 "La personne pourra être admise une fois son mot de passe, sa double "
 "authentification et sa clé personnelle mis en place."
 
-#: accounts/admission.py:103 keys/views.py:273
+#: accounts/admission.py:103 keys/views.py:288
 msgid ""
 "They have made a new key since this page was shown. Compare its safety "
 "number with them again."
@@ -2259,25 +2259,25 @@ msgstr "Français"
 msgid "English"
 msgstr "Anglais"
 
-#: keys/forms.py:34 keys/forms.py:36 keys/forms.py:51 keys/forms.py:111
-#: keys/forms.py:115 keys/forms.py:134 keys/forms.py:146 keys/forms.py:173
-#: keys/forms.py:198 keys/forms.py:202
+#: keys/forms.py:35 keys/forms.py:37 keys/forms.py:52 keys/forms.py:112
+#: keys/forms.py:116 keys/forms.py:135 keys/forms.py:147 keys/forms.py:173
+#: keys/forms.py:207 keys/forms.py:211 keys/forms.py:256 keys/forms.py:258
 msgid "The key could not be read."
 msgstr "La clé n'a pas pu être lue."
 
-#: keys/forms.py:69 keys/templates/keys/exposure.html:39
+#: keys/forms.py:70 keys/templates/keys/exposure.html:39
 msgid "Your login password:"
 msgstr "Votre mot de passe de connexion :"
 
-#: keys/forms.py:80 keys/templates/keys/exposure.html:42
+#: keys/forms.py:81 keys/templates/keys/exposure.html:42
 msgid "That is not your login password."
 msgstr "Ce n'est pas votre mot de passe de connexion."
 
-#: keys/forms.py:87
+#: keys/forms.py:88
 msgid "I have lost both my key passphrase and my recovery key."
 msgstr "J'ai perdu à la fois ma phrase secrète et ma clé de récupération."
 
-#: keys/forms.py:153
+#: keys/forms.py:154
 msgid "I compared this safety number with them, by phone or in person."
 msgstr ""
 "J'ai comparé ce numéro de sécurité avec la personne, par téléphone ou de "
@@ -2789,7 +2789,7 @@ msgstr ""
 msgid "Your key is reset. Set up a new one."
 msgstr "Votre clé est réinitialisée. Créez-en une nouvelle."
 
-#: keys/views.py:231
+#: keys/views.py:234
 msgid ""
 "Your new key is set up, and a rotation of the group key is requested. The "
 "admin will compare its safety number with you, then a lawyer will give you "
@@ -2799,7 +2799,7 @@ msgstr ""
 "demandé. L'administrateur·rice comparera son numéro de sécurité avec vous, "
 "puis un·e avocat·e vous remettra à nouveau la clé commune."
 
-#: keys/views.py:237
+#: keys/views.py:240
 #, python-format
 msgid ""
 "The label of %(count)d case could not be opened, so could not be moved to "
@@ -2814,7 +2814,22 @@ msgstr[1] ""
 "Les libellés de %(count)d dossiers de recherche n'ont pas pu être ouverts, "
 "et donc pas être transférés à votre nouvelle clé : ils sont perdus."
 
-#: keys/views.py:275
+#: keys/views.py:247
+#, python-format
+msgid ""
+"%(count)d message could not be opened, so could not be moved to your new "
+"key: you can no longer read it."
+msgid_plural ""
+"%(count)d messages could not be opened, so could not be moved to your new "
+"key: you can no longer read them."
+msgstr[0] ""
+"%(count)d message n'a pas pu être ouvert, et donc pas être transféré à votre "
+"nouvelle clé : vous ne pouvez plus le lire."
+msgstr[1] ""
+"%(count)d messages n'ont pas pu être ouverts, et donc pas être transférés à "
+"votre nouvelle clé : vous ne pouvez plus les lire."
+
+#: keys/views.py:290
 #, python-format
 msgid ""
 "%(name)s's new key is confirmed. A lawyer can now give them the group key."
@@ -2822,12 +2837,12 @@ msgstr ""
 "La nouvelle clé de %(name)s est confirmée. Un·e avocat·e peut maintenant lui "
 "remettre la clé commune."
 
-#: keys/views.py:367
+#: keys/views.py:382
 msgid "The keys changed while this page was open. Please try again."
 msgstr ""
 "Les clés ont changé pendant que cette page était ouverte. Veuillez réessayer."
 
-#: keys/views.py:369
+#: keys/views.py:384
 #, python-format
 msgid "%(name)s now holds the group key."
 msgstr "%(name)s a maintenant la clé commune."
