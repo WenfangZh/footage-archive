@@ -1689,8 +1689,8 @@ msgstr "Message à la personne qui détient le code"
 msgid "Your thread with this clip's code holder"
 msgstr "Votre fil de messages avec la personne qui détient le code de ce clip"
 
-#: cases/templates/cases/clip.html:141 cases/templates/cases/messages.html:42
-#: clips/templates/clips/clip.html:106 clips/templates/clips/upload.html:26
+#: cases/templates/cases/clip.html:141 cases/templates/cases/messages.html:43
+#: clips/templates/clips/clip.html:107 clips/templates/clips/upload.html:26
 msgid "Send"
 msgstr "Envoyer"
 
@@ -1778,44 +1778,54 @@ msgstr "Aucune correspondance."
 msgid "Clip %(clip_id)s"
 msgstr "Clip %(clip_id)s"
 
-#: cases/templates/cases/messages.html:20 clips/templates/clips/clip.html:86
+#: cases/templates/cases/messages.html:15
+#, python-format
+msgid ""
+"This thread will be deleted on %(day)s, unless you or the code holder write "
+"again before then. Save what you need into your own records."
+msgstr ""
+"Ce fil de messages sera supprimé le %(day)s, sauf si vous ou la personne qui "
+"détient le code écrivez à nouveau d'ici là. Gardez ce dont vous avez besoin "
+"dans vos propres dossiers."
+
+#: cases/templates/cases/messages.html:21 clips/templates/clips/clip.html:87
 msgid "You"
 msgstr "Vous"
 
-#: cases/templates/cases/messages.html:20
+#: cases/templates/cases/messages.html:21
 msgid "The code holder"
 msgstr "La personne qui détient le code"
 
-#: cases/templates/cases/messages.html:21 clips/templates/clips/clip.html:87
+#: cases/templates/cases/messages.html:22 clips/templates/clips/clip.html:88
 #, python-format
 msgid "%(day)s, in the four hours from %(start)s"
 msgstr "%(day)s, dans les quatre heures à partir de %(start)s"
 
-#: cases/templates/cases/messages.html:22
+#: cases/templates/cases/messages.html:23
 msgid "with your name and bar"
 msgstr "avec votre nom et votre barreau"
 
-#: cases/templates/cases/messages.html:22
+#: cases/templates/cases/messages.html:23
 msgid "as a verified defence lawyer"
 msgstr "en tant qu'avocat·e de la défense vérifié·e"
 
-#: cases/templates/cases/messages.html:23 clips/templates/clips/clip.html:88
+#: cases/templates/cases/messages.html:24 clips/templates/clips/clip.html:89
 msgid "New"
 msgstr "Nouveau"
 
-#: cases/templates/cases/messages.html:26 clips/templates/clips/clip.html:90
+#: cases/templates/cases/messages.html:27 clips/templates/clips/clip.html:91
 msgid "No note."
 msgstr "Pas de note."
 
-#: cases/templates/cases/messages.html:31
+#: cases/templates/cases/messages.html:32
 msgid "This message does not open: it may have been altered."
 msgstr "Ce message ne s'ouvre pas : il a peut-être été altéré."
 
-#: cases/templates/cases/messages.html:31
+#: cases/templates/cases/messages.html:32
 msgid "Unlock your personal key to read this message."
 msgstr "Déverrouillez votre clé personnelle pour lire ce message."
 
-#: cases/templates/cases/messages.html:33
+#: cases/templates/cases/messages.html:34
 msgid ""
 "You can no longer read this message: it was sealed to a personal key you "
 "have since replaced."
@@ -1823,7 +1833,7 @@ msgstr ""
 "Vous ne pouvez plus lire ce message : il a été scellé pour une clé "
 "personnelle que vous avez remplacée depuis."
 
-#: cases/templates/cases/messages.html:47
+#: cases/templates/cases/messages.html:48
 msgid ""
 "You have no messages yet. You can write to a clip's code holder from the "
 "clip's page."
@@ -1982,7 +1992,7 @@ msgid "Delete this clip for good"
 msgstr "Supprimer ce clip définitivement"
 
 #: cases/templates/cases/withdrawn_clips.html:16
-#: clips/templates/clips/clip.html:128
+#: clips/templates/clips/clip.html:129
 msgid "Delete"
 msgstr "Supprimer"
 
@@ -2002,31 +2012,31 @@ msgstr ""
 "Dossier de recherche nº %(number)s (libellé du dossier de recherche "
 "illisible)"
 
-#: cases/threads.py:47
+#: cases/threads.py:48
 msgid "You can send messages once the admin has confirmed your personal key."
 msgstr ""
 "Vous pourrez envoyer des messages une fois que l'administrateur·rice aura "
 "confirmé votre clé personnelle."
 
-#: cases/threads.py:50
+#: cases/threads.py:51
 msgid "This clip's code holder cannot receive messages yet."
 msgstr ""
 "La personne qui détient le code de ce clip ne peut pas encore recevoir de "
 "messages."
 
-#: cases/threads.py:74
+#: cases/threads.py:75
 msgid "Your message is sent. Its thread is on your messages page."
 msgstr ""
 "Votre message est envoyé. Son fil de messages est sur votre page de messages."
 
-#: cases/threads.py:96
+#: cases/threads.py:97
 msgid ""
 "Your report is sent to the code holder. Its thread is on your messages page."
 msgstr ""
 "Votre signalement de clip est envoyé à la personne qui détient le code. Son "
 "fil de messages est sur votre page de messages."
 
-#: cases/threads.py:148
+#: cases/threads.py:152
 msgid "Your message is sent."
 msgstr "Votre message est envoyé."
 
@@ -2046,7 +2056,7 @@ msgstr "Vos nouveaux dossiers de recherche commenceront avec cette marge."
 msgid "The case is closed."
 msgstr "Le dossier de recherche est clos."
 
-#: cases/withdrawn_clips.py:34 clips/templates/clips/clip.html:121
+#: cases/withdrawn_clips.py:34 clips/templates/clips/clip.html:122
 msgid "Tick the box to confirm."
 msgstr "Cochez la case pour confirmer."
 
@@ -2136,7 +2146,7 @@ msgstr ""
 msgid "To make the place more precise, give its new position."
 msgstr "Pour rendre le lieu plus précis, indiquez sa nouvelle position."
 
-#: clips/forms.py:171 clips/templates/clips/clip.html:103
+#: clips/forms.py:171 clips/templates/clips/clip.html:104
 msgid "Your reply"
 msgstr "Votre réponse"
 
@@ -2408,36 +2418,45 @@ msgid "Lawyer %(letter)s"
 msgstr "Avocat·e %(letter)s"
 
 #: clips/templates/clips/clip.html:80
+#, python-format
+msgid ""
+"These messages will be deleted on %(day)s, unless you or the lawyer write "
+"again before then."
+msgstr ""
+"Ces messages seront supprimés le %(day)s, sauf si vous ou l'avocat·e écrivez "
+"à nouveau d'ici là."
+
+#: clips/templates/clips/clip.html:81
 msgid "This lawyer no longer has access."
 msgstr "Cet·te avocat·e n'a plus accès à l'archive."
 
-#: clips/templates/clips/clip.html:86
+#: clips/templates/clips/clip.html:87
 msgid "A verified defence lawyer"
 msgstr "Un·e avocat·e de la défense vérifié·e"
 
-#: clips/templates/clips/clip.html:90
+#: clips/templates/clips/clip.html:91
 msgid "This message could not be opened."
 msgstr "Ce message n'a pas pu être ouvert."
 
-#: clips/templates/clips/clip.html:101
+#: clips/templates/clips/clip.html:102
 msgid "Your reply could not be sent. Check it and try again."
 msgstr "Votre réponse n'a pas pu être envoyée. Vérifiez-la et réessayez."
 
-#: clips/templates/clips/clip.html:109
+#: clips/templates/clips/clip.html:110
 msgid "You cannot answer this lawyer for now. Please try again later."
 msgstr ""
 "Vous ne pouvez pas répondre à cet·te avocat·e pour le moment. Veuillez "
 "réessayer plus tard."
 
-#: clips/templates/clips/clip.html:110
+#: clips/templates/clips/clip.html:111
 msgid "Your reply was not sent. Here it is, to keep:"
 msgstr "Votre réponse n'a pas été envoyée. La voici, pour la garder :"
 
-#: clips/templates/clips/clip.html:117
+#: clips/templates/clips/clip.html:118
 msgid "Delete this clip"
 msgstr "Supprimer ce clip"
 
-#: clips/templates/clips/clip.html:125
+#: clips/templates/clips/clip.html:126
 msgid "Yes, delete this clip and everything it holds, for good."
 msgstr "Oui, supprimer définitivement ce clip et tout ce qu'il contient."
 
@@ -2630,11 +2649,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:389
+#: config/settings.py:391
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:390
+#: config/settings.py:392
 msgid "English"
 msgstr "Anglais"
 

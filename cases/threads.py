@@ -22,6 +22,7 @@ from accounts.roles import lawyer_required
 from audit.models import Action, record
 from clips import vault
 from clips.models import Message
+from clips.threads import deletion_time
 from keys.views import b64
 
 from .clip_pages import case_and_clip
@@ -126,7 +127,10 @@ def messages_page(request):
     return render(request, 'cases/messages.html', {
         'threads': [
             # Its own field ids, so that a label never ticks another thread's box.
-            {'clip_id': clip_id, 'messages': thread, 'form': MessageForm(auto_id=f'thread-{clip_id}-%s')}
+            {
+                'clip_id': clip_id, 'messages': thread, 'form': MessageForm(auto_id=f'thread-{clip_id}-%s'),
+                'deleted_on': deletion_time(max(item['message'].sent_at for item in thread)),
+            }
             for clip_id, thread in ordered
         ],
     })

@@ -77,6 +77,7 @@
   {% for thread in threads %}
     <section>
       <h3>{% blocktranslate with letter=thread.letter %}Lawyer {{ letter }}{% endblocktranslate %}</h3>
+      <p>{% blocktranslate with day=thread.deleted_on|date:"j F Y" %}These messages will be deleted on {{ day }}, unless you or the lawyer write again before then.{% endblocktranslate %}</p>
       {% if thread.no_longer_has_access %}<p role="note">{% translate "This lawyer no longer has access." %}</p>{% endif %}
       <ol>
         {% for item in thread.messages %}
