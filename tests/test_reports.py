@@ -241,14 +241,15 @@ def test_deleting_a_clip_deletes_its_threads_reports_and_tag_proposals_and_keeps
     LawyerKey.objects.filter(lawyer_profile=third.profile).update(admin_confirmed_at=timezone.now())
     third.client.post(third.url('send_message', clip), {'text': 'Were you near the station?'})
     assert Report.objects.count() == 2 and TagProposal.objects.count() == 1 and Message.objects.count() == 1
-    logged = list(AuditEntry.objects.filter(clip_id=clip.pk).values_list('pk', 'action'))
+    entries = AuditEntry.objects.filter(clip_id=clip.pk).order_by('pk')
+    logged = list(entries.values_list('pk', 'action', 'lawyer_profile', 'case', 'clip_tag_id'))
 
     Client().post(reverse('clips:delete'), {'code': TEST_CODE, 'confirm_delete': 'yes'})
 
     assert not Clip.objects.exists()
     assert not Report.objects.exists() and not TagProposal.objects.exists() and not Message.objects.exists()
-    assert {Action.REPORT_DOUBT, Action.REPORT_INAPPROPRIATE, Action.TAG_REMOVAL_PROPOSAL, Action.MESSAGE} <= {action for _pk, action in logged}
-    assert list(AuditEntry.objects.filter(clip_id=clip.pk).values_list('pk', 'action')) == logged
+    assert {Action.REPORT_DOUBT, Action.REPORT_INAPPROPRIATE, Action.TAG_REMOVAL_PROPOSAL, Action.MESSAGE} <= {row[1] for row in logged}
+    assert list(entries.values_list('pk', 'action', 'lawyer_profile', 'case', 'clip_tag_id')) == logged
 
 
 def test_an_unknown_kind_of_report_is_not_found(lawyers, clip):
