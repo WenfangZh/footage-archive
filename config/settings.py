@@ -217,11 +217,13 @@ DATA_UPLOAD_MAX_NUMBER_FILES = 1
 # Error reports show no frame's variables, only where the error happened (core.error_reports).
 DEFAULT_EXCEPTION_REPORTER_FILTER = 'core.error_reports.NoFrameVariablesFilter'
 
-# Django's own logging, with upload addresses hidden from every handler (core.logs).
+# Django's own logging, where every handler hides upload addresses (core.logs) and drops
+# requests for map data (maps.logs).
 LOGGING = copy.deepcopy(DEFAULT_LOGGING)
 LOGGING['filters']['hide_upload_addresses'] = {'()': 'core.logs.HideUploadAddresses'}
+LOGGING['filters']['skip_map_data'] = {'()': 'maps.logs.SkipMapData'}
 for handler in LOGGING['handlers'].values():
-    handler['filters'] = [*handler.get('filters', []), 'hide_upload_addresses']
+    handler['filters'] = [*handler.get('filters', []), 'hide_upload_addresses', 'skip_map_data']
 
 # Upload (SPEC.md §5, §8)
 

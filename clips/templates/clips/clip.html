@@ -46,6 +46,7 @@
       {{ form.latitude.as_field_group }}
       {{ form.longitude.as_field_group }}
       {{ form.precision.as_field_group }}
+      {% include "clips/location_map.html" %}
       {% if metadata_size %}
         <p>{% translate "GPS position found in the video, as we keep it:" %} {{ metadata_size }}</p>
         {% if can_coarsen %}

@@ -1,0 +1,24 @@
+{% load i18n l10n static %}
+{# The map for the stated location (SPEC.md §8, M6.5), inside a form with the place's fields: loaded only when asked for, by clips/location_map.js. #}
+{% translate "Map for choosing the place" as map_title %}
+{% translate "Zoom in" as zoom_in_label %}
+{% translate "Zoom out" as zoom_out_label %}
+{% translate "Zoom in to choose the place." as zoom_in %}
+{% translate "To make the place more precise, click its new position on the map." as finer %}
+{% translate "The map is no longer available on this page. Type the coordinates, or reload the page." as expired %}
+{% translate "The map could not be loaded. Type the coordinates." as unavailable %}
+{{ stated_resolutions|json_script:"stated-resolutions" }}
+<p><button type="button" id="location-map-open" hidden>{% translate "Choose on a map" %}</button></p>
+<div id="location-map" class="area-map" hidden tabindex="-1" aria-label="{{ map_title|force_escape }}"
+  data-style-url="{{ map_style_url }}" data-picking-zoom="{{ picking_zoom|unlocalize }}"
+  data-maplibre="{% static 'maps/vendor/maplibre-gl.mjs' %}" data-maplibre-css="{% static 'maps/vendor/maplibre-gl.css' %}"
+  data-map-css="{% static 'maps/area_map.css' %}" data-pmtiles="{% static 'maps/vendor/pmtiles.js' %}" data-h3="{% static 'maps/vendor/h3-js.umd.js' %}"
+  {% if form.stated_centre %}data-kept-latitude="{{ form.stated_centre.0|unlocalize }}" data-kept-longitude="{{ form.stated_centre.1|unlocalize }}" data-kept-resolution="{{ form.stated_resolution|unlocalize }}"{% endif %}
+  data-map-title="{{ map_title|force_escape }}" data-zoom-in-label="{{ zoom_in_label|force_escape }}" data-zoom-out-label="{{ zoom_out_label|force_escape }}"
+  data-zoom-in="{{ zoom_in|force_escape }}" data-finer="{{ finer|force_escape }}" data-expired="{{ expired|force_escape }}" data-unavailable="{{ unavailable|force_escape }}">
+  <p>{% translate "Zoom in, then click where it was filmed. The coloured area is what we keep, for the precision you choose." %}</p>
+  <div class="area-map-canvas"></div>
+  <p class="area-map-attribution">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors</p>
+</div>
+<p id="location-map-status" role="status"></p>
+<script src="{% static 'clips/location_map.js' %}" type="module"></script>
