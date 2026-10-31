@@ -519,3 +519,28 @@ class Original(models.Model):
         if self.clip_id is not None:
             self.received_at = four_hour_block(self.received_at)
         super().save(*args, **kwargs)
+
+
+class PartialUpload(models.Model):
+    """A file still arriving in pieces (GLOSSARY.md), through the resumable upload (clips.resumable).
+
+    Its offset is the size of its file, so no column has to agree with it. Once its last piece
+    is in, it becomes an original, keeping the same file; one not finished within
+    PARTIAL_UPLOAD_MINUTES of starting is deleted.
+    """
+
+    # Random: its address, which lets whoever holds it continue or abandon the upload.
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Random too, and unrelated to the id: the address never names a file.
+    file = models.FileField(storage=quarantine_storage, upload_to=random_file_name)
+    # The size declared when it started, already checked against the size cap.
+    length = models.PositiveBigIntegerField()
+    started_at = models.DateTimeField(default=timezone.now)
+
+    def discard(self):
+        """Delete it, row first, then file; returns False if it was already gone (finished,
+        abandoned or deleted for age), and its file then belongs to whoever took it."""
+        deleted, _ = PartialUpload.objects.filter(pk=self.pk).delete()
+        if deleted:
+            self.file.delete(save=False)
+        return bool(deleted)

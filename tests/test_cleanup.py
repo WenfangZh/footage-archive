@@ -92,4 +92,4 @@ def test_an_old_file_of_a_waiting_original_is_kept(settings, minutes):
 def test_the_command_reports_counts_only(capsys, minutes):
     make_original(minutes + 1)
     call_command('delete_unconfirmed_originals')
-    assert capsys.readouterr().out.strip() == 'Deleted 1 unconfirmed originals and 0 stray files.'
+    assert capsys.readouterr().out.strip() == 'Deleted 1 unconfirmed originals, 0 partial uploads and 0 stray files.'
