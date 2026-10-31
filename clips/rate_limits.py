@@ -86,7 +86,8 @@ class UploadRateLimitMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.method == 'POST' and request.path == reverse('clips:upload'):
+        # A file sent in one piece, or the start of a resumable upload (clips.resumable).
+        if request.method == 'POST' and request.path in (reverse('clips:upload'), reverse('clips:resumable_start')):
             if is_limited(request, UPLOADS):
                 return too_many(request)
             count(request, UPLOADS)

@@ -10,7 +10,8 @@ clip's id, never anything read from a file or typed by an uploader.
   killed mid-attempt loses that attempt. A clip queued twice is not ingested twice:
   attempts on one clip never run together, and a clip that is no longer processing is
   left alone.
-- Every 15 minutes, originals whose form was never confirmed are deleted (clips.cleanup),
+- Every 15 minutes, originals whose form was never confirmed and partial uploads never
+  finished in time are deleted (clips.cleanup),
   and a backed-up queue alerts the admin (alerts.checks).
 - Every hour, vault files left over from a crash are deleted (clips.vault).
 - Every hour, threads past their deletion time are deleted (clips.threads).
@@ -69,6 +70,7 @@ def queue_unfinished_ingests():
 @db_periodic_task(crontab(minute='*/15'))
 def delete_unconfirmed_originals():
     cleanup.delete_unconfirmed_originals()
+    cleanup.delete_expired_partial_uploads()
     check_ingest_queue()
 
 

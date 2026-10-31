@@ -10,11 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import copy
 import os
 import re
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.log import DEFAULT_LOGGING
 from django.utils.translation import gettext_lazy as _
 from dotenv import load_dotenv
 
@@ -215,6 +217,12 @@ DATA_UPLOAD_MAX_NUMBER_FILES = 1
 # Error reports show no frame's variables, only where the error happened (core.error_reports).
 DEFAULT_EXCEPTION_REPORTER_FILTER = 'core.error_reports.NoFrameVariablesFilter'
 
+# Django's own logging, with upload addresses hidden from every handler (core.logs).
+LOGGING = copy.deepcopy(DEFAULT_LOGGING)
+LOGGING['filters']['hide_upload_addresses'] = {'()': 'core.logs.HideUploadAddresses'}
+for handler in LOGGING['handlers'].values():
+    handler['filters'] = [*handler.get('filters', []), 'hide_upload_addresses']
+
 # Upload (SPEC.md §5, §8)
 
 # Key for the keyed hash of upload codes. It is separate from SECRET_KEY, so that
@@ -228,6 +236,9 @@ UPLOAD_MAX_BYTES = env_int('UPLOAD_MAX_BYTES', default=2_000_000_000, minimum=1)
 
 # An original whose form is not confirmed within this time is deleted.
 UNCONFIRMED_ORIGINAL_MINUTES = env_int('UNCONFIRMED_ORIGINAL_MINUTES', default=120, minimum=1)
+
+# A partial upload not finished within this time after it started is deleted (clips.resumable).
+PARTIAL_UPLOAD_MINUTES = env_int('PARTIAL_UPLOAD_MINUTES', default=120, minimum=1)
 
 # Rate limits per connection (clips.rate_limits): upload attempts, and wrong upload
 # codes, per window. The IP address is kept only as a keyed hash in the cache, for
