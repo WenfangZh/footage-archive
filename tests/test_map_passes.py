@@ -26,11 +26,9 @@ def urls(map_pass):
 
 
 def issued_minutes_ago(minutes, monkeypatch):
-    now = time.time()
-    monkeypatch.setattr(signing.time, 'time', lambda: now - minutes * 60)
-    issued = passes.issue()
-    monkeypatch.undo()
-    return issued
+    with monkeypatch.context() as patched:
+        patched.setattr(passes.SIGNER, 'timestamp', lambda: signing.b62_encode(int(time.time() - minutes * 60)))
+        return passes.issue()
 
 
 def test_with_a_pass_anyone_gets_the_style_tiles_and_fonts(map_dir):  # noqa: F811
@@ -74,14 +72,21 @@ def test_a_pass_names_no_upload(map_dir):  # noqa: F811
     assert passes.SIGNER.unsign(passes.issue()) == passes.SIGNED
 
 
-def test_requests_with_a_pass_are_never_logged(map_dir, caplog):  # noqa: F811
-    caplog.set_level(logging.DEBUG)
+def test_requests_with_a_pass_are_never_logged(map_dir, django_log):  # noqa: F811
     map_pass = passes.issue()
     client = Client()
     for url in urls(map_pass):
         client.get(url)
     client.get(urls('forged.pass.here')[1])  # A 404.
     client.get(urls(map_pass)[1], HTTP_RANGE='bytes=5000-6000')  # A 416.
-    logging.getLogger('django.server').info('"%s" %s %s', f'GET /map/{map_pass}/tiles.pmtiles HTTP/1.1', 206, 128)
+    Client(enforce_csrf_checks=True).post(urls(map_pass)[1])  # Refused by the CSRF check, which logs too.
+    server = logging.getLogger('django.server')
+    server.info('"%s" %s %s', f'GET /map/{map_pass}/tiles.pmtiles HTTP/1.1', 206, 128)
+    # The development server writes the path as sent, which a client may encode.
+    server.info('"%s" %s %s', f'GET /%6dap/{map_pass}/style.json HTTP/1.1', 200, 128)
 
-    assert '/map/' not in caplog.text and map_pass not in caplog.text
+    log = django_log.getvalue()
+    assert map_pass not in log and '/map/' not in log
+    # Other requests are still logged.
+    server.info('"%s" %s %s', 'GET /upload/?next=/map/ HTTP/1.1', 200, 128)
+    assert 'GET /upload/?next=/map/' in django_log.getvalue()

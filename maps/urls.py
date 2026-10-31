@@ -1,5 +1,5 @@
 """The map's data for uploaders and code holders, behind a map pass (maps.passes). Never logged
-(maps.apps): keep every route of it under the prefix in maps.data."""
+(maps.logs): keep every route of it under the prefix in maps.data."""
 
 from django.urls import path
 

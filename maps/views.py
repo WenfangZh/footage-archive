@@ -2,7 +2,7 @@
 uploaders and code holders who hold a map pass (maps.passes).
 
 The browser reads the tiles in byte ranges, as the pmtiles library does; these requests are
-never logged (maps.apps), and no URL in what is served points to another origin. The style
+never logged (maps.logs), and no URL in what is served points to another origin. The style
 points to the same routes the page loaded it from: a lawyer's, or a pass's.
 """
 
@@ -13,6 +13,7 @@ import re
 
 from django.http import FileResponse, Http404, JsonResponse
 from django.urls import reverse
+from django.utils.cache import patch_cache_control
 
 from accounts.roles import lawyer_required
 from clips.streaming import file_response
@@ -54,7 +55,7 @@ def style_response(request, tiles_path, glyphs_path):
     origin = request.build_absolute_uri('/').removesuffix('/')
     style['sources']['protomaps']['url'] = f'pmtiles://{origin}{tiles_path}'
     style['glyphs'] = origin + glyphs_path.replace('FONTSTACK', '{fontstack}').replace('RANGE', '{range}')
-    return JsonResponse(style)
+    return private(JsonResponse(style))
 
 
 @lawyer_required
@@ -93,4 +94,10 @@ def glyphs_response(fontstack, glyph_range):
         file = open(data.fonts_dir() / fontstack / f'{glyph_range}.pbf', 'rb')
     except FileNotFoundError:
         raise Http404 from None
-    return FileResponse(file, content_type='application/x-protobuf')
+    return private(FileResponse(file, content_type='application/x-protobuf'))
+
+
+def private(response):
+    # As the tiles are (clips.streaming): no shared cache keeps them, and the style names a pass.
+    patch_cache_control(response, no_store=True, private=True)
+    return response
