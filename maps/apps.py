@@ -2,7 +2,7 @@ import logging
 
 from django.apps import AppConfig
 
-from .data import URL_PREFIX
+from .data import URL_PREFIXES
 
 
 class MapsConfig(AppConfig):
@@ -10,12 +10,14 @@ class MapsConfig(AppConfig):
     name = 'maps'
 
     def ready(self):
-        # Requests for map data show roughly where a lawyer is looking: never logged (ADR 0006),
-        # not even by Django's own request logs.
+        # Requests for map data show roughly where a lawyer or an uploader is looking, and an
+        # uploader's carry their map pass: never logged (ADR 0006), not even by Django's own
+        # request logs.
         for name in ('django.server', 'django.request'):
             logging.getLogger(name).addFilter(skip_map_data)
 
 
 def skip_map_data(record):
     """False for a log record about a request for map data, which drops it."""
-    return URL_PREFIX not in record.getMessage()
+    message = record.getMessage()
+    return not any(prefix in message for prefix in URL_PREFIXES)
