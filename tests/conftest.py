@@ -1,4 +1,6 @@
 import datetime
+import io
+import logging
 import os
 
 import pytest
@@ -62,6 +64,23 @@ def empty_vault_folder():
     for path in settings.VAULT_DIR.rglob('*'):
         if path.is_file():
             path.unlink()
+
+
+@pytest.fixture
+def django_log(settings):
+    """What Django's own log handlers write (settings.LOGGING), with their filters: pytest's
+    caplog sits beside them and sees records unfiltered. As in development, where they write most."""
+    settings.DEBUG = True
+    written = io.StringIO()
+    # Only Django's: pytest adds its own to the django.server logger, which does not propagate.
+    handlers = [
+        handler for handler in {*logging.getLogger('django').handlers, *logging.getLogger('django.server').handlers}
+        if handler.name in settings.LOGGING['handlers'] and isinstance(handler, logging.StreamHandler)
+    ]
+    streams = [handler.setStream(written) for handler in handlers]
+    yield written
+    for handler, stream in zip(handlers, streams):
+        handler.setStream(stream)
 
 
 @pytest.fixture

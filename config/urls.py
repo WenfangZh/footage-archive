@@ -25,6 +25,8 @@ urlpatterns = [
     path('', include('accounts.urls')),
     path('lawyer/', include((account_urls.lawyer_patterns, 'lawyer'))),
     path('manage/', include((account_urls.manage_patterns, 'manage'))),
+    # The map's data for uploaders and code holders, with a map pass (maps.urls).
+    path('map/', include('maps.urls')),
     # Django's set_language view, used by the language switch.
     path('i18n/', include('django.conf.urls.i18n')),
 ]
