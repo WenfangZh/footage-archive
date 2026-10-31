@@ -14,7 +14,9 @@
   {% endif %}
 
   {# The CSRF token comes before the file, so it still arrives if the file is stopped. #}
-  <form method="post" enctype="multipart/form-data" data-submit-once>
+  {# With JavaScript, the file goes in pieces instead (clips/static/clips/resumable.js). #}
+  <form method="post" enctype="multipart/form-data" data-submit-once
+        data-resumable-url="{% url 'clips:resumable_start' %}" data-partial-upload-minutes="{{ partial_upload_minutes }}">
     {% csrf_token %}
     {{ form.file.errors }}
     <p>
@@ -23,7 +25,25 @@
     </p>
     <p>{% blocktranslate %}Maximum size: {{ size_limit }}.{% endblocktranslate %}</p>
     <p id="file-too-large" role="alert" hidden>{% blocktranslate %}This file is larger than {{ size_limit }}, so it cannot be sent.{% endblocktranslate %}</p>
+    <p id="upload-progress-line" hidden>
+      <progress id="upload-progress" value="0" aria-label="{% translate 'Sent so far' %}"></progress> <span id="upload-percent"></span>
+    </p>
+    {# One live region, which the script fills from the texts below, so screen readers announce each change. #}
+    <p id="upload-status" role="status"></p>
+    <div id="upload-texts" hidden>
+      <p data-status="cut-off">{% translate "A video sent from this browser was cut off. Choose the same video again and press Send: it continues where it stopped." %}</p>
+      <p data-status="sending">{% translate "Sending. Keep this page open: if the connection drops, sending continues where it stopped." %}</p>
+      <p data-status="stopped">{% translate "Sending stopped. Check your connection, then press Send to continue where it stopped." %}</p>
+      <p data-status="not-a-video">{% translate "This file is not a video we can accept (MP4, MOV, MKV or WebM). It was deleted, and nothing was kept." %}</p>
+      <p data-status="checking">{% translate "Sent. Checking that it is a video…" %}</p>
+      <p data-status="rate-limited">{% translate "There have been too many attempts from your connection. Try again in an hour." %}</p>
+      <p data-status="closed">{% translate "The archive cannot take videos at the moment. Please try again later. A video that was not fully sent is deleted automatically." %}</p>
+    </div>
     <button type="submit">{% translate "Send" %}</button>
   </form>
+  {# Its token goes with the last step, which leads to the quick read, then the form. #}
+  <form id="finish-upload" method="post" hidden>{% csrf_token %}</form>
+  <script src="{% static 'clips/vendor/tus.min.js' %}" defer></script>
   <script src="{% static 'clips/forms.js' %}" defer></script>
+  <script src="{% static 'clips/resumable.js' %}" defer></script>
 {% endblock %}
