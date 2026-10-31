@@ -26,11 +26,23 @@
     ['fa-upload', file.size, file.type, file.lastModified, options.endpoint].join(':'),
   );
   let upload = null;
+  // Choosing the same file again gives a new object for it.
+  const sameFile = (one, other) => ['name', 'size', 'type', 'lastModified'].every((key) => one[key] === other[key]);
 
+  const statusLine = document.getElementById('upload-status');
   function show(status) {
-    for (const element of document.querySelectorAll('#upload-status [data-status]')) {
-      element.hidden = element.dataset.status !== status;
-    }
+    const text = document.querySelector(`#upload-texts [data-status="${status}"]`);
+    statusLine.textContent = text ? text.textContent : '';
+  }
+
+  function stopped(error) {
+    const response = error && error.originalResponse;
+    const status = response ? response.getStatus() : 0;
+    // A 503 is the archive's "uploads are closed" only when it comes from the archive itself.
+    const closed = status === 503 && response.getHeader('Tus-Resumable');
+    show(status === 429 ? 'rate-limited' : closed ? 'closed' : 'stopped');
+    submit.disabled = false;
+    input.disabled = false;
   }
 
   // Forget uploads the server has deleted for age, so nothing about them lingers in this browser;
@@ -51,17 +63,25 @@
   });
 
   form.addEventListener('submit', (event) => {
-    event.preventDefault();
     const file = input.files[0];
-    if (file === undefined || submit.disabled) {
+    // An empty file goes in one piece, and the server says why it is refused.
+    if (file === undefined || file.size === 0) {
+      return;
+    }
+    event.preventDefault();
+    if (submit.disabled) {
       return;
     }
     submit.disabled = true;
     input.disabled = true;
     show('sending');
-    if (upload !== null && upload.file === file) {
+    if (upload !== null && sameFile(upload.file, file)) {
       upload.start(); // It asks the server how much arrived, and goes on from there.
       return;
+    }
+    if (upload !== null) {
+      // Another file than the one cut off: the server deletes that partial upload, and the browser forgets it.
+      upload.abort(true).catch(() => {});
     }
     upload = new tus.Upload(file, {
       endpoint: form.dataset.resumableUrl,
@@ -71,18 +91,22 @@
       headers: { 'X-CSRFToken': token },
       fingerprint,
       removeFingerprintOnSuccess: true,
+      onShouldRetry(error) {
+        const response = error.originalResponse;
+        const status = response ? response.getStatus() : 0;
+        if (status === 503 && response.getHeader('Tus-Resumable')) {
+          return false; // Uploads are closed: retrying would only delay saying so.
+        }
+        // As tus-js-client decides by default: not after a refusal, except a conflict or a lock.
+        return (status < 400 || status >= 500 || status === 409 || status === 423) && navigator.onLine;
+      },
       onProgress(sent, total) {
         progressLine.hidden = false;
         progress.max = total;
         progress.value = sent;
         percent.textContent = asPercent.format(sent / total);
       },
-      onError(error) {
-        const status = error.originalResponse ? error.originalResponse.getStatus() : 0;
-        show({ 429: 'rate-limited', 503: 'closed' }[status] || 'stopped');
-        submit.disabled = false;
-        input.disabled = false;
-      },
+      onError: stopped,
       onSuccess() {
         show('checking');
         // The quick read, then the form, as for a file sent in one piece.
@@ -95,6 +119,15 @@
         upload.resumeFromPreviousUpload(previous[0]);
       }
       upload.start();
-    });
+    }).catch(stopped);
+  });
+
+  // Back from the next page, a browser may show this one as it was left: sending, controls off.
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+      show(null);
+      submit.disabled = false;
+      input.disabled = false;
+    }
   });
 }());

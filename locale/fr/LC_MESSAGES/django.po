@@ -1720,7 +1720,7 @@ msgid "Your thread with this clip's code holder"
 msgstr "Votre fil de messages avec la personne qui détient le code de ce clip"
 
 #: cases/templates/cases/clip.html:141 cases/templates/cases/messages.html:43
-#: clips/templates/clips/clip.html:107 clips/templates/clips/upload.html:37
+#: clips/templates/clips/clip.html:107 clips/templates/clips/upload.html:41
 msgid "Send"
 msgstr "Envoyer"
 
@@ -2632,7 +2632,7 @@ msgstr ""
 "fonctionne plus."
 
 #: clips/templates/clips/rate_limited.html:9
-#: clips/templates/clips/upload.html:34
+#: clips/templates/clips/upload.html:38
 msgid ""
 "There have been too many attempts from your connection. Try again in an hour."
 msgstr ""
@@ -2672,7 +2672,11 @@ msgstr "Taille maximale : %(size_limit)s."
 msgid "This file is larger than %(size_limit)s, so it cannot be sent."
 msgstr "Ce fichier dépasse %(size_limit)s : il ne peut pas être envoyé."
 
-#: clips/templates/clips/upload.html:30
+#: clips/templates/clips/upload.html:29
+msgid "Sent so far"
+msgstr "Transféré jusqu'ici"
+
+#: clips/templates/clips/upload.html:34
 msgid ""
 "A video sent from this browser was cut off. Choose the same video again and "
 "press Send: it continues where it stopped."
@@ -2681,7 +2685,7 @@ msgstr ""
 "nouveau la même vidéo et appuyez sur « Envoyer » : il reprendra là où il "
 "s'était arrêté."
 
-#: clips/templates/clips/upload.html:31
+#: clips/templates/clips/upload.html:35
 msgid ""
 "Sending. Keep this page open: if the connection drops, sending continues "
 "where it stopped."
@@ -2689,19 +2693,19 @@ msgstr ""
 "Transfert en cours. Gardez cette page ouverte : si la connexion est coupée, "
 "le transfert reprend là où il s'est arrêté."
 
-#: clips/templates/clips/upload.html:32
+#: clips/templates/clips/upload.html:36
 msgid ""
-"Sending stopped: the connection was lost. Press Send to continue where it "
+"Sending stopped. Check your connection, then press Send to continue where it "
 "stopped."
 msgstr ""
-"Le transfert s'est arrêté : la connexion a été perdue. Appuyez sur "
+"Le transfert s'est arrêté. Vérifiez votre connexion, puis appuyez sur "
 "« Envoyer » pour le reprendre là où il s'est arrêté."
 
-#: clips/templates/clips/upload.html:33
+#: clips/templates/clips/upload.html:37
 msgid "Sent. Checking that it is a video…"
 msgstr "Transfert terminé. Vérification qu'il s'agit bien d'une vidéo…"
 
-#: clips/templates/clips/upload.html:35
+#: clips/templates/clips/upload.html:39
 #: clips/templates/clips/uploads_closed.html:8
 msgid ""
 "The archive cannot take videos at the moment. Please try again later. A "
