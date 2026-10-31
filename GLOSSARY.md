@@ -269,13 +269,18 @@ _French_: anneau (de mailles)
 _Avoid_: Band, buffer
 
 **Map**:
-Where a lawyer can pick a case's area cell by cell, instead of typing a place and a radius. It shows streets and place names from the archive's own map data, never clips.
+Where a lawyer can pick a case's area cell by cell, instead of typing a place and a radius, and where an uploader or code holder can choose a clip's stated location by a click, instead of typing coordinates. It shows streets and place names from the archive's own map data, never clips.
 _French_: carte
 
 **Map data**:
-What the map is drawn from: its tiles, style and fonts, all served by the archive itself and only to lawyers.
+What the map is drawn from: its tiles, style and fonts, all served by the archive itself, to lawyers, and to uploaders and code holders who hold a map pass.
 _French_: données cartographiques
 _Avoid_: Tiles alone (could be taken for the grid's cells), basemap
+
+**Map pass**:
+What lets an uploader or code holder, who has no account, load the map data: a signed time stamp handed out by the upload form and the code holder's edit page, naming no upload, and valid for as long as an unconfirmed original is kept. Never displayed.
+_French_: laissez-passer cartographique
+_Avoid_: Token, key (a key opens something encrypted), ticket
 
 **Closed case**:
 A case that can no longer be used to search, preview or download, closed by its lawyer, by revocation, or after a long period without use. It remains in the audit log.
