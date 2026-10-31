@@ -35,14 +35,18 @@
     statusLine.textContent = text ? text.textContent : '';
   }
 
-  function stopped(error) {
+  function stopped(status) {
+    show(status);
+    submit.disabled = false;
+    input.disabled = false;
+  }
+
+  function failed(error) {
     const response = error && error.originalResponse;
     const status = response ? response.getStatus() : 0;
     // A 503 is the archive's "uploads are closed" only when it comes from the archive itself.
     const closed = status === 503 && response.getHeader('Tus-Resumable');
-    show(status === 429 ? 'rate-limited' : closed ? 'closed' : 'stopped');
-    submit.disabled = false;
-    input.disabled = false;
+    stopped(status === 429 ? 'rate-limited' : closed ? 'closed' : 'stopped');
   }
 
   // Forget uploads the server has deleted for age, so nothing about them lingers in this browser;
@@ -90,7 +94,9 @@
       retryDelays: [0, 1000, 3000, 5000, 10000, 20000, 30000, 60000],
       headers: { 'X-CSRFToken': token },
       fingerprint,
-      removeFingerprintOnSuccess: true,
+      // Forgotten only once the form is reached (finish, below): if that last step fails, choosing
+      // the video again finds every piece already there.
+      removeFingerprintOnSuccess: false,
       onShouldRetry(error) {
         const response = error.originalResponse;
         const status = response ? response.getStatus() : 0;
@@ -106,21 +112,44 @@
         progress.value = sent;
         percent.textContent = asPercent.format(sent / total);
       },
-      onError: stopped,
-      onSuccess() {
-        show('checking');
-        // The quick read, then the form, as for a file sent in one piece.
-        finishForm.action = new URL('finish/', upload.url).href;
-        finishForm.submit();
-      },
+      onError: failed,
+      onSuccess: finish,
     });
     upload.findPreviousUploads().then((previous) => {
       if (previous.length) {
         upload.resumeFromPreviousUpload(previous[0]);
       }
       upload.start();
-    }).catch(stopped);
+    }).catch(failed);
   });
+
+  // The quick read, then the form, as for a file sent in one piece.
+  function finish() {
+    show('checking');
+    fetch(new URL('finish/', upload.url), { method: 'POST', body: new FormData(finishForm), credentials: 'same-origin' })
+      .then((response) => {
+        if (response.ok && response.redirected) {
+          return forget().then(() => window.location.assign(response.url));
+        }
+        if (response.status === 400 || response.status === 404) {
+          // Not a video, so deleted on the server; or gone already: nothing is left to resume.
+          return forget().then(() => {
+            upload = null;
+            stopped(response.status === 400 ? 'not-a-video' : 'stopped');
+          });
+        }
+        // Uploads closed meanwhile, or no answer: kept, and Send finds every piece there.
+        stopped(response.status === 503 ? 'closed' : 'stopped');
+        return null;
+      })
+      .catch(() => stopped('stopped'));
+  }
+
+  function forget() {
+    return upload.findPreviousUploads().then((previous) => Promise.all(
+      previous.map((entry) => storage.removeUpload(entry.urlStorageKey)),
+    ));
+  }
 
   // Back from the next page, a browser may show this one as it was left: sending, controls off.
   window.addEventListener('pageshow', (event) => {
