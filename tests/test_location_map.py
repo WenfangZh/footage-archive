@@ -79,9 +79,10 @@ def test_nothing_of_a_click_but_its_cell_is_stored_or_logged(client, video, djan
         # Anything else a page might send about the map is not a field, and goes nowhere.
         zoom='16.25', map_view='2.369187,48.853212',
     )
-    client.post(reverse('clips:edit'), {
+    edited = client.post(reverse('clips:edit'), {
         **full_form(latitude='48.853377', longitude='2.369004', precision='exact_spot'), 'code': code,
     }, headers=ENGLISH)
+    assert edited.status_code == 200 and Clip.objects.get().stated_cell == grid.cell_for_point(48.853377, 2.369004, 11)
 
     connection.ensure_connection()
     stored = '\n'.join(connection.connection.iterdump())  # The whole database, as SQL.

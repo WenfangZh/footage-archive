@@ -2655,11 +2655,15 @@ msgstr ""
 "La carte n'est plus disponible sur cette page. Saisissez les coordonnées, ou "
 "rechargez la page."
 
-#: clips/templates/clips/location_map.html:10
+#: clips/templates/clips/location_map.html:9
+msgid "The map could not be loaded. Type the coordinates."
+msgstr "La carte n'a pas pu être chargée. Saisissez les coordonnées."
+
+#: clips/templates/clips/location_map.html:11
 msgid "Choose on a map"
 msgstr "Choisir sur une carte"
 
-#: clips/templates/clips/location_map.html:18
+#: clips/templates/clips/location_map.html:19
 msgid ""
 "Zoom in, then click where it was filmed. The coloured area is what we keep, "
 "for the precision you choose."

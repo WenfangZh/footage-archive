@@ -28,7 +28,8 @@ from .uploads import size_limit_display
 # How the metadata location's cell size is described, by H3 resolution.
 METADATA_SIZES = {int(value): label for value, label in METADATA_PRECISIONS}
 
-# Below this zoom a cell is a few pixels wide: too small to choose on purpose, as for lawyers.
+# Below this zoom a cell is a few pixels wide: too small to choose on purpose, as for lawyers
+# (PICKING_ZOOM in maps/static/maps/area_map.js).
 PICKING_ZOOM = 14
 
 # Fields that error reports must never show (SPEC.md §10).

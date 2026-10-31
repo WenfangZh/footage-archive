@@ -47,9 +47,9 @@ if (box && opener) {
   }
 
   function redraw() {
-    if (map === null || !map.getSource('chosen')) return;
     say('');
-    const cell = chosenCell();
+    const cell = chosenCell(); // Says why when there is none, even before the map has loaded.
+    if (map === null || !map.getSource('chosen')) return;
     map.getSource('chosen').setData({
       type: 'FeatureCollection',
       features: cell === null ? [] : [{
@@ -86,18 +86,24 @@ if (box && opener) {
       map.addLayer({ id: 'chosen-outline', type: 'line', source: 'chosen', paint: { 'line-color': '#d9480f', 'line-width': 1 } });
       redraw();
     });
-    // The map pass has expired (maps.passes): the map can load no more, the fields still work.
+    // The map pass has expired (maps.passes): the style or the tiles are refused, the fields still
+    // work. A font range the archive lacks is a 404 too, and costs only some labels: not said.
     map.on('error', (event) => {
-      if (event.error && event.error.status === 404) say(box.dataset.expired);
+      const error = event.error || {};
+      const styleRefused = error.status === 404 && /\/style\.json$/.test(error.url || '');
+      const tilesRefused = /Bad response code: 404/.test(error.message || '');
+      if (styleRefused || tilesRefused) say(box.dataset.expired);
     });
     map.on('click', (event) => {
       if (map.getZoom() < pickingZoom) {
         say(box.dataset.zoomIn);
         return;
       }
-      // As the form's own pre-filled positions are rounded (clips.views.initial_values).
-      latitude.value = event.lngLat.lat.toFixed(6);
-      longitude.value = event.lngLat.lng.toFixed(6);
+      // On a repeated copy of the world, as on the first. Rounded as the form's own pre-filled
+      // positions are (clips.views.initial_values).
+      const { lat, lng } = event.lngLat.wrap();
+      latitude.value = lat.toFixed(6);
+      longitude.value = lng.toFixed(6);
       // A click is no exact spot unless the uploader says so.
       if (!precision.value) form.querySelector('input[name=precision][value=street]').checked = true;
       redraw();
@@ -124,10 +130,13 @@ if (box && opener) {
       ]);
       start(await import(box.dataset.maplibre));
       opener.hidden = true;
-    } catch {
+      box.focus(); // The button pressed is gone: where the keyboard goes on from.
+    } catch (error) {
       // Without WebGL2, or if the map's files do not load: the coordinates still work.
+      console.error(error);
       box.hidden = true;
       opener.hidden = true;
+      say(box.dataset.unavailable);
     }
   });
 }
