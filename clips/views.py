@@ -13,12 +13,13 @@ from django.views.decorators.http import require_http_methods
 
 from keys import grants
 from keys.grants import uploads_open
+from maps import passes
 
 from . import grid, probe, rate_limits, vault
 from .confirmation import AlreadyConfirmed, confirm_upload
 from .editing import EDITABLE, NotEditable, apply_edits, clip_for_code, code_holder_tags, delete_clip
 from .forms import MESSAGE_MAX_LENGTH, METADATA_PRECISIONS, ConfirmForm, EditForm, FileForm, ReplyForm
-from .models import Clip, Message, Original, Precision
+from .models import STATED_RESOLUTIONS, Clip, Message, Original, Precision
 from .tags import DEFAULT_TAGS
 from .threads import code_holder_threads
 from .upload_codes import display, normalise
@@ -26,6 +27,10 @@ from .uploads import size_limit_display
 
 # How the metadata location's cell size is described, by H3 resolution.
 METADATA_SIZES = {int(value): label for value, label in METADATA_PRECISIONS}
+
+# Below this zoom a cell is a few pixels wide: too small to choose on purpose, as for lawyers
+# (PICKING_ZOOM in maps/static/maps/area_map.js).
+PICKING_ZOOM = 14
 
 # Fields that error reports must never show (SPEC.md §10).
 PRIVATE_FIELDS = ('latitude', 'longitude', 'custom_tags', 'context', 'contact_details')
@@ -105,7 +110,9 @@ def confirm(request, original_id):
                 ),
                 'return_url': request.build_absolute_uri(reverse('clips:code_holder')),
             })
-    return render(request, 'clips/confirm.html', {'form': form, 'read': read}, status=400 if form.errors else 200)
+    return render(request, 'clips/confirm.html', {
+        'form': form, 'read': read, **location_map(),
+    }, status=400 if form.errors else 200)
 
 
 def unconfirmed_original_or_404(original_id):
@@ -282,8 +289,22 @@ def render_clip(request, clip, form, status=200, **flags):
         'editable': clip.status in EDITABLE,
         'metadata_size': METADATA_SIZES.get(grid.resolution(clip.metadata_cell)) if clip.metadata_cell else None,
         'can_coarsen': 'metadata_precision' in form.fields,
+        # Only once the code has opened this clip: the page is shown to no one else.
+        **(location_map() if clip.status in EDITABLE else {}),
         **flags,
     }, status=status)
+
+
+def location_map():
+    """What the map for the stated location needs (SPEC.md §8, M6.5): a fresh map pass, which
+    names no upload, and the cell's resolution for each precision, as the server keeps it."""
+    return {
+        'map_style_url': reverse('maps:style', kwargs={'map_pass': passes.issue()}),
+        'stated_resolutions': {
+            precision.value: min(resolution, grid.finest_resolution()) for precision, resolution in STATED_RESOLUTIONS.items()
+        },
+        'picking_zoom': PICKING_ZOOM,
+    }
 
 
 def card_label_suggestion(cleaned):

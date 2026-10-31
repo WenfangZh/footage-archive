@@ -27,6 +27,7 @@
       {{ form.latitude.as_field_group }}
       {{ form.longitude.as_field_group }}
       {{ form.precision.as_field_group }}
+      {% include "clips/location_map.html" %}
       {% if read.gps %}
         {{ form.metadata_precision.as_field_group }}
         <p>{% translate "Lawyers use it to check the place you give. The exact position is never kept." %}</p>
