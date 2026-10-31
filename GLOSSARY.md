@@ -147,9 +147,15 @@ _Avoid_: Upload (as a noun), import, conversion
 _Avoid in French_: traitement (data processing in the GDPR sense)
 
 **Quarantine**:
-Where an original waits, from the moment it is uploaded until ingest ends. It is never reachable from the web.
+Where an original waits, from the moment it is uploaded until ingest ends, and where a partial upload waits for its last piece. It is never reachable from the web.
 _French_: quarantaine
 _Avoid_: Inbox, staging, temp
+
+**Partial upload**:
+A file still arriving in pieces, which can resume after a lost connection; once its last piece arrives it becomes an original. It waits in quarantine and is deleted if not finished in time. "Upload" here is the HTTP transfer, in its technical sense: a clip or an original is never "an upload".
+_French_: upload partiel
+_Avoid_: Draft, pending clip, chunk (for the whole file)
+_Avoid in French_: envoi (also the sending of a message)
 
 ### What a clip says about itself
 
@@ -193,9 +199,15 @@ _Avoid_: Tag author, tag owner
 _Avoid in French_: origine (already in fichier d'origine)
 
 **Tag history**:
-The admin's view of every tag added, proposed for removal and removed on one clip, with who and when.
+The admin's view of one clip's tags over time: every tag lawyers added, proposed for removal or restoration, removed or restored, and every cancelled proposal, with who and when, and when the code holder changed their tags.
 _French_: historique des étiquettes
 _Avoid_: Tag log, tag audit
+
+**Removed tag**:
+A tag that three different lawyers have proposed removing. Lawyers see it only in a list of removed tags, apart from the clip's tags; the code holder still sees it as before. It comes back once three different lawyers propose restoring it. A lawyer can cancel their own open proposal. If the code holder deletes the tag, its removal goes with it: added again later, it is a new tag.
+_French_: étiquette écartée (proposition d'écarter, proposition de rétablir, annuler)
+_Avoid_: Deleted tag, hidden tag, withdraw (a proposal)
+_Avoid in French_: retirée (a withdrawn clip is retiré), supprimée (deletion is for real)
 
 **Context**:
 Free text about a clip from the uploader or code holder: what happened, and anything a lawyer should know.
@@ -316,11 +328,21 @@ A note between a lawyer and the code holder of a clip, carried by the archive. T
 _French_: message
 _Avoid_: Contact request, chat
 
+**Thread**:
+All the messages between one lawyer and the code holder of one clip. It is deleted a set time after its last message.
+_French_: fil de messages
+_Avoid_: Conversation, chat, inbox
+
+**Notification**:
+An email telling a lawyer that something is waiting for them in the archive, and nothing more: never the message, the clip or who sent it.
+_French_: notification
+_Avoid_: Alert (that is the admin's), reminder
+
 **Report**:
-A lawyer's concern about a specific clip: wrong time or place, doubtful authenticity, or inappropriate content.
+A lawyer's concern about a specific clip: wrong time or place, doubtful authenticity, or inappropriate content. A lawyer can cancel a doubt, and a report of inappropriate content until the clip is withdrawn.
 _French_: signalement de clip
-_Avoid_: Flag, complaint
-_Avoid in French_: signalement alone (also a suspect's description, or a report to the authorities)
+_Avoid_: Flag, complaint, withdraw (a report)
+_Avoid in French_: retirer (a report; use annuler), signalement alone (also a suspect's description, or a report to the authorities)
 
 **Doubt marker**:
 A neutral notice shown to lawyers on a clip whose authenticity a lawyer has doubted, with no reason given and no verdict.
@@ -328,14 +350,20 @@ _French_: réserve sur l'authenticité
 _Avoid_: Flag, fake warning
 
 **Content warning**:
-A notice shown to lawyers on a clip that one lawyer has reported as inappropriate. The clip stays visible.
+A notice shown to lawyers on a clip that one lawyer has reported as inappropriate. The clip can still be found; its preview waits behind a "show anyway" step.
 _French_: avertissement de contenu
 _Avoid_: Flag, strike
 
 **Withdrawn**:
-The state of a clip reported as inappropriate by two lawyers holding different cases: hidden from all search, pending the admin's decision to delete it.
+The state of a clip reported as inappropriate by two different lawyers: gone from every search, clip page, preview and download. It cannot come back, and stays until the admin or the code holder deletes it. Only a clip is withdrawn; a report or proposal is cancelled, and a tag is removed.
 _French_: retiré
 _Avoid_: Hidden, removed, banned, suspended
+
+**Cancel**:
+What a lawyer does to their own open proposal on a tag, their doubt, or their report of inappropriate content before it withdraws a clip: it stops counting, and the audit log keeps both.
+_French_: annuler
+_Avoid_: Withdraw, retract, undo
+_Avoid in French_: retirer (a withdrawn clip is retiré)
 
 **Alert**:
 A notice to the admin of something needing attention: a lawyer's activity looks unusual (such as many downloads in a short period), logins for one account keep failing, or the ingest queue is backed up.
@@ -349,7 +377,7 @@ _Avoid_: Thresholds (alone), triggers
 _Avoid in French_: seuil alone (also the gap between the metadata time and stated time that is highlighted)
 
 **Audit log**:
-The permanent record of every action a lawyer takes in the archive, of the admin's actions on applicants' and lawyers' accounts, decisions on larger cases and raises of a lawyer's alert limit, and of changes to the size caps and alert limits. It can only be added to.
+The permanent record of every action a lawyer takes in the archive, of the admin's actions on applicants' and lawyers' accounts, decisions on larger cases, raises of a lawyer's alert limit and deletions of withdrawn clips, and of changes to the size caps and alert limits. It can only be added to.
 _French_: journal d'audit
 _Avoid_: Access log, history
 
@@ -368,7 +396,7 @@ _Avoid_: Storage, private store
 ### Keys
 
 **Personal key**:
-A lawyer's own key, made in their browser and never readable by the server. It opens their key grant, and the case labels sealed to it.
+A lawyer's own key, made in their browser and never readable by the server. It opens their key grant, and the case labels and messages sealed to it.
 _French_: clé personnelle
 _Avoid_: Account key, private key (in the interface)
 
@@ -385,7 +413,7 @@ _Avoid_: Recovery code (a single-use code for logging in), backup key
 _Avoid in French_: clé de secours, too close to code de secours
 
 **Key reset**:
-Retiring a lawyer's personal key when they have lost both its key passphrase and its recovery key, started from their own account. They then set up a new key, which the admin confirms and a lawyer grants the group key to, as for a newcomer; what was sealed only to the old key, such as case labels, is lost.
+Retiring a lawyer's personal key when they have lost both its key passphrase and its recovery key, started from their own account. They then set up a new key, which the admin confirms and a lawyer grants the group key to, as for a newcomer; what was sealed only to the old key, such as case labels and their copy of their messages, is lost to them.
 _French_: réinitialisation de la clé
 _Avoid_: Recovery (which keeps the key), rotation (the group key's)
 _Avoid in French_: renouvellement (the group key's rotation)
@@ -434,6 +462,6 @@ _French_: clé de l'élément
 _Avoid_: File key, content key
 
 **Code holder key**:
-The key derived from a clip's upload code, which opens the context and contact details addressed to the code holder. The server stores only its public half.
+The key derived from a clip's upload code, which opens the context and contact details addressed to the code holder, and the clip's messages. The server stores only its public half.
 _French_: clé du code
 _Avoid_: Uploader key
