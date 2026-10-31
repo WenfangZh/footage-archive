@@ -75,7 +75,7 @@ def resume(request, partial_id):
     partial = live_or_404(partial_id)
     if request.method == 'HEAD':
         return tus_response(200, {
-            'Upload-Offset': str(partial.file.size),
+            'Upload-Offset': str(size_or_404(partial)),
             'Upload-Length': str(partial.length),
             'Upload-Expires': expires(partial),
         })
@@ -95,7 +95,12 @@ def receive_piece(request, partial):
     if size is None:
         return tus_response(411)
 
-    with open(partial.file.path, 'ab') as file:
+    try:
+        # Never created here: a partial upload deleted since it was looked up stays deleted.
+        file = os.fdopen(os.open(partial.file.path, os.O_WRONLY | os.O_APPEND), 'ab')
+    except FileNotFoundError:
+        raise Http404
+    with file:
         try:
             fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
@@ -123,7 +128,7 @@ def finish(request, partial_id):
     partial = live_or_404(partial_id)
     if not views.uploads_open():
         return views.uploads_closed(request)
-    if partial.file.size != partial.length:
+    if size_or_404(partial) != partial.length:
         return HttpResponse(status=409)
     try:
         probe.quick_read(partial.file.path)
@@ -133,10 +138,14 @@ def finish(request, partial_id):
 
     with transaction.atomic():
         # The original takes over the file, so the partial upload's row goes without it.
-        if not PartialUpload.objects.filter(pk=partial.pk).delete()[0]:
-            raise Http404
-        # Received now: the form's time limit starts once the last piece is in.
-        original = Original.objects.create(file=partial.file.name)
+        if PartialUpload.objects.filter(pk=partial.pk).delete()[0]:
+            # Received now: the form's time limit starts once the last piece is in.
+            original = Original.objects.create(file=partial.file.name)
+        else:
+            # Sent twice: the first one already made the original, and the form is its.
+            original = Original.objects.filter(file=partial.file.name, clip__isnull=True).first()
+            if original is None:
+                raise Http404
     return redirect('clips:confirm', original_id=original.id)
 
 
@@ -149,13 +158,22 @@ def live_or_404(partial_id):
     return partial
 
 
+def size_or_404(partial):
+    """How much has arrived; a file gone since the row was read was deleted meanwhile."""
+    try:
+        return partial.file.size
+    except FileNotFoundError:
+        raise Http404
+
+
 def expires(partial):
     return http_date((partial.started_at + datetime.timedelta(minutes=settings.PARTIAL_UPLOAD_MINUTES)).timestamp())
 
 
 def whole_number(header):
     """A header's value as a whole number, or None if it is missing or anything else."""
-    if header is None or not header.isascii() or not header.isdigit():
+    # Twenty digits is past any size a file can have, and keeps int() from refusing a long one.
+    if header is None or len(header) > 20 or not header.isascii() or not header.isdigit():
         return None
     return int(header)
 

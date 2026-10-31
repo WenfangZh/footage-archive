@@ -70,8 +70,12 @@ def queue_unfinished_ingests():
 @db_periodic_task(crontab(minute='*/15'))
 def delete_unconfirmed_originals():
     cleanup.delete_unconfirmed_originals()
-    cleanup.delete_expired_partial_uploads()
     check_ingest_queue()
+
+
+@db_periodic_task(crontab(minute='*/15'))
+def delete_expired_partial_uploads():
+    cleanup.delete_expired_partial_uploads()
 
 
 @db_periodic_task(crontab(minute='7'))

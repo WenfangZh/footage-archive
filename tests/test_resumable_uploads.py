@@ -200,6 +200,18 @@ def test_a_partial_upload_is_deleted_once_its_time_is_up_and_answers_as_unknown_
     assert not PartialUpload.objects.exists() and not new_quarantine_files()
 
 
+def test_a_piece_arriving_as_its_upload_is_deleted_does_not_bring_it_back(client, new_quarantine_files):
+    url = address(start(client, 1000))
+    partial = PartialUpload.objects.get()
+    # Deleted for age between the request's look-up of the row and its opening of the file.
+    partial.file.delete(save=False)
+
+    assert send(client, url, 0, b'x' * 10).status_code == 404
+    assert client.head(url, headers=TUS).status_code == 404
+    assert finish(client, url).status_code == 404
+    assert not new_quarantine_files()
+
+
 def test_an_abandoned_upload_is_deleted(client, new_quarantine_files):
     url = address(start(client, 1000))
     send(client, url, 0, b'x' * 10)
