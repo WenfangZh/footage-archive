@@ -63,19 +63,18 @@ def test_the_style_points_only_to_this_archive(map_dir, lawyer_client):
     assert urls and all(url.removeprefix('pmtiles://').startswith('http://testserver/lawyer/map/') for url in urls)
 
 
-def test_requests_for_map_data_are_never_logged(map_dir, lawyer_client, caplog):
-    caplog.set_level(logging.DEBUG)
+def test_requests_for_map_data_are_never_logged(map_dir, lawyer_client, django_log):
     lawyer_client.get(reverse('lawyer:map_style'))
     lawyer_client.get(reverse('lawyer:map_tiles'), HTTP_RANGE='bytes=0-127')
     lawyer_client.get(reverse('lawyer:map_tiles'), HTTP_RANGE='bytes=5000-6000')  # A 416.
     lawyer_client.get(glyphs_url('Noto Sans Regular', '65280-65535'))  # A 404.
     # As the development server logs each request it answers.
     logging.getLogger('django.server').info('"%s" %s %s', 'GET /lawyer/map/tiles.pmtiles HTTP/1.1', 206, 128)
-    assert '/lawyer/map/' not in caplog.text and not AuditEntry.objects.exists()
+    assert '/lawyer/map/' not in django_log.getvalue() and not AuditEntry.objects.exists()
     # Other requests are still logged as before.
     logging.getLogger('django.server').info('"%s" %s %s', 'GET /lawyer/ HTTP/1.1', 200, 128)
     lawyer_client.get(reverse('lawyer:case', kwargs={'case_id': 999}))
-    assert 'GET /lawyer/ ' in caplog.text and 'Not Found: /lawyer/cases/999/' in caplog.text
+    assert 'GET /lawyer/ ' in django_log.getvalue() and 'Not Found: /lawyer/cases/999/' in django_log.getvalue()
 
 
 def test_without_map_data_the_map_finds_nothing(settings, tmp_path, lawyer_client):

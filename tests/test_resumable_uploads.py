@@ -230,26 +230,14 @@ def test_the_stray_file_sweep_leaves_a_partial_upload_alone(client, settings):
     assert PartialUpload.objects.get().file.storage.exists(PartialUpload.objects.get().file.name)
 
 
-def test_no_log_line_names_a_partial_uploads_address(client, settings):
-    # Django writes its request warnings and the development server's lines only in development.
-    settings.DEBUG = True
-    written = io.StringIO()
-    handlers = [
-        handler for handler in [*logging.getLogger('django').handlers, *logging.getLogger('django.server').handlers]
-        if isinstance(handler, logging.StreamHandler)
-    ]
-    streams = [handler.setStream(written) for handler in handlers]
-    try:
-        url = address(start(client, 1000))
-        path = url.removeprefix('http://testserver')
-        assert send(client, url, 5, b'x').status_code == 409  # Logged: "Conflict: <path>".
-        assert client.head(path + 'x', headers=TUS).status_code == 404  # Logged: "Not Found: <path>x".
-        logging.getLogger('django.server').info('"%s %s %s" %s %s', 'PATCH', path, 'HTTP/1.1', '204', '0')
-    finally:
-        for handler, stream in zip(handlers, streams):
-            handler.setStream(stream)
+def test_no_log_line_names_a_partial_uploads_address(client, django_log):
+    url = address(start(client, 1000))
+    path = url.removeprefix('http://testserver')
+    assert send(client, url, 5, b'x').status_code == 409  # Logged: "Conflict: <path>".
+    assert client.head(path + 'x', headers=TUS).status_code == 404  # Logged: "Not Found: <path>x".
+    logging.getLogger('django.server').info('"%s %s %s" %s %s', 'PATCH', path, 'HTTP/1.1', '204', '0')
 
-    log = written.getvalue()
+    log = django_log.getvalue()
     assert 'Conflict: /upload/resumable/…/' in log and '"PATCH /upload/resumable/…/ HTTP/1.1" 204' in log
     assert str(PartialUpload.objects.get().id) not in log
 
