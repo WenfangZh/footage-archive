@@ -70,6 +70,7 @@ def render_upload(request, form, problem=None, status=200):
         'form': form,
         'problem': problem,
         'size_limit': size_limit_display(),
+        'partial_upload_minutes': settings.PARTIAL_UPLOAD_MINUTES,
     }, status=status)
 
 

@@ -287,3 +287,17 @@ def test_the_protocol_is_announced_and_its_version_checked(client, settings):
     assert client.post(START_URL, headers={'Upload-Length': '1000'}).status_code == 412
     assert start(client, 1000, **{'Tus-Resumable': '0.2.2'}).status_code == 412
     assert not PartialUpload.objects.exists()
+
+
+def test_the_upload_page_sends_in_pieces_with_javascript_and_in_one_piece_without(client, settings):
+    settings.PARTIAL_UPLOAD_MINUTES = 90
+    html = client.get(reverse('clips:upload'), headers=ENGLISH).content.decode()
+
+    form = re.search(r'<form method="post" enctype="multipart/form-data"[^>]*>', html)[0]
+    # No action: without JavaScript the file goes to this page's own address, in one piece.
+    assert 'action=' not in form
+    assert f'data-resumable-url="{START_URL}"' in form and 'data-partial-upload-minutes="90"' in form
+    scripts = re.findall(r'<script src="([^"]+)"', html)
+    assert scripts.index('/static/clips/vendor/tus.min.js') < scripts.index('/static/clips/resumable.js')
+    finish_form = re.search(r'<form id="finish-upload" method="post" hidden>(.*?)</form>', html, re.S)[1]
+    assert 'csrfmiddlewaretoken' in finish_form
