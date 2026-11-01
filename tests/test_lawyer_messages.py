@@ -21,7 +21,7 @@ from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from cases.models import Case
 from clips import grid, upload_codes, vault
-from clips.models import Clip, ClipTag, Message, Precision
+from clips.models import Clip, ClipTag, Message
 from tests.conftest import BASTILLE, TEST_CODE, log_in_with_second_factor, make_case, make_key, with_code_holder_key
 
 pytestmark = pytest.mark.django_db
@@ -68,8 +68,8 @@ def lawyer():
 def clip():
     clip = Clip.objects.create(
         code_hash=upload_codes.keyed_hash(TEST_CODE), status=Clip.Status.READY,
-        stated_time=START + datetime.timedelta(minutes=10), stated_cell=CENTRE, stated_precision=Precision.EXACT_SPOT,
-        as_uploaded_stated_time=START, as_uploaded_stated_cell=CENTRE, as_uploaded_stated_precision=Precision.EXACT_SPOT,
+        stated_time=START + datetime.timedelta(minutes=10), stated_cells=[CENTRE],
+        as_uploaded_stated_time=START, as_uploaded_stated_cells=[CENTRE],
     )
     ClipTag.objects.create(clip=clip, custom_name='Barricade', source=ClipTag.Source.CODE_HOLDER)
     return with_code_holder_key(clip)
@@ -200,8 +200,8 @@ def test_a_code_holders_message_is_new_until_the_lawyer_opens_their_messages(law
 def test_each_threads_form_has_its_own_fields(lawyer, clip):
     other_clip = Clip.objects.create(
         code_hash=upload_codes.keyed_hash('another code'), status=Clip.Status.READY,
-        stated_time=START + datetime.timedelta(minutes=20), stated_cell=CENTRE, stated_precision=Precision.EXACT_SPOT,
-        as_uploaded_stated_time=START, as_uploaded_stated_cell=CENTRE, as_uploaded_stated_precision=Precision.EXACT_SPOT,
+        stated_time=START + datetime.timedelta(minutes=20), stated_cells=[CENTRE],
+        as_uploaded_stated_time=START, as_uploaded_stated_cells=[CENTRE],
     )
     with_code_holder_key(other_clip, code='ANOTHERCODE')
     lawyer.send(clip)

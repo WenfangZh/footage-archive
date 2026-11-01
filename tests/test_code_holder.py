@@ -1,6 +1,7 @@
 import datetime
 import re
 
+import h3.api.basic_int as h3
 import pytest
 from django.db import connection
 from django.urls import reverse
@@ -111,7 +112,8 @@ def test_saving_without_changes_records_no_edit(client, uploaded):
     assert response.status_code == 200
     assert not Edit.objects.exists()
     clip_after = Clip.objects.get()
-    assert (clip_after.stated_time, clip_after.stated_cell) == (clip.stated_time, clip.stated_cell)
+    # Without JavaScript too: the page sends back the cells kept, and empty coordinates keep them.
+    assert (clip_after.stated_time, clip_after.stated_cells) == (clip.stated_time, clip.stated_cells)
 
 
 def test_an_edit_records_the_field_and_its_block_only(client, uploaded):
@@ -157,41 +159,52 @@ def test_a_clip_confirmed_before_encryption_gets_its_code_holder_key_at_its_firs
     assert lawyer_text(clip, vault.CONTEXT, group_key_pair) == 'Entered again after encryption.'
 
 
-def test_moving_the_place_keeps_the_as_uploaded_one(client, uploaded):
+def hex_ids(*cells):
+    return ' '.join(format(cell, 'x') for cell in cells)
+
+
+def test_coordinates_given_replace_the_place_and_keep_the_as_uploaded_one(client, uploaded):
     clip, code = uploaded
-    edit(client, code, latitude=str(ELSEWHERE[0]), longitude=str(ELSEWHERE[1]))
+    edit(client, code, latitude=str(ELSEWHERE[0]), longitude=str(ELSEWHERE[1]), precision=Precision.EXACT_SPOT)
     clip.refresh_from_db()
-    assert clip.stated_cell == grid.cell_for_point(*ELSEWHERE, 11)
-    assert clip.as_uploaded_stated_cell == grid.cell_for_point(*STATED, 11)
+    assert clip.stated_cells == [grid.cell_for_point(*ELSEWHERE, 11)]
+    assert clip.as_uploaded_stated_cells == [grid.cell_for_point(*STATED, 11)]
     assert list(Edit.objects.values_list('field', flat=True)) == ['stated_location']
 
 
-def test_a_vaguer_place_can_be_given_from_the_shown_centre(client, uploaded):
+def test_the_code_holder_adds_and_removes_cells(client, uploaded):
     clip, code = uploaded
-    edit(client, code, precision=Precision.NEIGHBOURHOOD)
+    here = grid.cell_for_point(*STATED, 11)
+    along = [here, *h3.grid_ring(here, 1)[:2]]
+
+    edit(client, code, cells=hex_ids(*along))
     clip.refresh_from_db()
-    assert grid.resolution(clip.stated_cell) == 9
+    assert clip.stated_cells == sorted(along)
+    edit(client, code, cells=hex_ids(along[1]))
+    clip.refresh_from_db()
+    assert clip.stated_cells == [along[1]] and clip.as_uploaded_stated_cells == [here]
 
 
-def test_a_more_precise_place_needs_a_new_position(client, uploaded):
+def test_removing_every_cell_removes_the_place(client, uploaded):
     clip, code = uploaded
-    edit(client, code, precision=Precision.NEIGHBOURHOOD)
-    response = edit(client, code, precision=Precision.EXACT_SPOT)
+    edit(client, code, cells='')
+    clip.refresh_from_db()
+    assert clip.stated_cells is None and clip.as_uploaded_stated_cells is not None
+
+
+@pytest.mark.parametrize('cells', [
+    'not-a-cell',
+    hex_ids(grid.cell_for_point(*STATED, 11), grid.cell_for_point(*STATED, 11)),
+    hex_ids(grid.cell_for_point(*STATED, 10)),
+    # About 2 km apart: more than the stated location's ceiling across.
+    hex_ids(grid.cell_for_point(*STATED, 11), grid.cell_for_point(*ELSEWHERE, 11)),
+])
+def test_a_place_malformed_duplicated_coarser_than_the_finest_cells_or_too_wide_is_refused(client, uploaded, cells):
+    clip, code = uploaded
+    response = edit(client, code, cells=cells)
     assert response.status_code == 400
-    assert 'To make the place more precise, give its new position.' in response.content.decode()
     clip.refresh_from_db()
-    assert grid.resolution(clip.stated_cell) == 9
-    edit(client, code, precision=Precision.EXACT_SPOT, latitude=str(ELSEWHERE[0]), longitude=str(ELSEWHERE[1]))
-    clip.refresh_from_db()
-    assert clip.stated_cell == grid.cell_for_point(*ELSEWHERE, 11)
-
-
-def test_the_place_can_be_removed(client, uploaded):
-    clip, code = uploaded
-    edit(client, code, latitude='', longitude='', precision=None)
-    clip.refresh_from_db()
-    assert (clip.stated_cell, clip.stated_precision) == (None, '')
-    assert clip.as_uploaded_stated_cell is not None
+    assert clip.stated_cells == [grid.cell_for_point(*STATED, 11)]
 
 
 def test_the_metadata_location_can_only_be_made_coarser(client, uploaded):
@@ -366,3 +379,20 @@ def test_an_edit_does_not_bring_back_a_clip_that_failed_meanwhile(client, upload
     clip.refresh_from_db()
     # Nothing is left to describe: its texts went with it (SPEC.md §9).
     assert clip.status == Clip.Status.FAILED and not VaultText.objects.exists() and not Edit.objects.exists()
+
+
+def test_the_place_can_be_removed_without_javascript(client, uploaded):
+    clip, code = uploaded
+    page = open_clip(client, code).content.decode()
+    assert 'name="remove_place"' in page
+
+    # The page sends back the cells kept, as it does without JavaScript; the box wins over them,
+    # and over coordinates.
+    response = edit(client, code, remove_place='on', latitude=str(ELSEWHERE[0]), longitude=str(ELSEWHERE[1]),
+                    precision=Precision.EXACT_SPOT)
+
+    assert response.status_code == 200
+    clip.refresh_from_db()
+    assert clip.stated_cells is None and clip.as_uploaded_stated_cells == [grid.cell_for_point(*STATED, 11)]
+    assert list(Edit.objects.values_list('field', flat=True)) == ['stated_location']
+    assert 'name="remove_place"' not in open_clip(client, code).content.decode()

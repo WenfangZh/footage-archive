@@ -313,6 +313,9 @@ CASE_WINDOW_CAP_MINUTES = env_int(
     'CASE_WINDOW_CAP_MINUTES', default=2 * 60, minimum=1, maximum=CASE_WINDOW_CEILING_MINUTES,
 )
 CASE_AREA_CAP_METRES = env_int('CASE_AREA_CAP_METRES', default=2_000, minimum=1, maximum=CASE_AREA_CEILING_METRES)
+# A clip's stated location is at most this far across (SPEC.md §8, ADR 0009): fixed here in the
+# public code, with no approval past it.
+STATED_LOCATION_CEILING_METRES = 1_000
 # A case not used for this long (no search, preview or download since its creation or
 # its last use) closes on its own (SPEC.md §7).
 CASE_INACTIVITY_DAYS = env_int('CASE_INACTIVITY_DAYS', default=365, minimum=1, maximum=36_500)

@@ -12,7 +12,7 @@ from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from clips import grid, upload_codes
 from cases.models import Case
-from clips.models import Clip, ClipTag, Precision
+from clips.models import Clip, ClipTag
 from tests.conftest import BASTILLE, TEST_CODE, log_in_with_second_factor, make_case, with_code_holder_key
 from tests.test_code_holder import EDIT_URL, ENGLISH, ENTRY_URL, form_values
 
@@ -61,8 +61,8 @@ def lawyers():
 def clip():
     clip = Clip.objects.create(
         code_hash=upload_codes.keyed_hash(TEST_CODE), status=Clip.Status.READY,
-        stated_time=START + datetime.timedelta(minutes=10), stated_cell=CENTRE, stated_precision=Precision.EXACT_SPOT,
-        as_uploaded_stated_time=START, as_uploaded_stated_cell=CENTRE, as_uploaded_stated_precision=Precision.EXACT_SPOT,
+        stated_time=START + datetime.timedelta(minutes=10), stated_cells=[CENTRE],
+        as_uploaded_stated_time=START, as_uploaded_stated_cells=[CENTRE],
         as_uploaded_tags={'default': ['arrest'], 'custom': ['Barricade']},
     )
     ClipTag.objects.create(clip=clip, key='arrest', source=ClipTag.Source.CODE_HOLDER)

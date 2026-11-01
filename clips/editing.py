@@ -13,7 +13,7 @@ from .models import Clip, ClipTag, Edit, Original
 Field = Edit.EditableField
 # The clip's own fields a code holder edits: only these are saved, so that an edit never
 # overwrites what ingest recorded meanwhile (its status, duration, size).
-EDITED_FIELDS = ['stated_time', 'stated_cell', 'stated_precision', 'metadata_cell', 'code_holder_public_key']
+EDITED_FIELDS = ['stated_time', 'stated_cells', 'metadata_cell', 'code_holder_public_key']
 # A failed clip has nothing left to describe (SPEC.md §9), and a withdrawn one no one will see again (§7).
 EDITABLE = [Clip.Status.PROCESSING, Clip.Status.READY]
 
@@ -55,12 +55,12 @@ def apply_edits(clip, cleaned, code):
         clip.stated_time = cleaned['stated_time']
         changed.append(Field.STATED_TIME)
 
-    old_location = (clip.stated_cell, clip.stated_precision)
-    if cleaned['latitude'] is None:
-        clip.clear_stated_location()
+    old_location = clip.stated_cells
+    if cleaned['stated_cells']:
+        clip.set_stated_location(cleaned['stated_cells'])
     else:
-        clip.set_stated_location(cleaned['latitude'], cleaned['longitude'], cleaned['precision'])
-    if (clip.stated_cell, clip.stated_precision) != old_location:
+        clip.clear_stated_location()
+    if clip.stated_cells != old_location:
         changed.append(Field.STATED_LOCATION)
 
     resolution = cleaned.get('metadata_precision')

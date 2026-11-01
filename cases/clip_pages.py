@@ -79,14 +79,6 @@ def vault_case_and_clip(request, case_id, clip_id):
     return found
 
 
-def place(cell, precision=''):
-    """Where a cell is and how wide, for showing; None for no cell."""
-    if cell is None:
-        return None
-    latitude, longitude = grid.centre(cell)
-    return {'latitude': latitude, 'longitude': longitude, 'width': round(grid.width_metres(cell), -1), 'precision': precision}
-
-
 def tag_names(keys, custom):
     return [DEFAULT_TAGS.get(key, key) for key in keys] + list(custom)
 
@@ -124,9 +116,9 @@ def clip_page(request, case_id, clip_id):
     uploaded = clip.as_uploaded_tags or {}
     return render(request, 'cases/clip.html', {
         'case': case, 'clip': clip, 'match': match, 'mismatch': mismatch,
-        'stated_place': place(clip.stated_cell, clip.get_stated_precision_display()),
-        'metadata_place': place(clip.metadata_cell),
-        'uploaded_place': place(clip.as_uploaded_stated_cell, clip.get_as_uploaded_stated_precision_display()),
+        'stated_place': clip.stated_place(),
+        'metadata_place': grid.summary([clip.metadata_cell]) if clip.metadata_cell else None,
+        'uploaded_place': clip.as_uploaded_place(),
         # Which lawyer added a tag, and how many proposals one has, are never shown (SPEC.md §7).
         'tags': [tag for tag in shown_tags if not tag['removed']],
         'removed_tags': [tag for tag in shown_tags if tag['removed']],

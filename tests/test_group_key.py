@@ -23,7 +23,7 @@ from accounts.models import LawyerProfile
 from alerts.models import Alert
 from audit.models import Action, AuditEntry
 from clips import grid, vault
-from clips.models import Clip, Original, Precision
+from clips.models import Clip, Original
 from keys import grants
 from keys.models import PUBLIC_KEY_BYTES, SEALED_GROUP_KEY_BYTES, GroupKey, KeyGrant
 from tests.conftest import BASTILLE, hand_over, log_in_with_second_factor, make_case, make_key, put_vault_file, rotation_attempt, with_code_holder_key, with_data_key
@@ -370,7 +370,7 @@ def clip(tmp_path):
     centre = grid.cell_for_point(*BASTILLE, 11)
     clip = with_code_holder_key(Clip.objects.create(
         code_hash='1' * 64, status=Clip.Status.READY, stated_time=START + datetime.timedelta(minutes=10),
-        duration=datetime.timedelta(seconds=42), stated_cell=centre, stated_precision=Precision.EXACT_SPOT,
+        duration=datetime.timedelta(seconds=42), stated_cells=[centre],
     ))
     source = tmp_path / 'video.mp4'
     source.write_bytes(b'not really a video')

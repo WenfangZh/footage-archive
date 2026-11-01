@@ -18,7 +18,7 @@ from maps import passes
 from . import grid, probe, rate_limits, vault
 from .confirmation import AlreadyConfirmed, confirm_upload
 from .editing import EDITABLE, NotEditable, apply_edits, clip_for_code, code_holder_tags, delete_clip
-from .forms import MESSAGE_MAX_LENGTH, METADATA_PRECISIONS, ConfirmForm, EditForm, FileForm, ReplyForm
+from .forms import MESSAGE_MAX_LENGTH, METADATA_PRECISIONS, ConfirmForm, EditForm, FileForm, ReplyForm, max_stated_cells
 from .models import STATED_RESOLUTIONS, Clip, Message, Original, Precision
 from .tags import DEFAULT_TAGS
 from .threads import code_holder_threads
@@ -28,9 +28,9 @@ from .uploads import size_limit_display
 # How the metadata location's cell size is described, by H3 resolution.
 METADATA_SIZES = {int(value): label for value, label in METADATA_PRECISIONS}
 
-# Below this zoom a cell is a few pixels wide: too small to choose on purpose, as for lawyers
-# (PICKING_ZOOM in maps/static/maps/area_map.js).
-PICKING_ZOOM = 14
+# From this zoom a 50 m cell is about 60 px across in Paris, enough for a fingertip: the grid
+# appears and taps pick (lawyers, on computers, pick from 14: PICKING_ZOOM in maps/static/maps/area_map.js).
+PICKING_ZOOM = 16
 
 # Fields that error reports must never show (SPEC.md §10).
 PRIVATE_FIELDS = ('latitude', 'longitude', 'custom_tags', 'context', 'contact_details')
@@ -106,7 +106,7 @@ def confirm(request, original_id):
                 'code': display(code),
                 'card_label': card_label_suggestion(form.cleaned_data),
                 'missing_time_or_place': (
-                    form.cleaned_data['stated_time'] is None or form.cleaned_data['latitude'] is None
+                    form.cleaned_data['stated_time'] is None or not form.cleaned_data['stated_cells']
                 ),
                 'return_url': request.build_absolute_uri(reverse('clips:code_holder')),
             })
@@ -248,29 +248,21 @@ def clip_or_refusal(request, typed):
 @sensitive_variables('code', 'initial')
 def edit_form(clip, code=None, data=None):
     """The edit form for a clip: pre-filled from it, or bound to what was sent."""
-    stated_centre = None
-    if clip.stated_cell is not None:
-        stated_centre = tuple(round(value, 6) for value in grid.centre(clip.stated_cell))
-    kwargs = {
-        'stated_centre': stated_centre,
-        'stated_resolution': grid.resolution(clip.stated_cell) if clip.stated_cell else None,
-        'metadata_resolution': grid.resolution(clip.metadata_cell) if clip.metadata_cell else None,
-    }
+    kwargs = {'metadata_resolution': grid.resolution(clip.metadata_cell) if clip.metadata_cell else None}
     if data is not None:
         return EditForm(data, **kwargs)
     keys, custom = code_holder_tags(clip)
     initial = {
         'code': code,
         'stated_time': clip.stated_time,
-        'precision': clip.stated_precision,
+        # The cells kept: sent back as they are, unless the map changes them or coordinates are typed.
+        'cells': clip.stated_cells,
         'tags': keys,
         'custom_tags': ', '.join(custom),
         # Opened with the code, during this request only (docs/m5-encryption-design.md §7.2).
         'context': vault.code_holder_text(clip, vault.CONTEXT, normalise(code)),
         'contact_details': vault.code_holder_text(clip, vault.CONTACT_DETAILS, normalise(code)),
     }
-    if stated_centre is not None:
-        initial['latitude'], initial['longitude'] = stated_centre
     return EditForm(initial=initial, **kwargs)
 
 
@@ -296,10 +288,14 @@ def render_clip(request, clip, form, status=200, **flags):
 
 
 def location_map():
-    """What the map for the stated location needs (SPEC.md §8, M6.5): a fresh map pass, which
-    names no upload, and the cell's resolution for each precision, as the server keeps it."""
+    """What the map of the stated location needs (SPEC.md §8, M6.5, M6.6): a fresh map pass,
+    which names no upload; the grid's finest resolution and the ceiling, as the server checks them;
+    and each precision's hexagon, to turn a typed place into its cells."""
     return {
         'map_style_url': reverse('maps:style', kwargs={'map_pass': passes.issue()}),
+        'grid_resolution': grid.finest_resolution(),
+        'ceiling_metres': settings.STATED_LOCATION_CEILING_METRES,
+        'max_cells': max_stated_cells(),
         'stated_resolutions': {
             precision.value: min(resolution, grid.finest_resolution()) for precision, resolution in STATED_RESOLUTIONS.items()
         },

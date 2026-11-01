@@ -1,6 +1,4 @@
 import datetime
-import math
-import re
 import unicodedata
 import zoneinfo
 
@@ -13,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 
 from accounts.models import LawyerProfile
 from clips import grid
-from clips.forms import MESSAGE_MAX_LENGTH
+from clips.forms import MESSAGE_MAX_LENGTH, CellsField
 from clips.models import Message
 from clips.tags import CUSTOM_TAG_MAX_LENGTH, DEFAULT_TAGS
 
@@ -74,46 +72,9 @@ class ForgottenNumberInput(forms.NumberInput):
         return None
 
 
-# An H3 id in hexadecimal, as the map's h3-js writes it; grid.is_cell checks the rest.
-HEX_ID = re.compile(r'[0-9a-f]{1,16}', re.IGNORECASE)
-
-
 def max_cells():
-    """More cells than any area within the ceiling holds: such a set is refused before it is measured.
-
-    An area at most D across fits in a circle D/√3 in radius (Jung's theorem); twice that
-    circle's area in cells of average size leaves room for cells smaller than average.
-    """
-    radius = settings.CASE_AREA_CEILING_METRES / math.sqrt(3)
-    return max(1, int(2 * math.pi * radius**2 / grid.average_area_square_metres()))
-
-
-class CellsField(forms.Field):
-    """An area picked on the map (M4.5): the grid's finest cells, as H3 ids in hexadecimal.
-
-    Only these ids reach the server, never a click or the map's view (ADR 0006), and they
-    are checked like anything else a browser sends.
-    """
-
-    widget = forms.HiddenInput
-    default_error_messages = {
-        'invalid': _('The area picked on the map could not be read. Pick it again.'),
-        'too_many': _('The area picked on the map has more cells than any case can hold.'),
-    }
-
-    def to_python(self, value):
-        ids = (value or '').replace(',', ' ').split()
-        if not ids:
-            return None
-        if len(ids) > max_cells():
-            raise forms.ValidationError(self.error_messages['too_many'], code='too_many')
-        cells = set()
-        for text in ids:
-            cell = int(text, 16) if HEX_ID.fullmatch(text) else None
-            if cell in cells or not grid.is_cell(cell) or grid.resolution(cell) != grid.finest_resolution():
-                raise forms.ValidationError(self.error_messages['invalid'], code='invalid')
-            cells.add(cell)
-        return cells
+    """More cells than any area within the ceiling holds: such a set is refused before it is measured."""
+    return grid.max_cells_within(settings.CASE_AREA_CEILING_METRES)
 
 
 PLACE_FIELDS = ('latitude', 'longitude', 'radius_metres')
@@ -147,7 +108,11 @@ class CaseForm(forms.Form):
         label=_('Radius around that place, in metres'), min_value=0, required=False,
         max_value=settings.CASE_AREA_CEILING_METRES // 2,
     )
-    cells = CellsField(required=False)
+    # An area picked on the map (M4.5, ADR 0006).
+    cells = CellsField(required=False, max_cells=lambda: max_cells(), error_messages={
+        'invalid': _('The area picked on the map could not be read. Pick it again.'),
+        'too_many': _('The area picked on the map has more cells than any case can hold.'),
+    })
     margin_minutes, margin_rings = margin_fields()
     reason = forms.CharField(
         label=_('Why this case needs to be larger than the size caps'), required=False,
