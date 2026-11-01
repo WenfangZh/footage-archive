@@ -18,3 +18,7 @@ A clip's stated location is stored as the one H3 cell that contains the given po
 ## Addendum (2026-10-18): padding is now the margin
 
 The matching padding named under Consequences is now each case's margin (SPEC §7, GLOSSARY). A clip whose cell lies only in the margin still matches, as a margin match, listed after the core matches.
+
+## Addendum (2026-11-01): the stated location is now painted cells
+
+From M6.6, the stated location is a set of the grid's finest cells that the uploader paints on the map (ADR 0009); the painted area is its own precision. The three precisions remain for coordinates typed without JavaScript, which now stand for the finest cells of the hexagon they name, not for the hexagon itself: about the same area, centred on the hexagon, not on the point, so the objection above to a ring of fine cells (that its centre gives the point away) does not apply. Existing clips are converted the same way. The metadata location's precision, and the rule that it can only be made coarser, are unchanged.
