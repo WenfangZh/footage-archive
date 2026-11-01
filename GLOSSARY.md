@@ -172,8 +172,8 @@ _Avoid_: Corrected time, user time, manual time
 _Avoid in French_: heure déclarée (suggests a formal declaration)
 
 **Stated location**:
-Where the clip was filmed, as given by the uploader or code holder, with how precise it is (exact spot, street or neighbourhood); it is never kept more precisely than that. Matching uses this location.
-_French_: lieu indiqué (its precision: endroit exact, rue or quartier)
+Where the clip was filmed, as given by the uploader or code holder: the 50 m cells they paint on the map, or, given as coordinates, the 50 m cells of a hexagon whose size follows how precise they say it is (exact spot, street or neighbourhood). At most 1 km across. Matching uses this location.
+_French_: lieu indiqué (its precision, for coordinates: endroit exact, rue or quartier)
 _Avoid_: Precise location, GPS, address
 
 **Metadata location**:
@@ -269,7 +269,7 @@ _French_: anneau (de mailles)
 _Avoid_: Band, buffer
 
 **Map**:
-Where a lawyer can pick a case's area cell by cell, instead of typing a place and a radius, and where an uploader or code holder can choose a clip's stated location by a click, instead of typing coordinates. It shows streets and place names from the archive's own map data, never clips.
+Where a lawyer can pick a case's area cell by cell, instead of typing a place and a radius, and where an uploader or code holder paints a clip's stated location cell by cell, instead of typing coordinates. It shows streets and place names from the archive's own map data, never clips.
 _French_: carte
 
 **Map data**:
