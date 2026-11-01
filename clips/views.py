@@ -18,7 +18,7 @@ from maps import passes
 from . import grid, probe, rate_limits, vault
 from .confirmation import AlreadyConfirmed, confirm_upload
 from .editing import EDITABLE, NotEditable, apply_edits, clip_for_code, code_holder_tags, delete_clip
-from .forms import MESSAGE_MAX_LENGTH, METADATA_PRECISIONS, ConfirmForm, EditForm, FileForm, ReplyForm
+from .forms import MESSAGE_MAX_LENGTH, METADATA_PRECISIONS, ConfirmForm, EditForm, FileForm, ReplyForm, max_stated_cells
 from .models import STATED_RESOLUTIONS, Clip, Message, Original, Precision
 from .tags import DEFAULT_TAGS
 from .threads import code_holder_threads
@@ -28,9 +28,9 @@ from .uploads import size_limit_display
 # How the metadata location's cell size is described, by H3 resolution.
 METADATA_SIZES = {int(value): label for value, label in METADATA_PRECISIONS}
 
-# Below this zoom a cell is a few pixels wide: too small to choose on purpose, as for lawyers
-# (PICKING_ZOOM in maps/static/maps/area_map.js).
-PICKING_ZOOM = 14
+# From this zoom a 50 m cell is about 30 px across, enough for a fingertip: the grid appears and
+# taps pick (lawyers, on computers, pick from 14: PICKING_ZOOM in maps/static/maps/area_map.js).
+PICKING_ZOOM = 16
 
 # Fields that error reports must never show (SPEC.md §10).
 PRIVATE_FIELDS = ('latitude', 'longitude', 'custom_tags', 'context', 'contact_details')
@@ -288,10 +288,14 @@ def render_clip(request, clip, form, status=200, **flags):
 
 
 def location_map():
-    """What the map for the stated location needs (SPEC.md §8, M6.5): a fresh map pass, which
-    names no upload, and the cell's resolution for each precision, as the server keeps it."""
+    """What the map of the stated location needs (SPEC.md §8, M6.5, M6.6): a fresh map pass,
+    which names no upload; the grid's finest resolution and the ceiling, as the server checks them;
+    and each precision's hexagon, to turn a typed place into its cells."""
     return {
         'map_style_url': reverse('maps:style', kwargs={'map_pass': passes.issue()}),
+        'grid_resolution': grid.finest_resolution(),
+        'ceiling_metres': settings.STATED_LOCATION_CEILING_METRES,
+        'max_cells': max_stated_cells(),
         'stated_resolutions': {
             precision.value: min(resolution, grid.finest_resolution()) for precision, resolution in STATED_RESOLUTIONS.items()
         },

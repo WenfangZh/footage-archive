@@ -5,6 +5,7 @@
 // pmtiles and h3 are the globals of the two classic scripts loaded before this one.
 
 import * as maplibregl from './vendor/maplibre-gl.mjs';
+import { showGrid, spanMetres } from './cells.js';
 
 // Below this zoom a cell is a few pixels wide: too small to pick on purpose.
 const PICKING_ZOOM = 14;
@@ -54,47 +55,6 @@ function add(cell) {
   if (picked.size < maxCells) picked.add(cell);
 }
 
-function metres(a, b) {
-  return h3.greatCircleDistance(a, b, 'm');
-}
-
-// The same estimate as the server's (clips.grid.span_metres): the farthest two centres
-// among the corners of their convex hull, plus half a cell at each end and one ring's
-// spacing per ring of margin.
-function spanMetres(cells, marginRings) {
-  const centres = new Map(cells.map((cell) => [cell, h3.cellToLatLng(cell)]));
-  const hull = convexHull(centres);
-  let farthest = 0;
-  for (let i = 0; i < hull.length; i += 1) {
-    for (let j = i + 1; j < hull.length; j += 1) {
-      farthest = Math.max(farthest, metres(centres.get(hull[i]), centres.get(hull[j])));
-    }
-  }
-  let halfWidth = 0;
-  let spacing = 0;
-  for (const cell of hull) {
-    for (const corner of h3.cellToBoundary(cell)) halfWidth = Math.max(halfWidth, metres(centres.get(cell), corner));
-    for (const near of h3.gridDisk(cell, 1)) spacing = Math.max(spacing, metres(centres.get(cell), h3.cellToLatLng(near)));
-  }
-  return farthest + 2 * halfWidth + 2 * marginRings * spacing;
-}
-
-function convexHull(centres) {
-  const stretch = Math.cos((centres.values().next().value[0] * Math.PI) / 180);
-  const points = [...centres].map(([cell, [lat, lng]]) => [lng * stretch, lat, cell]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  if (points.length <= 2) return points.map((point) => point[2]);
-  const turnsLeft = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]) > 0;
-  const chain = (ordered) => {
-    const kept = [];
-    for (const point of ordered) {
-      while (kept.length >= 2 && !turnsLeft(kept[kept.length - 2], kept[kept.length - 1], point)) kept.pop();
-      kept.push(point);
-    }
-    return kept.slice(0, -1);
-  };
-  return [...chain(points), ...chain([...points].reverse())].map((point) => point[2]);
-}
-
 function showSize() {
   let text = canPick() ? '' : `${readout.dataset.zoomIn} `;
   if (picked.size === 0) {
@@ -138,6 +98,7 @@ function start() {
   }
 
   map.on('load', () => {
+    showGrid(map, resolution, PICKING_ZOOM);
     map.addSource('picked', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     map.addLayer({ id: 'picked-fill', type: 'fill', source: 'picked', paint: { 'fill-color': '#d9480f', 'fill-opacity': 0.35 } });
     map.addLayer({ id: 'picked-outline', type: 'line', source: 'picked', paint: { 'line-color': '#d9480f', 'line-width': 1 } });

@@ -1,73 +1,110 @@
-// The map for the stated location (SPEC.md §8, §12 M6.5; ADR 0006 and its addendum), on the
-// upload form and the code holder's edit page. Loaded only when asked for. Once zoomed in, a
-// click fills the latitude and longitude, from which the server keeps only the cell; the map
-// draws that cell, as lawyers' picked cells are drawn, for the precision chosen. Nothing else of
-// the map (its view, its zoom) leaves the page.
+// The map of a clip's stated location (SPEC.md §8, §12 M6.6; ADR 0006, ADR 0009), on the upload
+// form and the code holder's edit page, made first for phones. Loaded only when asked for. The
+// usual gestures move and zoom it: one finger drags; pinching, a double tap or the scroll wheel
+// zooms. Once zoomed in far enough for a cell to take a fingertip, a faint grid shows the cells,
+// and a tap adds or removes one; on a computer, dragging with Shift held down adds every cell it
+// crosses, as on the lawyers' map. Only the cells' ids leave the page, in the form's `cells`
+// field: never a tap's position or where the map was looking.
 
 const box = document.getElementById('location-map');
 const opener = document.getElementById('location-map-open');
 const status = document.getElementById('location-map-status');
 
+// A tap waits this long for a second one: two make a double tap, which zooms instead.
+const DOUBLE_TAP_MS = 300;
+// A drag that jumps farther than this many cells between two mouse events is not filled in.
+const LONGEST_FILL = 200;
+
 if (box && opener) {
   const form = box.closest('form');
+  const field = form.elements.cells;
+  const typed = document.getElementById('typed-place');
   const { latitude, longitude, precision } = form.elements;
   const resolutions = JSON.parse(document.getElementById('stated-resolutions').textContent);
+  const finest = Number(box.dataset.resolution);
   const pickingZoom = Number(box.dataset.pickingZoom);
-  // On the edit page, the fields start at the kept cell's centre, which a finer precision cannot
-  // start from (clips.forms.EditForm): it needs a new position.
-  const kept = box.dataset.keptResolution ? {
-    latitude: Number(box.dataset.keptLatitude),
-    longitude: Number(box.dataset.keptLongitude),
-    resolution: Number(box.dataset.keptResolution),
-  } : null;
+  const ceiling = Number(box.dataset.ceilingMetres);
+  const maxCells = Number(box.dataset.maxCells);
   let map = null;
+  let spanMetres = null;
+  let picked = new Set();
 
   const say = (text) => { status.textContent = text || ''; };
 
-  function point() {
+  // What the status line says when nothing has gone wrong: how to pick, then the place's size.
+  function describe() {
+    if (map === null) return;
+    if (map.getZoom() < pickingZoom) {
+      say(box.dataset.zoomIn);
+    } else if (picked.size === 0) {
+      say(box.dataset.tap);
+    } else {
+      const across = Math.round(spanMetres([...picked]));
+      say(box.dataset.size.replace('{cells}', picked.size).replace('{metres}', across));
+    }
+  }
+
+  function changed() {
+    field.value = [...picked].join(' ');
+    map.getSource('picked')?.setData({
+      type: 'FeatureCollection',
+      features: [...picked].map((cell) => ({
+        type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [h3.cellToBoundary(cell, true)] },
+      })),
+    });
+    describe();
+  }
+
+  // Refused, with a word, when it would take the place past its ceiling (clips.forms checks again).
+  function add(cell) {
+    if (picked.has(cell)) return true;
+    if (picked.size >= maxCells || spanMetres([...picked, cell]) > ceiling) return false;
+    picked.add(cell);
+    return true;
+  }
+
+  function cellAt(lngLat) {
+    const { lat, lng } = lngLat.wrap(); // On a repeated copy of the world, as on the first.
+    return h3.latLngToCell(lat, lng, finest);
+  }
+
+  // A place typed before the map was opened, or pre-filled from the file's GPS, becomes its cells,
+  // as the server would keep it; the typed fields then give way to the map.
+  function takeOverTypedPlace() {
     const lat = Number(latitude.value);
     const lng = Number(longitude.value);
-    if (latitude.value.trim() === '' || longitude.value.trim() === '') return null;
-    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
-    return [lat, lng];
-  }
-
-  // The cell the server will keep, from the same rounded coordinates the form sends.
-  function chosenCell() {
-    const position = point();
-    const resolution = resolutions[precision.value];
-    if (position === null || resolution === undefined) return null;
-    const fromKeptCentre = kept !== null
-      && Math.abs(position[0] - kept.latitude) < 1e-7 && Math.abs(position[1] - kept.longitude) < 1e-7;
-    if (fromKeptCentre && resolution > kept.resolution) {
-      say(box.dataset.finer);
-      return null;
+    if (latitude.value.trim() !== '' && longitude.value.trim() !== '' && Number.isFinite(lat) && Number.isFinite(lng)) {
+      const hexagon = h3.latLngToCell(lat, lng, resolutions[precision.value] ?? finest);
+      picked = new Set(h3.cellToChildren(hexagon, finest));
     }
-    return h3.latLngToCell(position[0], position[1], resolution);
+    latitude.value = '';
+    longitude.value = '';
+    for (const choice of precision) choice.checked = false;
+    typed.hidden = true;
   }
 
-  function redraw() {
-    say('');
-    const cell = chosenCell(); // Says why when there is none, even before the map has loaded.
-    if (map === null || !map.getSource('chosen')) return;
-    map.getSource('chosen').setData({
-      type: 'FeatureCollection',
-      features: cell === null ? [] : [{
-        type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [h3.cellToBoundary(cell, true)] },
-      }],
-    });
+  function fit() {
+    const corners = [...picked].flatMap((cell) => h3.cellToBoundary(cell, true));
+    const lngs = corners.map((corner) => corner[0]);
+    const lats = corners.map((corner) => corner[1]);
+    map.fitBounds([[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], { padding: 40, duration: 0, maxZoom: 18 });
+    if (map.getZoom() < pickingZoom) map.setZoom(pickingZoom);
   }
 
-  function start(maplibregl) {
+  function start(maplibregl, cellsModule) {
+    ({ spanMetres } = cellsModule);
+    picked = new Set(field.value.split(/[\s,]+/).filter((cell) => h3.isValidCell(cell) && h3.getResolution(cell) === finest));
+    takeOverTypedPlace();
     maplibregl.addProtocol('pmtiles', new pmtiles.Protocol().tile);
-    const position = point();
     box.hidden = false;
     map = new maplibregl.Map({
       container: box.querySelector('.area-map-canvas'),
       style: box.dataset.styleUrl,
-      center: position ? [position[1], position[0]] : [2.35, 48.86],
-      zoom: position ? 16 : 11,
+      center: [2.35, 48.86],
+      zoom: 11,
       maxZoom: 19,
+      // Shift-drag paints instead of zooming to a box; the map stays flat and north up.
+      boxZoom: false,
       dragRotate: false,
       pitchWithRotate: false,
       touchPitch: false,
@@ -79,36 +116,93 @@ if (box && opener) {
         'NavigationControl.ZoomOut': box.dataset.zoomOutLabel,
       },
     });
+    map.touchZoomRotate.disableRotation();
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }));
+    if (picked.size) fit();
     map.on('load', () => {
-      map.addSource('chosen', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      map.addLayer({ id: 'chosen-fill', type: 'fill', source: 'chosen', paint: { 'fill-color': '#d9480f', 'fill-opacity': 0.35 } });
-      map.addLayer({ id: 'chosen-outline', type: 'line', source: 'chosen', paint: { 'line-color': '#d9480f', 'line-width': 1 } });
-      redraw();
+      cellsModule.showGrid(map, finest, pickingZoom);
+      map.addSource('picked', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({ id: 'picked-fill', type: 'fill', source: 'picked', paint: { 'fill-color': '#d9480f', 'fill-opacity': 0.35 } });
+      map.addLayer({ id: 'picked-outline', type: 'line', source: 'picked', paint: { 'line-color': '#d9480f', 'line-width': 1 } });
+      changed();
     });
-    // The map pass has expired (maps.passes): the style or the tiles are refused, the fields still
-    // work. A font range the archive lacks is a 404 too, and costs only some labels: not said.
+    map.on('zoomend', describe);
+    // The map pass has expired (maps.passes): the style or the tiles are refused, and the place
+    // picked so far still goes with the form. A font range the archive lacks is a 404 too, and
+    // costs only some labels: not said.
     map.on('error', (event) => {
       const error = event.error || {};
       const styleRefused = error.status === 404 && /\/style\.json$/.test(error.url || '');
       const tilesRefused = /Bad response code: 404/.test(error.message || '');
       if (styleRefused || tilesRefused) say(box.dataset.expired);
     });
+
+    // A tap waits to see whether a second follows: a double tap zooms (MapLibre's own) and picks nothing.
+    let waiting = null;
     map.on('click', (event) => {
-      if (map.getZoom() < pickingZoom) {
-        say(box.dataset.zoomIn);
+      if (event.originalEvent.shiftKey) return;
+      if (waiting !== null) {
+        clearTimeout(waiting);
+        waiting = null;
         return;
       }
-      // On a repeated copy of the world, as on the first. Rounded as the form's own pre-filled
-      // positions are (clips.views.initial_values).
-      const { lat, lng } = event.lngLat.wrap();
-      latitude.value = lat.toFixed(6);
-      longitude.value = lng.toFixed(6);
-      // A click is no exact spot unless the uploader says so.
-      if (!precision.value) form.querySelector('input[name=precision][value=street]').checked = true;
-      redraw();
+      const cell = cellAt(event.lngLat);
+      const zoomedIn = map.getZoom() >= pickingZoom;
+      waiting = setTimeout(() => {
+        waiting = null;
+        if (!zoomedIn) {
+          describe();
+          return;
+        }
+        const added = picked.delete(cell) || add(cell);
+        changed();
+        if (!added) say(box.dataset.tooWide);
+      }, DOUBLE_TAP_MS);
     });
-    for (const field of [latitude, longitude, ...precision]) field.addEventListener('input', redraw);
+
+    // On a computer: while Shift is held, dragging paints instead of moving the map. Keys pressed
+    // or let go while the page had no focus are missed, so leaving the page ends any painting too.
+    let lastCell = null;
+    const stopPainting = () => {
+      lastCell = null;
+      map.dragPan.enable();
+    };
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Shift') map.dragPan.disable();
+    });
+    window.addEventListener('keyup', (event) => {
+      if (event.key === 'Shift') stopPainting();
+    });
+    window.addEventListener('blur', stopPainting);
+    window.addEventListener('mouseup', () => { lastCell = null; });
+    map.on('mousedown', (event) => {
+      if (!event.originalEvent.shiftKey || map.getZoom() < pickingZoom) return;
+      map.dragPan.disable();
+      lastCell = cellAt(event.lngLat);
+      const added = add(lastCell);
+      changed();
+      if (!added) say(box.dataset.tooWide);
+    });
+    map.on('mousemove', (event) => {
+      if (lastCell === null) return;
+      if (event.originalEvent.buttons === 0) {
+        lastCell = null;
+        return;
+      }
+      const cell = cellAt(event.lngLat);
+      if (cell === lastCell) return;
+      // A fast drag skips cells between two events: fill in the line between them.
+      let path = [cell];
+      try {
+        if (h3.gridDistance(lastCell, cell) <= LONGEST_FILL) path = h3.gridPathCells(lastCell, cell);
+      } catch {
+        // No path across a pentagon: just the cell under the mouse.
+      }
+      const added = path.every(add);
+      lastCell = cell;
+      changed();
+      if (!added) say(box.dataset.tooWide);
+    });
   }
 
   function load(tag, attributes) {
@@ -128,7 +222,8 @@ if (box && opener) {
         load('script', { src: box.dataset.pmtiles }),
         load('script', { src: box.dataset.h3 }),
       ]);
-      start(await import(box.dataset.maplibre));
+      const [maplibregl, cellsModule] = await Promise.all([import(box.dataset.maplibre), import(box.dataset.cells)]);
+      start(maplibregl, cellsModule);
       opener.hidden = true;
       box.focus(); // The button pressed is gone: where the keyboard goes on from.
     } catch (error) {
@@ -136,6 +231,7 @@ if (box && opener) {
       console.error(error);
       box.hidden = true;
       opener.hidden = true;
+      typed.hidden = false;
       say(box.dataset.unavailable);
     }
   });
