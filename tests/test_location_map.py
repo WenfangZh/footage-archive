@@ -5,13 +5,13 @@ for the precision chosen, and nothing else of it is stored or logged; nothing fr
 import re
 
 import pytest
-from django.db import connection
 from django.test import Client
 from django.urls import reverse
 
 from clips import grid
 from clips.models import Clip
 from maps import passes
+from tests.conftest import database_dump
 from tests.test_confirm import code_on, full_form, start_upload, video  # noqa: F401 (fixture)
 
 pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures('group_key_pair')]
@@ -84,8 +84,7 @@ def test_nothing_of_a_click_but_its_cell_is_stored_or_logged(client, video, djan
     }, headers=ENGLISH)
     assert edited.status_code == 200 and Clip.objects.get().stated_cells == [grid.cell_for_point(48.853377, 2.369004, 11)]
 
-    connection.ensure_connection()
-    stored = '\n'.join(connection.connection.iterdump())  # The whole database, as SQL.
+    stored = database_dump()
     for value in (*CLICKED, '48.853377', '2.369004', '16.25'):
         assert value not in stored and value not in django_log.getvalue()
 

@@ -2,12 +2,14 @@ import datetime
 import io
 import logging
 import os
+import re
 
 import pytest
 from django_otp import DEVICE_ID_SESSION_KEY
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django.conf import settings
 from django.core.cache import cache
+from django.db import connection
 from django.utils import timezone
 
 from audit import limits
@@ -64,6 +66,17 @@ def empty_vault_folder():
     for path in settings.VAULT_DIR.rglob('*'):
         if path.is_file():
             path.unlink()
+
+
+# Times stored to the microsecond (each migration's, among others), which vary from run to run.
+STORED_TIME = re.compile(r'\d{4}-\d\d-\d\d[ T]\d\d:\d\d:\d\d(\.\d+)?')
+
+
+def database_dump():
+    """The whole test database as SQL, its times blanked out: a short fragment of a number, which
+    also catches a rounded copy of it, must not match a time by chance."""
+    connection.ensure_connection()
+    return STORED_TIME.sub('<time>', '\n'.join(connection.connection.iterdump()))
 
 
 @pytest.fixture
