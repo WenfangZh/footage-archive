@@ -47,7 +47,7 @@ if (box && opener) {
       const across = Math.round(spanMetres([...picked]));
       const size = box.dataset.size.replace('{cells}', picked.size).replace('{metres}', across);
       // Cells sent back by a refused form may be too many: the server says why, and so does this.
-      say(across > ceiling ? `${size} ${box.dataset.tooWide}` : size);
+      say(across > ceiling ? `${size} ${box.dataset.overCeiling}` : size);
     }
   }
 
@@ -80,13 +80,15 @@ if (box && opener) {
   // loaded, so that a map that fails leaves them as they were; and not a place the form refused
   // (its errors stay in sight), nor one the server would refuse.
   function takeOverTypedPlace() {
-    if (typed.querySelector('.errorlist')) return;
-    const given = latitude.value.trim() !== '' || longitude.value.trim() !== '';
-    const lat = Number(latitude.value);
-    const lng = Number(longitude.value);
-    if (given) {
-      if (!(Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180)) return;
-      const hexagon = h3.latLngToCell(lat, lng, resolutions[precision.value] ?? finest);
+    if (expired || typed.querySelector('.errorlist')) return;
+    const filled = [latitude, longitude].filter((input) => input.value.trim() !== '').length;
+    if (filled === 1) return; // Half a place: the server says what is missing.
+    if (filled === 2) {
+      const lat = Number(latitude.value);
+      const lng = Number(longitude.value);
+      const inRange = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+      if (!inRange || !(precision.value in resolutions)) return;
+      const hexagon = h3.latLngToCell(lat, lng, resolutions[precision.value]);
       picked = new Set(h3.cellToChildren(hexagon, finest));
     }
     latitude.value = '';
@@ -155,6 +157,7 @@ if (box && opener) {
       if (styleRefused || tilesRefused) {
         expired = true;
         typed.hidden = false; // Coordinates given there replace the cells (clips.forms).
+        instead.hidden = true;
         describe();
       }
     });

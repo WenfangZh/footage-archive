@@ -2667,6 +2667,11 @@ msgid "That would make the place more than %(ceiling)s m across."
 msgstr "Le lieu ferait alors plus de %(ceiling)s m de large."
 
 #: clips/templates/clips/location_map.html:10
+#, python-format
+msgid "The place is more than %(ceiling)s m across: take some cells out."
+msgstr "Le lieu fait plus de %(ceiling)s m de large : retirez-en des mailles."
+
+#: clips/templates/clips/location_map.html:11
 msgid ""
 "The map is no longer available on this page. Type the coordinates, or reload "
 "the page."
@@ -2674,15 +2679,15 @@ msgstr ""
 "La carte n'est plus disponible sur cette page. Saisissez les coordonnées, ou "
 "rechargez la page."
 
-#: clips/templates/clips/location_map.html:11
+#: clips/templates/clips/location_map.html:12
 msgid "The map could not be loaded. Type the coordinates."
 msgstr "La carte n'a pas pu être chargée. Saisissez les coordonnées."
 
-#: clips/templates/clips/location_map.html:13
+#: clips/templates/clips/location_map.html:14
 msgid "Choose on a map"
 msgstr "Choisir sur une carte"
 
-#: clips/templates/clips/location_map.html:23
+#: clips/templates/clips/location_map.html:24
 msgid ""
 "Zoom in to where it was filmed: once the grid appears, tap the cells that "
 "cover the place."
@@ -2690,7 +2695,7 @@ msgstr ""
 "Zoomez jusqu'à l'endroit filmé : une fois la grille apparue, touchez les "
 "mailles qui couvrent le lieu."
 
-#: clips/templates/clips/location_map.html:28
+#: clips/templates/clips/location_map.html:29
 msgid "Type coordinates instead"
 msgstr "Saisir plutôt des coordonnées"
 

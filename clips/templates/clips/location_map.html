@@ -7,6 +7,7 @@
 {% translate "Tap a cell to add it to the place, or tap it again to take it out." as tap %}
 {% blocktranslate with ceiling=ceiling_metres asvar size %}Cells: {cells}, about {metres} m across (at most {{ ceiling }} m).{% endblocktranslate %}
 {% blocktranslate with ceiling=ceiling_metres asvar too_wide %}That would make the place more than {{ ceiling }} m across.{% endblocktranslate %}
+{% blocktranslate with ceiling=ceiling_metres asvar over_ceiling %}The place is more than {{ ceiling }} m across: take some cells out.{% endblocktranslate %}
 {% translate "The map is no longer available on this page. Type the coordinates, or reload the page." as expired %}
 {% translate "The map could not be loaded. Type the coordinates." as unavailable %}
 {{ stated_resolutions|json_script:"stated-resolutions" }}
@@ -18,7 +19,7 @@
   data-map-css="{% static 'maps/area_map.css' %}" data-pmtiles="{% static 'maps/vendor/pmtiles.js' %}" data-h3="{% static 'maps/vendor/h3-js.umd.js' %}"
   data-cells="{% static 'maps/cells.js' %}"
   data-map-title="{{ map_title|force_escape }}" data-zoom-in-label="{{ zoom_in_label|force_escape }}" data-zoom-out-label="{{ zoom_out_label|force_escape }}"
-  data-zoom-in="{{ zoom_in|force_escape }}" data-tap="{{ tap|force_escape }}" data-size="{{ size|force_escape }}" data-too-wide="{{ too_wide|force_escape }}"
+  data-zoom-in="{{ zoom_in|force_escape }}" data-tap="{{ tap|force_escape }}" data-size="{{ size|force_escape }}" data-too-wide="{{ too_wide|force_escape }}" data-over-ceiling="{{ over_ceiling|force_escape }}"
   data-expired="{{ expired|force_escape }}" data-unavailable="{{ unavailable|force_escape }}">
   <p>{% translate "Zoom in to where it was filmed: once the grid appears, tap the cells that cover the place." %}</p>
   <div class="area-map-canvas"></div>
