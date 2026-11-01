@@ -1029,11 +1029,11 @@ msgstr "Heure française, comme dans le procès-verbal."
 msgid "End of the time window"
 msgstr "Fin de la plage horaire"
 
-#: cases/forms.py:99 clips/forms.py:99
+#: cases/forms.py:99 clips/forms.py:100
 msgid "Latitude"
 msgstr "Latitude"
 
-#: cases/forms.py:103 clips/forms.py:103
+#: cases/forms.py:103 clips/forms.py:104
 msgid "Longitude"
 msgstr "Longitude"
 
@@ -1680,7 +1680,7 @@ msgstr ""
 msgid "Send the report"
 msgstr "Envoyer le signalement de clip"
 
-#: cases/templates/cases/clip.html:121 clips/forms.py:119 clips/models.py:246
+#: cases/templates/cases/clip.html:121 clips/forms.py:120 clips/models.py:246
 #: clips/models.py:293
 msgid "Context"
 msgstr "Contexte"
@@ -2149,19 +2149,19 @@ msgstr "Vidéo"
 msgid "When was it filmed?"
 msgstr "Quand la vidéo a-t-elle été filmée ?"
 
-#: clips/forms.py:107
+#: clips/forms.py:108
 msgid "How precise is this place?"
 msgstr "Quelle est la précision de ce lieu ?"
 
-#: clips/forms.py:111
+#: clips/forms.py:112
 msgid "What can be seen?"
 msgstr "Que voit-on dans la vidéo ?"
 
-#: clips/forms.py:115
+#: clips/forms.py:116
 msgid "Other tags, separated by commas"
 msgstr "Autres étiquettes, séparées par des virgules"
 
-#: clips/forms.py:121
+#: clips/forms.py:122
 msgid ""
 "What happened, and anything a lawyer should know. Leave out names, and "
 "addresses more precise than the place above."
@@ -2169,45 +2169,45 @@ msgstr ""
 "Ce qui s'est passé, et tout ce qu'un·e avocat·e devrait savoir. N'indiquez "
 "pas de noms, ni d'adresse plus précise que le lieu ci-dessus."
 
-#: clips/forms.py:126
+#: clips/forms.py:127
 msgid "Contact details or social media handle"
 msgstr "Moyen de contact ou pseudonyme sur un réseau social"
 
-#: clips/forms.py:138
+#: clips/forms.py:139
 #, python-format
 msgid "Each tag can be at most %(length)d characters."
 msgstr "Chaque étiquette peut compter au plus %(length)d caractères."
 
-#: clips/forms.py:144
+#: clips/forms.py:145
 #, python-format
 msgid "At most %(count)d other tags."
 msgstr "Au plus %(count)d autres étiquettes."
 
-#: clips/forms.py:156
+#: clips/forms.py:157
 msgid "Give both the latitude and the longitude, or neither."
 msgstr "Indiquez la latitude et la longitude, ou aucune des deux."
 
-#: clips/forms.py:158
+#: clips/forms.py:159
 msgid "Say how precise this place is."
 msgstr "Indiquez la précision de ce lieu."
 
-#: clips/forms.py:166
+#: clips/forms.py:167
 #, python-format
 msgid "The place painted on the map is more than %(metres)d m across."
 msgstr "Le lieu colorié sur la carte fait plus de %(metres)d m de large."
 
-#: clips/forms.py:176
+#: clips/forms.py:177
 msgid "How precisely may we keep the GPS position found in the video?"
 msgstr ""
 "Avec quelle précision pouvons-nous garder la position GPS trouvée dans la "
 "vidéo ?"
 
-#: clips/forms.py:191
+#: clips/forms.py:192
 msgid "How precisely we keep the GPS position found in the video"
 msgstr ""
 "Précision avec laquelle nous gardons la position GPS trouvée dans la vidéo"
 
-#: clips/forms.py:217 clips/templates/clips/clip.html:111
+#: clips/forms.py:218 clips/templates/clips/clip.html:111
 msgid "Your reply"
 msgstr "Votre réponse"
 
@@ -2689,6 +2689,10 @@ msgid ""
 msgstr ""
 "Zoomez jusqu'à l'endroit filmé : une fois la grille apparue, touchez les "
 "mailles qui couvrent le lieu."
+
+#: clips/templates/clips/location_map.html:28
+msgid "Type coordinates instead"
+msgstr "Saisir plutôt des coordonnées"
 
 #: clips/templates/clips/place.html:2
 #, python-format

@@ -28,8 +28,8 @@ from .uploads import size_limit_display
 # How the metadata location's cell size is described, by H3 resolution.
 METADATA_SIZES = {int(value): label for value, label in METADATA_PRECISIONS}
 
-# From this zoom a 50 m cell is about 30 px across, enough for a fingertip: the grid appears and
-# taps pick (lawyers, on computers, pick from 14: PICKING_ZOOM in maps/static/maps/area_map.js).
+# From this zoom a 50 m cell is about 60 px across in Paris, enough for a fingertip: the grid
+# appears and taps pick (lawyers, on computers, pick from 14: PICKING_ZOOM in maps/static/maps/area_map.js).
 PICKING_ZOOM = 16
 
 # Fields that error reports must never show (SPEC.md §10).

@@ -25,22 +25,29 @@ if (box && opener) {
   const pickingZoom = Number(box.dataset.pickingZoom);
   const ceiling = Number(box.dataset.ceilingMetres);
   const maxCells = Number(box.dataset.maxCells);
+  const instead = document.getElementById('typed-place-show');
   let map = null;
   let spanMetres = null;
   let picked = new Set();
+  // Once the map data is refused, the status line keeps saying so.
+  let expired = false;
 
   const say = (text) => { status.textContent = text || ''; };
 
   // What the status line says when nothing has gone wrong: how to pick, then the place's size.
   function describe() {
     if (map === null) return;
-    if (map.getZoom() < pickingZoom) {
+    if (expired) {
+      say(box.dataset.expired);
+    } else if (map.getZoom() < pickingZoom) {
       say(box.dataset.zoomIn);
     } else if (picked.size === 0) {
       say(box.dataset.tap);
     } else {
       const across = Math.round(spanMetres([...picked]));
-      say(box.dataset.size.replace('{cells}', picked.size).replace('{metres}', across));
+      const size = box.dataset.size.replace('{cells}', picked.size).replace('{metres}', across);
+      // Cells sent back by a refused form may be too many: the server says why, and so does this.
+      say(across > ceiling ? `${size} ${box.dataset.tooWide}` : size);
     }
   }
 
@@ -69,11 +76,16 @@ if (box && opener) {
   }
 
   // A place typed before the map was opened, or pre-filled from the file's GPS, becomes its cells,
-  // as the server would keep it; the typed fields then give way to the map.
+  // as the server would keep it, and the typed fields give way to the map. Only once the map has
+  // loaded, so that a map that fails leaves them as they were; and not a place the form refused
+  // (its errors stay in sight), nor one the server would refuse.
   function takeOverTypedPlace() {
+    if (typed.querySelector('.errorlist')) return;
+    const given = latitude.value.trim() !== '' || longitude.value.trim() !== '';
     const lat = Number(latitude.value);
     const lng = Number(longitude.value);
-    if (latitude.value.trim() !== '' && longitude.value.trim() !== '' && Number.isFinite(lat) && Number.isFinite(lng)) {
+    if (given) {
+      if (!(Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180)) return;
       const hexagon = h3.latLngToCell(lat, lng, resolutions[precision.value] ?? finest);
       picked = new Set(h3.cellToChildren(hexagon, finest));
     }
@@ -81,6 +93,7 @@ if (box && opener) {
     longitude.value = '';
     for (const choice of precision) choice.checked = false;
     typed.hidden = true;
+    instead.hidden = false;
   }
 
   function fit() {
@@ -94,7 +107,6 @@ if (box && opener) {
   function start(maplibregl, cellsModule) {
     ({ spanMetres } = cellsModule);
     picked = new Set(field.value.split(/[\s,]+/).filter((cell) => h3.isValidCell(cell) && h3.getResolution(cell) === finest));
-    takeOverTypedPlace();
     maplibregl.addProtocol('pmtiles', new pmtiles.Protocol().tile);
     box.hidden = false;
     map = new maplibregl.Map({
@@ -118,9 +130,15 @@ if (box && opener) {
     });
     map.touchZoomRotate.disableRotation();
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }));
-    if (picked.size) fit();
     map.on('load', () => {
-      cellsModule.showGrid(map, finest, pickingZoom);
+      takeOverTypedPlace();
+      field.value = [...picked].join(' ');
+      if (picked.size) fit();
+      try {
+        cellsModule.showGrid(map, finest, pickingZoom);
+      } catch (error) {
+        console.error(error); // Without the grid, cells can still be picked.
+      }
       map.addSource('picked', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addLayer({ id: 'picked-fill', type: 'fill', source: 'picked', paint: { 'fill-color': '#d9480f', 'fill-opacity': 0.35 } });
       map.addLayer({ id: 'picked-outline', type: 'line', source: 'picked', paint: { 'line-color': '#d9480f', 'line-width': 1 } });
@@ -134,11 +152,23 @@ if (box && opener) {
       const error = event.error || {};
       const styleRefused = error.status === 404 && /\/style\.json$/.test(error.url || '');
       const tilesRefused = /Bad response code: 404/.test(error.message || '');
-      if (styleRefused || tilesRefused) say(box.dataset.expired);
+      if (styleRefused || tilesRefused) {
+        expired = true;
+        typed.hidden = false; // Coordinates given there replace the cells (clips.forms).
+        describe();
+      }
     });
 
     // A tap waits to see whether a second follows: a double tap zooms (MapLibre's own) and picks nothing.
     let waiting = null;
+    // A slow double tap, or a double-tap-and-drag zoom, starts zooming before its second tap: the
+    // first one picks nothing then either.
+    const cancelTap = () => {
+      clearTimeout(waiting);
+      waiting = null;
+    };
+    map.on('zoomstart', cancelTap);
+    map.on('movestart', cancelTap);
     map.on('click', (event) => {
       if (event.originalEvent.shiftKey) return;
       if (waiting !== null) {
@@ -211,6 +241,14 @@ if (box && opener) {
       document.head.append(element);
     });
   }
+
+  // For whoever cannot pick on a map (a keyboard, a screen reader): the coordinates again, which
+  // replace the cells when given.
+  instead.addEventListener('click', () => {
+    typed.hidden = false;
+    instead.hidden = true;
+    latitude.focus();
+  });
 
   opener.hidden = false;
   opener.addEventListener('click', async () => {

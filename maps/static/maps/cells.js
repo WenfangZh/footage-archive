@@ -20,11 +20,16 @@ export function showGrid(map, resolution, fromZoom, limit = 8000) {
     const padLng = (bounds.getEast() - bounds.getWest()) / 10;
     const [south, north] = [bounds.getSouth() - padLat, bounds.getNorth() + padLat];
     const [west, east] = [bounds.getWest() - padLng, bounds.getEast() + padLng];
+    if (west < -180 || east > 180) {
+      // Across the 180° meridian, or on a repeated copy of the world: no grid.
+      map.getSource('grid').setData(empty);
+      return;
+    }
     let cells = [];
     try {
       cells = h3.polygonToCells([[south, west], [north, west], [north, east], [south, east]], resolution);
     } catch {
-      // A view h3 cannot fill (across the 180° meridian): no grid.
+      // A view h3 cannot fill: no grid.
     }
     map.getSource('grid').setData(cells.length > limit ? empty : {
       type: 'FeatureCollection',
