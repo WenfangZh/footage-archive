@@ -2209,7 +2209,7 @@ msgstr "Retirer le lieu"
 #: clips/forms.py:195
 msgid "No lawyer can find the clip until you give a place again."
 msgstr ""
-"Aucun·e avocat·e ne peut trouver le clip tant que vous n'indiquez pas de "
+"Aucun·e avocat·e ne peut trouver le clip tant que vous n'indiquez pas à "
 "nouveau un lieu."
 
 #: clips/forms.py:198
