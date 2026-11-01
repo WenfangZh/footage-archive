@@ -106,7 +106,7 @@ def confirm(request, original_id):
                 'code': display(code),
                 'card_label': card_label_suggestion(form.cleaned_data),
                 'missing_time_or_place': (
-                    form.cleaned_data['stated_time'] is None or form.cleaned_data['latitude'] is None
+                    form.cleaned_data['stated_time'] is None or not form.cleaned_data['stated_cells']
                 ),
                 'return_url': request.build_absolute_uri(reverse('clips:code_holder')),
             })
@@ -248,29 +248,21 @@ def clip_or_refusal(request, typed):
 @sensitive_variables('code', 'initial')
 def edit_form(clip, code=None, data=None):
     """The edit form for a clip: pre-filled from it, or bound to what was sent."""
-    stated_centre = None
-    if clip.stated_cell is not None:
-        stated_centre = tuple(round(value, 6) for value in grid.centre(clip.stated_cell))
-    kwargs = {
-        'stated_centre': stated_centre,
-        'stated_resolution': grid.resolution(clip.stated_cell) if clip.stated_cell else None,
-        'metadata_resolution': grid.resolution(clip.metadata_cell) if clip.metadata_cell else None,
-    }
+    kwargs = {'metadata_resolution': grid.resolution(clip.metadata_cell) if clip.metadata_cell else None}
     if data is not None:
         return EditForm(data, **kwargs)
     keys, custom = code_holder_tags(clip)
     initial = {
         'code': code,
         'stated_time': clip.stated_time,
-        'precision': clip.stated_precision,
+        # The cells kept: sent back as they are, unless the map changes them or coordinates are typed.
+        'cells': clip.stated_cells,
         'tags': keys,
         'custom_tags': ', '.join(custom),
         # Opened with the code, during this request only (docs/m5-encryption-design.md §7.2).
         'context': vault.code_holder_text(clip, vault.CONTEXT, normalise(code)),
         'contact_details': vault.code_holder_text(clip, vault.CONTACT_DETAILS, normalise(code)),
     }
-    if stated_centre is not None:
-        initial['latitude'], initial['longitude'] = stated_centre
     return EditForm(initial=initial, **kwargs)
 
 

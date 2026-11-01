@@ -23,7 +23,7 @@ from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from cases.models import Case
 from clips import grid, vault
-from clips.models import Clip, Precision, VaultFile
+from clips.models import Clip, VaultFile
 from tests.conftest import (
     BASTILLE, hand_over, log_in_with_second_factor, make_case, put_vault_file, with_data_key,
 )
@@ -64,7 +64,7 @@ def clip(tmp_path, group_key_pair):
     """A ready clip with both files, with their data keys as `data_keys`."""
     clip = Clip.objects.create(
         code_hash='1' * 64, status=Clip.Status.READY, stated_time=START + datetime.timedelta(minutes=10),
-        stated_cell=grid.cell_for_point(*BASTILLE, 11), stated_precision=Precision.EXACT_SPOT,
+        stated_cells=[grid.cell_for_point(*BASTILLE, 11)],
     )
     source = tmp_path / 'video.mp4'
     source.write_bytes(PLAINTEXT)

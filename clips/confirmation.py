@@ -30,10 +30,9 @@ def confirm_upload(original, read, cleaned):
         as_uploaded_stated_time=cleaned['stated_time'],
         as_uploaded_tags={'default': cleaned['tags'], 'custom': cleaned['custom_tags']},
     )
-    if cleaned['latitude'] is not None:
-        clip.set_stated_location(cleaned['latitude'], cleaned['longitude'], cleaned['precision'])
-        clip.as_uploaded_stated_cell = clip.stated_cell
-        clip.as_uploaded_stated_precision = clip.stated_precision
+    if cleaned['stated_cells']:
+        clip.set_stated_location(cleaned['stated_cells'])
+        clip.as_uploaded_stated_cells = clip.stated_cells
     if read.gps is not None:
         clip.set_metadata_location(*read.gps, int(cleaned['metadata_precision']))
 

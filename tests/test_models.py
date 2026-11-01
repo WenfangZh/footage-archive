@@ -7,7 +7,7 @@ from django.core.files.base import ContentFile
 from django.db import IntegrityError, transaction
 
 from clips import grid
-from clips.models import Clip, ClipTag, Edit, Original, Precision
+from clips.models import Clip, ClipTag, Edit, Original, Precision, stated_cells_for_point
 
 pytestmark = pytest.mark.django_db
 
@@ -41,28 +41,31 @@ def test_edit_time_is_kept_only_to_its_block():
     assert edit.edited_at == ITS_BLOCK
 
 
-@pytest.mark.parametrize('precision, resolution', [
-    (Precision.EXACT_SPOT, 11), (Precision.STREET, 10), (Precision.NEIGHBOURHOOD, 9),
+@pytest.mark.parametrize('precision, resolution, count', [
+    (Precision.EXACT_SPOT, 11, 1), (Precision.STREET, 10, 7), (Precision.NEIGHBOURHOOD, 9, 49),
 ])
-def test_stated_location_keeps_only_the_cell_for_its_precision(precision, resolution):
+def test_a_typed_point_stands_for_the_finest_cells_of_its_precisions_hexagon(precision, resolution, count):
     clip = Clip(code_hash='0' * 64)
-    clip.set_stated_location(LATITUDE, LONGITUDE, precision)
+    clip.set_stated_location(stated_cells_for_point(LATITUDE, LONGITUDE, precision))
     clip.save()
     clip.refresh_from_db()
-    assert clip.stated_precision == precision
-    assert grid.resolution(clip.stated_cell) == resolution
-    assert clip.stated_cell == grid.cell_for_point(LATITUDE, LONGITUDE, resolution)
+    hexagon = grid.cell_for_point(LATITUDE, LONGITUDE, resolution)
+    assert len(clip.stated_cells) == count
+    assert {grid.coarsen(cell, resolution) for cell in clip.stated_cells} == {hexagon}
 
 
-@pytest.mark.parametrize('fields', [
-    {'stated_cell': grid.cell_for_point(LATITUDE, LONGITUDE, 11)},
-    {'stated_precision': Precision.STREET},
-    {'as_uploaded_stated_cell': grid.cell_for_point(LATITUDE, LONGITUDE, 11)},
-    {'as_uploaded_stated_precision': Precision.STREET},
-])
-def test_a_location_needs_both_its_cell_and_its_precision(fields):
+def test_a_stated_location_is_only_the_grids_finest_cells_at_most_the_ceiling_across(settings):
+    clip = Clip(code_hash='0' * 64)
+    here = grid.cell_for_point(LATITUDE, LONGITUDE, 11)
+    for cells in ([], [grid.coarsen(here, 10)], [here, grid.cell_for_point(LATITUDE + 0.01, LONGITUDE, 11)]):
+        with pytest.raises(ValueError):
+            clip.set_stated_location(cells)  # None; coarser; about 1.1 km apart.
+
+
+@pytest.mark.parametrize('field', ['stated_cells', 'as_uploaded_stated_cells'])
+def test_a_location_is_never_an_empty_set(field):
     with pytest.raises(IntegrityError), transaction.atomic():
-        make_clip(**fields)
+        make_clip(**{field: []})
 
 
 def test_metadata_location_resolutions_are_11_to_9():
@@ -81,7 +84,7 @@ def test_metadata_location_resolutions_are_11_to_9():
     ('upload_time', ITS_BLOCK + datetime.timedelta(hours=4)),
     ('code_hash', 'f' * 64),
     ('as_uploaded_stated_time', None),
-    ('as_uploaded_stated_precision', Precision.NEIGHBOURHOOD),
+    ('as_uploaded_stated_cells', [grid.cell_for_point(LATITUDE, LONGITUDE, 11)]),
     ('as_uploaded_tags', {'default': ['arrest', 'tear_gas'], 'custom': []}),
 ])
 def test_metadata_time_and_as_uploaded_values_cannot_change(field, value):
@@ -89,8 +92,7 @@ def test_metadata_time_and_as_uploaded_values_cannot_change(field, value):
         code_hash='0' * 64, metadata_time=PRECISE_TIME, as_uploaded_stated_time=PRECISE_TIME,
         as_uploaded_tags={'default': ['arrest'], 'custom': []},
     )
-    clip.as_uploaded_stated_cell = grid.cell_for_point(LATITUDE, LONGITUDE, 10)
-    clip.as_uploaded_stated_precision = Precision.STREET
+    clip.as_uploaded_stated_cells = sorted(stated_cells_for_point(LATITUDE, LONGITUDE, Precision.STREET))
     clip.save()
     setattr(clip, field, value)
     with pytest.raises(ValueError, match=f'{field} cannot be changed'):
@@ -100,7 +102,7 @@ def test_metadata_time_and_as_uploaded_values_cannot_change(field, value):
 def test_stated_values_can_change():
     clip = make_clip(stated_time=PRECISE_TIME)
     clip.stated_time = PRECISE_TIME + datetime.timedelta(hours=1)
-    clip.set_stated_location(LATITUDE, LONGITUDE, Precision.NEIGHBOURHOOD)
+    clip.set_stated_location(stated_cells_for_point(LATITUDE, LONGITUDE, Precision.NEIGHBOURHOOD))
     clip.save()
 
 

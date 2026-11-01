@@ -1,1 +1,0 @@
-{% load i18n %}{% if place %}{% blocktranslate with latitude=place.latitude|floatformat:"5u" longitude=place.longitude|floatformat:"5u" width=place.width|floatformat:"0" %}the cell around {{ latitude }}, {{ longitude }}, about {{ width }} m across{% endblocktranslate %}{% if place.precision %} ({{ place.precision }}){% endif %}{% else %}{% translate "not given" %}{% endif %}
