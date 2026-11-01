@@ -15,7 +15,7 @@ from cases.models import Case, CaseApproval
 from clips import grid
 from nacl.public import PrivateKey
 
-from tests.conftest import BASTILLE, log_in_with_second_factor, make_case, make_key, open_label
+from tests.conftest import BASTILLE, database_dump, log_in_with_second_factor, make_case, make_key, open_label
 
 pytestmark = pytest.mark.django_db
 
@@ -103,7 +103,7 @@ def test_the_typed_place_is_never_kept_or_logged(lawyer_client, caplog):
     create(lawyer_client, **ODD_PLACE)
     create(lawyer_client, label='', **ODD_PLACE)
     case = Case.objects.get()
-    database = '\n'.join(connection.connection.iterdump())
+    database = database_dump()
     page = lawyer_client.get(reverse('lawyer:case', kwargs={'case_id': case.pk})).content.decode()
     for kept in (database, page, caplog.text):
         assert '85417' not in kept and '36923' not in kept
@@ -419,5 +419,5 @@ def test_no_coordinates_or_map_view_are_kept_with_a_case_from_the_map(lawyer_cli
     view = {'centre': '48.85417,2.36923', 'zoom': '16.123457'}
     create(lawyer_client, cells=ids(PICKED), **NO_PLACE, **view)
     assert Case.objects.exists()
-    database = '\n'.join(connection.connection.iterdump())
+    database = database_dump()
     assert '85417' not in database and '36923' not in database and '123457' not in database
