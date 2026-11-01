@@ -45,6 +45,7 @@
       {% if clip.stated_cells %}
         <p>{% translate "The place we keep:" %} {% include "clips/place.html" with place=clip.stated_place %}.
           {% translate "Coordinates given below replace it." %}</p>
+        {{ form.remove_place.as_field_group }}
       {% endif %}
       {# Without the map: the place as coordinates and a precision (ADR 0004, ADR 0009). #}
       <div id="typed-place">

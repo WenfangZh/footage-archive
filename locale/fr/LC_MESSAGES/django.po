@@ -1720,7 +1720,7 @@ msgid "Your thread with this clip's code holder"
 msgstr "Votre fil de messages avec la personne qui détient le code de ce clip"
 
 #: cases/templates/cases/clip.html:141 cases/templates/cases/messages.html:43
-#: clips/templates/clips/clip.html:114 clips/templates/clips/upload.html:42
+#: clips/templates/clips/clip.html:115 clips/templates/clips/upload.html:42
 msgid "Send"
 msgstr "Envoyer"
 
@@ -1807,7 +1807,7 @@ msgstr ""
 "détient le code écrivez à nouveau d'ici là. Gardez ce dont vous avez besoin "
 "dans vos propres dossiers."
 
-#: cases/templates/cases/messages.html:21 clips/templates/clips/clip.html:94
+#: cases/templates/cases/messages.html:21 clips/templates/clips/clip.html:95
 msgid "You"
 msgstr "Vous"
 
@@ -1815,7 +1815,7 @@ msgstr "Vous"
 msgid "The code holder"
 msgstr "La personne qui détient le code"
 
-#: cases/templates/cases/messages.html:22 clips/templates/clips/clip.html:95
+#: cases/templates/cases/messages.html:22 clips/templates/clips/clip.html:96
 #, python-format
 msgid "%(day)s, in the four hours from %(start)s"
 msgstr "%(day)s, dans les quatre heures à partir de %(start)s"
@@ -1828,11 +1828,11 @@ msgstr "avec votre nom et votre barreau"
 msgid "as a verified defence lawyer"
 msgstr "en tant qu'avocat·e de la défense vérifié·e"
 
-#: cases/templates/cases/messages.html:24 clips/templates/clips/clip.html:96
+#: cases/templates/cases/messages.html:24 clips/templates/clips/clip.html:97
 msgid "New"
 msgstr "Nouveau"
 
-#: cases/templates/cases/messages.html:27 clips/templates/clips/clip.html:98
+#: cases/templates/cases/messages.html:27 clips/templates/clips/clip.html:99
 msgid "No note."
 msgstr "Pas de note."
 
@@ -2043,7 +2043,7 @@ msgid "Delete this clip for good"
 msgstr "Supprimer ce clip définitivement"
 
 #: cases/templates/cases/withdrawn_clips.html:16
-#: clips/templates/clips/clip.html:136
+#: clips/templates/clips/clip.html:137
 msgid "Delete"
 msgstr "Supprimer"
 
@@ -2107,7 +2107,7 @@ msgstr "Vos réglages sont enregistrés."
 msgid "The case is closed."
 msgstr "Le dossier de recherche est clos."
 
-#: cases/withdrawn_clips.py:34 clips/templates/clips/clip.html:129
+#: cases/withdrawn_clips.py:34 clips/templates/clips/clip.html:130
 msgid "Tick the box to confirm."
 msgstr "Cochez la case pour confirmer."
 
@@ -2202,12 +2202,22 @@ msgstr ""
 "Avec quelle précision pouvons-nous garder la position GPS trouvée dans la "
 "vidéo ?"
 
-#: clips/forms.py:192
+#: clips/forms.py:194
+msgid "Remove the place"
+msgstr "Retirer le lieu"
+
+#: clips/forms.py:195
+msgid "No lawyer can find the clip until you give a place again."
+msgstr ""
+"Aucun·e avocat·e ne peut trouver le clip tant que vous n'indiquez pas à "
+"nouveau un lieu."
+
+#: clips/forms.py:198
 msgid "How precisely we keep the GPS position found in the video"
 msgstr ""
 "Précision avec laquelle nous gardons la position GPS trouvée dans la vidéo"
 
-#: clips/forms.py:218 clips/templates/clips/clip.html:111
+#: clips/forms.py:230 clips/templates/clips/clip.html:112
 msgid "Your reply"
 msgstr "Votre réponse"
 
@@ -2414,22 +2424,22 @@ msgstr "Le lieu que nous conservons :"
 msgid "Coordinates given below replace it."
 msgstr "Les coordonnées indiquées ci-dessous le remplacent."
 
-#: clips/templates/clips/clip.html:57
+#: clips/templates/clips/clip.html:58
 msgid "GPS position found in the video, as we keep it:"
 msgstr "Position GPS trouvée dans la vidéo, telle que nous la gardons :"
 
-#: clips/templates/clips/clip.html:60
+#: clips/templates/clips/clip.html:61
 msgid ""
 "You can have it kept less precisely, never more: the exact position is gone."
 msgstr ""
 "Vous pouvez la faire garder moins précisément, jamais plus : la position "
 "exacte n'existe plus."
 
-#: clips/templates/clips/clip.html:70
+#: clips/templates/clips/clip.html:71
 msgid "Contact details (optional)"
 msgstr "Moyen de contact (facultatif)"
 
-#: clips/templates/clips/clip.html:71 clips/templates/clips/confirm.html:51
+#: clips/templates/clips/clip.html:72 clips/templates/clips/confirm.html:51
 msgid ""
 "Defence lawyers whose case finds this clip will see these details, to "
 "contact you. Anyone else who obtains them could use them against you. Leave "
@@ -2440,7 +2450,7 @@ msgstr ""
 "l'obtiendrait pourrait s'en servir contre vous. Ne le laissez que si vous "
 "acceptez ce risque."
 
-#: clips/templates/clips/clip.html:75
+#: clips/templates/clips/clip.html:76
 msgid ""
 "Lawyers see which details you changed, and roughly when, but not the old "
 "values. For the time, the place and the tags, they also see what you gave at "
@@ -2450,19 +2460,19 @@ msgstr ""
 "mais pas les anciennes valeurs. Pour l'heure, le lieu et les étiquettes, la "
 "version telle qu'uploadée leur reste aussi visible."
 
-#: clips/templates/clips/clip.html:76
+#: clips/templates/clips/clip.html:77
 msgid "Save changes"
 msgstr "Enregistrer les modifications"
 
-#: clips/templates/clips/clip.html:81
+#: clips/templates/clips/clip.html:82
 msgid "Messages from lawyers"
 msgstr "Messages d'avocat·es"
 
-#: clips/templates/clips/clip.html:82
+#: clips/templates/clips/clip.html:83
 msgid "Your reply is sent."
 msgstr "Votre réponse est envoyée."
 
-#: clips/templates/clips/clip.html:83
+#: clips/templates/clips/clip.html:84
 msgid ""
 "Only you, with your code, and the lawyer of each thread can read these "
 "messages. Lawyers are not told whether or when you read them. You decide "
@@ -2473,12 +2483,12 @@ msgstr ""
 "vous les lisez. Vous décidez de répondre ou non, et de dire qui vous êtes ou "
 "non."
 
-#: clips/templates/clips/clip.html:86
+#: clips/templates/clips/clip.html:87
 #, python-format
 msgid "Lawyer %(letter)s"
 msgstr "Avocat·e %(letter)s"
 
-#: clips/templates/clips/clip.html:87
+#: clips/templates/clips/clip.html:88
 #, python-format
 msgid ""
 "These messages will be deleted on %(day)s, unless you or the lawyer write "
@@ -2487,37 +2497,37 @@ msgstr ""
 "Ces messages seront supprimés le %(day)s, sauf si vous ou l'avocat·e écrivez "
 "à nouveau d'ici là."
 
-#: clips/templates/clips/clip.html:88
+#: clips/templates/clips/clip.html:89
 msgid "This lawyer no longer has access."
 msgstr "Cet·te avocat·e n'a plus accès à l'archive."
 
-#: clips/templates/clips/clip.html:94
+#: clips/templates/clips/clip.html:95
 msgid "A verified defence lawyer"
 msgstr "Un·e avocat·e de la défense vérifié·e"
 
-#: clips/templates/clips/clip.html:98
+#: clips/templates/clips/clip.html:99
 msgid "This message could not be opened."
 msgstr "Ce message n'a pas pu être ouvert."
 
-#: clips/templates/clips/clip.html:109
+#: clips/templates/clips/clip.html:110
 msgid "Your reply could not be sent. Check it and try again."
 msgstr "Votre réponse n'a pas pu être envoyée. Vérifiez-la et réessayez."
 
-#: clips/templates/clips/clip.html:117
+#: clips/templates/clips/clip.html:118
 msgid "You cannot answer this lawyer for now. Please try again later."
 msgstr ""
 "Vous ne pouvez pas répondre à cet·te avocat·e pour le moment. Veuillez "
 "réessayer plus tard."
 
-#: clips/templates/clips/clip.html:118
+#: clips/templates/clips/clip.html:119
 msgid "Your reply was not sent. Here it is, to keep:"
 msgstr "Votre réponse n'a pas été envoyée. La voici, pour la garder :"
 
-#: clips/templates/clips/clip.html:125
+#: clips/templates/clips/clip.html:126
 msgid "Delete this clip"
 msgstr "Supprimer ce clip"
 
-#: clips/templates/clips/clip.html:133
+#: clips/templates/clips/clip.html:134
 msgid "Yes, delete this clip and everything it holds, for good."
 msgstr "Oui, supprimer définitivement ce clip et tout ce qu'il contient."
 
