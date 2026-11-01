@@ -188,6 +188,12 @@ class EditForm(ClipFieldsForm):
     """The code holder's changes to a clip (SPEC.md §5). The code comes back with each change."""
 
     code = forms.CharField(widget=forms.HiddenInput)
+    # Without JavaScript the page sends back the cells kept, and empty coordinates keep them: this
+    # is how a place is removed then (SPEC.md §8).
+    remove_place = forms.BooleanField(
+        label=_('Remove the place'), required=False,
+        help_text=_('No lawyer can find the clip until you give a place again.'),
+    )
     metadata_precision = forms.ChoiceField(
         label=_('How precisely we keep the GPS position found in the video'),
         widget=forms.RadioSelect,
@@ -203,6 +209,12 @@ class EditForm(ClipFieldsForm):
             self.fields['metadata_precision'].initial = str(metadata_resolution)
         else:
             del self.fields['metadata_precision']
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('remove_place'):
+            cleaned['stated_cells'] = None  # Whatever else was sent for the place.
+        return cleaned
 
 
 # A message's or reply's length, either way: lawyers' (cases.forms) and the code holder's.

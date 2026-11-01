@@ -379,3 +379,20 @@ def test_an_edit_does_not_bring_back_a_clip_that_failed_meanwhile(client, upload
     clip.refresh_from_db()
     # Nothing is left to describe: its texts went with it (SPEC.md §9).
     assert clip.status == Clip.Status.FAILED and not VaultText.objects.exists() and not Edit.objects.exists()
+
+
+def test_the_place_can_be_removed_without_javascript(client, uploaded):
+    clip, code = uploaded
+    page = open_clip(client, code).content.decode()
+    assert 'name="remove_place"' in page
+
+    # The page sends back the cells kept, as it does without JavaScript; the box wins over them,
+    # and over coordinates.
+    response = edit(client, code, remove_place='on', latitude=str(ELSEWHERE[0]), longitude=str(ELSEWHERE[1]),
+                    precision=Precision.EXACT_SPOT)
+
+    assert response.status_code == 200
+    clip.refresh_from_db()
+    assert clip.stated_cells is None and clip.as_uploaded_stated_cells == [grid.cell_for_point(*STATED, 11)]
+    assert list(Edit.objects.values_list('field', flat=True)) == ['stated_location']
+    assert 'name="remove_place"' not in open_clip(client, code).content.decode()
