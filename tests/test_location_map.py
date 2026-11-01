@@ -70,7 +70,7 @@ def test_a_place_chosen_on_the_map_is_kept_as_the_cell_for_the_precision_chosen(
     confirmed(client, video, latitude=CLICKED[0], longitude=CLICKED[1], precision='street')
 
     clip = Clip.objects.get()
-    assert clip.stated_cell == grid.cell_for_point(float(CLICKED[0]), float(CLICKED[1]), 10)
+    assert clip.stated_cells == sorted(grid.children(grid.cell_for_point(float(CLICKED[0]), float(CLICKED[1]), 10), 11))
 
 
 def test_nothing_of_a_click_but_its_cell_is_stored_or_logged(client, video, django_log):  # noqa: F811
@@ -82,7 +82,7 @@ def test_nothing_of_a_click_but_its_cell_is_stored_or_logged(client, video, djan
     edited = client.post(reverse('clips:edit'), {
         **full_form(latitude='48.853377', longitude='2.369004', precision='exact_spot'), 'code': code,
     }, headers=ENGLISH)
-    assert edited.status_code == 200 and Clip.objects.get().stated_cell == grid.cell_for_point(48.853377, 2.369004, 11)
+    assert edited.status_code == 200 and Clip.objects.get().stated_cells == [grid.cell_for_point(48.853377, 2.369004, 11)]
 
     connection.ensure_connection()
     stored = '\n'.join(connection.connection.iterdump())  # The whole database, as SQL.

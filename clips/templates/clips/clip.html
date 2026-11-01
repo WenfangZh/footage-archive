@@ -40,8 +40,11 @@
 
     <fieldset>
       <legend>{% translate "Place" %}</legend>
-      {% if clip.stated_cell %}
-        <p>{% translate "The position shown is the centre of the area we keep, not the exact spot you gave." %}</p>
+      {{ form.cells }}
+      {{ form.cells.errors }}
+      {% if clip.stated_cells %}
+        <p>{% translate "The place we keep:" %} {% include "clips/place.html" with place=clip.stated_place %}.
+          {% translate "Coordinates given below replace it." %}</p>
       {% endif %}
       {{ form.latitude.as_field_group }}
       {{ form.longitude.as_field_group }}

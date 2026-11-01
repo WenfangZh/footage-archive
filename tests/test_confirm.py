@@ -92,12 +92,10 @@ def test_confirming_creates_the_clip_and_shows_its_code(client, video):
     assert clip.code_hash == upload_codes.keyed_hash(code)
     assert clip.metadata_time == datetime.datetime(2026, 5, 1, 12, 3, 22, tzinfo=UTC)
     assert clip.stated_time == datetime.datetime(2026, 5, 1, 12, 5, tzinfo=UTC)
-    assert clip.stated_cell == grid.cell_for_point(*STATED, 10)
-    assert clip.stated_precision == Precision.STREET
+    # A street: the finest cells of the hexagon about 130 m across (ADR 0009).
+    assert clip.stated_cells == sorted(grid.children(grid.cell_for_point(*STATED, 10), 11))
     assert clip.metadata_cell == grid.cell_for_point(*FILE_GPS, 11)
-    assert (clip.as_uploaded_stated_time, clip.as_uploaded_stated_cell, clip.as_uploaded_stated_precision) == (
-        clip.stated_time, clip.stated_cell, clip.stated_precision,
-    )
+    assert (clip.as_uploaded_stated_time, clip.as_uploaded_stated_cells) == (clip.stated_time, clip.stated_cells)
     assert clip.as_uploaded_tags == {'default': ['arrest', 'kettling'], 'custom': ['Pont Neuf', 'Barricade']}
     assert {(tag.key, tag.custom_name, tag.source) for tag in ClipTag.objects.all()} == {
         ('arrest', '', 'code_holder'), ('kettling', '', 'code_holder'),
@@ -136,10 +134,11 @@ def test_the_metadata_time_comes_from_the_file_not_the_form(client, video):
     assert Clip.objects.get().metadata_time == datetime.datetime(2026, 5, 1, 12, 3, 22, tzinfo=UTC)
 
 
-def test_vague_precisions_keep_only_coarse_cells(client, video):
+def test_vague_precisions_keep_only_coarse_places(client, video):
     client.post(start_upload(client, video), full_form(precision=Precision.NEIGHBOURHOOD, metadata_precision='9'))
     clip = Clip.objects.get()
-    assert clip.stated_cell == grid.cell_for_point(*STATED, 9)
+    assert {grid.coarsen(cell, 9) for cell in clip.stated_cells} == {grid.cell_for_point(*STATED, 9)}
+    assert len(clip.stated_cells) == 49
     assert clip.metadata_cell == grid.cell_for_point(*FILE_GPS, 9)
 
 
@@ -174,7 +173,7 @@ def test_an_empty_form_still_creates_a_clip_with_a_warning(client, video_without
     assert response.status_code == 200
     assert 'No lawyer can find this clip until you add the time and the place.' in html
     clip = Clip.objects.get()
-    assert (clip.metadata_time, clip.metadata_cell, clip.stated_time, clip.stated_cell) == (None,) * 4
+    assert (clip.metadata_time, clip.metadata_cell, clip.stated_time, clip.stated_cells) == (None,) * 4
     assert clip.as_uploaded_tags == {'default': [], 'custom': []}
 
 

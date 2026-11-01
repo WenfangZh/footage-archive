@@ -24,14 +24,15 @@ class FourHourBlockField(models.DateTimeField):
 
 
 class Precision(models.TextChoices):
-    """How precisely the uploader or code holder knows the stated location."""
+    """How precisely the uploader or code holder knows a place given as coordinates (ADR 0004)."""
 
     EXACT_SPOT = 'exact_spot', _('Exact spot')
     STREET = 'street', _('Street')
     NEIGHBOURHOOD = 'neighbourhood', _('Neighbourhood')
 
 
-# The H3 resolution of the cell kept for each stated precision (ADR 0004).
+# The H3 resolution of the hexagon a typed point names, for each precision (ADR 0004): its finest
+# cells are kept (ADR 0009).
 STATED_RESOLUTIONS = {
     Precision.EXACT_SPOT: 11,
     Precision.STREET: 10,
@@ -40,6 +41,13 @@ STATED_RESOLUTIONS = {
 
 # The resolutions the uploader may choose for the metadata location (ADR 0004).
 METADATA_RESOLUTIONS = (11, 10, 9)
+
+
+def stated_cells_for_point(latitude, longitude, precision):
+    """The finest cells of the hexagon that a typed point and its precision name (ADR 0004, 0009):
+    the same area, centred on the hexagon, not on the point."""
+    hexagon = grid.cell_for_point(latitude, longitude, STATED_RESOLUTIONS[precision])
+    return grid.children(hexagon, grid.finest_resolution())
 
 
 class Clip(models.Model):
@@ -78,45 +86,47 @@ class Clip(models.Model):
     metadata_cell = models.BigIntegerField(null=True, blank=True)
 
     stated_time = models.DateTimeField(null=True, blank=True)
-    # An H3 cell whose resolution follows the stated precision.
-    stated_cell = models.BigIntegerField(null=True, blank=True)
-    stated_precision = models.CharField(max_length=20, choices=Precision.choices, blank=True)
+    # The grid's finest cells covering where it was filmed, as H3 ids in order (ADR 0009); none
+    # is null, never an empty list.
+    stated_cells = models.JSONField(null=True, blank=True)
 
     # The stated values and tags as they were at upload. Never modified.
     as_uploaded_stated_time = models.DateTimeField(null=True, blank=True)
-    as_uploaded_stated_cell = models.BigIntegerField(null=True, blank=True)
-    as_uploaded_stated_precision = models.CharField(max_length=20, choices=Precision.choices, blank=True)
+    as_uploaded_stated_cells = models.JSONField(null=True, blank=True)
     # {"default": [tag keys], "custom": [custom tag names]}
     as_uploaded_tags = models.JSONField(default=dict)
 
     IMMUTABLE_FIELDS = (
         'code_hash', 'upload_time', 'metadata_time', 'as_uploaded_stated_time',
-        'as_uploaded_stated_cell', 'as_uploaded_stated_precision', 'as_uploaded_tags',
+        'as_uploaded_stated_cells', 'as_uploaded_tags',
     )
 
     class Meta:
         constraints = [
-            # A stated location is a cell and a precision, or nothing.
-            models.CheckConstraint(
-                condition=Q(stated_cell__isnull=True, stated_precision='')
-                | (Q(stated_cell__isnull=False) & ~Q(stated_precision='')),
-                name='stated_location_has_cell_and_precision',
-            ),
-            models.CheckConstraint(
-                condition=Q(as_uploaded_stated_cell__isnull=True, as_uploaded_stated_precision='')
-                | (Q(as_uploaded_stated_cell__isnull=False) & ~Q(as_uploaded_stated_precision='')),
-                name='as_uploaded_location_has_cell_and_precision',
-            ),
+            # A stated location is some cells, or nothing: never an empty set.
+            models.CheckConstraint(condition=~Q(stated_cells=[]), name='stated_location_not_empty'),
+            models.CheckConstraint(condition=~Q(as_uploaded_stated_cells=[]), name='as_uploaded_location_not_empty'),
         ]
 
-    def set_stated_location(self, latitude, longitude, precision):
-        """Keep only the cell of the given point that matches its precision."""
-        self.stated_cell = grid.cell_for_point(latitude, longitude, STATED_RESOLUTIONS[precision])
-        self.stated_precision = precision
+    def set_stated_location(self, cells):
+        """Keep these cells as the stated location: the grid's finest, at most
+        STATED_LOCATION_CEILING_METRES across (clips.forms checks both first, to say why)."""
+        cells = set(cells)
+        if not cells or not all(grid.is_cell(cell) and grid.resolution(cell) == grid.finest_resolution() for cell in cells):
+            raise ValueError("A stated location is a set of the grid's finest cells.")
+        if grid.span_metres(cells) > settings.STATED_LOCATION_CEILING_METRES:
+            raise ValueError(f'A stated location is at most {settings.STATED_LOCATION_CEILING_METRES} m across.')
+        self.stated_cells = sorted(cells)
 
     def clear_stated_location(self):
-        self.stated_cell = None
-        self.stated_precision = ''
+        self.stated_cells = None
+
+    def stated_place(self):
+        """How many cells, where and how wide the stated location is, for showing; None for none."""
+        return grid.summary(self.stated_cells) if self.stated_cells else None
+
+    def as_uploaded_place(self):
+        return grid.summary(self.as_uploaded_stated_cells) if self.as_uploaded_stated_cells else None
 
     def set_metadata_location(self, latitude, longitude, resolution):
         if resolution not in METADATA_RESOLUTIONS:

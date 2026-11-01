@@ -1,8 +1,11 @@
+import re
+
 from django import forms
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
-from .models import STATED_RESOLUTIONS, Precision
+from . import grid
+from .models import Precision, stated_cells_for_point
 from .tags import CUSTOM_TAG_MAX_LENGTH, DEFAULT_TAGS
 
 CONTEXT_MAX_LENGTH = 4000
@@ -15,6 +18,51 @@ METADATA_PRECISIONS = [
     ('10', _('About 130 m')),
     ('9', _('About 340 m')),
 ]
+
+
+# An H3 id in hexadecimal, as the map's h3-js writes it; grid.is_cell checks the rest.
+HEX_ID = re.compile(r'[0-9a-f]{1,16}', re.IGNORECASE)
+
+
+def max_stated_cells():
+    return grid.max_cells_within(settings.STATED_LOCATION_CEILING_METRES)
+
+
+class CellsField(forms.Field):
+    """Cells picked on a map: the grid's finest cells, as H3 ids in hexadecimal (a case's area,
+    M4.5; a clip's stated location, M6.6). Only these ids reach the server, never a click or the
+    map's view (ADR 0006, ADR 0009), and they are checked like anything else a browser sends.
+    `max_cells` says how many are too many to measure.
+    """
+
+    widget = forms.HiddenInput
+    default_error_messages = {
+        'invalid': _('The place painted on the map could not be read. Paint it again.'),
+        'too_many': _('The place painted on the map is too large.'),
+    }
+
+    def __init__(self, *, max_cells, **kwargs):
+        self.max_cells = max_cells
+        super().__init__(**kwargs)
+
+    def prepare_value(self, value):
+        if isinstance(value, (list, set, tuple)):
+            return ' '.join(format(cell, 'x') for cell in sorted(value))
+        return value
+
+    def to_python(self, value):
+        ids = (value or '').replace(',', ' ').split()
+        if not ids:
+            return None
+        if len(ids) > self.max_cells():
+            raise forms.ValidationError(self.error_messages['too_many'], code='too_many')
+        cells = set()
+        for text in ids:
+            cell = int(text, 16) if HEX_ID.fullmatch(text) else None
+            if cell in cells or not grid.is_cell(cell) or grid.resolution(cell) != grid.finest_resolution():
+                raise forms.ValidationError(self.error_messages['invalid'], code='invalid')
+            cells.add(cell)
+        return cells
 
 
 class FileForm(forms.Form):
@@ -45,6 +93,8 @@ class ClipFieldsForm(forms.Form):
         label=_('When was it filmed?'), required=False,
         widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
     )
+    # The place painted on the map (ADR 0009). Coordinates typed below, when given, replace it.
+    cells = CellsField(required=False, max_cells=lambda: max_stated_cells())
     latitude = forms.FloatField(
         label=_('Latitude'), required=False, min_value=-90, max_value=90,
         widget=forms.NumberInput(attrs={'step': 'any'}),
@@ -96,14 +146,26 @@ class ClipFieldsForm(forms.Form):
         return names
 
     def clean(self):
+        """The stated location, as cleaned['stated_cells']: the typed point's cells, or else the
+        cells painted; None for none."""
         cleaned = super().clean()
-        if 'latitude' in self.errors or 'longitude' in self.errors:
+        if 'latitude' in self.errors or 'longitude' in self.errors or 'cells' in self.errors:
             return cleaned
         latitude, longitude = cleaned.get('latitude'), cleaned.get('longitude')
         if (latitude is None) != (longitude is None):
             raise forms.ValidationError(_('Give both the latitude and the longitude, or neither.'))
         if latitude is not None and not cleaned.get('precision'):
             self.add_error('precision', _('Say how precise this place is.'))
+            return cleaned
+        if latitude is not None:
+            cleaned['stated_cells'] = stated_cells_for_point(latitude, longitude, cleaned['precision'])
+        else:
+            cleaned['stated_cells'] = cleaned.get('cells')
+        if cleaned['stated_cells'] and grid.span_metres(cleaned['stated_cells']) > settings.STATED_LOCATION_CEILING_METRES:
+            self.add_error('cells', forms.ValidationError(
+                _('The place painted on the map is more than %(metres)d m across.'),
+                params={'metres': settings.STATED_LOCATION_CEILING_METRES},
+            ))
         return cleaned
 
 
@@ -130,10 +192,8 @@ class EditForm(ClipFieldsForm):
         widget=forms.RadioSelect,
     )
 
-    def __init__(self, *args, stated_centre, stated_resolution, metadata_resolution, **kwargs):
+    def __init__(self, *args, metadata_resolution, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stated_centre = stated_centre
-        self.stated_resolution = stated_resolution
         # The metadata location can only be made coarser (ADR 0004).
         coarser = [(value, label) for value, label in METADATA_PRECISIONS
                    if metadata_resolution is not None and int(value) <= metadata_resolution]
@@ -142,20 +202,6 @@ class EditForm(ClipFieldsForm):
             self.fields['metadata_precision'].initial = str(metadata_resolution)
         else:
             del self.fields['metadata_precision']
-
-    def clean(self):
-        cleaned = super().clean()
-        precision = cleaned.get('precision')
-        position = (cleaned.get('latitude'), cleaned.get('longitude'))
-        # The form shows the centre of the stored cell, not where the clip was filmed.
-        # Making the place more precise from that centre would invent precision.
-        if (
-            precision and self.stated_centre is not None
-            and position == self.stated_centre
-            and STATED_RESOLUTIONS[precision] > self.stated_resolution
-        ):
-            self.add_error('precision', _('To make the place more precise, give its new position.'))
-        return cleaned
 
 
 # A message's or reply's length, either way: lawyers' (cases.forms) and the code holder's.

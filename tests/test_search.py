@@ -13,7 +13,7 @@ from audit.models import Action, AuditEntry
 from cases.models import Case
 from cases.search import find, match_of
 from clips import grid
-from clips.models import Clip, Precision
+from clips.models import Clip
 from tests.conftest import BASTILLE, log_in_with_second_factor, make_case
 
 pytestmark = pytest.mark.django_db
@@ -48,13 +48,21 @@ def ring_cell(rings):
     return h3.grid_ring(CENTRE, rings)[0]
 
 
-def make_clip(minutes=10, seconds=60, cell=CENTRE, precision=Precision.EXACT_SPOT, **fields):
-    """A ready clip stated `minutes` after the window starts, lasting `seconds`, in `cell`."""
+def cells_of(cell):
+    # A cell finer than the grid's limit is one from before the grid was made coarser: kept as is.
+    if grid.resolution(cell) >= grid.finest_resolution():
+        return [cell]
+    return sorted(grid.children(cell, grid.finest_resolution()))
+
+
+def make_clip(minutes=10, seconds=60, cell=CENTRE, **fields):
+    """A ready clip stated `minutes` after the window starts, lasting `seconds`, in `cell`: as a
+    typed point would give it, the finest cells of `cell` (ADR 0009)."""
     values = {
         'code_hash': f'{next(codes):064d}', 'status': Clip.Status.READY,
         'stated_time': START + datetime.timedelta(minutes=minutes),
         'duration': datetime.timedelta(seconds=seconds) if seconds is not None else None,
-        'stated_cell': cell, 'stated_precision': precision if cell else '',
+        'stated_cells': cells_of(cell) if cell else None,
     }
     return Clip.objects.create(**{**values, **fields})
 
@@ -98,9 +106,8 @@ def test_a_clip_in_the_margin_of_both_time_and_place_is_a_margin_match(case):
 
 
 def test_a_coarse_clip_matches_any_area_inside_its_cell(case):
-    coarse = make_clip(cell=grid.coarsen(CENTRE, 9), precision=Precision.NEIGHBOURHOOD)
-    elsewhere = make_clip(cell=grid.coarsen(grid.cell_for_point(BASTILLE[0] + 0.1, BASTILLE[1], 11), 9),
-                          precision=Precision.NEIGHBOURHOOD)
+    coarse = make_clip(cell=grid.coarsen(CENTRE, 9))
+    elsewhere = make_clip(cell=grid.coarsen(grid.cell_for_point(BASTILLE[0] + 0.1, BASTILLE[1], 11), 9))
     assert find(case) == ([coarse], [])
     assert match_of(case, elsewhere) is None
 
@@ -109,7 +116,7 @@ def test_a_coarse_clip_touching_only_the_margin_is_a_margin_match(lawyer):
     # A case of one cell, whose margin ring crosses into a neighbouring coarse cell.
     margin_cell = next(cell for cell in h3.grid_ring(CENTRE, 1) if grid.coarsen(cell, 10) != grid.coarsen(CENTRE, 10))
     case = make_case(lawyer, cells={CENTRE}, margin_rings=1, margin_minutes=0, **WINDOW)
-    clip = make_clip(cell=grid.coarsen(margin_cell, 10), precision=Precision.STREET)
+    clip = make_clip(cell=grid.coarsen(margin_cell, 10))
     assert match_of(case, clip) == 'margin'
 
 
@@ -117,7 +124,7 @@ def test_a_coarse_clip_touching_only_the_margin_is_a_margin_match(lawyer):
     {'status': Clip.Status.PROCESSING},
     {'status': Clip.Status.FAILED},
     {'stated_time': None},
-    {'stated_cell': None, 'stated_precision': ''},
+    {'stated_cells': None},
 ])
 def test_only_ready_clips_with_a_stated_time_and_place_can_match(case, fields):
     make_clip(**fields)
@@ -220,9 +227,9 @@ def test_one_clip_s_match_is_the_same_as_the_search_s(lawyer):
     clips = []
     for _ in range(150):
         cell = rng.choice(list(h3.grid_disk(CENTRE, 8)))
-        precision, resolution = rng.choice([(Precision.EXACT_SPOT, 11), (Precision.STREET, 10), (Precision.NEIGHBOURHOOD, 9)])
+        resolution = rng.choice([11, 10, 9])
         clips.append(make_clip(minutes=rng.randint(-40, 100), seconds=rng.choice([None, 0, 30, 900]),
-                               cell=grid.coarsen(cell, resolution), precision=precision))
+                               cell=grid.coarsen(cell, resolution)))
     found = find(case)
     expected = {clip.pk: 'core' for clip in found.core} | {clip.pk: 'margin' for clip in found.margin}
     assert {clip.pk: match_of(case, clip) for clip in clips} == {clip.pk: expected.get(clip.pk) for clip in clips}

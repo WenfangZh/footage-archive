@@ -14,7 +14,7 @@ from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from cases.models import Case
 from clips import grid, vault
-from clips.models import Clip, ClipTag, Edit, Precision
+from clips.models import Clip, ClipTag, Edit
 from tests.conftest import (
     BASTILLE, log_in_with_second_factor, make_case, open_page_text, put_vault_file, with_code_holder_key, with_data_key,
 )
@@ -56,9 +56,8 @@ def clip(tmp_path, group_key_pair, lawyer_client):
     clip = Clip.objects.create(
         code_hash='1' * 64, status=Clip.Status.READY, stated_time=START + datetime.timedelta(minutes=10),
         metadata_time=START + datetime.timedelta(minutes=10, seconds=30), duration=datetime.timedelta(seconds=42),
-        stated_cell=CENTRE, stated_precision=Precision.EXACT_SPOT, metadata_cell=grid.coarsen(CENTRE, 10),
-        as_uploaded_stated_time=START, as_uploaded_stated_cell=CENTRE,
-        as_uploaded_stated_precision=Precision.EXACT_SPOT,
+        stated_cells=[CENTRE], metadata_cell=grid.coarsen(CENTRE, 10),
+        as_uploaded_stated_time=START, as_uploaded_stated_cells=[CENTRE],
         as_uploaded_tags={'default': ['arrest'], 'custom': ['Rue de la Roquette']},
     )
     with_code_holder_key(clip)
@@ -66,6 +65,22 @@ def clip(tmp_path, group_key_pair, lawyer_client):
     source.write_bytes(PROXY_BYTES)
     with_data_key(lawyer_client, vault.PROXY, put_vault_file(clip, vault.PROXY, source, 'mp4'))
     return clip
+
+
+def test_a_lawyer_sees_a_painted_place_as_cells_a_size_and_a_real_cells_centre(case, clip, lawyer_client, settings):
+    settings.LANGUAGE_CODE = 'en'
+    # A stretch of street: three cells in a row, the middle one in the middle.
+    row = [h3.grid_ring(CENTRE, 1)[0], CENTRE]
+    row.append(next(cell for cell in h3.grid_ring(CENTRE, 1) if h3.grid_distance(cell, row[0]) == 2))
+    Clip.objects.filter(pk=clip.pk).update(stated_cells=sorted(row))
+
+    page = lawyer_client.get(url('clip', case, clip)).content.decode()
+
+    latitude, longitude = grid.centre(CENTRE)
+    width = round(grid.span_metres(row), -1)
+    assert f'3 cells around {latitude:.5f}, {longitude:.5f}, about {width:.0f} m across' in page
+    # As uploaded, still the one cell.
+    assert 'the cell around' in page
 
 
 def access_entries():
@@ -86,7 +101,7 @@ def test_a_lawyer_sees_a_matching_clip_with_its_values(case, clip, lawyer_client
     page = response.content.decode()
     for shown in (
         'Use of force <small>(code holder)</small>', 'Tags as uploaded: Arrest, Rue de la Roquette',
-        'Stated time: ', 'in the four hours from', '42 s', 'Exact spot',
+        'Stated time: ', 'in the four hours from', '42 s', 'the cell around',
         'about 60 m across',
         # Stated, metadata and as-uploaded times, in Paris time.
         '15 June 2026 18:10:00', '15 June 2026 18:10:30', '15 June 2026 18:00:00',
@@ -245,7 +260,7 @@ def make_clip_for(lawyer, tmp_path):
     case = make_case(lawyer, rings=2, starts_at=START, ends_at=START + datetime.timedelta(hours=1))
     clip = Clip.objects.create(
         code_hash='2' * 64, status=Clip.Status.READY, stated_time=START + datetime.timedelta(minutes=10),
-        stated_cell=CENTRE, stated_precision=Precision.EXACT_SPOT,
+        stated_cells=[CENTRE],
     )
     data_keys = {}
     for kind, name in ((vault.PROXY, 'proxy.mp4'), (vault.EVIDENCE_COPY, 'evidence.mp4')):

@@ -6,7 +6,7 @@ No cell is finer than settings.GRID_H3_RESOLUTION (11, about 50 m across, at mos
 """
 
 from itertools import combinations
-from math import cos, radians
+from math import cos, pi, radians, sqrt
 
 import h3.api.basic_int as h3
 from django.conf import settings
@@ -140,6 +140,27 @@ def cells_around(latitude, longitude, radius_metres):
 def average_area_square_metres():
     """The average area of a cell at the grid's finest resolution."""
     return h3.average_hexagon_area(finest_resolution(), 'm^2')
+
+
+def max_cells_within(ceiling_metres):
+    """More of the finest cells than any set at most `ceiling_metres` across holds: a larger set
+    can be refused before it is measured.
+
+    A set at most D across fits in a circle D/√3 in radius (Jung's theorem); twice that
+    circle's area in cells of average size leaves room for cells smaller than average.
+    """
+    radius = ceiling_metres / sqrt(3)
+    return max(1, int(2 * pi * radius**2 / average_area_square_metres()))
+
+
+def summary(cells):
+    """Where a set of cells is and how wide, for showing: how many, the centre of the middle one,
+    and the span edge to edge (one cell's own width for a single cell)."""
+    cells = set(cells)
+    middle = middle_cell(cells)
+    latitude, longitude = centre(middle)
+    width = width_metres(middle) if len(cells) == 1 else span_metres(cells)
+    return {'count': len(cells), 'latitude': latitude, 'longitude': longitude, 'width': round(width, -1)}
 
 
 def width_metres(cell):

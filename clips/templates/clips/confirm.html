@@ -24,6 +24,8 @@
     <fieldset>
       <legend>{% translate "Place" %}</legend>
       {% if read.gps %}<p>{% translate "Pre-filled from the GPS position in the video." %}</p>{% endif %}
+      {{ form.cells }}
+      {{ form.cells.errors }}
       {{ form.latitude.as_field_group }}
       {{ form.longitude.as_field_group }}
       {{ form.precision.as_field_group }}
