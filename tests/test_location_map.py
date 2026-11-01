@@ -77,7 +77,7 @@ def test_nothing_of_a_click_but_its_cell_is_stored_or_logged(client, video, djan
     code = confirmed(
         client, video, latitude=CLICKED[0], longitude=CLICKED[1], precision='exact_spot',
         # Anything else a page might send about the map is not a field, and goes nowhere.
-        zoom='16.25', map_view='2.369187,48.853212',
+        zoom='16.2518347', map_view='2.369187,48.853212',
     )
     edited = client.post(reverse('clips:edit'), {
         **full_form(latitude='48.853377', longitude='2.369004', precision='exact_spot'), 'code': code,
@@ -86,7 +86,7 @@ def test_nothing_of_a_click_but_its_cell_is_stored_or_logged(client, video, djan
 
     connection.ensure_connection()
     stored = '\n'.join(connection.connection.iterdump())  # The whole database, as SQL.
-    for value in (*CLICKED, '48.853377', '2.369004', '16.25'):
+    for value in (*CLICKED, '48.853377', '2.369004', '16.2518347'):
         assert value not in stored and value not in django_log.getvalue()
 
 

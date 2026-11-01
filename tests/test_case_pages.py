@@ -95,8 +95,10 @@ def test_the_typed_place_is_never_sent_back(lawyer_client):
     assert FORM['radius_metres'] in page and not Case.objects.exists()
 
 
-# An unusual place, so that its digits are found nowhere by chance.
-ODD_PLACE = {'latitude': '48.85417', 'longitude': '2.36923'}
+# An unusual place, so that its digits are found nowhere by chance. Seven decimals: the database
+# also holds times to the microsecond (each migration's, among others), whose six digits a shorter
+# fragment could match.
+ODD_PLACE = {'latitude': '48.8541736', 'longitude': '2.3692318'}
 
 
 def test_the_typed_place_is_never_kept_or_logged(lawyer_client, caplog):
@@ -106,7 +108,7 @@ def test_the_typed_place_is_never_kept_or_logged(lawyer_client, caplog):
     database = '\n'.join(connection.connection.iterdump())
     page = lawyer_client.get(reverse('lawyer:case', kwargs={'case_id': case.pk})).content.decode()
     for kept in (database, page, caplog.text):
-        assert '85417' not in kept and '36923' not in kept
+        assert '8541736' not in kept and '3692318' not in kept
 
 
 def test_the_typed_place_reason_and_label_are_left_out_of_error_reports(lawyer_client):
@@ -416,8 +418,8 @@ def test_a_place_needs_its_radius(lawyer_client):
 
 def test_no_coordinates_or_map_view_are_kept_with_a_case_from_the_map(lawyer_client):
     # Whatever else a browser sends, such as where the map was looking, is not kept.
-    view = {'centre': '48.85417,2.36923', 'zoom': '16.123457'}
+    view = {'centre': '48.8541736,2.3692318', 'zoom': '16.1234579'}
     create(lawyer_client, cells=ids(PICKED), **NO_PLACE, **view)
     assert Case.objects.exists()
     database = '\n'.join(connection.connection.iterdump())
-    assert '85417' not in database and '36923' not in database and '123457' not in database
+    assert '8541736' not in database and '3692318' not in database and '1234579' not in database
