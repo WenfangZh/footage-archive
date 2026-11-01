@@ -1029,11 +1029,11 @@ msgstr "Heure française, comme dans le procès-verbal."
 msgid "End of the time window"
 msgstr "Fin de la plage horaire"
 
-#: cases/forms.py:99 clips/forms.py:99
+#: cases/forms.py:99 clips/forms.py:100
 msgid "Latitude"
 msgstr "Latitude"
 
-#: cases/forms.py:103 clips/forms.py:103
+#: cases/forms.py:103 clips/forms.py:104
 msgid "Longitude"
 msgstr "Longitude"
 
@@ -1680,7 +1680,7 @@ msgstr ""
 msgid "Send the report"
 msgstr "Envoyer le signalement de clip"
 
-#: cases/templates/cases/clip.html:121 clips/forms.py:119 clips/models.py:246
+#: cases/templates/cases/clip.html:121 clips/forms.py:120 clips/models.py:246
 #: clips/models.py:293
 msgid "Context"
 msgstr "Contexte"
@@ -1720,7 +1720,7 @@ msgid "Your thread with this clip's code holder"
 msgstr "Votre fil de messages avec la personne qui détient le code de ce clip"
 
 #: cases/templates/cases/clip.html:141 cases/templates/cases/messages.html:43
-#: clips/templates/clips/clip.html:111 clips/templates/clips/upload.html:42
+#: clips/templates/clips/clip.html:114 clips/templates/clips/upload.html:42
 msgid "Send"
 msgstr "Envoyer"
 
@@ -1807,7 +1807,7 @@ msgstr ""
 "détient le code écrivez à nouveau d'ici là. Gardez ce dont vous avez besoin "
 "dans vos propres dossiers."
 
-#: cases/templates/cases/messages.html:21 clips/templates/clips/clip.html:91
+#: cases/templates/cases/messages.html:21 clips/templates/clips/clip.html:94
 msgid "You"
 msgstr "Vous"
 
@@ -1815,7 +1815,7 @@ msgstr "Vous"
 msgid "The code holder"
 msgstr "La personne qui détient le code"
 
-#: cases/templates/cases/messages.html:22 clips/templates/clips/clip.html:92
+#: cases/templates/cases/messages.html:22 clips/templates/clips/clip.html:95
 #, python-format
 msgid "%(day)s, in the four hours from %(start)s"
 msgstr "%(day)s, dans les quatre heures à partir de %(start)s"
@@ -1828,11 +1828,11 @@ msgstr "avec votre nom et votre barreau"
 msgid "as a verified defence lawyer"
 msgstr "en tant qu'avocat·e de la défense vérifié·e"
 
-#: cases/templates/cases/messages.html:24 clips/templates/clips/clip.html:93
+#: cases/templates/cases/messages.html:24 clips/templates/clips/clip.html:96
 msgid "New"
 msgstr "Nouveau"
 
-#: cases/templates/cases/messages.html:27 clips/templates/clips/clip.html:95
+#: cases/templates/cases/messages.html:27 clips/templates/clips/clip.html:98
 msgid "No note."
 msgstr "Pas de note."
 
@@ -2043,7 +2043,7 @@ msgid "Delete this clip for good"
 msgstr "Supprimer ce clip définitivement"
 
 #: cases/templates/cases/withdrawn_clips.html:16
-#: clips/templates/clips/clip.html:133
+#: clips/templates/clips/clip.html:136
 msgid "Delete"
 msgstr "Supprimer"
 
@@ -2107,7 +2107,7 @@ msgstr "Vos réglages sont enregistrés."
 msgid "The case is closed."
 msgstr "Le dossier de recherche est clos."
 
-#: cases/withdrawn_clips.py:34 clips/templates/clips/clip.html:126
+#: cases/withdrawn_clips.py:34 clips/templates/clips/clip.html:129
 msgid "Tick the box to confirm."
 msgstr "Cochez la case pour confirmer."
 
@@ -2149,19 +2149,19 @@ msgstr "Vidéo"
 msgid "When was it filmed?"
 msgstr "Quand la vidéo a-t-elle été filmée ?"
 
-#: clips/forms.py:107
+#: clips/forms.py:108
 msgid "How precise is this place?"
 msgstr "Quelle est la précision de ce lieu ?"
 
-#: clips/forms.py:111
+#: clips/forms.py:112
 msgid "What can be seen?"
 msgstr "Que voit-on dans la vidéo ?"
 
-#: clips/forms.py:115
+#: clips/forms.py:116
 msgid "Other tags, separated by commas"
 msgstr "Autres étiquettes, séparées par des virgules"
 
-#: clips/forms.py:121
+#: clips/forms.py:122
 msgid ""
 "What happened, and anything a lawyer should know. Leave out names, and "
 "addresses more precise than the place above."
@@ -2169,45 +2169,45 @@ msgstr ""
 "Ce qui s'est passé, et tout ce qu'un·e avocat·e devrait savoir. N'indiquez "
 "pas de noms, ni d'adresse plus précise que le lieu ci-dessus."
 
-#: clips/forms.py:126
+#: clips/forms.py:127
 msgid "Contact details or social media handle"
 msgstr "Moyen de contact ou pseudonyme sur un réseau social"
 
-#: clips/forms.py:138
+#: clips/forms.py:139
 #, python-format
 msgid "Each tag can be at most %(length)d characters."
 msgstr "Chaque étiquette peut compter au plus %(length)d caractères."
 
-#: clips/forms.py:144
+#: clips/forms.py:145
 #, python-format
 msgid "At most %(count)d other tags."
 msgstr "Au plus %(count)d autres étiquettes."
 
-#: clips/forms.py:156
+#: clips/forms.py:157
 msgid "Give both the latitude and the longitude, or neither."
 msgstr "Indiquez la latitude et la longitude, ou aucune des deux."
 
-#: clips/forms.py:158
+#: clips/forms.py:159
 msgid "Say how precise this place is."
 msgstr "Indiquez la précision de ce lieu."
 
-#: clips/forms.py:166
+#: clips/forms.py:167
 #, python-format
 msgid "The place painted on the map is more than %(metres)d m across."
 msgstr "Le lieu colorié sur la carte fait plus de %(metres)d m de large."
 
-#: clips/forms.py:176
+#: clips/forms.py:177
 msgid "How precisely may we keep the GPS position found in the video?"
 msgstr ""
 "Avec quelle précision pouvons-nous garder la position GPS trouvée dans la "
 "vidéo ?"
 
-#: clips/forms.py:191
+#: clips/forms.py:192
 msgid "How precisely we keep the GPS position found in the video"
 msgstr ""
 "Précision avec laquelle nous gardons la position GPS trouvée dans la vidéo"
 
-#: clips/forms.py:217 clips/templates/clips/clip.html:108
+#: clips/forms.py:218 clips/templates/clips/clip.html:111
 msgid "Your reply"
 msgstr "Votre réponse"
 
@@ -2414,22 +2414,22 @@ msgstr "Le lieu que nous conservons :"
 msgid "Coordinates given below replace it."
 msgstr "Les coordonnées indiquées ci-dessous le remplacent."
 
-#: clips/templates/clips/clip.html:54
+#: clips/templates/clips/clip.html:57
 msgid "GPS position found in the video, as we keep it:"
 msgstr "Position GPS trouvée dans la vidéo, telle que nous la gardons :"
 
-#: clips/templates/clips/clip.html:57
+#: clips/templates/clips/clip.html:60
 msgid ""
 "You can have it kept less precisely, never more: the exact position is gone."
 msgstr ""
 "Vous pouvez la faire garder moins précisément, jamais plus : la position "
 "exacte n'existe plus."
 
-#: clips/templates/clips/clip.html:67
+#: clips/templates/clips/clip.html:70
 msgid "Contact details (optional)"
 msgstr "Moyen de contact (facultatif)"
 
-#: clips/templates/clips/clip.html:68 clips/templates/clips/confirm.html:48
+#: clips/templates/clips/clip.html:71 clips/templates/clips/confirm.html:51
 msgid ""
 "Defence lawyers whose case finds this clip will see these details, to "
 "contact you. Anyone else who obtains them could use them against you. Leave "
@@ -2440,7 +2440,7 @@ msgstr ""
 "l'obtiendrait pourrait s'en servir contre vous. Ne le laissez que si vous "
 "acceptez ce risque."
 
-#: clips/templates/clips/clip.html:72
+#: clips/templates/clips/clip.html:75
 msgid ""
 "Lawyers see which details you changed, and roughly when, but not the old "
 "values. For the time, the place and the tags, they also see what you gave at "
@@ -2450,19 +2450,19 @@ msgstr ""
 "mais pas les anciennes valeurs. Pour l'heure, le lieu et les étiquettes, la "
 "version telle qu'uploadée leur reste aussi visible."
 
-#: clips/templates/clips/clip.html:73
+#: clips/templates/clips/clip.html:76
 msgid "Save changes"
 msgstr "Enregistrer les modifications"
 
-#: clips/templates/clips/clip.html:78
+#: clips/templates/clips/clip.html:81
 msgid "Messages from lawyers"
 msgstr "Messages d'avocat·es"
 
-#: clips/templates/clips/clip.html:79
+#: clips/templates/clips/clip.html:82
 msgid "Your reply is sent."
 msgstr "Votre réponse est envoyée."
 
-#: clips/templates/clips/clip.html:80
+#: clips/templates/clips/clip.html:83
 msgid ""
 "Only you, with your code, and the lawyer of each thread can read these "
 "messages. Lawyers are not told whether or when you read them. You decide "
@@ -2473,12 +2473,12 @@ msgstr ""
 "vous les lisez. Vous décidez de répondre ou non, et de dire qui vous êtes ou "
 "non."
 
-#: clips/templates/clips/clip.html:83
+#: clips/templates/clips/clip.html:86
 #, python-format
 msgid "Lawyer %(letter)s"
 msgstr "Avocat·e %(letter)s"
 
-#: clips/templates/clips/clip.html:84
+#: clips/templates/clips/clip.html:87
 #, python-format
 msgid ""
 "These messages will be deleted on %(day)s, unless you or the lawyer write "
@@ -2487,37 +2487,37 @@ msgstr ""
 "Ces messages seront supprimés le %(day)s, sauf si vous ou l'avocat·e écrivez "
 "à nouveau d'ici là."
 
-#: clips/templates/clips/clip.html:85
+#: clips/templates/clips/clip.html:88
 msgid "This lawyer no longer has access."
 msgstr "Cet·te avocat·e n'a plus accès à l'archive."
 
-#: clips/templates/clips/clip.html:91
+#: clips/templates/clips/clip.html:94
 msgid "A verified defence lawyer"
 msgstr "Un·e avocat·e de la défense vérifié·e"
 
-#: clips/templates/clips/clip.html:95
+#: clips/templates/clips/clip.html:98
 msgid "This message could not be opened."
 msgstr "Ce message n'a pas pu être ouvert."
 
-#: clips/templates/clips/clip.html:106
+#: clips/templates/clips/clip.html:109
 msgid "Your reply could not be sent. Check it and try again."
 msgstr "Votre réponse n'a pas pu être envoyée. Vérifiez-la et réessayez."
 
-#: clips/templates/clips/clip.html:114
+#: clips/templates/clips/clip.html:117
 msgid "You cannot answer this lawyer for now. Please try again later."
 msgstr ""
 "Vous ne pouvez pas répondre à cet·te avocat·e pour le moment. Veuillez "
 "réessayer plus tard."
 
-#: clips/templates/clips/clip.html:115
+#: clips/templates/clips/clip.html:118
 msgid "Your reply was not sent. Here it is, to keep:"
 msgstr "Votre réponse n'a pas été envoyée. La voici, pour la garder :"
 
-#: clips/templates/clips/clip.html:122
+#: clips/templates/clips/clip.html:125
 msgid "Delete this clip"
 msgstr "Supprimer ce clip"
 
-#: clips/templates/clips/clip.html:130
+#: clips/templates/clips/clip.html:133
 msgid "Yes, delete this clip and everything it holds, for good."
 msgstr "Oui, supprimer définitivement ce clip et tout ce qu'il contient."
 
@@ -2607,14 +2607,14 @@ msgstr ""
 msgid "Pre-filled from the GPS position in the video."
 msgstr "Prérempli à partir de la position GPS de la vidéo."
 
-#: clips/templates/clips/confirm.html:35
+#: clips/templates/clips/confirm.html:38
 msgid ""
 "Lawyers use it to check the place you give. The exact position is never kept."
 msgstr ""
 "Les avocat·es s'en servent pour vérifier le lieu que vous indiquez. La "
 "position exacte n'est jamais gardée."
 
-#: clips/templates/clips/confirm.html:39
+#: clips/templates/clips/confirm.html:42
 msgid ""
 "If you leave the time or the place empty, no lawyer can find this clip until "
 "you add both."
@@ -2622,11 +2622,11 @@ msgstr ""
 "Si vous laissez l'heure ou le lieu vide, aucun·e avocat·e ne pourra trouver "
 "ce clip tant que vous n'aurez pas ajouté les deux."
 
-#: clips/templates/clips/confirm.html:47
+#: clips/templates/clips/confirm.html:50
 msgid "Leave contact details (optional)"
 msgstr "Laisser un moyen de contact (facultatif)"
 
-#: clips/templates/clips/confirm.html:52
+#: clips/templates/clips/confirm.html:55
 msgid "Confirm and get my upload code"
 msgstr "Confirmer et obtenir mon code d'upload"
 
@@ -2646,16 +2646,32 @@ msgid "Map for choosing the place"
 msgstr "Carte pour choisir le lieu"
 
 #: clips/templates/clips/location_map.html:6
-msgid "Zoom in to choose the place."
-msgstr "Zoomez pour choisir le lieu."
+msgid "Zoom in until the grid appears."
+msgstr "Zoomez jusqu'à ce que la grille apparaisse."
 
 #: clips/templates/clips/location_map.html:7
-msgid "To make the place more precise, click its new position on the map."
+msgid "Tap a cell to add it to the place, or tap it again to take it out."
 msgstr ""
-"Pour rendre le lieu plus précis, cliquez sur sa nouvelle position sur la "
-"carte."
+"Touchez une maille pour l'ajouter au lieu, ou touchez-la à nouveau pour la "
+"retirer."
 
 #: clips/templates/clips/location_map.html:8
+#, python-format, python-brace-format
+msgid "Cells: {cells}, about {metres} m across (at most %(ceiling)s m)."
+msgstr ""
+"Mailles : {cells}, environ {metres} m de large (au plus %(ceiling)s m)."
+
+#: clips/templates/clips/location_map.html:9
+#, python-format
+msgid "That would make the place more than %(ceiling)s m across."
+msgstr "Le lieu ferait alors plus de %(ceiling)s m de large."
+
+#: clips/templates/clips/location_map.html:10
+#, python-format
+msgid "The place is more than %(ceiling)s m across: take some cells out."
+msgstr "Le lieu fait plus de %(ceiling)s m de large : retirez-en des mailles."
+
+#: clips/templates/clips/location_map.html:11
 msgid ""
 "The map is no longer available on this page. Type the coordinates, or reload "
 "the page."
@@ -2663,21 +2679,25 @@ msgstr ""
 "La carte n'est plus disponible sur cette page. Saisissez les coordonnées, ou "
 "rechargez la page."
 
-#: clips/templates/clips/location_map.html:9
+#: clips/templates/clips/location_map.html:12
 msgid "The map could not be loaded. Type the coordinates."
 msgstr "La carte n'a pas pu être chargée. Saisissez les coordonnées."
 
-#: clips/templates/clips/location_map.html:11
+#: clips/templates/clips/location_map.html:14
 msgid "Choose on a map"
 msgstr "Choisir sur une carte"
 
-#: clips/templates/clips/location_map.html:19
+#: clips/templates/clips/location_map.html:24
 msgid ""
-"Zoom in, then click where it was filmed. The coloured area is what we keep, "
-"for the precision you choose."
+"Zoom in to where it was filmed: once the grid appears, tap the cells that "
+"cover the place."
 msgstr ""
-"Zoomez, puis cliquez là où la vidéo a été filmée. La zone colorée est ce que "
-"nous conservons, selon la précision choisie."
+"Zoomez jusqu'à l'endroit filmé : une fois la grille apparue, touchez les "
+"mailles qui couvrent le lieu."
+
+#: clips/templates/clips/location_map.html:29
+msgid "Type coordinates instead"
+msgstr "Saisir plutôt des coordonnées"
 
 #: clips/templates/clips/place.html:2
 #, python-format
@@ -3416,6 +3436,21 @@ msgstr ""
 #: templates/home.html:9
 msgid "Defence lawyers: log in"
 msgstr "Avocat·es de la défense : se connecter"
+
+#~ msgid "Zoom in to choose the place."
+#~ msgstr "Zoomez pour choisir le lieu."
+
+#~ msgid "To make the place more precise, click its new position on the map."
+#~ msgstr ""
+#~ "Pour rendre le lieu plus précis, cliquez sur sa nouvelle position sur la "
+#~ "carte."
+
+#~ msgid ""
+#~ "Zoom in, then click where it was filmed. The coloured area is what we "
+#~ "keep, for the precision you choose."
+#~ msgstr ""
+#~ "Zoomez, puis cliquez là où la vidéo a été filmée. La zone colorée est ce "
+#~ "que nous conservons, selon la précision choisie."
 
 #~ msgid "To make the place more precise, give its new position."
 #~ msgstr "Pour rendre le lieu plus précis, indiquez sa nouvelle position."
