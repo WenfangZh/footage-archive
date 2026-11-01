@@ -27,6 +27,14 @@ def to_cells(apps, schema_editor):
         )
 
 
+def refuse_if_placed(apps, schema_editor):
+    """The cells cannot tell which precision they came from: undoing this would leave every clip
+    without a place. Refused, unless no clip has one."""
+    Clip = apps.get_model('clips', 'Clip')
+    if Clip.objects.exclude(stated_cells=None, as_uploaded_stated_cells=None).exists():
+        raise RuntimeError('Clips have places as cells, which cannot be turned back into a cell and a precision.')
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -52,8 +60,7 @@ class Migration(migrations.Migration):
             name='stated_cells',
             field=models.JSONField(blank=True, null=True),
         ),
-        # Forward only: the cells cannot tell which precision they came from.
-        migrations.RunPython(to_cells, migrations.RunPython.noop),
+        migrations.RunPython(to_cells, refuse_if_placed),
         migrations.RemoveField(
             model_name='clip',
             name='as_uploaded_stated_cell',

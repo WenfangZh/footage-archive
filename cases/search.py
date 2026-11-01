@@ -95,18 +95,3 @@ def match_of(case, clip):
     if case.cells.filter(cell__in=grid.widen(inside, case.margin_rings)).exists():
         return 'margin'
     return None
-    area_resolution = grid.resolution(case.cells.values_list('cell', flat=True).first())
-    cell = candidate.stated_cell
-    if grid.resolution(cell) > area_resolution:
-        cell = grid.coarsen(cell, area_resolution)
-    steps_finer = area_resolution - grid.resolution(cell)
-    if steps_finer > _MAX_STEPS_FINER:
-        found = find(case, Clip.objects.filter(pk=clip.pk))
-        return 'core' if found.core else 'margin' if found.margin else None
-    inside = grid.children(cell, area_resolution)
-    in_window = candidate.stated_time <= case.ends_at and candidate.stated_end >= case.starts_at
-    if case.cells.filter(cell__in=inside).exists():
-        return 'core' if in_window else 'margin'
-    if case.cells.filter(cell__in=grid.widen(inside, case.margin_rings)).exists():
-        return 'margin'
-    return None

@@ -6,6 +6,7 @@ from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 
 from clips import grid
+from clips.models import Clip
 
 pytestmark = pytest.mark.django_db(transaction=True)
 
@@ -39,3 +40,13 @@ def test_existing_clips_keep_the_finest_cells_of_their_old_cell():
     assert moved.stated_cells == sorted(grid.children(street, 11)) and len(moved.stated_cells) == 7
     assert moved.as_uploaded_stated_cells == [exact]
     assert (unplaced.stated_cells, unplaced.as_uploaded_stated_cells) == (None, None)
+
+
+def test_it_cannot_be_undone_once_clips_have_places_as_cells():
+    Clip.objects.create(code_hash='3' * 64, stated_cells=[grid.cell_for_point(*REPUBLIQUE, 11)])
+    try:
+        with pytest.raises(RuntimeError, match='cannot be turned back'):
+            migrate(BEFORE)
+        assert Clip.objects.get().stated_cells == [grid.cell_for_point(*REPUBLIQUE, 11)]
+    finally:
+        migrate(MigrationExecutor(connection).loader.graph.leaf_nodes())

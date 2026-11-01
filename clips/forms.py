@@ -94,6 +94,7 @@ class ClipFieldsForm(forms.Form):
         widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
     )
     # The place painted on the map (ADR 0009). Coordinates typed below, when given, replace it.
+    # Looked up at each use, so that a test can lower it.
     cells = CellsField(required=False, max_cells=lambda: max_stated_cells())
     latitude = forms.FloatField(
         label=_('Latitude'), required=False, min_value=-90, max_value=90,
