@@ -27,8 +27,9 @@
   const start = boxes('id_starts_at');
   const end = boxes('id_ends_at');
   if (start.includes(null) || end.includes(null)) return;
-  // An end the lawyer typed, or one a refused form sends back, is theirs: never replaced.
-  let endChosen = end[3].value !== '';
+  // An end the lawyer typed, or one a refused form sends back, is theirs: never replaced. The
+  // page opens with the same date in both, and no time.
+  let endChosen = end[3].value !== '' || [0, 1, 2].some((part) => end[part].value !== start[part].value);
   // Set while this script fills the end itself, so that only someone else's input counts.
   let filling = false;
   const choose = () => { if (!filling) endChosen = true; };
@@ -36,9 +37,12 @@
   document.querySelector('input.calendar[data-for="id_ends_at"]')?.addEventListener('change', choose);
 
   const followStart = () => {
-    const [year, month, day, time] = start.map((box) => box.value);
-    if (endChosen || !year || !month || !day || !/^\d{1,2}:\d{2}$/.test(time)) return;
+    const [year, month, day, time] = start.map((box) => box.value.trim());
+    if (endChosen || !/^\d{4}$/.test(year) || !/^\d{1,2}$/.test(month) || !/^\d{1,2}$/.test(day) || !/^\d{1,2}:\d{2}$/.test(time)) return;
     const [hours, minutes] = time.split(':').map(Number);
+    // Only a date that exists: the server says what is wrong with any other.
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    if (date.getUTCMonth() + 1 !== Number(month) || date.getUTCDate() !== Number(day)) return;
     // An hour later on the clock, into the next day if need be.
     const later = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), hours + 1, minutes));
     filling = true;
