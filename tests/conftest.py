@@ -131,6 +131,14 @@ def log_in_with_second_factor(client, user):
     return client
 
 
+def typed_time(name, value):
+    """A time as a form's boxes take it (clips.forms.TypedDateTimeField), from `value` written
+    as 2026-05-01T14:05."""
+    date, time = value.split('T')
+    year, month, day = date.split('-')
+    return {f'{name}_year': year, f'{name}_month': month, f'{name}_day': day, f'{name}_time': time}
+
+
 def admit(profile):
     """Admit an applicant, as the admin does once their bar is verified and someone vouched for them."""
     from accounts.models import LawyerProfile

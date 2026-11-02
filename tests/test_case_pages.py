@@ -12,7 +12,7 @@ from audit.models import Action, AuditEntry
 from cases.models import Case, CaseApproval
 from clips import grid
 
-from tests.conftest import BASTILLE, database_dump, log_in_with_second_factor, make_case, make_lawyer, open_label
+from tests.conftest import BASTILLE, database_dump, log_in_with_second_factor, make_case, make_lawyer, open_label, typed_time
 
 pytestmark = pytest.mark.django_db
 
@@ -26,9 +26,9 @@ def lawyer_client(lawyer):
     return log_in_with_second_factor(Client(), lawyer.user)
 
 
-# Typed as in the police report: Paris time, as the browser's datetime-local field sends it.
+# Typed as in the police report: Paris time, in the form's year, month, day and time boxes.
 FORM = {
-    'label': 'Bastille, 15 June', 'starts_at': '2026-06-15T18:00', 'ends_at': '2026-06-15T19:00',
+    'label': 'Bastille, 15 June', **typed_time('starts_at', '2026-06-15T18:00'), **typed_time('ends_at', '2026-06-15T19:00'),
     'latitude': str(BASTILLE[0]), 'longitude': str(BASTILLE[1]), 'radius_metres': '200',
     'margin_minutes': '10', 'margin_rings': '1',
 }
@@ -38,6 +38,10 @@ REASON = 'Two charges in the same evening, an hour apart.'
 
 
 def create(client, **changes):
+    """Post the new case form, with times in `changes` written as 2026-06-15T18:00."""
+    for name in ('starts_at', 'ends_at'):
+        if name in changes:
+            changes.update(typed_time(name, changes.pop(name)))
     return client.post(reverse('lawyer:new_case'), {**FORM, **changes})
 
 
@@ -129,20 +133,6 @@ def test_times_are_french_time_whatever_the_clocks_do(lawyer_client, starts_at, 
     assert case.ends_at - case.starts_at == datetime.timedelta(hours=hours)
 
 
-@pytest.mark.parametrize('starts_at', ['0001-01-01T00:00', '1999-12-31T23:00', '9999-12-31T22:00', '2099-01-01T00:00'])
-def test_dates_far_off_are_refused(lawyer_client, starts_at):
-    response = create(lawyer_client, starts_at=starts_at, ends_at='9999-12-31T23:00')
-    assert response.status_code == 400 and 'starts_at' in response.context['form'].errors
-
-
-@pytest.mark.parametrize('typed', [
-    '2026-06-15T18:00Z', '2026-06-15T18:00+05:00', '2026-06-15T18:00-03:00', '20260615T1800-0500', '20260615T1800-0000',
-])
-def test_a_time_with_an_offset_is_refused_not_misread(lawyer_client, typed):
-    response = create(lawyer_client, starts_at=typed)
-    assert response.status_code == 400 and 'starts_at' in response.context['form'].errors
-
-
 def test_a_case_beyond_the_ceiling_says_so(lawyer_client, settings):
     settings.LANGUAGE_CODE = 'en'
     response = create(lawyer_client, starts_at='2026-06-14T18:00', ends_at='2026-06-15T19:00')
@@ -151,7 +141,7 @@ def test_a_case_beyond_the_ceiling_says_so(lawyer_client, settings):
 
 
 def test_a_time_window_must_end_after_it_starts(lawyer_client):
-    response = create(lawyer_client, ends_at=FORM['starts_at'])
+    response = create(lawyer_client, ends_at='2026-06-15T18:00')
     assert response.status_code == 400 and 'ends_at' in response.context['form'].errors
 
 
@@ -211,7 +201,7 @@ def test_a_default_margin_is_bounded(lawyer, lawyer_client):
 
 # Larger cases (SPEC.md §7): over the size caps, a case waits for the admin's approval.
 
-LARGER = {'starts_at': '2026-06-15T17:00', 'ends_at': '2026-06-15T19:00'}
+LARGER = {**typed_time('starts_at', '2026-06-15T17:00'), **typed_time('ends_at', '2026-06-15T19:00')}
 
 
 def test_a_case_over_the_caps_with_a_reason_waits_for_approval(lawyer, lawyer_client):

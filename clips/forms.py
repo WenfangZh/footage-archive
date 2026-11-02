@@ -1,7 +1,10 @@
+import datetime
 import re
+import zoneinfo
 
 from django import forms
 from django.conf import settings
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from . import grid
@@ -11,6 +14,69 @@ from .tags import CUSTOM_TAG_MAX_LENGTH, DEFAULT_TAGS
 CONTEXT_MAX_LENGTH = 4000
 CONTACT_DETAILS_MAX_LENGTH = 500
 MAX_CUSTOM_TAGS = 10
+
+# Footage in the archive is recent; anything outside these years is a typing mistake.
+EARLIEST_YEAR = 2000
+TIME = re.compile(r'([01]?\d|2[0-3]):([0-5]\d)')
+
+
+class TypedDateTimeWidget(forms.MultiWidget):
+    """Boxes for the year, month and day, in the order the archive writes dates, and the time:
+    typed, with no calendar pop-up (SPEC.md §12 M8.5)."""
+
+    def __init__(self):
+        # Text boxes with the number keyboard: no spinners crowding a few digits.
+        number = {'inputmode': 'numeric', 'pattern': '[0-9]*', 'autocomplete': 'off'}
+        super().__init__({
+            'year': forms.TextInput(attrs={**number, 'maxlength': 4, 'class': 'year', 'aria-label': _('Year'), 'placeholder': _('YYYY')}),
+            'month': forms.TextInput(attrs={**number, 'maxlength': 2, 'class': 'month', 'aria-label': _('Month'), 'placeholder': _('MM')}),
+            'day': forms.TextInput(attrs={**number, 'maxlength': 2, 'class': 'day', 'aria-label': _('Day'), 'placeholder': _('DD')}),
+            'time': forms.TimeInput(attrs={'type': 'time', 'class': 'time', 'aria-label': _('Time')}, format='%H:%M'),
+        })
+
+    def decompress(self, value):
+        if value is None:
+            return [None, None, None, None]
+        local = timezone.localtime(value)
+        return [local.year, local.month, local.day, local.time()]
+
+
+class TypedDateTimeField(forms.MultiValueField):
+    """A time typed as on a police report: French time, read without refusing the hour that
+    clocks repeat or skip when they change.
+
+    In the repeated autumn hour, the first one is meant; a time in the skipped spring hour
+    is read with the winter offset, an hour later in summer time.
+    """
+
+    widget = TypedDateTimeWidget
+
+    def __init__(self, **kwargs):
+        # A time left wholly empty is no time (when the field allows it); one partly empty is
+        # refused with the message below.
+        # Bounded here, so that no typed number reaches the date arithmetic below (which
+        # overflows on a huge month or day); the year's range is checked in compress.
+        parts = [
+            forms.IntegerField(), forms.IntegerField(min_value=1, max_value=12),
+            forms.IntegerField(min_value=1, max_value=31), forms.CharField(),
+        ]
+        error_messages = {'incomplete': _('Enter the year, month, day and time.')}
+        super().__init__(parts, require_all_fields=False, error_messages=error_messages, **kwargs)
+
+    def compress(self, data_list):
+        if not data_list:
+            return None
+        year, month, day, typed_time = data_list
+        hours_minutes = TIME.fullmatch(typed_time)
+        if hours_minutes is None:
+            raise forms.ValidationError(_('Enter the time as hours and minutes, such as 18:42.'), code='invalid_time')
+        if not EARLIEST_YEAR <= year <= timezone.now().year + 1:
+            raise forms.ValidationError(_('Enter a date between %(first)s and next year.'), params={'first': EARLIEST_YEAR})
+        try:
+            naive = datetime.datetime(year, month, day, int(hours_minutes[1]), int(hours_minutes[2]))
+        except ValueError:
+            raise forms.ValidationError(_('Enter a date that exists.'), code='invalid_date')
+        return naive.replace(tzinfo=zoneinfo.ZoneInfo(settings.TIME_ZONE), fold=0)
 
 # Cell sizes offered for the metadata location (ADR 0004), finest first.
 METADATA_PRECISIONS = [
@@ -89,10 +155,7 @@ class ClipFieldsForm(forms.Form):
     Everything is optional. The metadata time is never a field.
     """
 
-    stated_time = forms.DateTimeField(
-        label=_('When was it filmed?'), required=False,
-        widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
-    )
+    stated_time = TypedDateTimeField(label=_('When was it filmed?'), required=False)
     # The place painted on the map (ADR 0009). Coordinates typed below, when given, replace it.
     # Looked up at each use, so that a test can lower it.
     cells = CellsField(required=False, max_cells=lambda: max_stated_cells())

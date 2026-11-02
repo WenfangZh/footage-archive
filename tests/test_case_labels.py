@@ -18,7 +18,7 @@ from nacl.public import PrivateKey
 from cases import labels
 from cases.models import Case
 from keys.grants import current_key
-from tests.conftest import BASTILLE, log_in_with_second_factor, make_case, make_key, make_lawyer, open_label
+from tests.conftest import BASTILLE, log_in_with_second_factor, make_case, make_key, make_lawyer, open_label, typed_time
 
 pytestmark = pytest.mark.django_db
 
@@ -55,7 +55,7 @@ def test_a_lawyer_without_a_personal_key_cannot_create_a_case():
     lawyer = make_lawyer()
     client = log_in_with_second_factor(Client(), lawyer.user)
     response = client.post(reverse('lawyer:new_case'), {
-        'label': 'A case', 'starts_at': '2026-06-15T18:00', 'ends_at': '2026-06-15T19:00',
+        'label': 'A case', **typed_time('starts_at', '2026-06-15T18:00'), **typed_time('ends_at', '2026-06-15T19:00'),
         'latitude': str(BASTILLE[0]), 'longitude': str(BASTILLE[1]), 'radius_metres': '50',
         'margin_minutes': '10', 'margin_rings': '1',
     })
@@ -146,7 +146,7 @@ def test_error_reports_hide_the_label_in_the_form_and_where_it_is_sealed(monkeyp
 
     monkeypatch.setattr(CaseCellQuerySet, 'bulk_create', fails)
     response = client.post(reverse('lawyer:new_case'), {
-        'label': 'SecretLabelXYZ', 'starts_at': '2026-06-15T18:00', 'ends_at': '2026-06-15T19:00',
+        'label': 'SecretLabelXYZ', **typed_time('starts_at', '2026-06-15T18:00'), **typed_time('ends_at', '2026-06-15T19:00'),
         'latitude': str(BASTILLE[0]), 'longitude': str(BASTILLE[1]), 'radius_metres': '50',
         'margin_minutes': '10', 'margin_rings': '1',
     })

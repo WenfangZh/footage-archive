@@ -1,17 +1,14 @@
-import datetime
 import unicodedata
-import zoneinfo
 
 from django import forms
 from django.conf import settings
-from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_variables
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import LawyerProfile
 from clips import grid
-from clips.forms import MESSAGE_MAX_LENGTH, CellsField
+from clips.forms import MESSAGE_MAX_LENGTH, CellsField, TypedDateTimeField
 from clips.models import Message
 from clips.tags import CUSTOM_TAG_MAX_LENGTH, DEFAULT_TAGS
 
@@ -32,37 +29,6 @@ def margin_fields():
         max_value=settings.CASE_AREA_CEILING_METRES // 100,
     )
     return minutes, rings
-
-
-# Footage in the archive is recent; anything outside these years is a typing mistake.
-EARLIEST_YEAR = 2000
-UTC_ZONE = zoneinfo.ZoneInfo('UTC')
-
-
-class ParisDateTimeField(forms.DateTimeField):
-    """A time typed as on a police report: French time, read without refusing the hour that
-    clocks repeat or skip when they change.
-
-    In the repeated autumn hour, the first one is meant; a time in the skipped spring hour
-    is read with the winter offset, an hour later in summer time.
-    """
-
-    widget = forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M')
-
-    def to_python(self, value):
-        # Django's own refuses those hours: read the time as UTC, then put French time on it.
-        # A time typed with its own offset comes back with another time zone, and is refused
-        # rather than misread.
-        with timezone.override(UTC_ZONE):
-            parsed = super().to_python(value)
-        if parsed is not None and parsed.tzinfo is not UTC_ZONE:
-            raise forms.ValidationError(_('Enter the time without a time zone: it is read as French time.'))
-        if parsed is None:
-            return None
-        local = parsed.replace(tzinfo=zoneinfo.ZoneInfo(settings.TIME_ZONE), fold=0)
-        if not EARLIEST_YEAR <= local.year <= timezone.now().year + 1:
-            raise forms.ValidationError(_('Enter a date between %(first)s and next year.'), params={'first': EARLIEST_YEAR})
-        return local
 
 
 class ForgottenNumberInput(forms.NumberInput):
@@ -91,10 +57,10 @@ class CaseForm(forms.Form):
         label=_('Case label'), max_length=LABEL_MAX_LENGTH,
         help_text=_("Something to recognise the case by. Never a client's name."),
     )
-    starts_at = ParisDateTimeField(
+    starts_at = TypedDateTimeField(
         label=_('Start of the time window'), help_text=_('French time, as in the police report.'),
     )
-    ends_at = ParisDateTimeField(label=_('End of the time window'))
+    ends_at = TypedDateTimeField(label=_('End of the time window'))
     latitude = forms.FloatField(
         label=_('Latitude'), min_value=-90, max_value=90, required=False,
         widget=ForgottenNumberInput(attrs={'step': 'any'}),

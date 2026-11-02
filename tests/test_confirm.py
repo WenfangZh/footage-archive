@@ -12,6 +12,7 @@ from clips import confirmation, grid, upload_codes, vault, views
 from clips.models import Clip, ClipTag, Original, Precision
 from clips.probe import quick_read
 from clips.time_blocks import four_hour_block
+from tests.conftest import typed_time
 from tests.media import H264
 
 # Texts are sealed to the group keys in use when they are written: one exists in each test here.
@@ -47,7 +48,7 @@ def start_upload(client, path):
 
 def full_form(**changes):
     data = {
-        'stated_time': '2026-05-01T14:05',
+        **typed_time('stated_time', '2026-05-01T14:05'),
         'latitude': str(STATED[0]), 'longitude': str(STATED[1]), 'precision': Precision.STREET,
         'metadata_precision': '11',
         'tags': ['arrest', 'kettling'],
@@ -66,7 +67,8 @@ def code_on(html):
 def test_the_form_is_prefilled_from_the_quick_read(client, video):
     html = client.get(start_upload(client, video), headers=ENGLISH).content.decode()
     # 12:03:22 UTC is 14:03 in Paris in May.
-    assert 'value="2026-05-01T14:03"' in html
+    for name, value in [('year', '2026'), ('month', '5'), ('day', '1'), ('time', '14:03')]:
+        assert re.search(rf'name="stated_time_{name}"[^>]*value="{value}"', html), name
     assert 'value="48.8532"' in html and 'value="2.3692"' in html
     assert re.search(r'value="exact_spot"[^>]*checked', html)
     assert re.search(r'name="metadata_precision" value="11"[^>]*checked', html)
@@ -152,7 +154,6 @@ def test_vague_precisions_keep_only_coarse_places(client, video):
     {'tags': ['suspect']},
     {'custom_tags': 'x' * 61},
     {'custom_tags': ','.join(f'tag {n}' for n in range(11))},
-    {'stated_time': 'last Tuesday'},
     {'contact_details': 'x' * 501},
 ])
 def test_invalid_answers_are_refused_and_create_nothing(client, video, changes):

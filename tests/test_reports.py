@@ -18,7 +18,7 @@ from cases.models import Case
 from clips import grid, upload_codes, vault
 from clips.models import Clip, ClipTag, Message, Report, TagProposal
 from keys.models import LawyerKey
-from tests.conftest import BASTILLE, TEST_CODE, log_in_with_second_factor, make_case, make_lawyer, with_code_holder_key
+from tests.conftest import BASTILLE, TEST_CODE, log_in_with_second_factor, make_case, make_lawyer, with_code_holder_key, typed_time
 
 pytestmark = pytest.mark.django_db
 
@@ -180,7 +180,7 @@ def test_the_code_holder_sees_the_withdrawal_and_can_only_delete_the_clip(lawyer
     client = Client()
 
     page = client.post(reverse('clips:code_holder'), {'code': TEST_CODE}, headers=ENGLISH).content.decode()
-    refused = client.post(reverse('clips:edit'), {'code': TEST_CODE, 'stated_time': '2026-06-15T19:00'}, headers=ENGLISH)
+    refused = client.post(reverse('clips:edit'), {'code': TEST_CODE, **typed_time('stated_time', '2026-06-15T19:00')}, headers=ENGLISH)
 
     assert 'Your clip was withdrawn' in page
     assert f'action="{reverse("clips:edit")}"' not in page and f'action="{reverse("clips:delete")}"' in page

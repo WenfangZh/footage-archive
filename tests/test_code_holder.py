@@ -10,6 +10,7 @@ from clips import grid, vault
 from clips.upload_codes import normalise
 from clips.models import Clip, ClipTag, Edit, Original, Precision, VaultText
 from clips.time_blocks import four_hour_block
+from tests.conftest import typed_time
 from tests.media import H264
 
 # Texts are sealed to the group keys in use when they are written: one exists in each test here.
@@ -36,7 +37,7 @@ def uploaded(client, make_media):
     with open(video, 'rb') as file:
         confirm_url = client.post(reverse('clips:upload'), {'file': file})['Location']
     response = client.post(confirm_url, {
-        'stated_time': '2026-05-01T14:05',
+        **typed_time('stated_time', '2026-05-01T14:05'),
         'latitude': str(STATED[0]), 'longitude': str(STATED[1]), 'precision': Precision.EXACT_SPOT,
         'metadata_precision': '11',
         'tags': ['arrest'], 'custom_tags': 'Barricade',
@@ -72,6 +73,8 @@ def form_values(html):
 
 def edit(client, code, **changes):
     values = form_values(open_clip(client, code).content.decode())
+    if 'stated_time' in changes:
+        changes.update(typed_time('stated_time', changes.pop('stated_time')))
     values.update(changes)
     return client.post(EDIT_URL, {key: value for key, value in values.items() if value is not None}, headers=ENGLISH)
 
@@ -325,7 +328,7 @@ def test_a_failed_clip_asks_for_a_new_upload_and_can_only_be_deleted(client, upl
     assert f'action="{EDIT_URL}"' not in html
     assert 'action="{}"'.format(reverse('clips:delete')) in html
 
-    refused = client.post(EDIT_URL, {'code': code, 'stated_time': '2026-05-02T10:00'}, headers=ENGLISH)
+    refused = client.post(EDIT_URL, {'code': code, **typed_time('stated_time', '2026-05-02T10:00')}, headers=ENGLISH)
     assert refused.status_code == 409
     clip.refresh_from_db()
     assert clip.stated_time.day == 1
