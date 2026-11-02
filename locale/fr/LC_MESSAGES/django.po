@@ -1536,12 +1536,13 @@ msgstr "Durée"
 msgid "%(seconds)s s"
 msgstr "%(seconds)s s"
 
-#: cases/templates/cases/clip.html:56 cases/templates/cases/matches.html:5
-#: clips/templates/clips/clip.html:42 clips/templates/clips/confirm.html:26
+#: cases/templates/cases/clip.html:56 clips/templates/clips/clip.html:42
+#: clips/templates/clips/confirm.html:26
 msgid "Place"
 msgstr "Lieu"
 
-#: cases/templates/cases/clip.html:58 clips/models.py:244
+#: cases/templates/cases/clip.html:58 cases/templates/cases/matches.html:5
+#: clips/models.py:244
 msgid "Stated location"
 msgstr "Lieu indiqué"
 
