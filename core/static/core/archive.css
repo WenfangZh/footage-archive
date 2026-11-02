@@ -230,7 +230,9 @@ fieldset fieldset legend { font-size: inherit; font-variant: normal; letter-spac
 
 label { display: inline-block; margin-bottom: 0.25rem; }
 
-input, select, textarea, button { font: inherit; font-family: var(--mono); font-size: 0.875rem; }
+/* What is typed is mostly data: monospace. Buttons read like the text around them. */
+input, select, textarea { font: inherit; font-family: var(--mono); font-size: 0.875rem; }
+button { font: inherit; font-size: 1rem; }
 
 input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="file"]), select, textarea {
   display: block;
