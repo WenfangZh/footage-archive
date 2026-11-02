@@ -29,7 +29,11 @@ def case_pages():
             full_route = route + str(pattern.pattern)
             if isinstance(pattern, URLResolver):
                 walk(pattern.url_patterns, full_route, ':'.join(filter(None, [namespace, pattern.namespace])))
-            elif full_route.startswith(LAWYER_AREA) and 'case_id' in pattern.pattern.converters:
+            elif full_route.startswith(LAWYER_AREA):
+                # A case named any other way would be missed here.
+                assert all(part == 'case_id' or 'case' not in part for part in pattern.pattern.converters), full_route
+                if 'case_id' not in pattern.pattern.converters:
+                    continue
                 found.append((':'.join(filter(None, [namespace, pattern.name])), list(pattern.pattern.converters)))
 
     walk(get_resolver().url_patterns, '', '')
@@ -78,6 +82,7 @@ def test_no_lawyer_reaches_another_lawyer_s_case_or_changes_anything_through_it(
         methods = []
         for method in ['get', 'post']:
             own = undone(lambda: getattr(lawyer_client, method)(url))
+            own.close()  # A preview or download holds its vault file open.
             if own.status_code == 405:
                 continue
             methods.append(method)
