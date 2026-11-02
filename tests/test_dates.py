@@ -25,6 +25,13 @@ def test_templates_use_only_the_archive_date_formats():
     assert used and used <= ARCHIVE_FORMATS, used - ARCHIVE_FORMATS
 
 
+@pytest.fixture
+def clip_waiting(settings):
+    from clips.models import Clip
+    settings.QUEUE_ALERT_CLIPS = 0
+    return Clip.objects.create(status=Clip.Status.PROCESSING)
+
+
 @pytest.mark.parametrize('language', ['fr', 'en'])
 def test_the_admin_reads_alert_times_as_the_archive_writes_them(admin_client, clip_waiting, language):
     paris = ZoneInfo('Europe/Paris')
@@ -37,10 +44,3 @@ def test_the_admin_reads_alert_times_as_the_archive_writes_them(admin_client, cl
     assert block[language] in page
     assert '2026-11-01 18:42' in page
     assert '2026-11-01 16:00' not in page
-
-
-@pytest.fixture
-def clip_waiting(settings):
-    from clips.models import Clip
-    settings.QUEUE_ALERT_CLIPS = 0
-    return Clip.objects.create(status=Clip.Status.PROCESSING)
