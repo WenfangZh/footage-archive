@@ -6,10 +6,12 @@ const [packageDir] = process.argv.slice(2);
 const { layers, namedFlavor } = await import(`${packageDir}/dist/esm/index.js`);
 
 // Icons would need a sprite sheet, which is not served: no points of interest, one-way
-// arrows or road number shields, and town names without their dot.
+// arrows or road number shields, and town names without their dot. Landcover is drawn
+// only below zoom 7, far below the zooms where cells show, and drawing it would call
+// for crediting its source, ESA WorldCover (CC BY 4.0), on the map.
 const flavor = { ...namedFlavor('light'), pois: undefined };
 const withoutIcons = layers('protomaps', flavor, { lang: 'fr' })
-  .filter((layer) => !['roads_oneway', 'roads_shields'].includes(layer.id))
+  .filter((layer) => !['roads_oneway', 'roads_shields', 'landcover'].includes(layer.id))
   .map((layer) => {
     if (!layer.layout) return layer;
     const layout = Object.fromEntries(Object.entries(layer.layout).filter(([key]) => !key.startsWith('icon-')));
