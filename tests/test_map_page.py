@@ -6,6 +6,7 @@ until the lawyer follows it; the libraries may hold only the ones listed below, 
 fetches.
 """
 
+import json
 import re
 from html.parser import HTMLParser
 from pathlib import Path
@@ -97,8 +98,8 @@ def test_the_map_page_and_what_it_loads_hold_no_url_to_another_origin(page):
                 assert found <= NEVER_FETCHED, path
             else:
                 assert found == set(), path
-    style = client.get(reverse('lawyer:map_style')).content.decode()
-    assert foreign(style) == set()
+    for name in ('lawyer:map_style', 'lawyer:map_style_dark'):
+        assert foreign(client.get(reverse(name)).content.decode()) == set(), name
 
 
 def test_the_browser_is_told_to_load_nothing_from_another_origin(page):
@@ -119,3 +120,22 @@ def test_the_credit_to_openstreetmap_links_to_its_licence(page):
         r'<p class="area-map-attribution">© <a [^>]*href="' + re.escape(OSM_COPYRIGHT) + r'"[^>]*>OpenStreetMap</a> contributors</p>',
         response.content.decode(),
     )
+
+
+def test_on_the_dark_map_the_picked_cells_outline_and_the_grid_stand_out():
+    """SPEC.md §12 M8.6: 3:1 against the dark style's land, water and buildings; the fill is a tint."""
+    from maps import data
+    from tests.test_interface import contrast
+
+    def blend(colour, ground, opacity):
+        parts = [(int(colour[i:i + 2], 16), int(ground[i:i + 2], 16)) for i in (1, 3, 5)]
+        return '#' + ''.join(f'{round(opacity * c + (1 - opacity) * g):02x}' for c, g in parts)
+
+    layers = {layer['id']: layer for layer in json.loads(data.STYLE_FILES['dark'].read_text())['layers']}
+    grounds = [layers['earth']['paint']['fill-color'], layers['water']['paint']['fill-color'], layers['buildings']['paint']['fill-color']]
+    cells = (MAP_FILES / 'cells.js').read_text()
+    dark = re.search(r"dark: \{ picked: '(#[0-9a-f]{6})', grid: '(#[0-9a-f]{6})', gridOpacity: ([0-9.]+) \}", cells)
+    picked, grid, grid_opacity = dark[1], dark[2], float(dark[3])
+    for ground in grounds:
+        assert contrast(picked, ground) >= 3, ground
+        assert contrast(blend(grid, ground, grid_opacity), ground) >= 3, ground

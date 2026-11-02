@@ -291,8 +291,10 @@ def location_map():
     """What the map of the stated location needs (SPEC.md §8, M6.5, M6.6): a fresh map pass,
     which names no upload; the grid's finest resolution and the ceiling, as the server checks them;
     and each precision's hexagon, to turn a typed place into its cells."""
+    map_pass = passes.issue()
     return {
-        'map_style_url': reverse('maps:style', kwargs={'map_pass': passes.issue()}),
+        'map_style_url': reverse('maps:style', kwargs={'map_pass': map_pass}),
+        'map_style_dark_url': reverse('maps:style_dark', kwargs={'map_pass': map_pass}),
         'grid_resolution': grid.finest_resolution(),
         'ceiling_metres': settings.STATED_LOCATION_CEILING_METRES,
         'max_cells': max_stated_cells(),

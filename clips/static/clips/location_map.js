@@ -113,7 +113,7 @@ if (box && opener) {
     box.hidden = false;
     map = new maplibregl.Map({
       container: box.querySelector('.area-map-canvas'),
-      style: box.dataset.styleUrl,
+      style: cellsModule.styleUrl(box),
       center: [2.35, 48.86],
       zoom: 11,
       maxZoom: 19,
@@ -141,9 +141,7 @@ if (box && opener) {
       } catch (error) {
         console.error(error); // Without the grid, cells can still be picked.
       }
-      map.addSource('picked', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      map.addLayer({ id: 'picked-fill', type: 'fill', source: 'picked', paint: { 'fill-color': '#d9480f', 'fill-opacity': 0.35 } });
-      map.addLayer({ id: 'picked-outline', type: 'line', source: 'picked', paint: { 'line-color': '#d9480f', 'line-width': 1 } });
+      cellsModule.showPicked(map);
       changed();
     });
     map.on('zoomend', describe);
@@ -152,7 +150,7 @@ if (box && opener) {
     // costs only some labels: not said.
     map.on('error', (event) => {
       const error = event.error || {};
-      const styleRefused = error.status === 404 && /\/style\.json$/.test(error.url || '');
+      const styleRefused = error.status === 404 && /\/style(-dark)?\.json$/.test(error.url || '');
       const tilesRefused = /Bad response code: 404/.test(error.message || '');
       if (styleRefused || tilesRefused) {
         expired = true;

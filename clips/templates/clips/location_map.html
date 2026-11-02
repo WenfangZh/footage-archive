@@ -13,7 +13,7 @@
 {{ stated_resolutions|json_script:"stated-resolutions" }}
 <p><button type="button" id="location-map-open" hidden>{% translate "Choose on a map" %}</button></p>
 <div id="location-map" class="area-map" hidden tabindex="-1" aria-label="{{ map_title|force_escape }}"
-  data-style-url="{{ map_style_url }}" data-resolution="{{ grid_resolution|unlocalize }}" data-picking-zoom="{{ picking_zoom|unlocalize }}"
+  data-style-url="{{ map_style_url }}" data-style-dark-url="{{ map_style_dark_url }}" data-resolution="{{ grid_resolution|unlocalize }}" data-picking-zoom="{{ picking_zoom|unlocalize }}"
   data-ceiling-metres="{{ ceiling_metres|unlocalize }}" data-max-cells="{{ max_cells|unlocalize }}"
   data-maplibre="{% static 'maps/vendor/maplibre-gl.mjs' %}" data-maplibre-css="{% static 'maps/vendor/maplibre-gl.css' %}"
   data-map-css="{% static 'maps/area_map.css' %}" data-pmtiles="{% static 'maps/vendor/pmtiles.js' %}" data-h3="{% static 'maps/vendor/h3-js.umd.js' %}"

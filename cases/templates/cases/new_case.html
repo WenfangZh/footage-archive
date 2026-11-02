@@ -31,7 +31,7 @@
       <div>{{ field.as_field_group }}</div>
       {% if field.name == 'radius_metres' %}
         <div id="area-map" class="area-map" hidden
-          data-style-url="{% url 'lawyer:map_style' %}" data-resolution="{{ grid_resolution|unlocalize }}"
+          data-style-url="{% url 'lawyer:map_style' %}" data-style-dark-url="{% url 'lawyer:map_style_dark' %}" data-resolution="{{ grid_resolution|unlocalize }}"
           data-cap-metres="{{ cap_metres|unlocalize }}" data-ceiling-metres="{{ ceiling_metres|unlocalize }}"
           data-max-cells="{{ max_cells|unlocalize }}" data-map-title="{{ map_title|force_escape }}"
           data-zoom-in-label="{{ zoom_in_label|force_escape }}" data-zoom-out-label="{{ zoom_out_label|force_escape }}">

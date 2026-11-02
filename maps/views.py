@@ -36,22 +36,23 @@ def pass_required(view):
 
 
 @lawyer_required
-def style(request):
-    return style_response(request, reverse('lawyer:map_tiles'), reverse('lawyer:map_glyphs', kwargs=GLYPH_PLACEHOLDERS))
+def style(request, flavour):
+    return style_response(request, flavour, reverse('lawyer:map_tiles'), reverse('lawyer:map_glyphs', kwargs=GLYPH_PLACEHOLDERS))
 
 
 @pass_required
-def style_with_pass(request, map_pass):
+def style_with_pass(request, map_pass, flavour):
     return style_response(
-        request,
+        request, flavour,
         reverse('maps:tiles', kwargs={'map_pass': map_pass}),
         reverse('maps:glyphs', kwargs={'map_pass': map_pass, **GLYPH_PLACEHOLDERS}),
     )
 
 
-def style_response(request, tiles_path, glyphs_path):
-    """The map's style, pointing to the tiles and fonts on this archive's own origin."""
-    style = json.loads(data.STYLE_FILE.read_text(encoding='utf-8'))
+def style_response(request, flavour, tiles_path, glyphs_path):
+    """The map's style, light or dark (named by the URL pattern), pointing to the tiles and
+    fonts on this archive's own origin."""
+    style = json.loads(data.STYLE_FILES[flavour].read_text(encoding='utf-8'))
     origin = request.build_absolute_uri('/').removesuffix('/')
     style['sources']['protomaps']['url'] = f'pmtiles://{origin}{tiles_path}'
     style['glyphs'] = origin + glyphs_path.replace('FONTSTACK', '{fontstack}').replace('RANGE', '{range}')

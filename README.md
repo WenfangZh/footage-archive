@@ -130,7 +130,7 @@ python manage.py fetch_map_data
 
 Run it again with `--replace-tiles` for newer tiles. Without map data the map stays blank, and a typed place and radius still work.
 
-The map's style, `maps/style.json`, is generated from `@protomaps/basemaps` 5.7.2 by `maps/generate_style.mjs`. Only a change of style needs it again, with Node.js and the package's npm tarball unpacked outside the repository.
+The map's styles, `maps/style.json` and `maps/style-dark.json` for the dark theme, are generated from `@protomaps/basemaps` 5.7.2 by `maps/generate_style.mjs` (its first lines say how). Only a change of style needs it again, with Node.js and the package's npm tarball unpacked outside the repository.
 
 libsodium.js, which lawyers' browsers use to open the vault, is copied into `core/static/core/vendor/libsodium/`. The test vectors showing that it and PyNaCl agree (`tests/vectors/README.md`) need Node.js too, but only when either library changes.
 

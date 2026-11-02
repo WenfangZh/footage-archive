@@ -1,15 +1,17 @@
-// Writes the map's style from @protomaps/basemaps, once, on a developer's machine (README):
-//   node maps/generate_style.mjs <unpacked @protomaps/basemaps package> > maps/style.json
-// The archive itself never runs Node.
+// Writes the map's styles from @protomaps/basemaps, once, on a developer's machine (README):
+//   node maps/generate_style.mjs <unpacked @protomaps/basemaps package> light > maps/style.json
+//   node maps/generate_style.mjs <unpacked @protomaps/basemaps package> dark > maps/style-dark.json
+// The dark one is for the dark theme (SPEC.md §12 M8.6). The archive itself never runs Node.
 
-const [packageDir] = process.argv.slice(2);
+const [packageDir, flavorName] = process.argv.slice(2);
+if (!['light', 'dark'].includes(flavorName)) throw new Error('Name the flavour: light or dark.');
 const { layers, namedFlavor } = await import(`${packageDir}/dist/esm/index.js`);
 
 // Icons would need a sprite sheet, which is not served: no points of interest, one-way
 // arrows or road number shields, and town names without their dot. Landcover is drawn
 // only below zoom 7, far below the zooms where cells show, and drawing it would call
 // for crediting its source, ESA WorldCover (CC BY 4.0), on the map.
-const flavor = { ...namedFlavor('light'), pois: undefined };
+const flavor = { ...namedFlavor(flavorName), pois: undefined };
 const withoutIcons = layers('protomaps', flavor, { lang: 'fr' })
   .filter((layer) => !['roads_oneway', 'roads_shields', 'landcover'].includes(layer.id))
   .map((layer) => {
