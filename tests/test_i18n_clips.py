@@ -58,9 +58,9 @@ def test_the_confirm_form_in_both_languages(client, video, headers, expected):
 
 
 @pytest.mark.parametrize('headers, expected', [
-    (FRENCH, ["Votre code d'upload", 'Fiche de code', 'value="01/05/2026 – Interpellation, Nasse"',
+    (FRENCH, ["Votre code d'upload", 'Fiche de code', 'value="2026-05-01 – Interpellation, Nasse"',
               'Toute personne qui trouve cette fiche peut lire les messages du clip et le supprimer.']),
-    (ENGLISH, ['Your upload code', 'Code card', 'value="05/01/2026 – Arrest, Kettling (crowd encircled and held by police)"',
+    (ENGLISH, ['Your upload code', 'Code card', 'value="2026-05-01 – Arrest, Kettling (crowd encircled and held by police)"',
                "Anyone who finds this card can read the clip's messages and delete it."]),
 ])
 def test_the_code_card_in_both_languages(client, video, headers, expected):

@@ -188,7 +188,7 @@ def test_the_code_card_has_no_form_and_never_sends_the_card_label(client, video)
     assert '<form' not in html
     label_input = re.search(r'<input[^>]*id="card-label"[^>]*>', html)[0]
     assert 'name=' not in label_input
-    assert 'value="05/01/2026 – Arrest, Kettling (crowd encircled and held by police), Pont Neuf"' in label_input
+    assert 'value="2026-05-01 – Arrest, Kettling (crowd encircled and held by police), Pont Neuf"' in label_input
     assert "Anyone who finds this card can read the clip's messages and delete it." in html
 
 
