@@ -1,6 +1,6 @@
 # Third-party notices
 
-What the archive holds, serves or installs that others wrote, under which licence, and where its notices are. `tests/test_third_party_notices.py` checks that every vendored file and every Python package pinned in the requirements files is listed, and that the licence files named exist.
+What the archive holds, serves or installs that others wrote, under which licence, and where its notices are. `tests/test_third_party_notices.py` checks that every vendored file is listed in its folder's README with its hash, that every Python package pinned in the requirements files is listed here at its version, and that the files named exist.
 
 ## Served to browsers, copied into the repository
 
@@ -18,13 +18,13 @@ Each folder's README lists its files, their versions, SHA-256 and licence files,
 
 ## Downloaded, not in the repository, and served
 
-`python manage.py fetch_map_data` downloads these into `var/map/`; the archive serves them to lawyers, and to uploaders and code holders with a map pass (ADR 0006).
+`python manage.py fetch_map_data` downloads these into `var/map/`; the archive serves them to lawyers, and to uploaders and code holders with a map pass (ADR 0006). The tiles' sources are those Protomaps lists in [its data licences](https://github.com/protomaps/basemaps/blob/main/LICENSE_DATA.md).
 
 | Data | Source | Licence | Notice |
 |---|---|---|---|
 | Map tiles: an extract of a Protomaps basemap build | OpenStreetMap, and coastlines from osmdata.openstreetmap.de | ODbL 1.0 | "© OpenStreetMap contributors" on the map, linking to openstreetmap.org/copyright |
 | | Natural Earth | Public domain | None needed |
-| | Landcover from Daylight, derived from ESA WorldCover (zooms 0 to 7) | CC BY 4.0 | Named here |
+| | Landcover from Daylight, derived from ESA WorldCover (zooms 0 to 7), which the style does not draw | CC BY 4.0 | Credited here, with its licence |
 | Fonts: Noto Sans Regular, Medium and Italic, as glyph files | protomaps/basemaps-assets at a fixed commit (`fetch_map_data.FONTS_COMMIT`) | SIL Open Font License 1.1, "Copyright 2022 The Noto Project Authors" | `OFL.txt`, saved beside the fonts |
 
 ## Python packages, installed by pip

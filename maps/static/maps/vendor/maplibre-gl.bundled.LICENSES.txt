@@ -125,8 +125,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-@maplibre/geojson-vt 6.3.0 (ISC)
---------------------------------
+@maplibre/geojson-vt 6.3.0 (MIT, with Mapbox's ISC notice)
+----------------------------------------------------------
 
 The MIT License (MIT)
 
@@ -169,8 +169,8 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 
 
-@maplibre/maplibre-gl-style-spec 26.4.4 (ISC)
----------------------------------------------
+@maplibre/maplibre-gl-style-spec 26.4.4 (BSD-3-Clause; its package.json says ISC)
+---------------------------------------------------------------------------------
 
 Copyright (c) 2020, MapLibre contributors
 

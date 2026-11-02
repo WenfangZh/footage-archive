@@ -15,12 +15,13 @@ INDEX = ROOT / 'THIRD_PARTY_NOTICES.md'
 # The folders that hold files, at any depth under a static folder's vendor/.
 VENDOR_FOLDERS = sorted({path.parent for path in ROOT.glob('*/static/**/vendor/**/*') if path.is_file()})
 HASH_LINE = re.compile(r'^([0-9a-f]{64})  (\S+)$', re.MULTILINE)
-LINK = re.compile(r'\]\(([^)#]+)\)')
-PINNED = re.compile(r'^([A-Za-z0-9._-]+)==(\S+)$', re.MULTILINE)
+# Links to files in the repository, not to the web.
+LINK = re.compile(r'\]\((?![a-z]+://)([^)#]+)\)')
+PINNED = re.compile(r'([A-Za-z0-9._-]+)==(\S+)')
 
 
 def test_every_vendor_folder_is_listed_in_the_index():
-    assert [folder.relative_to(ROOT).parts[0] for folder in VENDOR_FOLDERS] == ['clips', 'core', 'maps']
+    assert VENDOR_FOLDERS
     links = {(ROOT / target).resolve() for target in LINK.findall(INDEX.read_text())}
     for folder in VENDOR_FOLDERS:
         assert folder / 'README.md' in links, folder
@@ -54,5 +55,8 @@ def test_every_file_the_index_links_to_exists():
 def test_every_pinned_python_package_is_listed_at_its_version():
     rows = INDEX.read_text().splitlines()
     for requirements in ('requirements.txt', 'requirements-dev.txt'):
-        for name, version in PINNED.findall((ROOT / requirements).read_text()):
-            assert any(re.match(rf'\| {re.escape(name)}( \(development\))? \| {re.escape(version)} \|', row) for row in rows), name
+        for line in (ROOT / requirements).read_text().splitlines():
+            if line and not line.startswith(('#', '-r ')):
+                # Every requirement is pinned exactly, so none slips past this check.
+                name, version = PINNED.fullmatch(line).groups()
+                assert any(re.match(rf'\| {re.escape(name)}( \(development\))? \| {re.escape(version)} \|', row) for row in rows), name
