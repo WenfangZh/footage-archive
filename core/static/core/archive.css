@@ -2,29 +2,22 @@
    inline style, so every page is styled from here. System fonts only: nothing is downloaded. */
 
 :root {
+  /* Each colour as light-dark(light, dark): color-scheme picks one, from the system or, once
+     chosen with the header's theme switch, from data-theme (core/theme.py, M8.5). */
   color-scheme: light dark;
-  --paper: #fbfaf7;
-  --tint: #f1efe9;
-  --ink: #1b1b1a;
-  --muted: #5d5b56;
-  --rule: #d6d3cb;
-  --accent: #1f4ea0;
-  --danger: #a3241b;
+  --paper: light-dark(#fbfaf7, #141413);
+  --tint: light-dark(#f1efe9, #1e1d1b);
+  --ink: light-dark(#1b1b1a, #e7e4dc);
+  --muted: light-dark(#5d5b56, #a19d94);
+  --rule: light-dark(#d6d3cb, #3b3a36);
+  --accent: light-dark(#1f4ea0, #93b4ff);
+  --danger: light-dark(#a3241b, #ff9a8c);
   --serif: Charter, 'Bitstream Charter', 'Iowan Old Style', 'Palatino Linotype', Palatino, 'DejaVu Serif', Georgia, serif;
   --mono: ui-monospace, 'SFMono-Regular', 'DejaVu Sans Mono', 'Liberation Mono', Menlo, Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #141413;
-    --tint: #1e1d1b;
-    --ink: #e7e4dc;
-    --muted: #a19d94;
-    --rule: #3b3a36;
-    --accent: #93b4ff;
-    --danger: #ff9a8c;
-  }
-}
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -85,6 +78,7 @@ pre { overflow-x: auto; }
 }
 
 .site-header form { display: inline; margin: 0; }
+.site-header .theme-switch { margin-left: 1.1rem; white-space: nowrap; }
 
 /* Buttons in the header read as links: the language switch and logging out. */
 .site-header button {

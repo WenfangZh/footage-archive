@@ -147,6 +147,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.navigation.navigation',
+                'core.theme.theme',
             ],
         },
     },

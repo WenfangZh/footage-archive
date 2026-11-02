@@ -24,15 +24,13 @@ CONTROL_BORDERS = ['ink', 'muted', 'danger']
 BACKGROUNDS = ['paper', 'tint']
 
 
-def colours(block):
-    return dict(re.findall(r'--(\w+):\s*(#[0-9a-f]{6});', block))
-
-
 def themes():
-    css = STYLESHEET.read_text()
-    light = colours(re.search(r'^:root \{(.*?)\}', css, re.S | re.M).group(1))
-    dark = colours(re.search(r'prefers-color-scheme: dark\) \{\s*:root \{(.*?)\}', css, re.S).group(1))
-    return {'light': light, 'dark': {**light, **dark}}
+    """Each colour token's light and dark values, written as light-dark(light, dark)."""
+    pairs = re.findall(r'--(\w+):\s*light-dark\((#[0-9a-f]{6}),\s*(#[0-9a-f]{6})\);', STYLESHEET.read_text())
+    return {
+        'light': {name: light for name, light, _ in pairs},
+        'dark': {name: dark for name, _, dark in pairs},
+    }
 
 
 def luminance(colour):

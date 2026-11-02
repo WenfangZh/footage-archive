@@ -2892,11 +2892,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:418
+#: config/settings.py:419
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:419
+#: config/settings.py:420
 msgid "English"
 msgstr "Anglais"
 
@@ -3493,11 +3493,23 @@ msgstr "%(name)s a maintenant la clé commune."
 msgid "Footage archive"
 msgstr "Archive de vidéos"
 
-#: templates/base.html:37
+#: templates/base.html:34
+msgid "Light"
+msgstr "Clair"
+
+#: templates/base.html:35
+msgid "Dark"
+msgstr "Sombre"
+
+#: templates/base.html:36
+msgid "System"
+msgstr "Système"
+
+#: templates/base.html:43
 msgid "Log out"
 msgstr "Se déconnecter"
 
-#: templates/base.html:51 templates/licences.html:4 templates/licences.html:7
+#: templates/base.html:57 templates/licences.html:4 templates/licences.html:7
 msgid "Licences and source code"
 msgstr "Licences et code source"
 
