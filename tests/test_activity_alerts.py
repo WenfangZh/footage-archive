@@ -14,7 +14,7 @@ from accounts.models import LawyerProfile
 from alerts.checks import activity_limit, check_activity
 from alerts.models import Alert, AlertLimitRaise
 from audit.models import Action, AuditEntry, record
-from tests.conftest import log_in_with_second_factor, make_case, make_lawyer
+from tests.conftest import log_in_with_second_factor, make_case, make_lawyer, typed_time
 
 pytestmark = pytest.mark.django_db
 
@@ -111,7 +111,7 @@ def test_the_views_check_after_logging(lawyer, settings):
     settings.ALERT_CASES = 1
     client = log_in_with_second_factor(Client(), lawyer.user)
     client.post(reverse('lawyer:new_case'), {
-        'label': 'A case', 'starts_at': '2026-06-15T18:00', 'ends_at': '2026-06-15T19:00',
+        'label': 'A case', **typed_time('starts_at', '2026-06-15T18:00'), **typed_time('ends_at', '2026-06-15T19:00'),
         'latitude': '48.8532', 'longitude': '2.3692', 'radius_metres': '50', 'margin_minutes': '10', 'margin_rings': '1',
     })
     assert alerts(Alert.Kind.MANY_CASES) == [lawyer.user.pk]
@@ -205,7 +205,7 @@ def test_a_failed_check_leaves_no_case_behind(lawyer, monkeypatch):
     client = log_in_with_second_factor(Client(), lawyer.user)
     with pytest.raises(RuntimeError):
         client.post(reverse('lawyer:new_case'), {
-            'label': 'A case', 'starts_at': '2026-06-15T18:00', 'ends_at': '2026-06-15T19:00',
+            'label': 'A case', **typed_time('starts_at', '2026-06-15T18:00'), **typed_time('ends_at', '2026-06-15T19:00'),
             'latitude': '48.8532', 'longitude': '2.3692', 'radius_metres': '50', 'margin_minutes': '10',
             'margin_rings': '1',
         })

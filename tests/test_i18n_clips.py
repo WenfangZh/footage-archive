@@ -7,6 +7,7 @@ from django.utils import translation
 
 from clips.tags import DEFAULT_TAGS
 from tests.media import H264
+from tests.conftest import typed_time
 
 pytestmark = pytest.mark.django_db
 
@@ -65,7 +66,7 @@ def test_the_confirm_form_in_both_languages(client, video, headers, expected):
 ])
 def test_the_code_card_in_both_languages(client, video, headers, expected):
     url = start_upload(client, video)
-    html = page(client, url, headers, {'stated_time': '2026-05-01T14:03', 'tags': ['arrest', 'kettling'],
+    html = page(client, url, headers, {**typed_time('stated_time', '2026-05-01T14:03'), 'tags': ['arrest', 'kettling'],
                                       'metadata_precision': '11'})
     for text in expected:
         assert text in html

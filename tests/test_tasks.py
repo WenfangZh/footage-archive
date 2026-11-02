@@ -11,6 +11,7 @@ from huey.contrib.djhuey import HUEY
 from clips import ingest, probe, tasks, vault
 from clips.models import Clip, HashRecord, Original
 from tests.media import H264
+from tests.conftest import typed_time
 
 # Ingest seals each file's data key to the group keys in use: one exists in each test here.
 pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures('group_key_pair')]
@@ -52,7 +53,7 @@ def test_confirming_an_upload_queues_its_ingest(client, video, django_capture_on
     with open(video, 'rb') as file:
         step_two = client.post(reverse('clips:upload'), {'file': file})['Location']
     with django_capture_on_commit_callbacks(execute=True):
-        response = client.post(step_two, {'stated_time': '2026-05-01T14:05'})
+        response = client.post(step_two, {**typed_time('stated_time', '2026-05-01T14:05')})
     assert response.status_code == 200
     clip = Clip.objects.get()
     assert clip.status == Clip.Status.READY
