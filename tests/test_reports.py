@@ -7,7 +7,6 @@ import datetime
 import re
 
 import pytest
-from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
@@ -19,7 +18,7 @@ from cases.models import Case
 from clips import grid, upload_codes, vault
 from clips.models import Clip, ClipTag, Message, Report, TagProposal
 from keys.models import LawyerKey
-from tests.conftest import BASTILLE, TEST_CODE, log_in_with_second_factor, make_case, with_code_holder_key
+from tests.conftest import BASTILLE, TEST_CODE, log_in_with_second_factor, make_case, make_lawyer, with_code_holder_key
 
 pytestmark = pytest.mark.django_db
 
@@ -35,10 +34,7 @@ class Lawyer:
     """An admitted lawyer with a case the clip matches, logged in."""
 
     def __init__(self, email):
-        self.profile = LawyerProfile.objects.create(user=get_user_model().objects.create_user(email), bar='Paris')
-        self.profile.verified_via, self.profile.vouched_by = 'The bar directory', 'A defence organisation'
-        self.profile.save()
-        self.profile.change_status(LawyerProfile.Status.LAWYER)
+        self.profile = make_lawyer(email)
         self.case = make_case(self.profile, starts_at=START, ends_at=START + datetime.timedelta(hours=1))
         self.client = log_in_with_second_factor(Client(), self.profile.user)
 

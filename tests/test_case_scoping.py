@@ -12,8 +12,8 @@ from django.urls import URLResolver, get_resolver, reverse
 
 from clips import vault
 from clips.models import ClipTag, HashRecord
-from tests.conftest import database_dump, log_in_with_second_factor, put_vault_file, with_data_key
-from tests.test_clip_pages import START, make_lawyer
+from tests.conftest import database_dump, log_in_with_second_factor, make_lawyer, put_vault_file, with_data_key
+from tests.test_clip_pages import START
 from tests.test_clip_pages import case, clip, lawyer, lawyer_client  # noqa: F401
 from tests.test_roles import LAWYER_AREA
 

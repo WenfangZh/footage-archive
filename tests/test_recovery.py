@@ -27,7 +27,9 @@ from clips import rate_limits, vault
 from clips.models import Clip, Message
 from keys import grants
 from keys.models import ENCRYPTED_PRIVATE_KEY_BYTES, SALT_BYTES, GroupKey, KeyGrant, LawyerKey
-from tests.conftest import TEST_CODE, log_in_with_second_factor, make_case, make_key, open_label, with_code_holder_key
+from tests.conftest import (
+    TEST_CODE, log_in_with_second_factor, make_case, make_key, make_lawyer, open_label, with_code_holder_key,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -47,10 +49,7 @@ PASSWORD = 'a long test passphrase'
 
 
 def lawyer(email='lawyer@example.org', confirmed=True):
-    profile = LawyerProfile.objects.create(user=User.objects.create_user(email, PASSWORD), bar='Paris')
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(Status.LAWYER)
+    profile = make_lawyer(email, PASSWORD)
     key = make_key(profile)
     if confirmed:
         key.admin_confirmed_at = timezone.now()
@@ -67,11 +66,6 @@ def give(group_key, *profiles):
 
 def client_for(profile):
     return log_in_with_second_factor(Client(), profile.user)
-
-
-@pytest.fixture
-def admin_client():
-    return log_in_with_second_factor(Client(), User.objects.create_superuser('admin@example.org'))
 
 
 # A new key passphrase, set with the recovery key.

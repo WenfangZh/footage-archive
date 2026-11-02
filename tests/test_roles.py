@@ -14,7 +14,7 @@ from django.urls.resolvers import RoutePattern
 
 from accounts.models import LawyerProfile
 from accounts.roles import Role, role
-from tests.conftest import log_in_with_second_factor
+from tests.conftest import admit, log_in_with_second_factor
 
 pytestmark = pytest.mark.django_db
 
@@ -69,10 +69,7 @@ def make_account(kind):
     if kind == 'declined':
         profile.change_status(Status.DECLINED)
     if kind in ('lawyer', 'suspended', 'revoked'):
-        profile.verified_via = 'The bar directory'
-        profile.vouched_by = 'A defence organisation'
-        profile.save()
-        profile.change_status(Status.LAWYER)
+        admit(profile)
     if kind in ('suspended', 'revoked'):
         profile.change_status(Status(kind))
     return user

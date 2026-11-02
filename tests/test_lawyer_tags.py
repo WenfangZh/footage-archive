@@ -4,7 +4,6 @@ different lawyers, never shown to the code holder, logged by the tag's id."""
 import datetime
 
 import pytest
-from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 
@@ -13,7 +12,7 @@ from audit.models import Action, AuditEntry
 from clips import grid, upload_codes
 from cases.models import Case
 from clips.models import Clip, ClipTag
-from tests.conftest import BASTILLE, TEST_CODE, log_in_with_second_factor, make_case, with_code_holder_key
+from tests.conftest import BASTILLE, TEST_CODE, log_in_with_second_factor, make_case, make_lawyer, with_code_holder_key
 from tests.test_code_holder import EDIT_URL, ENGLISH, ENTRY_URL, form_values
 
 pytestmark = pytest.mark.django_db
@@ -26,10 +25,7 @@ class Lawyer:
     """An admitted lawyer with a case the clip matches, logged in."""
 
     def __init__(self, email):
-        self.profile = LawyerProfile.objects.create(user=get_user_model().objects.create_user(email), bar='Paris')
-        self.profile.verified_via, self.profile.vouched_by = 'The bar directory', 'A defence organisation'
-        self.profile.save()
-        self.profile.change_status(LawyerProfile.Status.LAWYER)
+        self.profile = make_lawyer(email)
         self.case = make_case(self.profile, starts_at=START, ends_at=START + datetime.timedelta(hours=1))
         self.client = log_in_with_second_factor(Client(), self.profile.user)
 

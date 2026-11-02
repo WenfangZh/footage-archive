@@ -26,7 +26,10 @@ from clips import grid, vault
 from clips.models import Clip, Original
 from keys import grants
 from keys.models import PUBLIC_KEY_BYTES, SEALED_GROUP_KEY_BYTES, GroupKey, KeyGrant
-from tests.conftest import BASTILLE, hand_over, log_in_with_second_factor, make_case, make_key, put_vault_file, rotation_attempt, with_code_holder_key, with_data_key
+from tests.conftest import (
+    BASTILLE, hand_over, log_in_with_second_factor, make_case, make_key, make_lawyer, put_vault_file, rotation_attempt,
+    with_code_holder_key, with_data_key,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -139,10 +142,7 @@ def test_only_a_lawyer_with_a_confirmed_key_makes_the_group_key():
     applicant = person('applicant@example.org', Status.APPLICANT, confirmed=False)
     assert start(client_for(applicant)).status_code == 403
     # Admitted before keys existed: nothing to seal it to.
-    keyless = LawyerProfile.objects.create(user=User.objects.create_user('keyless@example.org'), bar='Paris')
-    keyless.verified_via, keyless.vouched_by = 'The bar directory', 'A defence organisation'
-    keyless.save()
-    keyless.change_status(Status.LAWYER)
+    keyless = make_lawyer('keyless@example.org')
     assert start(client_for(keyless)).status_code == 409
     assert not GroupKey.objects.exists()
 

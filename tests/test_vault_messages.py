@@ -2,7 +2,6 @@
 personal key (SPEC.md §6, §7; docs/m5-encryption-design.md §7.3)."""
 
 import pytest
-from django.contrib.auth import get_user_model
 from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 from nacl import bindings
@@ -14,7 +13,7 @@ from clips import vault
 from clips.editing import delete_clip
 from clips.models import Clip, Message
 from clips.time_blocks import four_hour_block
-from tests.conftest import TEST_CODE, make_key, with_code_holder_key
+from tests.conftest import TEST_CODE, make_key, make_lawyer, with_code_holder_key
 
 pytestmark = pytest.mark.django_db
 
@@ -23,12 +22,9 @@ FROM = Message.Direction.FROM_CODE_HOLDER
 TEXT = 'Could you tell me what happened just before the start of your video?'
 
 
-def make_lawyer(email, key=True):
+def confirmed_lawyer(email, key=True):
     """An admitted lawyer, with a personal key the admin confirmed unless `key` is False."""
-    profile = LawyerProfile.objects.create(user=get_user_model().objects.create_user(email), bar='Paris')
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(LawyerProfile.Status.LAWYER)
+    profile = make_lawyer(email)
     private_key = PrivateKey.generate() if key else None
     if key:
         confirmed_key(profile, private_key)
@@ -44,7 +40,7 @@ def confirmed_key(profile, private_key):
 
 @pytest.fixture
 def lawyer():
-    return make_lawyer('lawyer@example.org')
+    return confirmed_lawyer('lawyer@example.org')
 
 
 @pytest.fixture
@@ -91,7 +87,7 @@ def test_the_length_shows_only_to_the_nearest_block(clip, lawyer):
 
 def test_no_other_key_opens_it(clip, lawyer):
     message = vault.send_message(clip, lawyer[0], TO, TEXT)
-    other_profile, other_key = make_lawyer('other@example.org')
+    other_profile, other_key = confirmed_lawyer('other@example.org')
     group_key = PrivateKey.generate()
     for key in (other_key, group_key):
         with pytest.raises(CryptoError):
@@ -121,7 +117,7 @@ def test_a_text_moved_to_another_message_does_not_open(clip, lawyer):
 def test_a_text_whose_thread_place_direction_kind_or_naming_changes_does_not_open(clip, lawyer, change):
     message = vault.send_message(clip, lawyer[0], TO, TEXT)
     if change.pop('thread', False):
-        change = {'lawyer_profile': make_lawyer('other@example.org')[0]}
+        change = {'lawyer_profile': confirmed_lawyer('other@example.org')[0]}
     Message.objects.filter(pk=message.pk).update(**change)
     assert vault.code_holder_messages(clip, TEST_CODE)[0][1] is None
 
@@ -145,7 +141,7 @@ def test_only_lawyers_report_or_are_named(clip, lawyer, fields):
 
 
 def test_messages_take_their_places_in_each_thread(clip, lawyer):
-    other = make_lawyer('other@example.org')[0]
+    other = confirmed_lawyer('other@example.org')[0]
     places = [
         (vault.send_message(clip, profile, TO, TEXT).position, profile)
         for profile in (lawyer[0], lawyer[0], other, lawyer[0])
@@ -161,7 +157,7 @@ def test_the_time_is_kept_to_its_four_hour_block(clip, lawyer):
 
 
 def test_nothing_is_sent_without_a_lawyer_key_the_admin_confirmed_or_a_code_holder_key(clip):
-    keyless = make_lawyer('keyless@example.org', key=False)[0]
+    keyless = confirmed_lawyer('keyless@example.org', key=False)[0]
     for direction in (TO, FROM):
         with pytest.raises(vault.NoLawyerKey):
             vault.send_message(clip, keyless, direction, TEXT)
@@ -170,7 +166,7 @@ def test_nothing_is_sent_without_a_lawyer_key_the_admin_confirmed_or_a_code_hold
     for direction in (TO, FROM):
         with pytest.raises(vault.NoLawyerKey):
             vault.send_message(clip, keyless, direction, TEXT)
-    profile, _ = make_lawyer('lawyer@example.org')
+    profile, _ = confirmed_lawyer('lawyer@example.org')
     old_clip = Clip.objects.create(code_hash='1' * 64)
     with pytest.raises(vault.NoCodeHolderKey):
         vault.send_message(old_clip, profile, TO, TEXT)

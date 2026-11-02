@@ -8,6 +8,7 @@ from django_otp.plugins.otp_static.models import StaticToken
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from accounts.models import LawyerProfile
+from tests.conftest import make_lawyer
 
 pytestmark = pytest.mark.django_db
 
@@ -19,13 +20,7 @@ VERIFY_URL = reverse('accounts:two_factor_verify')
 
 @pytest.fixture
 def lawyer():
-    user = User.objects.create_user('lawyer@example.org', PASSWORD)
-    profile = LawyerProfile.objects.create(user=user, bar='Paris')
-    profile.verified_via = 'The bar directory'
-    profile.vouched_by = 'A defence organisation'
-    profile.save()
-    profile.change_status(LawyerProfile.Status.LAWYER)
-    return user
+    return make_lawyer(password=PASSWORD).user
 
 
 def code_for(device):

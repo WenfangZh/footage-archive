@@ -12,8 +12,7 @@ from django.test import Client
 from django.urls import reverse
 
 from audit.models import AuditEntry
-from tests.conftest import log_in_with_second_factor
-from tests.test_case_pages import make_lawyer
+from tests.conftest import log_in_with_second_factor, make_lawyer
 
 pytestmark = pytest.mark.django_db
 

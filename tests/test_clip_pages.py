@@ -10,13 +10,13 @@ from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from cases.models import Case
 from clips import grid, vault
 from clips.models import Clip, ClipTag, Edit
 from tests.conftest import (
-    BASTILLE, log_in_with_second_factor, make_case, open_page_text, put_vault_file, with_code_holder_key, with_data_key,
+    BASTILLE, log_in_with_second_factor, make_case, make_lawyer, open_page_text, put_vault_file, with_code_holder_key,
+    with_data_key,
 )
 
 pytestmark = pytest.mark.django_db
@@ -25,14 +25,6 @@ User = get_user_model()
 CENTRE = grid.cell_for_point(*BASTILLE, 11)
 START = datetime.datetime(2026, 6, 15, 16, tzinfo=datetime.UTC)
 PROXY_BYTES = bytes(range(256)) * 40
-
-
-def make_lawyer(email):
-    profile = LawyerProfile.objects.create(user=User.objects.create_user(email), bar='Paris')
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(LawyerProfile.Status.LAWYER)
-    return profile
 
 
 @pytest.fixture

@@ -15,25 +15,12 @@ from django.urls import reverse
 from nacl.exceptions import CryptoError
 from nacl.public import PrivateKey
 
-from accounts.models import LawyerProfile
 from cases import labels
 from cases.models import Case
 from keys.grants import current_key
-from tests.conftest import BASTILLE, log_in_with_second_factor, make_case, make_key, open_label
+from tests.conftest import BASTILLE, log_in_with_second_factor, make_case, make_key, make_lawyer, open_label
 
 pytestmark = pytest.mark.django_db
-
-
-def make_lawyer(email='lawyer@example.org', key=True):
-    from django.contrib.auth import get_user_model
-    profile = LawyerProfile.objects.create(user=get_user_model().objects.create_user(email), bar='Paris')
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(LawyerProfile.Status.LAWYER)
-    if key:
-        profile.private_key = PrivateKey.generate()
-        make_key(profile, profile.private_key)
-    return profile
 
 
 def dump():
@@ -42,7 +29,7 @@ def dump():
 
 
 def test_a_label_is_stored_encrypted_and_opens_only_with_the_lawyer_s_key():
-    lawyer = make_lawyer()
+    lawyer = make_lawyer(key=True)
     case = make_case(lawyer, 'Bastille, 15 June')
     case.refresh_from_db()
     assert case.label == '' and case.label_key == current_key(lawyer)
@@ -54,7 +41,7 @@ def test_a_label_is_stored_encrypted_and_opens_only_with_the_lawyer_s_key():
 
 
 def test_a_label_moved_to_another_case_does_not_open():
-    lawyer = make_lawyer()
+    lawyer = make_lawyer(key=True)
     first, second = make_case(lawyer, 'First'), make_case(lawyer, 'Second')
     first.refresh_from_db()
     # As a database writer could swap them: the encryption is bound to the case's id.
@@ -65,7 +52,7 @@ def test_a_label_moved_to_another_case_does_not_open():
 
 
 def test_a_lawyer_without_a_personal_key_cannot_create_a_case():
-    lawyer = make_lawyer(key=False)
+    lawyer = make_lawyer()
     client = log_in_with_second_factor(Client(), lawyer.user)
     response = client.post(reverse('lawyer:new_case'), {
         'label': 'A case', 'starts_at': '2026-06-15T18:00', 'ends_at': '2026-06-15T19:00',
@@ -77,7 +64,7 @@ def test_a_lawyer_without_a_personal_key_cannot_create_a_case():
 
 def test_pages_carry_the_label_encrypted_with_the_case_number_until_the_browser_opens_it(settings):
     settings.LANGUAGE_CODE = 'en'
-    lawyer = make_lawyer()
+    lawyer = make_lawyer(key=True)
     case = make_case(lawyer, 'Bastille, 15 June')
     client = log_in_with_second_factor(Client(), lawyer.user)
     for url in (reverse('lawyer:home'), reverse('lawyer:case', kwargs={'case_id': case.pk})):
@@ -88,7 +75,7 @@ def test_pages_carry_the_label_encrypted_with_the_case_number_until_the_browser_
 
 def test_a_label_sealed_to_a_retired_key_is_unreadable(settings):
     settings.LANGUAGE_CODE = 'en'
-    lawyer = make_lawyer()
+    lawyer = make_lawyer(key=True)
     case = make_case(lawyer, 'Bastille, 15 June')
     current_key(lawyer).retire()
     make_key(lawyer)
@@ -97,7 +84,7 @@ def test_a_label_sealed_to_a_retired_key_is_unreadable(settings):
 
 
 def test_a_closed_case_can_have_its_label_sealed_but_nothing_else_changed():
-    lawyer = make_lawyer()
+    lawyer = make_lawyer(key=True)
     case = make_case(lawyer, 'Bastille, 15 June')
     Case.objects.filter(pk=case.pk).close(Case.ClosedBecause.LAWYER)
     case.refresh_from_db()
@@ -109,7 +96,7 @@ def test_a_closed_case_can_have_its_label_sealed_but_nothing_else_changed():
 
 
 def test_a_label_is_never_both_plaintext_and_encrypted():
-    case = make_case(make_lawyer(), 'Bastille, 15 June')
+    case = make_case(make_lawyer(key=True), 'Bastille, 15 June')
     case.label = 'Bastille, 15 June'
     with pytest.raises(IntegrityError), transaction.atomic():
         case.save(update_fields=['label'])
@@ -117,7 +104,7 @@ def test_a_label_is_never_both_plaintext_and_encrypted():
 
 @pytest.mark.django_db(transaction=True)
 def test_encrypt_vault_seals_labels_from_before_encryption_to_their_lawyer_s_key():
-    with_key, without_key = make_lawyer('one@example.org'), make_lawyer('two@example.org', key=False)
+    with_key, without_key = make_lawyer('one@example.org', key=True), make_lawyer('two@example.org')
     old = make_case(with_key, 'Placeholder')
     make_key(without_key)
     keyless = make_case(without_key, 'Placeholder')
@@ -137,7 +124,7 @@ def test_encrypt_vault_seals_labels_from_before_encryption_to_their_lawyer_s_key
 
 
 def test_a_label_is_sealed_only_to_its_own_lawyer_s_current_key():
-    lawyer, other = make_lawyer(), make_lawyer('other@example.org')
+    lawyer, other = make_lawyer(key=True), make_lawyer('other@example.org', key=True)
     case = make_case(lawyer, 'Bastille, 15 June')
     with pytest.raises(ValueError):
         labels.seal(case, 'Bastille, 15 June', current_key(other))
@@ -151,7 +138,7 @@ def test_error_reports_hide_the_label_in_the_form_and_where_it_is_sealed(monkeyp
     from django.views.debug import ExceptionReporter
 
     from cases.models import CaseCellQuerySet
-    lawyer = make_lawyer()
+    lawyer = make_lawyer(key=True)
     client = log_in_with_second_factor(Client(raise_request_exception=False), lawyer.user)
 
     def fails(*args, **kwargs):

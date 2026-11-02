@@ -8,12 +8,11 @@ from django.urls import reverse
 from django.utils import timezone
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
-from accounts.models import LawyerProfile
 from alerts.checks import check_ingest_queue
 from alerts.models import Alert
 from clips import tasks
 from clips.models import Clip
-from tests.conftest import log_in_with_second_factor
+from tests.conftest import log_in_with_second_factor, make_lawyer
 
 pytestmark = pytest.mark.django_db
 
@@ -28,12 +27,7 @@ def waiting_clip(upload_time):
 
 @pytest.fixture
 def lawyer():
-    user = User.objects.create_user('lawyer@example.org', PASSWORD)
-    profile = LawyerProfile.objects.create(user=user, bar='Paris')
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(LawyerProfile.Status.LAWYER)
-    return user
+    return make_lawyer(password=PASSWORD).user
 
 
 def test_a_short_queue_raises_no_alert():

@@ -14,7 +14,7 @@ from clips.models import Message
 from tests.conftest import make_case
 from tests.test_code_holder_messages import ENGLISH, clip, page, section  # noqa: F401 (the clip fixture)
 from tests.test_lawyer_messages import Lawyer
-from tests.test_vault_messages import FROM, TO, make_lawyer
+from tests.test_vault_messages import FROM, TO, confirmed_lawyer
 
 pytestmark = pytest.mark.django_db
 
@@ -35,8 +35,8 @@ def send(clip, profile, direction, text, at=SENT):  # noqa: F811
 
 
 def test_a_thread_is_deleted_the_set_time_after_its_last_message_and_not_before(clip):  # noqa: F811
-    quiet, _ = make_lawyer('quiet@example.org')
-    answered, _ = make_lawyer('answered@example.org')
+    quiet, _ = confirmed_lawyer('quiet@example.org')
+    answered, _ = confirmed_lawyer('answered@example.org')
     send(clip, quiet, TO, 'Were you near the station?')
     send(clip, answered, TO, 'Did you keep filming?')
     send(clip, answered, FROM, 'Yes.', at=SENT + 5 * DAY)
@@ -53,7 +53,7 @@ def test_a_thread_is_deleted_the_set_time_after_its_last_message_and_not_before(
 
 
 def test_a_thread_whose_last_block_is_the_long_one_when_the_clocks_go_back_is_not_deleted_early(clip):  # noqa: F811
-    profile, _ = make_lawyer('autumn@example.org')
+    profile, _ = confirmed_lawyer('autumn@example.org')
     # The 00h block of 25 October 2026 in Paris lasts five hours, to 04h winter time (03h UTC).
     send(clip, profile, TO, 'Sent at 02h30 UTC, in that block', at=datetime.datetime(2026, 10, 24, 22, tzinfo=datetime.UTC))
 
@@ -78,12 +78,12 @@ def test_each_page_says_when_its_thread_is_deleted(clip):  # noqa: F811
 
 
 def test_no_letter_is_given_again_to_another_lawyer_once_a_thread_is_deleted(clip):  # noqa: F811
-    first, _ = make_lawyer('first@example.org')
+    first, _ = confirmed_lawyer('first@example.org')
     send(clip, first, TO, 'The first thread')
     page(Client())
     threads.delete_expired_threads(now=SENT + 30 * DAY)
 
-    second, _ = make_lawyer('second@example.org')
+    second, _ = confirmed_lawyer('second@example.org')
     vault.send_message(clip, second, TO, 'The second thread')
     content = page(Client())
 

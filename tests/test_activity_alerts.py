@@ -14,7 +14,7 @@ from accounts.models import LawyerProfile
 from alerts.checks import activity_limit, check_activity
 from alerts.models import Alert, AlertLimitRaise
 from audit.models import Action, AuditEntry, record
-from tests.conftest import log_in_with_second_factor, make_case, make_key
+from tests.conftest import log_in_with_second_factor, make_case, make_lawyer
 
 pytestmark = pytest.mark.django_db
 
@@ -22,18 +22,9 @@ User = get_user_model()
 DOWNLOADS, CASES = AlertLimitRaise.Activity.DOWNLOADS, AlertLimitRaise.Activity.CASES
 
 
-def make_lawyer(email):
-    profile = LawyerProfile.objects.create(user=User.objects.create_user(email), bar='Paris')
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(LawyerProfile.Status.LAWYER)
-    make_key(profile)
-    return profile
-
-
 @pytest.fixture
 def lawyer():
-    return make_lawyer('lawyer@example.org')
+    return make_lawyer(key=True)
 
 
 @pytest.fixture
@@ -76,7 +67,7 @@ def test_downloads_spread_out_raise_no_alert(lawyer, case):
 
 
 def test_downloads_are_counted_per_lawyer(lawyer, case):
-    other_case = make_case(make_lawyer('other@example.org'))
+    other_case = make_case(make_lawyer('other@example.org', key=True))
     for each in (case, case, other_case):
         download(each)
     check_activity(lawyer, DOWNLOADS)
@@ -127,16 +118,6 @@ def test_the_views_check_after_logging(lawyer, settings):
 
 
 # The admin's raise page.
-
-@pytest.fixture
-def admin():
-    return User.objects.create_superuser('admin@example.org')
-
-
-@pytest.fixture
-def admin_client(admin):
-    return log_in_with_second_factor(Client(), admin)
-
 
 def raise_limit(client, lawyer, **data):
     return client.post(reverse('manage:raise_limit', kwargs={'profile_id': lawyer.pk}), {

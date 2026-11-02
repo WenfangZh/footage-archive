@@ -8,13 +8,12 @@ from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 
-from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from cases.models import Case
 from cases.search import find, match_of
 from clips import grid
 from clips.models import Clip
-from tests.conftest import BASTILLE, log_in_with_second_factor, make_case
+from tests.conftest import BASTILLE, log_in_with_second_factor, make_case, make_lawyer
 
 pytestmark = pytest.mark.django_db
 
@@ -23,14 +22,6 @@ CENTRE = grid.cell_for_point(*BASTILLE, 11)
 START = datetime.datetime(2026, 6, 15, 16, tzinfo=datetime.UTC)
 WINDOW = {'starts_at': START, 'ends_at': START + datetime.timedelta(hours=1)}
 codes = iter(range(10**6))
-
-
-def make_lawyer(email):
-    profile = LawyerProfile.objects.create(user=User.objects.create_user(email), bar='Paris')
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(LawyerProfile.Status.LAWYER)
-    return profile
 
 
 @pytest.fixture

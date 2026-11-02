@@ -10,23 +10,14 @@ from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry, record
 from cases.models import Case
 from cases.tasks import close_unused_cases
-from tests.conftest import log_in_with_second_factor, make_case
+from tests.conftest import log_in_with_second_factor, make_case, make_lawyer
 
 pytestmark = pytest.mark.django_db
 
 User = get_user_model()
-
-
-def make_lawyer(email):
-    profile = LawyerProfile.objects.create(user=User.objects.create_user(email), bar='Paris')
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(LawyerProfile.Status.LAWYER)
-    return profile
 
 
 @pytest.fixture

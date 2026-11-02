@@ -3,30 +3,17 @@ admin, keeping their hash record and audit entries, with an entry that names no 
 sees the list, and no clip that is not withdrawn can be deleted from it."""
 
 import pytest
-from django.contrib.auth import get_user_model
-from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
 from audit.models import Action, AuditEntry
 from clips.models import Clip, ClipTag, HashRecord, Report
-from tests.conftest import log_in_with_second_factor
 from tests.test_reports import Lawyer, clip  # noqa: F401 (the clip fixture)
 
 pytestmark = pytest.mark.django_db
 
 ENGLISH = {'accept-language': 'en'}
 LIST_URL = reverse('manage:withdrawn_clips')
-
-
-@pytest.fixture
-def admin():
-    return get_user_model().objects.create_superuser('admin@example.org')
-
-
-@pytest.fixture
-def admin_client(admin):
-    return log_in_with_second_factor(Client(), admin)
 
 
 @pytest.fixture

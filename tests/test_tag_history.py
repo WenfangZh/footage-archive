@@ -6,15 +6,13 @@ import datetime
 import uuid
 
 import pytest
-from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 
-from accounts.models import LawyerProfile
 from audit.models import Action, record
 from clips import upload_codes
 from clips.models import Clip, ClipTag, Edit
-from tests.conftest import TEST_CODE, log_in_with_second_factor, make_case
+from tests.conftest import TEST_CODE, log_in_with_second_factor, make_case, make_lawyer
 
 pytestmark = pytest.mark.django_db
 
@@ -22,13 +20,7 @@ ENGLISH = {'accept-language': 'en'}
 
 
 def lawyer(last_name):
-    profile = LawyerProfile.objects.create(
-        user=get_user_model().objects.create_user(f'{last_name.lower()}@example.org', last_name=last_name), bar='Lyon',
-    )
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(LawyerProfile.Status.LAWYER)
-    return profile
+    return make_lawyer(f'{last_name.lower()}@example.org', last_name=last_name)
 
 
 def act(action, profile, clip, tag=None):
@@ -39,11 +31,6 @@ def act(action, profile, clip, tag=None):
 @pytest.fixture
 def clip():
     return Clip.objects.create(code_hash=upload_codes.keyed_hash(TEST_CODE), status=Clip.Status.READY)
-
-
-@pytest.fixture
-def admin_client():
-    return log_in_with_second_factor(Client(), get_user_model().objects.create_superuser('admin@example.org'))
 
 
 def history(client, clip_id):

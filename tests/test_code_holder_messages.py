@@ -10,7 +10,7 @@ from accounts.models import LawyerProfile
 from clips import upload_codes, vault
 from clips.models import Clip, Message
 from tests.conftest import TEST_CODE, with_code_holder_key
-from tests.test_vault_messages import FROM, TO, make_lawyer, opened_by_lawyer
+from tests.test_vault_messages import FROM, TO, confirmed_lawyer, opened_by_lawyer
 
 pytestmark = pytest.mark.django_db
 
@@ -25,7 +25,7 @@ def clip():
 
 
 def named_lawyer(email, first_name):
-    profile, private_key = make_lawyer(email)
+    profile, private_key = confirmed_lawyer(email)
     profile.user.first_name, profile.user.last_name = first_name, 'Exemple'
     profile.user.save()
     return profile, private_key
@@ -58,7 +58,7 @@ def test_the_code_holder_reads_each_lawyers_thread_as_a_verified_defence_lawyer_
 
 
 def test_a_message_is_marked_new_until_the_code_holder_has_been_shown_it(client, clip):
-    profile, _ = make_lawyer('lawyer@example.org')
+    profile, _ = confirmed_lawyer('lawyer@example.org')
     vault.send_message(clip, profile, TO, 'Were you near the station?')
 
     assert '<strong>New</strong>' in page(client)
@@ -66,7 +66,7 @@ def test_a_message_is_marked_new_until_the_code_holder_has_been_shown_it(client,
 
 
 def test_the_code_holder_replies_and_the_lawyer_reads_it_with_their_key(client, clip):
-    profile, private_key = make_lawyer('lawyer@example.org')
+    profile, private_key = confirmed_lawyer('lawyer@example.org')
     first = vault.send_message(clip, profile, TO, 'Were you near the station?')
 
     response = reply(client, first)
@@ -80,7 +80,7 @@ def test_the_code_holder_replies_and_the_lawyer_reads_it_with_their_key(client, 
 
 @pytest.mark.parametrize('status', [LawyerProfile.Status.SUSPENDED, LawyerProfile.Status.REVOKED])
 def test_a_lawyer_who_no_longer_has_access_is_marked_and_cannot_be_answered(client, clip, status):
-    profile, _ = make_lawyer('lawyer@example.org')
+    profile, _ = confirmed_lawyer('lawyer@example.org')
     first = vault.send_message(clip, profile, TO, 'Were you near the station?')
     profile.change_status(status)
 
@@ -94,7 +94,7 @@ def test_a_lawyer_who_no_longer_has_access_is_marked_and_cannot_be_answered(clie
 
 
 def test_a_lawyer_whose_new_key_is_unconfirmed_cannot_be_answered_for_now_without_saying_why(client, clip):
-    profile, _ = make_lawyer('lawyer@example.org')
+    profile, _ = confirmed_lawyer('lawyer@example.org')
     first = vault.send_message(clip, profile, TO, 'Were you near the station?')
     # A key reset: the old key retired, a new one waiting for the admin's confirmation.
     from keys.models import LawyerKey
@@ -112,7 +112,7 @@ def test_a_lawyer_whose_new_key_is_unconfirmed_cannot_be_answered_for_now_withou
 
 def test_a_reply_names_a_thread_of_this_clip_only(client, clip):
     other_clip = with_code_holder_key(Clip.objects.create(code_hash=upload_codes.keyed_hash('another code'), status=Clip.Status.READY), code='OTHERCODE')
-    profile, _ = make_lawyer('lawyer@example.org')
+    profile, _ = confirmed_lawyer('lawyer@example.org')
     elsewhere = vault.send_message(other_clip, profile, TO, 'About another clip')
 
     assert reply(client, elsewhere).status_code == 400
@@ -120,7 +120,7 @@ def test_a_reply_names_a_thread_of_this_clip_only(client, clip):
 
 
 def test_no_messages_without_the_right_code(client, clip):
-    profile, _ = make_lawyer('lawyer@example.org')
+    profile, _ = confirmed_lawyer('lawyer@example.org')
     vault.send_message(clip, profile, TO, 'Were you near the station?')
 
     response = client.post(PAGE_URL, {'code': 'WRONGCODE'}, headers=ENGLISH)
@@ -143,7 +143,7 @@ def test_a_lawyer_keeps_their_letter_when_a_new_thread_begins(client, clip):
 
 
 def test_only_the_messages_shown_count_as_seen(client, clip, monkeypatch):
-    profile, _ = make_lawyer('lawyer@example.org')
+    profile, _ = confirmed_lawyer('lawyer@example.org')
     vault.send_message(clip, profile, TO, 'Shown')
     read = vault.code_holder_messages
 
@@ -159,7 +159,7 @@ def test_only_the_messages_shown_count_as_seen(client, clip, monkeypatch):
 
 
 def test_a_reply_needs_the_clips_code(client, clip):
-    profile, _ = make_lawyer('lawyer@example.org')
+    profile, _ = confirmed_lawyer('lawyer@example.org')
     first = vault.send_message(clip, profile, TO, 'Were you near the station?')
 
     response = client.post(REPLY_URL, {'code': 'WRONGCODE', 'thread': first.pk, 'text': 'A reply'}, headers=ENGLISH)
