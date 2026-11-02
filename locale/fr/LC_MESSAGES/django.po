@@ -3465,10 +3465,9 @@ msgstr ""
 "Le code de l'archive est un logiciel libre, sous la GNU Affero General "
 "Public License (licence publique générale GNU Affero), version 3 ou toute "
 "version ultérieure : toute personne peut l'utiliser, l'étudier, le modifier "
-"et le partager, et qui fait fonctionner une copie modifiée pour d'autres "
-"doit leur en proposer le code source."
+"et le partager, et toute personne qui fait fonctionner une copie modifiée "
+"pour d'autres doit leur en proposer le code source."
 
-#
 #: templates/licences.html:13
 msgid "Source code"
 msgstr "Code source"
@@ -3477,7 +3476,6 @@ msgstr "Code source"
 msgid "Libraries the archive's pages load"
 msgstr "Bibliothèques chargées par les pages de l'archive"
 
-#
 #: templates/licences.html:17
 msgid "The map:"
 msgstr "La carte :"
@@ -3502,7 +3500,6 @@ msgstr "Le chiffrement dans le navigateur des avocat·es :"
 msgid "Resumable uploads:"
 msgstr "La reprise des envois interrompus :"
 
-#
 #: templates/licences.html:34
 msgid "The map"
 msgstr "La carte"
@@ -3514,11 +3511,11 @@ msgid ""
 "the Open Database License (ODbL), through Protomaps; coastlines from "
 "osmdata.openstreetmap.de (ODbL); and Natural Earth, in the public domain."
 msgstr ""
-"Données de la carte © les contributeurs et contributrices d'<a "
-"href=\"https://www.openstreetmap.org/copyright\" rel=\"noopener "
-"noreferrer\">OpenStreetMap</a>, disponibles sous l'Open Database License "
-"(ODbL), via Protomaps ; côtes issues d'osmdata.openstreetmap.de (ODbL) ; et "
-"Natural Earth, dans le domaine public."
+"Données de la carte © les contributeur·ices d'<a href=\"https://"
+"www.openstreetmap.org/copyright\" rel=\"noopener noreferrer\">OpenStreetMap</"
+"a>, disponibles sous l'Open Database License (ODbL), via Protomaps ; côtes "
+"issues d'osmdata.openstreetmap.de (ODbL) ; et Natural Earth, dans le domaine "
+"public."
 
 #: templates/licences.html:39
 msgid ""

@@ -13,12 +13,14 @@ pytestmark = pytest.mark.django_db
 
 ROOT = settings.BASE_DIR
 # The notices the archive serves as static files: those of the vendored libraries, the map's style and its fonts.
+# Any other .txt in a static folder would count too, and need a link from the page.
 NOTICES = {
     # The path below the app's static folder, as the static tag names it.
     path.relative_to(ROOT / path.relative_to(ROOT).parts[0] / 'static').as_posix()
     for path in ROOT.glob('*/static/**/*.txt')
 }
-URL = re.compile(r"""[a-z][a-z0-9+.-]*://[^\s"'`()<>\\]+""")
+# With a scheme, or protocol-relative (//host/...), as in tests/test_map_page.py.
+URL = re.compile(r"""[a-z][a-z0-9+.-]*://[^\s"'`()<>\\]+|(?<![\w:/])//[\w-]+\.[\w.-]*[a-z]/[^\s"'`()<>\\]*""")
 
 
 class Links(HTMLParser):
@@ -44,9 +46,12 @@ def page(client, language):
 
 
 def test_the_page_is_open_to_anyone_in_both_languages(client):
-    assert 'Licences et code source' in page(client, 'fr')
-    assert 'Licences and source code' in page(client, 'en')
-    assert 'GNU Affero General Public License' in page(client, 'en')
+    for language, title in (('fr', 'Licences et code source'), ('en', 'Licences and source code')):
+        html = page(client, language)
+        assert title in html
+        # The archive's licence, the map data's and the fonts'.
+        for name in ('GNU Affero General Public License', 'Open Database License (ODbL)', 'SIL Open Font License'):
+            assert name in html, (language, name)
 
 
 def test_every_page_links_to_it(client):
