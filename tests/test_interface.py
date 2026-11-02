@@ -26,7 +26,11 @@ BACKGROUNDS = ['paper', 'tint']
 
 def themes():
     """Each colour token's light and dark values, written as light-dark(light, dark)."""
-    pairs = re.findall(r'--(\w+):\s*light-dark\((#[0-9a-f]{6}),\s*(#[0-9a-f]{6})\);', STYLESHEET.read_text())
+    css = STYLESHEET.read_text()
+    pairs = re.findall(r'--(\w+):\s*light-dark\((#[0-9a-f]{6}),\s*(#[0-9a-f]{6})\);', css)
+    # Every colour of the first :root is such a pair: none escapes the check below.
+    first_root = re.search(r'^:root \{(.*?)\}', css, re.S | re.M).group(1)
+    assert {name for name, *_ in pairs} == set(re.findall(r'--(\w+):', first_root)) - {'serif', 'mono'}
     return {
         'light': {name: light for name, light, _ in pairs},
         'dark': {name: dark for name, _, dark in pairs},
