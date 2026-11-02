@@ -84,7 +84,8 @@ DEBUG = env_bool('DJANGO_DEBUG', default=False)
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS')
 
 # Behind a proxy that ends TLS, every request reaches Django as plain HTTP; trust the proxy's
-# word for it, and only where .env.example's conditions hold (SPEC.md §12 M8.6).
+# word for it, and only where .env.example's conditions hold (SPEC.md §12 M8.6). The session
+# and CSRF cookies are not made Secure here: that is left to deployment (Later).
 if env_bool('DJANGO_BEHIND_TLS_PROXY'):
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 

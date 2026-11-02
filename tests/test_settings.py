@@ -247,3 +247,20 @@ def test_a_request_the_proxy_marks_as_https_counts_as_secure_only_behind_it(clie
     style = client.get('/lawyer/map/style.json', **marked).json()
     scheme = 'https' if behind_proxy else 'http'
     assert style['glyphs'].startswith(f'{scheme}://') and style['sources']['protomaps']['url'].startswith(f'pmtiles://{scheme}://')
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('behind_proxy', [True, False])
+def test_a_form_sent_over_https_through_the_proxy_passes_the_origin_check_only_behind_it(settings, behind_proxy):
+    from django.test import Client
+    if behind_proxy:
+        settings.SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    client = Client(enforce_csrf_checks=True)
+    client.get('/')
+    token = client.cookies['csrftoken'].value
+    response = client.post(
+        '/theme/', {'theme': 'dark', 'next': '/', 'csrfmiddlewaretoken': token},
+        # As the proxy sends it on: the real Host, as .env.example requires.
+        HTTP_X_FORWARDED_PROTO='https', HTTP_ORIGIN='https://testserver', HTTP_HOST='testserver',
+    )
+    assert response.status_code == (302 if behind_proxy else 403)
