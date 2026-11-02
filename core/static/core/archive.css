@@ -28,6 +28,9 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Elements a page hides until a script shows them stay hidden, whatever display a rule gives them. */
+[hidden] { display: none !important; }
+
 html { -webkit-text-size-adjust: 100%; }
 
 body {
@@ -85,7 +88,7 @@ pre { overflow-x: auto; }
 
 /* Buttons in the header read as links: the language switch and logging out. */
 .site-header button {
-  min-height: 0;
+  min-height: 1.5rem;
   padding: 0;
   border: 0;
   background: none;
@@ -95,7 +98,7 @@ pre { overflow-x: auto; }
   text-underline-offset: 2px;
 }
 
-.site-header button:disabled { color: var(--ink); text-decoration: none; cursor: default; }
+.site-header button:disabled { color: var(--ink); text-decoration: none; cursor: default; opacity: 1; }
 
 main {
   max-width: 46rem;

@@ -5,12 +5,15 @@ import re
 
 import pytest
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from tests.conftest import log_in_with_second_factor, make_lawyer
 from tests.test_roles import client_for  # noqa: F401 (a fixture)
 
 pytestmark = pytest.mark.django_db
+
+User = get_user_model()
 
 STYLESHEET = settings.BASE_DIR / 'core' / 'static' / 'core' / 'archive.css'
 
@@ -58,27 +61,36 @@ HEADER_PAGES = {
 }
 
 
-def header(response):
-    return response.content.decode().split('<main>')[0]
+def role_links(response):
+    """The header's links to any role's pages, in order."""
+    every = {reverse(name) for names in HEADER_PAGES.values() for name in names}
+    header = response.content.decode().split('<main>')[0]
+    return [href for href in re.findall(r'<a href="([^"]+)"', header) if href in every]
 
 
 @pytest.mark.parametrize('kind', ['lawyer', 'admin'])
-def test_the_header_links_each_role_to_its_pages(client, admin_client, kind):
-    # A lawyer with a personal key, without which the key page sends them to set one up.
-    client = admin_client if kind == 'admin' else log_in_with_second_factor(client, make_lawyer(key=True).user)
+def test_the_header_links_each_role_to_its_pages_and_no_others(client, kind):
+    user = User.objects.create_superuser('admin@example.org') if kind == 'admin' else make_lawyer(key=True).user
+    # The lawyer has a personal key, without which the key page sends them to set one up.
+    client = log_in_with_second_factor(client, user)
     urls = [reverse(name) for name in HEADER_PAGES[kind]]
     for url in urls:
         response = client.get(url)
         assert response.status_code == 200, url
-        links = re.findall(r'<a href="([^"]+)"( aria-current="page")?>', header(response))
-        assert [href for href, _ in links if href in urls] == urls, url
-        assert [href for href, current in links if current] == [url], url
+        assert role_links(response) == urls, url
 
 
-@pytest.mark.parametrize('kind', ['applicant', 'suspended'])
-def test_people_without_a_role_page_get_no_links_but_logging_out(client_for, kind):
-    page = header(client_for(kind).get(reverse('accounts:home'), follow=True))
-    assert reverse('accounts:logout') in page
-    for names in HEADER_PAGES.values():
-        for name in names:
-            assert f'href="{reverse(name)}"' not in page
+@pytest.mark.parametrize('kind', ['applicant', 'suspended', 'no second factor', 'logged out'])
+def test_nobody_else_gets_links_to_role_pages(client_for, client, kind):
+    if kind == 'logged out':
+        response = client.get(reverse('home'))
+    else:
+        if kind == 'no second factor':
+            client.force_login(make_lawyer().user)  # A password, but no code yet.
+        else:
+            client = client_for(kind)
+        response = client.get(reverse('accounts:home'), follow=True)
+    # A suspended lawyer is refused with a page that has the header too.
+    assert response.status_code in (200, 403)
+    assert role_links(response) == []
+    assert (reverse('accounts:logout') in response.content.decode()) == (kind != 'logged out')

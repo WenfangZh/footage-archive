@@ -40,12 +40,18 @@ def assert_strict(policy, url):
 
 
 def assert_styled(response, url):
+    """The site stylesheet and no inline style; the archive's name and the language switch in
+    the header, and the licences page in the footer (M8)."""
     # Only pages: redirects, refusals of a method and JSON have nothing to style.
     if response.status_code != 200 or not response['Content-Type'].startswith('text/html'):
         return
     page = response.content.decode()
     assert f'<link rel="stylesheet" href="{static("core/archive.css")}">' in page, url
     assert '<style' not in page and ' style=' not in page, url
+    header, footer = page.split('<main>')[0], page.split('</main>')[1]
+    assert f'class="site-name" href="{reverse("home")}"' in header, url
+    assert f'action="{reverse("set_language")}"' in header, url
+    assert f'href="{reverse("licences")}"' in footer, url
 
 
 def test_every_lawyer_page_may_run_webassembly(client_for):
