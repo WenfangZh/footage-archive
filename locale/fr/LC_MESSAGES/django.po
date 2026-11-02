@@ -2833,11 +2833,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:412
+#: config/settings.py:417
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:413
+#: config/settings.py:418
 msgid "English"
 msgstr "Anglais"
 
@@ -3437,6 +3437,10 @@ msgstr "Archive de vidéos"
 msgid "Log out"
 msgstr "Se déconnecter"
 
+#: templates/base.html:42 templates/licences.html:4 templates/licences.html:7
+msgid "Licences and source code"
+msgstr "Licences et code source"
+
 #: templates/home.html:6
 msgid "Learning build: not deployed, not for real footage."
 msgstr ""
@@ -3446,6 +3450,101 @@ msgstr ""
 #: templates/home.html:9
 msgid "Defence lawyers: log in"
 msgstr "Avocat·es de la défense : se connecter"
+
+#: templates/licences.html:9
+msgid "This archive"
+msgstr "L'archive"
+
+#: templates/licences.html:10
+msgid ""
+"The archive's code is free software, under the GNU Affero General Public "
+"License, version 3 or any later version: anyone may use, study, change and "
+"share it, and whoever runs a changed copy for others must offer them its "
+"source."
+msgstr ""
+"Le code de l'archive est un logiciel libre, sous la GNU Affero General "
+"Public License (licence publique générale GNU Affero), version 3 ou toute "
+"version ultérieure : toute personne peut l'utiliser, l'étudier, le modifier "
+"et le partager, et toute personne qui fait fonctionner une copie modifiée "
+"pour d'autres doit leur en proposer le code source."
+
+#: templates/licences.html:13
+msgid "Source code"
+msgstr "Code source"
+
+#: templates/licences.html:15
+msgid "Libraries the archive's pages load"
+msgstr "Bibliothèques chargées par les pages de l'archive"
+
+#: templates/licences.html:17
+msgid "The map:"
+msgstr "La carte :"
+
+#: templates/licences.html:19 templates/licences.html:31
+msgid "libraries it bundles"
+msgstr "bibliothèques intégrées"
+
+#: templates/licences.html:21
+msgid "library it bundles"
+msgstr "bibliothèque intégrée"
+
+#: templates/licences.html:23
+msgid "notice"
+msgstr "mentions"
+
+#: templates/licences.html:25
+msgid "Encryption in lawyers' browsers:"
+msgstr "Le chiffrement dans le navigateur des avocat·es :"
+
+#: templates/licences.html:29
+msgid "Resumable uploads:"
+msgstr "La reprise des envois interrompus :"
+
+#: templates/licences.html:34
+msgid "The map"
+msgstr "La carte"
+
+#: templates/licences.html:36
+msgid ""
+"Map data © <a href=\"https://www.openstreetmap.org/copyright\" "
+"rel=\"noopener noreferrer\">OpenStreetMap</a> contributors, available under "
+"the Open Database License (ODbL), through Protomaps; coastlines from "
+"osmdata.openstreetmap.de (ODbL); and Natural Earth, in the public domain."
+msgstr ""
+"Données de la carte © les contributeur·ices d'<a href=\"https://"
+"www.openstreetmap.org/copyright\" rel=\"noopener noreferrer\">OpenStreetMap</"
+"a>, disponibles sous l'Open Database License (ODbL), via Protomaps ; côtes "
+"issues d'osmdata.openstreetmap.de (ODbL) ; et Natural Earth, dans le domaine "
+"public."
+
+#: templates/licences.html:39
+msgid ""
+"The map's data also holds land cover from ESA WorldCover, through Daylight, "
+"under the <a href=\"https://creativecommons.org/licenses/by/4.0/\" "
+"rel=\"noopener noreferrer\">Creative Commons Attribution 4.0</a> licence. "
+"The map does not draw it."
+msgstr ""
+"Les données de la carte contiennent aussi l'occupation du sol d'ESA "
+"WorldCover, via Daylight, sous la licence <a href=\"https://"
+"creativecommons.org/licenses/by/4.0/\" rel=\"noopener noreferrer\">Creative "
+"Commons Attribution 4.0</a>. La carte ne l'affiche pas."
+
+#: templates/licences.html:42
+msgid "The map's style comes from Protomaps' basemaps:"
+msgstr "Le style de la carte vient des basemaps de Protomaps :"
+
+#: templates/licences.html:43
+msgid "its licences"
+msgstr "ses licences"
+
+#: templates/licences.html:44
+msgid "Place names are drawn in Noto Sans, under the SIL Open Font License:"
+msgstr ""
+"Les noms de lieux sont écrits en Noto Sans, sous la SIL Open Font License :"
+
+#: templates/licences.html:45
+msgid "its licence"
+msgstr "sa licence"
 
 #~ msgid "Zoom in to choose the place."
 #~ msgstr "Zoomez pour choisir le lieu."

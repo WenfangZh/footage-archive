@@ -18,9 +18,11 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 
 from accounts import urls as account_urls
+from core.views import licences
 
 urlpatterns = [
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
+    path('licences/', licences, name='licences'),
     path('', include('clips.urls')),
     path('', include('accounts.urls')),
     path('lawyer/', include((account_urls.lawyer_patterns, 'lawyer'))),
