@@ -1,0 +1,2 @@
+{% load i18n %}{% spaceless %}{% for widget in widget.subwidgets %}{% include widget.template_name %}{% endfor %}{% endspaceless %}{% if widget.calendar %}
+<input type="date" class="calendar" data-for="{{ widget.attrs.id }}" aria-label="{% translate 'Pick the date on a calendar' %}" hidden>{% endif %}

@@ -58,9 +58,10 @@ class CaseForm(forms.Form):
         help_text=_("Something to recognise the case by. Never a client's name."),
     )
     starts_at = TypedDateTimeField(
+        calendar=True,
         label=_('Start of the time window'), help_text=_('French time, as in the police report.'),
     )
-    ends_at = TypedDateTimeField(label=_('End of the time window'))
+    ends_at = TypedDateTimeField(calendar=True, label=_('End of the time window'))
     latitude = forms.FloatField(
         label=_('Latitude'), min_value=-90, max_value=90, required=False,
         widget=ForgottenNumberInput(attrs={'step': 'any'}),

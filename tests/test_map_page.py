@@ -86,10 +86,13 @@ def test_the_map_page_and_what_it_loads_hold_no_url_to_another_origin(page):
     elsewhere = [link.get('href', '') for link in parser.links if not link.get('href', '').startswith(('/', '#'))]
     assert elsewhere == [OSM_COPYRIGHT]
     loaded = {path for path in parser.paths if path.startswith('/static/maps/')}
-    # The map's five files, and the site stylesheet, which loads nothing from anywhere (M8).
+    # The map's five files.
     assert len(loaded) == 5
-    assert sorted(set(parser.paths) - loaded) == ['/static/core/archive.css']
-    assert foreign(Path(finders.find('core/archive.css')).read_text(encoding='utf-8')) == set()
+    # And the site stylesheet and the times' script (M8, M8.7), which load nothing from anywhere.
+    own = ['/static/cases/case_times.js', '/static/core/archive.css']
+    assert sorted(set(parser.paths) - loaded) == own
+    for path in own:
+        assert foreign(Path(finders.find(path.removeprefix('/static/'))).read_text(encoding='utf-8')) == set(), path
     # The files these load in turn (MapLibre's module and its worker) are in the same folder.
     for path in MAP_FILES.rglob('*'):
         if path.suffix in ('.js', '.mjs', '.css'):

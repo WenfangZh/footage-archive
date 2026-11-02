@@ -22,9 +22,13 @@ TIME = re.compile(r'([01]?\d|2[0-3]):([0-5]\d)')
 
 class TypedDateTimeWidget(forms.MultiWidget):
     """Boxes for the year, month and day, in the order the archive writes dates, and the time:
-    typed, with no calendar pop-up (SPEC.md §12 M8.5)."""
+    typed (SPEC.md §12 M8.5). With `calendar`, a calendar beside them fills the date boxes, for
+    a script to show (cases/static/cases/case_times.js, M8.7)."""
 
-    def __init__(self):
+    template_name = 'clips/typed_time.html'
+
+    def __init__(self, calendar=False):
+        self.calendar = calendar
         # Text boxes with the number keyboard: no spinners crowding a few digits.
         number = {'inputmode': 'numeric', 'pattern': '[0-9]*', 'autocomplete': 'off'}
         super().__init__({
@@ -33,6 +37,11 @@ class TypedDateTimeWidget(forms.MultiWidget):
             'day': forms.TextInput(attrs={**number, 'maxlength': 2, 'class': 'day', 'aria-label': _('Day'), 'placeholder': _('DD')}),
             'time': forms.TimeInput(attrs={'type': 'time', 'class': 'time', 'aria-label': _('Time')}, format='%H:%M'),
         })
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        context['widget']['calendar'] = self.calendar
+        return context
 
     def decompress(self, value):
         if value is None:
@@ -49,9 +58,8 @@ class TypedDateTimeField(forms.MultiValueField):
     is read with the winter offset, an hour later in summer time.
     """
 
-    widget = TypedDateTimeWidget
-
-    def __init__(self, **kwargs):
+    def __init__(self, calendar=False, **kwargs):
+        kwargs.setdefault('widget', TypedDateTimeWidget(calendar=calendar))
         # A time left wholly empty is no time (when the field allows it); one partly empty is
         # refused with the message below.
         # Bounded here, so that no typed number reaches the date arithmetic below (which
