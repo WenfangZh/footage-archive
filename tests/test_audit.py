@@ -200,9 +200,11 @@ def test_an_entry_about_a_tag_names_the_tags_own_clip(case, clip, tag):
         )
 
 
-# What each entry names (SPEC.md §7; docs/m5-encryption-design.md §5.3, §5.5, §5.6), written
-# out here rather than taken from audit.models, so that an action filed in the wrong group
-# there fails. Every action is listed, with every field it names; it names no other.
+# What each entry names, written out here rather than taken from audit.models, so that an action
+# filed in the wrong group there fails. The people, case, clip and tag follow SPEC.md §7 (the
+# admin's actions name the admin; a lawyer's, their case); the key, rotation and attempt follow
+# docs/m5-encryption-design.md §5.3, §5.5 and §5.6, and the admin's confirmation of a new key
+# keys/recovery.py. Every action is listed, with every field it names; it names no other.
 ADMIN_ON = {'admin', 'lawyer'}
 CASE_ACTION = {'lawyer', 'case'}
 ON_A_CLIP = {'lawyer', 'case', 'clip'}
@@ -211,7 +213,7 @@ NAMES = {
     Action.INVITATION: ADMIN_ON, Action.DECLINING: ADMIN_ON, Action.ADMISSION: ADMIN_ON,
     Action.SUSPENSION: ADMIN_ON, Action.REINSTATEMENT: ADMIN_ON, Action.REVOCATION: ADMIN_ON,
     Action.CASE_CREATION: CASE_ACTION, Action.CASE_CLOSING: CASE_ACTION, Action.LARGER_CASE_REQUEST: CASE_ACTION,
-    Action.SEARCH: CASE_ACTION | {'counts'},
+    Action.SEARCH: CASE_ACTION | {'core_count', 'margin_count'},
     Action.PREVIEW: ON_A_CLIP, Action.DOWNLOAD: ON_A_CLIP, Action.CLIP_VIEW: ON_A_CLIP,
     Action.CASE_APPROVAL: ADMIN_ON | {'case'}, Action.CASE_REFUSAL: ADMIN_ON | {'case'},
     # About the archive's settings, not a person.
@@ -244,39 +246,34 @@ def test_every_action_says_what_it_names():
 
 def test_each_entry_names_what_its_action_names_and_nothing_else(admin, case, clip, tag):
     attempt = rotation_attempt(GroupKey.Status.CHECKING)
-    # Each name's fields, as record() takes them, and as the stored entry gives them back.
+    # Each name's field, as record() takes it.
     values = {
-        'admin': ({'admin': admin}, {'admin': admin}),
-        'lawyer': ({'lawyer_profile': case.lawyer_profile}, {'lawyer_profile': case.lawyer_profile}),
-        'case': ({'case': case}, {'case': case}),
-        'clip': ({'clip': clip}, {'clip_id': clip.pk}),
-        'tag': ({'clip_tag': tag}, {'clip_tag_id': tag.pk}),
-        'counts': ({'core_count': 3, 'margin_count': 0}, {'core_count': 3, 'margin_count': 0}),
-        'key': ({'lawyer_key': current_key(case.lawyer_profile)},) * 2,
-        'rotation': ({'rotation': attempt.rotation},) * 2,
-        'attempt': ({'rotation_attempt': attempt},) * 2,
+        'admin': {'admin': admin}, 'lawyer': {'lawyer_profile': case.lawyer_profile}, 'case': {'case': case},
+        'clip': {'clip': clip}, 'tag': {'clip_tag': tag}, 'core_count': {'core_count': 3}, 'margin_count': {'margin_count': 0},
+        'key': {'lawyer_key': current_key(case.lawyer_profile)}, 'rotation': {'rotation': attempt.rotation},
+        'attempt': {'rotation_attempt': attempt}, 'limits': None,
     }
-
-    def with_limits(action):
-        limits = {'limits': {Action.ALERT_LIMIT_RAISE: RAISED}.get(action, LIMITS)}
-        return {**values, 'limits': (limits, limits)}
-
-    def given(action, names):
-        fields = {'lawyer_profile': None}
-        for name in names:
-            fields.update(with_limits(action)[name][0])
-        return fields
+    # The stored entry gives the clip and tag back as ids.
+    stored_as = {'clip': ('clip_id', clip.pk), 'tag': ('clip_tag_id', tag.pk)}
 
     for action, names in NAMES.items():
-        stored = AuditEntry.objects.get(pk=record(action, **given(action, names)).pk)
-        for name, (_, read_back) in with_limits(action).items():
-            for field, value in read_back.items():
-                assert getattr(stored, field) == (value if name in names else None), (action, field)
+        values['limits'] = {'limits': RAISED if action == Action.ALERT_LIMIT_RAISE else LIMITS}
 
-        for name in with_limits(action):
-            with pytest.raises((IntegrityError, ValueError)), transaction.atomic():
-                record(action, **given(action, names ^ {name}))
-    assert AuditEntry.objects.count() == len(NAMES)
+        def given(names):
+            return {'lawyer_profile': None, **{field: v for name in names for field, v in values[name].items()}}
+
+        stored = AuditEntry.objects.get(pk=record(action, **given(names)).pk)
+        for name, fields in values.items():
+            field, value = stored_as.get(name, next(iter(fields.items())))
+            assert getattr(stored, field) == (value if name in names else None), (action, field)
+
+        for name in values:
+            try:
+                with transaction.atomic():
+                    record(action, **given(names ^ {name}))
+            except (IntegrityError, ValueError):
+                continue
+            pytest.fail(f'{action} was stored with {name} {"left out" if name in names else "added"}')
 
 
 def test_deleting_a_tag_leaves_its_entries_as_they_were(case, clip, tag):
@@ -284,12 +281,6 @@ def test_deleting_a_tag_leaves_its_entries_as_they_were(case, clip, tag):
     tag_id = tag.pk
     tag.delete()
     assert AuditEntry.objects.get(pk=entry.pk).clip_tag_id == tag_id
-
-
-def test_a_search_records_both_numbers(case):
-    for counts in [{}, {'core_count': 1}, {'margin_count': 1}]:
-        with pytest.raises(IntegrityError), transaction.atomic():
-            record(Action.SEARCH, case.lawyer_profile, case=case, **counts)
 
 
 def test_an_entry_about_a_case_names_the_cases_own_lawyer(case):
