@@ -2,7 +2,6 @@ import datetime
 import uuid
 
 import pytest
-from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
@@ -12,11 +11,10 @@ from alerts.checks import check_ingest_queue
 from alerts.models import Alert
 from clips import tasks
 from clips.models import Clip
-from tests.conftest import log_in_with_second_factor, make_lawyer
+from tests.conftest import make_lawyer
 
 pytestmark = pytest.mark.django_db
 
-User = get_user_model()
 PASSWORD = 'a long test passphrase'
 NOW = datetime.datetime(2026, 6, 15, 21, 30, tzinfo=datetime.UTC)
 
@@ -119,9 +117,8 @@ def test_failed_logins_for_an_unknown_address_raise_no_alert(settings):
     assert not Alert.objects.exists()
 
 
-def test_the_admin_sees_unseen_alerts_and_can_mark_them_seen():
+def test_the_admin_sees_unseen_alerts_and_can_mark_them_seen(admin_client):
     Alert.objects.create(kind=Alert.Kind.QUEUE_BACKED_UP)
-    admin_client = log_in_with_second_factor(Client(), User.objects.create_superuser('admin@example.org'))
     page = admin_client.get(reverse('manage:home')).content.decode()
     assert 'La file de préparation est engorgée' in page
     alert = Alert.objects.get()
@@ -187,10 +184,9 @@ def test_wrong_passwords_and_wrong_codes_add_up(lawyer, settings):
     assert Alert.objects.get().account == lawyer
 
 
-def test_an_alert_about_a_closed_account_shows_its_former_address(lawyer):
+def test_an_alert_about_a_closed_account_shows_its_former_address(lawyer, admin_client):
     Alert.objects.create(kind=Alert.Kind.FAILED_LOGINS, account=lawyer)
     lawyer.former_email, lawyer.email = lawyer.email, ''
     lawyer.save()
-    admin_client = log_in_with_second_factor(Client(), User.objects.create_superuser('admin@example.org'))
     alerts = admin_client.get(reverse('manage:home')).content.decode().split('<h2>')[1]
     assert '(lawyer@example.org)' in alerts and 'None' not in alerts

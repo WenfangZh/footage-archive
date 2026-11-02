@@ -482,16 +482,15 @@ def test_lawyers_pages_take_part_in_rotations(world):
         assert f'"{reverse("lawyer:" + name)}"' in page
 
 
-def test_the_revoke_page_warns_before_revoking_the_last_holder(settings):
+def test_the_revoke_page_warns_before_revoking_the_last_holder(settings, admin_client):
     settings.LANGUAGE_CODE = 'en'
     key = GroupKey.objects.create(public_key=os.urandom(32))
     only = lawyer('only')
     give(key, only)
-    admin = log_in_with_second_factor(Client(), User.objects.create_superuser('admin@example.org'))
-    page = admin.get(reverse('manage:revoke', args=[only.pk])).content.decode()
+    page = admin_client.get(reverse('manage:revoke', args=[only.pk])).content.decode()
     assert 'the last lawyer holding the group key' in page
     give(key, lawyer('second'))
-    assert 'the last lawyer holding the group key' not in admin.get(reverse('manage:revoke', args=[only.pk])).content.decode()
+    assert 'the last lawyer holding the group key' not in admin_client.get(reverse('manage:revoke', args=[only.pk])).content.decode()
 
 
 def test_a_confirmer_redrawn_after_three_days_checks_the_same_items(world):
