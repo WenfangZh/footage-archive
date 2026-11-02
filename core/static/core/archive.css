@@ -108,6 +108,23 @@ pre { overflow-x: auto; }
 
 .site-header button:disabled { color: var(--ink); text-decoration: none; cursor: default; opacity: 1; }
 
+/* The language and theme switches: each a small segmented control, its current choice filled
+   in, the two set apart (M8.6). Logging out stays a link. */
+/* The gap sets the two groups apart, and vanishes where the theme group wraps to a new line. */
+.site-header form[action$="/setlang/"] { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 1rem; }
+.site-header form[action$="/setlang/"] > button,
+.site-header .theme-switch > button {
+  padding: 0.1rem 0.55rem;
+  border: 1px solid var(--muted);
+  text-decoration: none;
+}
+/* Drawn back by the form's column gap, so that a language's buttons touch. */
+.site-header form[action$="/setlang/"] > button + button { border-inline-start: 0; margin-inline-start: -1rem; }
+.site-header .theme-switch > button + button { border-inline-start: 0; }
+.site-header form[action$="/setlang/"] > button:disabled,
+.site-header .theme-switch > button:disabled { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.site-header .theme-switch { display: inline-flex; }
+
 main {
   max-width: 46rem;
   margin: 0 auto;
