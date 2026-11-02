@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from tests.conftest import log_in_with_second_factor, make_lawyer
+from tests.test_confirm import start_upload, video  # noqa: F401 (a fixture)
 from tests.test_roles import client_for  # noqa: F401 (a fixture)
 
 pytestmark = pytest.mark.django_db
@@ -94,3 +95,23 @@ def test_nobody_else_gets_links_to_role_pages(client_for, client, kind):
     assert response.status_code in (200, 403)
     assert role_links(response) == []
     assert (reverse('accounts:logout') in response.content.decode()) == (kind != 'logged out')
+
+
+@pytest.mark.parametrize('language, descriptions', [
+    ('fr', ["Pas besoin de compte", "Modifier les informations de votre clip", "Avec votre mot de passe"]),
+    ('en', ["No account needed", "Change your clip's details", "With your password"]),
+])
+def test_the_front_page_offers_three_paths_with_what_each_leads_to(client, language, descriptions):
+    page = client.get(reverse('home'), HTTP_ACCEPT_LANGUAGE=language).content.decode()
+    paths = re.findall(r'<li><a href="([^"]+)"', page)
+    assert paths == [reverse('clips:upload'), reverse('clips:code_holder'), reverse('accounts:login')]
+    for description in descriptions:
+        assert description in page
+
+
+def test_each_upload_step_marks_its_own_step(client, video):
+    def marked(page):
+        return re.findall(r'<li aria-current="step">(\d)', page)
+
+    assert marked(client.get(reverse('clips:upload')).content.decode()) == ['1']
+    assert marked(client.get(start_upload(client, video)).content.decode()) == ['2']

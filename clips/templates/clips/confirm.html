@@ -5,7 +5,8 @@
 
 {% block content %}
   <h1>{% translate "Upload a video" %}</h1>
-  <p>{% translate "Step 2 of 2. Everything here is optional, and you can change it later with your upload code." %}</p>
+  {% include "clips/steps.html" with step=2 %}
+  <p>{% translate "Everything here is optional, and you can change it later with your upload code." %}</p>
 
   <form method="post" data-submit-once>
     {% csrf_token %}
