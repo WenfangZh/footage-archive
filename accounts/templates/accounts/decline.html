@@ -9,6 +9,6 @@
   <form method="post" action="{% url 'manage:decline' profile.pk %}">
     {% csrf_token %}
     <label><input type="checkbox" name="confirm" value="yes" required> {% translate "I confirm" %}</label>
-    <button type="submit">{% translate "Decline" %}</button>
+    <button type="submit" class="danger">{% translate "Decline" %}</button>
   </form>
 {% endblock %}

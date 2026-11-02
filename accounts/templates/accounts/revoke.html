@@ -19,6 +19,6 @@
     {% if wrong %}<p role="alert">{% translate "The address typed does not match." %}</p>{% endif %}
     <label>{% blocktranslate with email=profile.user.email %}To confirm, type their email address ({{ email }}):{% endblocktranslate %}
       <input type="email" name="email" required autocomplete="off"></label>
-    <button type="submit">{% translate "Revoke access for good" %}</button>
+    <button type="submit" class="danger">{% translate "Revoke access for good" %}</button>
   </form>
 {% endblock %}
