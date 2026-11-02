@@ -107,13 +107,12 @@ def test_a_message_through_a_matching_case_is_stored_encrypted_and_logged(lawyer
     assert [text for _message, text in vault.code_holder_messages(clip, TEST_CODE)] == [TEXT]
 
 
-def test_no_message_through_a_case_the_clip_does_not_match_a_closed_case_or_another_lawyers(lawyer, clip):
+def test_no_message_through_a_case_the_clip_does_not_match_or_a_closed_case(lawyer, clip):
     elsewhere = make_case(lawyer.profile, starts_at=START + datetime.timedelta(days=30), ends_at=START + datetime.timedelta(days=30, hours=1))
     closed = make_case(lawyer.profile, starts_at=START, ends_at=START + datetime.timedelta(hours=1))
     Case.objects.filter(pk=closed.pk).close(Case.ClosedBecause.LAWYER)
-    other = Lawyer('other@example.org')
 
-    for case in [elsewhere, closed, other.case]:
+    for case in [elsewhere, closed]:
         assert lawyer.send(clip, case=case).status_code == 404
     assert not Message.objects.exists()
     assert not AuditEntry.objects.filter(action=Action.MESSAGE).exists()

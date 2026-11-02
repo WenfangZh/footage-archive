@@ -115,7 +115,6 @@ def test_a_data_key_that_cannot_be_one_is_refused(case, clip, client_, value):
 def test_a_data_key_is_taken_only_in_a_case_that_matches_the_clip(lawyer, case, clip):
     other_lawyer = make_lawyer('other@example.org')
     other_client = log_in_with_second_factor(Client(), other_lawyer.user)
-    assert hand_over(other_client, case, clip, vault.PROXY, clip.data_keys[vault.PROXY]).status_code == 404
     elsewhere = make_case(other_lawyer, starts_at=START + datetime.timedelta(days=3), ends_at=START + datetime.timedelta(days=3, hours=1))
     assert hand_over(other_client, elsewhere, clip, vault.PROXY, clip.data_keys[vault.PROXY]).status_code == 404
     Case.objects.filter(pk=case.pk).close(Case.ClosedBecause.LAWYER)

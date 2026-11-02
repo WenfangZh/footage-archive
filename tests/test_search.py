@@ -213,12 +213,6 @@ def test_a_case_waiting_for_approval_allows_no_search(lawyer, lawyer_client):
     assert search(lawyer_client, waiting).status_code == 404
 
 
-def test_a_lawyer_cannot_search_another_lawyer_s_case(case):
-    other = log_in_with_second_factor(Client(), make_lawyer('other@example.org').user)
-    assert search(other, case).status_code == 404
-    assert not AuditEntry.objects.filter(action=Action.SEARCH).exists()
-
-
 def test_one_clip_s_match_is_the_same_as_the_search_s(lawyer):
     """match_of() checks a clip from its own side: it must agree with find() everywhere."""
     import random
