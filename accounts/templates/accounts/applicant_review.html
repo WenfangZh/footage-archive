@@ -10,7 +10,7 @@
 
   <p>{% if ready %}{% translate "They have set their password, two-factor authentication and personal key." %}{% else %}{% translate "They have not yet set their password, two-factor authentication and personal key: they cannot be admitted before then." %}{% endif %}</p>
   {% if key %}
-    <p>{% translate "Safety number of their key:" %} <strong>{{ key.safety_number }}</strong></p>
+    <p>{% translate "Safety number of their key:" %} <strong class="data">{{ key.safety_number }}</strong></p>
     <p>{% translate "Before admitting them, contact them through the bar directory's contact details, never those they gave, and ask them to read the safety number shown on their key page. Admit them only if it is the same as this one." %}</p>
   {% endif %}
 
@@ -19,9 +19,9 @@
   <form method="post" action="{% url 'manage:applicant' profile.pk %}">
     {% csrf_token %}
     {{ form.as_div }}
-    <button type="submit">{% translate "Admit as a lawyer" %}</button>
+    <button type="submit" class="primary">{% translate "Admit as a lawyer" %}</button>
   </form>
 
   <h2>{% translate "Decline" %}</h2>
-  <p><a href="{% url 'manage:decline' profile.pk %}">{% translate "Decline this applicant" %}</a></p>
+  <p><a class="danger" href="{% url 'manage:decline' profile.pk %}">{% translate "Decline this applicant" %}</a></p>
 {% endblock %}

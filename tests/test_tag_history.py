@@ -121,7 +121,7 @@ def test_the_disputed_list_shows_each_clip_with_a_proposal_by_identifier_latest_
     response = admin_client.get(reverse('manage:disputed_tags'), headers=ENGLISH)
 
     assert response.status_code == 200
-    listed = items(response)
+    listed = response.content.decode().split('<tr>')[1:]
     assert [str(clip.pk) in listed[0], str(older.pk) in listed[1]] == [True, True]
     assert len(listed) == 2
     assert reverse('manage:tag_history', kwargs={'clip_id': clip.pk}) in listed[0]
