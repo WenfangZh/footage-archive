@@ -9,9 +9,17 @@
   <h1>{% translate "Closed cases" %}</h1>
   {% unlock_form %}
   {% if cases %}
-    <ul>
-      {% for case in cases %}<li><a href="{% url 'lawyer:case' case_id=case.pk %}">{% case_label case %}</a>: {{ case.get_closed_because_display }}, {{ case.closed_at|date:"DATE_FORMAT" }}</li>{% endfor %}
-    </ul>
+    <div class="scroll">
+      <table>
+        <tbody>
+          {% for case in cases %}<tr>
+            <td><a href="{% url 'lawyer:case' case_id=case.pk %}">{% case_label case %}</a></td>
+            <td>{{ case.get_closed_because_display }}</td>
+            <td class="data">{{ case.closed_at|date:"DATE_FORMAT" }}</td>
+          </tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% else %}
     <p>{% translate "You have no closed cases." %}</p>
   {% endif %}

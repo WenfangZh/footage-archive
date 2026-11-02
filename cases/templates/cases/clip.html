@@ -47,9 +47,9 @@
 
   <h2>{% translate "Time" %}</h2>
   <dl>
-    <dt>{% translate "Stated time" %}</dt><dd>{{ clip.stated_time|date:"Y-m-d H:i:s" }}</dd>
-    <dt>{% translate "Metadata time" %}</dt><dd>{{ clip.metadata_time|date:"Y-m-d H:i:s"|default:_("not given") }}</dd>
-    <dt>{% translate "Stated time as uploaded" %}</dt><dd>{{ clip.as_uploaded_stated_time|date:"Y-m-d H:i:s"|default:_("not given") }}</dd>
+    <dt>{% translate "Stated time" %}</dt><dd class="data">{{ clip.stated_time|date:"Y-m-d H:i:s" }}</dd>
+    <dt>{% translate "Metadata time" %}</dt><dd class="data">{{ clip.metadata_time|date:"Y-m-d H:i:s"|default:_("not given") }}</dd>
+    <dt>{% translate "Stated time as uploaded" %}</dt><dd class="data">{{ clip.as_uploaded_stated_time|date:"Y-m-d H:i:s"|default:_("not given") }}</dd>
     {% if clip.duration %}<dt>{% translate "Duration" %}</dt><dd>{% blocktranslate with seconds=clip.duration.total_seconds|floatformat:"0" %}{{ seconds }} s{% endblocktranslate %}</dd>{% endif %}
   </dl>
 
@@ -62,7 +62,7 @@
 
   <h2>{% translate "Tags" %}</h2>
   {% if tags %}
-    <ul>{% for tag in tags %}
+    <ul class="tag-list">{% for tag in tags %}
       <li class="tag-source-{{ tag.source }}">{{ tag.name }} <small>({{ tag.source_name }})</small>
         {% if tag.proposed %}
           · {% translate "you proposed removing it" %}
@@ -75,7 +75,7 @@
   <p>{% translate "Proposals from three different lawyers remove a tag for lawyers; the code holder still sees their own tags." %}</p>
   {% if removed_tags %}
     <h3>{% translate "Tags removed by lawyers" %}</h3>
-    <ul>{% for tag in removed_tags %}
+    <ul class="tag-list">{% for tag in removed_tags %}
       <li class="tag-source-{{ tag.source }}">{{ tag.name }} <small>({{ tag.source_name }})</small>
         {% if tag.proposed %}
           · {% translate "you proposed restoring it" %}

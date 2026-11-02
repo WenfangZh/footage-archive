@@ -19,7 +19,7 @@
   {% endif %}
   <dl>
     <dt>{% translate "Time window" %}</dt>
-    <dd>{{ case.starts_at|date:"DATETIME_FORMAT" }} – {{ case.ends_at|date:"DATETIME_FORMAT" }}</dd>
+    <dd class="data">{{ case.starts_at|date:"DATETIME_FORMAT" }} – {{ case.ends_at|date:"DATETIME_FORMAT" }}</dd>
     <dt>{% translate "Area" %}</dt>
     <dd>{% blocktranslate count cells=cells with metres=area_metres %}{{ cells }} cell, about {{ metres }} m across{% plural %}{{ cells }} cells, about {{ metres }} m across{% endblocktranslate %}</dd>
     <dt>{% translate "Margin" %}</dt>
@@ -29,13 +29,20 @@
   {% if usable %}
     <form method="post" action="{% url 'lawyer:search' case_id=case.pk %}">
       {% csrf_token %}
-      <button type="submit">{% translate "Search for clips" %}</button>
+      <button type="submit" class="primary">{% translate "Search for clips" %}</button>
     </form>
   {% endif %}
-  {% if not case.closed_at %}<p><a href="{% url 'lawyer:close_case' case_id=case.pk %}">{% translate "Close this case" %}</a></p>{% endif %}
+  {% if not case.closed_at %}<p><a class="danger" href="{% url 'lawyer:close_case' case_id=case.pk %}">{% translate "Close this case" %}</a></p>{% endif %}
   <h2>{% translate "Case log" %}</h2>
-  <ul>
-    {% for entry in entries %}<li>{{ entry.at|date:"DATETIME_FORMAT" }}: {{ entry.get_action_display }}{% if entry.clip_id %} ({% blocktranslate with clip=entry.clip_id %}clip {{ clip }}{% endblocktranslate %}){% endif %}{% if entry.core_count is not None %} ({% blocktranslate with core=entry.core_count margin=entry.margin_count %}core matches: {{ core }}, margin matches: {{ margin }}{% endblocktranslate %}){% endif %}</li>{% endfor %}
-  </ul>
+  <div class="scroll">
+    <table>
+      <tbody>
+        {% for entry in entries %}<tr>
+          <td class="data">{{ entry.at|date:"DATETIME_FORMAT" }}</td>
+          <td>{{ entry.get_action_display }}{% if entry.clip_id %} <span class="data">({% blocktranslate with clip=entry.clip_id %}clip {{ clip }}{% endblocktranslate %})</span>{% endif %}{% if entry.core_count is not None %} ({% blocktranslate with core=entry.core_count margin=entry.margin_count %}core matches: {{ core }}, margin matches: {{ margin }}{% endblocktranslate %}){% endif %}</td>
+        </tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
   <p><a href="{% url 'lawyer:home' %}">{% translate "Your cases" %}</a></p>
 {% endblock %}
