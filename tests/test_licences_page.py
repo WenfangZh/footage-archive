@@ -89,11 +89,9 @@ def test_its_only_links_elsewhere_are_the_source_and_the_data_licences(client):
 
 def test_it_serves_the_archives_own_licences(client):
     hrefs = [link['href'] for link in links(page(client, 'fr'))]
-    for name, file, first_line in (
-        ('licence_code', 'LICENSE', 'GNU AFFERO GENERAL PUBLIC LICENSE'),
-        ('licence_documentation', 'LICENSE-docs', 'Attribution 4.0 International'),
-    ):
+    for name, file in (('licence_code', 'LICENSE'), ('licence_documentation', 'LICENSE-docs')):
         assert reverse(name) in hrefs
         response = client.get(reverse(name))
         assert response['Content-Type'] == 'text/plain; charset=utf-8'
-        assert b''.join(response.streaming_content).decode().lstrip().startswith(first_line)
+        assert b''.join(response.streaming_content) == (ROOT / file).read_bytes()
+        response.close()
