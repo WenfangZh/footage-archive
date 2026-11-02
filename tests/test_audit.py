@@ -7,12 +7,12 @@ from django.db import IntegrityError, models, transaction
 from django.db.models import ProtectedError
 
 from accounts.models import LawyerProfile
-from audit.models import (
-    ADMIN_ACTIONS, ADMIN_CASE_ACTIONS, CASE_ACTIONS, CLIP_ACTIONS, TAG_ACTIONS, Action, AppendOnly, AuditEntry, record,
-)
+from audit.models import Action, AppendOnly, AuditEntry, record
 from clips.editing import delete_clip
 from clips.models import Clip, ClipTag
-from tests.conftest import make_case
+from keys.grants import current_key
+from keys.models import GroupKey
+from tests.conftest import make_case, rotation_attempt
 
 pytestmark = pytest.mark.django_db
 
@@ -61,15 +61,6 @@ def test_the_time_cannot_be_backdated(admin, applicant):
         at=datetime.datetime(2000, 1, 1, tzinfo=datetime.UTC),
     )
     assert AuditEntry.objects.get(pk=entry.pk).at.year != 2000
-
-
-@pytest.mark.parametrize('action', [
-    action for action in ADMIN_ACTIONS
-    if action not in ADMIN_CASE_ACTIONS and action not in (Action.ALERT_LIMIT_RAISE, Action.WITHDRAWN_CLIP_DELETION)
-])
-def test_the_admin_actions_name_the_admin(action, applicant):
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(action, applicant)
 
 
 def test_only_the_admin_account_can_be_the_admin_on_an_entry(applicant):
@@ -190,20 +181,6 @@ def clip():
     return Clip.objects.create(code_hash='0' * 64)
 
 
-def test_a_lawyers_action_records_the_case_and_the_clip(case, clip):
-    entry = record(Action.PREVIEW, case.lawyer_profile, case=case, clip=clip)
-    stored = AuditEntry.objects.get(pk=entry.pk)
-    assert (stored.action, stored.lawyer_profile, stored.admin) == (Action.PREVIEW, case.lawyer_profile, None)
-    assert (stored.case, stored.clip_id, stored.core_count) == (case, clip.pk, None)
-    assert list(case.audit_entries.all()) == [stored]
-
-
-def test_a_search_records_the_numbers_of_clips_found(case):
-    entry = record(Action.SEARCH, case.lawyer_profile, case=case, core_count=3, margin_count=0)
-    stored = AuditEntry.objects.get(pk=entry.pk)
-    assert (stored.core_count, stored.margin_count, stored.clip_id) == (3, 0, None)
-
-
 def test_deleting_a_clip_leaves_its_entries_as_they_were(case, clip):
     entry = record(Action.DOWNLOAD, case.lawyer_profile, case=case, clip=clip)
     clip_id = clip.pk
@@ -216,53 +193,87 @@ def tag(clip):
     return ClipTag.objects.create(clip=clip, key='arrest', source=ClipTag.Source.CODE_HOLDER)
 
 
-def fields_taken_by(action, clip, tag=None):
-    """The fields other than the case that `action` takes, so that only the case is missing."""
-    if action in TAG_ACTIONS:
-        return {'clip': clip, 'clip_tag': tag}
-    if action in CLIP_ACTIONS:
-        return {'clip': clip}
-    if action == Action.SEARCH:
-        return {'core_count': 1, 'margin_count': 1}
-    return {}
-
-
-@pytest.mark.parametrize('action', CASE_ACTIONS)
-def test_actions_on_a_case_name_it(action, case, clip, tag):
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(action, case.lawyer_profile, **fields_taken_by(action, clip, tag))
-    record(action, case.lawyer_profile, case=case, **fields_taken_by(action, clip, tag))
-
-
-@pytest.mark.parametrize('action', [action for action in CLIP_ACTIONS if action not in TAG_ACTIONS + ADMIN_ACTIONS])
-def test_actions_on_a_clip_name_it(action, case):
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(action, case.lawyer_profile, case=case)
-
-
-@pytest.mark.parametrize('action', TAG_ACTIONS)
-def test_actions_on_a_tag_name_the_tag_and_its_clip(action, case, clip, tag):
-    entry = record(action, case.lawyer_profile, case=case, clip=clip, clip_tag=tag)
-    stored = AuditEntry.objects.get(pk=entry.pk)
-    assert (stored.case, stored.clip_id, stored.clip_tag_id) == (case, clip.pk, tag.pk)
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(action, case.lawyer_profile, case=case, clip=clip)
-    # A tag of another clip.
+def test_an_entry_about_a_tag_names_the_tags_own_clip(case, clip, tag):
     with pytest.raises(ValueError):
-        record(action, case.lawyer_profile, case=case, clip=Clip.objects.create(code_hash='1' * 64), clip_tag=tag)
+        record(
+            Action.TAG_ADDITION, case.lawyer_profile, case=case, clip=Clip.objects.create(code_hash='1' * 64), clip_tag=tag,
+        )
 
 
-def test_a_reply_names_the_clip_and_no_case(case, clip):
-    entry = record(Action.REPLY, case.lawyer_profile, clip=clip)
-    stored = AuditEntry.objects.get(pk=entry.pk)
-    assert (stored.lawyer_profile, stored.clip_id, stored.case) == (case.lawyer_profile, clip.pk, None)
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(Action.REPLY, case.lawyer_profile, case=case, clip=clip)
+# What each entry names, written out here rather than taken from audit.models, so that an action
+# filed in the wrong group there fails. The people, case, clip and tag follow SPEC.md §7 (the
+# admin's actions name the admin; a lawyer's, their case); the key, rotation and attempt follow
+# docs/m5-encryption-design.md §5.3, §5.5 and §5.6, and the admin's confirmation of a new key
+# keys/recovery.py. Every action is listed, with every field it names; it names no other.
+ADMIN_ON = {'admin', 'lawyer'}
+CASE_ACTION = {'lawyer', 'case'}
+ON_A_CLIP = {'lawyer', 'case', 'clip'}
+ON_A_TAG = {'lawyer', 'case', 'clip', 'tag'}
+NAMES = {
+    Action.INVITATION: ADMIN_ON, Action.DECLINING: ADMIN_ON, Action.ADMISSION: ADMIN_ON,
+    Action.SUSPENSION: ADMIN_ON, Action.REINSTATEMENT: ADMIN_ON, Action.REVOCATION: ADMIN_ON,
+    Action.CASE_CREATION: CASE_ACTION, Action.CASE_CLOSING: CASE_ACTION, Action.LARGER_CASE_REQUEST: CASE_ACTION,
+    Action.SEARCH: CASE_ACTION | {'core_count', 'margin_count'},
+    Action.PREVIEW: ON_A_CLIP, Action.DOWNLOAD: ON_A_CLIP, Action.CLIP_VIEW: ON_A_CLIP,
+    Action.CASE_APPROVAL: ADMIN_ON | {'case'}, Action.CASE_REFUSAL: ADMIN_ON | {'case'},
+    # About the archive's settings, not a person.
+    Action.LIMITS_CHANGE: {'limits'},
+    Action.ALERT_LIMIT_RAISE: ADMIN_ON | {'limits'},
+    Action.GROUP_KEY_CREATION: {'lawyer'}, Action.STARTING_OVER: {'lawyer'},
+    Action.KEY_GRANT: {'lawyer', 'key'}, Action.PASSPHRASE_REPLACEMENT: {'lawyer', 'key'},
+    Action.KEY_RESET: {'lawyer', 'key'}, Action.KEY_EXPOSURE_REPORT: {'lawyer', 'key'},
+    Action.KEY_CONFIRMATION: ADMIN_ON | {'key'},
+    Action.ROTATION_REQUEST: {'lawyer', 'rotation'},
+    Action.ROTATION_ATTEMPT: {'lawyer', 'attempt'}, Action.ROTATION_NEW_KEY: {'lawyer', 'attempt'},
+    Action.ROTATION_CHECK_PASSED: {'lawyer', 'attempt'}, Action.ROTATION_CHECK_FAILED: {'lawyer', 'attempt'},
+    Action.ROTATION_REJECTION: {'lawyer', 'attempt'}, Action.ROTATION_ABANDON: {'lawyer', 'attempt'},
+    Action.ROTATION_END: {'lawyer', 'attempt'},
+    Action.TAG_ADDITION: ON_A_TAG, Action.TAG_REMOVAL_PROPOSAL: ON_A_TAG, Action.TAG_RESTORATION_PROPOSAL: ON_A_TAG,
+    Action.TAG_PROPOSAL_CANCELLING: ON_A_TAG, Action.TAG_REMOVAL: ON_A_TAG, Action.TAG_RESTORATION: ON_A_TAG,
+    Action.MESSAGE: ON_A_CLIP, Action.REPORT_WRONG_TIME: ON_A_CLIP, Action.REPORT_WRONG_PLACE: ON_A_CLIP,
+    Action.REPORT_DOUBT: ON_A_CLIP, Action.REPORT_INAPPROPRIATE: ON_A_CLIP, Action.DOUBT_CANCELLING: ON_A_CLIP,
+    Action.INAPPROPRIATE_CANCELLING: ON_A_CLIP, Action.CLIP_WITHDRAWAL: ON_A_CLIP,
+    # From the lawyer's messages page, which needs no case: a closed case must not cut a thread off.
+    Action.REPLY: {'lawyer', 'clip'},
+    # No lawyer, so as not to single out the lawyers who reported the clip.
+    Action.WITHDRAWN_CLIP_DELETION: {'admin', 'clip'},
+}
 
 
-def test_only_actions_on_a_tag_name_one(case, clip, tag):
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(Action.PREVIEW, case.lawyer_profile, case=case, clip=clip, clip_tag=tag)
+def test_every_action_says_what_it_names():
+    assert set(NAMES) == set(Action)
+
+
+def test_each_entry_names_what_its_action_names_and_nothing_else(admin, case, clip, tag):
+    attempt = rotation_attempt(GroupKey.Status.CHECKING)
+    # Each name's field, as record() takes it.
+    values = {
+        'admin': {'admin': admin}, 'lawyer': {'lawyer_profile': case.lawyer_profile}, 'case': {'case': case},
+        'clip': {'clip': clip}, 'tag': {'clip_tag': tag}, 'core_count': {'core_count': 3}, 'margin_count': {'margin_count': 0},
+        'key': {'lawyer_key': current_key(case.lawyer_profile)}, 'rotation': {'rotation': attempt.rotation},
+        'attempt': {'rotation_attempt': attempt}, 'limits': None,
+    }
+    # The stored entry gives the clip and tag back as ids.
+    stored_as = {'clip': ('clip_id', clip.pk), 'tag': ('clip_tag_id', tag.pk)}
+
+    for action, names in NAMES.items():
+        values['limits'] = {'limits': RAISED if action == Action.ALERT_LIMIT_RAISE else LIMITS}
+
+        def given(names):
+            return {'lawyer_profile': None, **{field: v for name in names for field, v in values[name].items()}}
+
+        stored = AuditEntry.objects.get(pk=record(action, **given(names)).pk)
+        for name, fields in values.items():
+            field, value = stored_as.get(name, next(iter(fields.items())))
+            assert getattr(stored, field) == (value if name in names else None), (action, field)
+
+        for name in values:
+            try:
+                with transaction.atomic():
+                    record(action, **given(names ^ {name}))
+            except (IntegrityError, ValueError):
+                continue
+            pytest.fail(f'{action} was stored with {name} {"left out" if name in names else "added"}')
 
 
 def test_deleting_a_tag_leaves_its_entries_as_they_were(case, clip, tag):
@@ -272,50 +283,6 @@ def test_deleting_a_tag_leaves_its_entries_as_they_were(case, clip, tag):
     assert AuditEntry.objects.get(pk=entry.pk).clip_tag_id == tag_id
 
 
-def test_the_admins_deletion_of_a_withdrawn_clip_names_the_admin_and_the_clip_and_no_lawyer(admin, case, clip):
-    entry = record(Action.WITHDRAWN_CLIP_DELETION, None, admin=admin, clip=clip)
-    stored = AuditEntry.objects.get(pk=entry.pk)
-    assert (stored.admin, stored.clip_id, stored.lawyer_profile, stored.case) == (admin, clip.pk, None, None)
-    for given in [
-        {'lawyer_profile': case.lawyer_profile, 'admin': admin, 'clip': clip},
-        {'lawyer_profile': None, 'clip': clip},
-        {'lawyer_profile': None, 'admin': admin},
-    ]:
-        with pytest.raises(IntegrityError), transaction.atomic():
-            record(Action.WITHDRAWN_CLIP_DELETION, **given)
-
-
-def test_a_search_records_both_numbers(case):
-    for counts in [{}, {'core_count': 1}, {'margin_count': 1}]:
-        with pytest.raises(IntegrityError), transaction.atomic():
-            record(Action.SEARCH, case.lawyer_profile, case=case, **counts)
-
-
-@pytest.mark.parametrize('extra', ['case', 'clip', 'count'])
-def test_the_admins_account_actions_name_no_case_clip_or_count(extra, admin, case, clip):
-    given = {'case': {'case': case}, 'clip': {'clip': clip}, 'count': {'core_count': 1, 'margin_count': 1}}[extra]
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(Action.SUSPENSION, case.lawyer_profile, admin=admin, **given)
-
-
-def test_a_search_names_no_clip(case, clip):
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(Action.SEARCH, case.lawyer_profile, case=case, clip=clip, core_count=1, margin_count=1)
-
-
-@pytest.mark.parametrize('counts', [{'core_count': 1}, {'margin_count': 1}])
-def test_a_preview_names_no_count(counts, case, clip):
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(Action.PREVIEW, case.lawyer_profile, case=case, clip=clip, **counts)
-
-
-@pytest.mark.parametrize('extra', ['clip', 'count'])
-def test_a_case_creation_names_no_clip_or_count(extra, case, clip):
-    given = {'clip': {'clip': clip}, 'count': {'core_count': 1, 'margin_count': 1}}[extra]
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(Action.CASE_CREATION, case.lawyer_profile, case=case, **given)
-
-
 def test_an_entry_about_a_case_names_the_cases_own_lawyer(case):
     other = LawyerProfile.objects.create(user=User.objects.create_user('other@example.org'), bar='Lyon')
     with pytest.raises(ValueError):
@@ -323,41 +290,7 @@ def test_an_entry_about_a_case_names_the_cases_own_lawyer(case):
     assert not AuditEntry.objects.exists()
 
 
-@pytest.mark.parametrize('action', ADMIN_CASE_ACTIONS)
-def test_the_admins_decision_on_a_case_names_the_admin_the_case_and_its_lawyer(action, admin, case):
-    entry = record(action, case.lawyer_profile, admin=admin, case=case)
-    stored = AuditEntry.objects.get(pk=entry.pk)
-    assert (stored.action, stored.admin, stored.case, stored.lawyer_profile) == (action, admin, case, case.lawyer_profile)
-    for missing in [{'case': case}, {'admin': admin}]:
-        with pytest.raises(IntegrityError), transaction.atomic():
-            record(action, case.lawyer_profile, **missing)
-
-
 LIMITS = {'before': None, 'after': {'CASE_AREA_CAP_METRES': 2000}}
-
-
-def test_a_change_of_limits_names_nobody_and_records_the_numbers():
-    entry = record(Action.LIMITS_CHANGE, None, limits=LIMITS)
-    stored = AuditEntry.objects.get(pk=entry.pk)
-    assert (stored.limits, stored.lawyer_profile, stored.admin, stored.case) == (LIMITS, None, None, None)
-    with pytest.raises(ValueError):
-        record(Action.LIMITS_CHANGE, None)
-
-
-def test_a_change_of_limits_names_no_person(admin, applicant):
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(Action.LIMITS_CHANGE, applicant, limits=LIMITS)
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(Action.LIMITS_CHANGE, None, admin=admin, limits=LIMITS)
-
-
-def test_every_other_entry_names_a_person_and_no_limits(admin, applicant, case):
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(Action.INVITATION, None, admin=admin)
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(Action.INVITATION, applicant, admin=admin, limits=LIMITS)
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(Action.CASE_CREATION, case.lawyer_profile, case=case, limits=LIMITS)
 
 
 RAISED = {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_DOWNLOADS': 60}, 'days': 2}
@@ -376,21 +309,3 @@ RAISED = {'before': {'ALERT_DOWNLOADS': 20}, 'after': {'ALERT_DOWNLOADS': 60}, '
 def test_a_raise_records_one_higher_limit_and_its_days(admin, case, limits_given):
     with pytest.raises(ValueError):
         record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, admin=admin, limits=limits_given)
-
-
-def test_a_raise_names_no_case(admin, case):
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, admin=admin, case=case, limits=RAISED)
-
-
-def test_a_raise_of_an_alert_limit_names_the_admin_and_lawyer_and_records_the_numbers(admin, case):
-    raised = RAISED
-    entry = record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, admin=admin, limits=raised)
-    stored = AuditEntry.objects.get(pk=entry.pk)
-    assert (stored.admin, stored.lawyer_profile, stored.limits, stored.case) == (admin, case.lawyer_profile, raised, None)
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, limits=raised)
-    with pytest.raises(ValueError):
-        record(Action.ALERT_LIMIT_RAISE, case.lawyer_profile, admin=admin)
-    with pytest.raises(IntegrityError), transaction.atomic():
-        record(Action.ALERT_LIMIT_RAISE, None, admin=admin, limits=raised)
