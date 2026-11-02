@@ -307,7 +307,7 @@ def card_label_suggestion(cleaned):
     """A suggested card label, from the stated date and the first tags. Never stored."""
     parts = []
     if cleaned['stated_time'] is not None:
-        parts.append(date_format(timezone.localtime(cleaned['stated_time']), 'SHORT_DATE_FORMAT'))
+        parts.append(date_format(timezone.localtime(cleaned['stated_time']), 'DATE_FORMAT'))
     names = [str(DEFAULT_TAGS[key]) for key in cleaned['tags']] + cleaned['custom_tags']
     if names:
         parts.append(', '.join(names[:3]))
