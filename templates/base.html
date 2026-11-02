@@ -1,44 +1,53 @@
-{% load i18n %}<!doctype html>
+{% load i18n static %}<!doctype html>
 {% get_current_language as LANGUAGE_CODE %}
 <html lang="{{ LANGUAGE_CODE }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{% translate "Footage archive" %}{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'core/archive.css' %}">
   {% block head %}{% endblock %}
 </head>
 <body>
-  <header>
-    {% block language_switch %}
-    <form action="{% url 'set_language' %}" method="post">
-      {% csrf_token %}
-      <input type="hidden" name="next" value="{% block language_next %}{{ request.get_full_path }}{% endblock %}">
-      {% get_available_languages as LANGUAGES %}
-      {% get_language_info_list for LANGUAGES as languages %}
-      {% for language in languages %}
-        <button type="submit" name="language" value="{{ language.code }}" lang="{{ language.code }}"
-          {% if language.code == LANGUAGE_CODE %}aria-current="true" disabled{% endif %}>
-          {{ language.name_local|capfirst }}
-        </button>
+  <header class="site-header">
+    <nav aria-label="{% translate 'Footage archive' %}">
+      <a class="site-name" href="{% url 'home' %}">{% translate "Footage archive" %}</a>
+      {% for page in navigation %}
+        <a href="{{ page.url }}"{% if page.current %} aria-current="page"{% endif %}>{{ page.label }}</a>
       {% endfor %}
-    </form>
-    {% endblock %}
-    {% if user.is_authenticated %}
-    <form action="{% url 'accounts:logout' %}" method="post">
-      {% csrf_token %}
-      <button type="submit">{% translate "Log out" %}</button>
-    </form>
-    {% endif %}
+    </nav>
+    <div class="account">
+      {% block language_switch %}
+      <form action="{% url 'set_language' %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% block language_next %}{{ request.get_full_path }}{% endblock %}">
+        {% get_available_languages as LANGUAGES %}
+        {% get_language_info_list for LANGUAGES as languages %}
+        {% for language in languages %}
+          <button type="submit" name="language" value="{{ language.code }}" lang="{{ language.code }}"
+            {% if language.code == LANGUAGE_CODE %}aria-current="true" disabled{% endif %}>
+            {{ language.name_local|capfirst }}
+          </button>
+        {% endfor %}
+      </form>
+      {% endblock %}
+      {% if user.is_authenticated %}
+      <form action="{% url 'accounts:logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit">{% translate "Log out" %}</button>
+      </form>
+      {% endif %}
+    </div>
   </header>
   <main>
     {% if messages %}
-    <ul>
+    <ul class="messages">
       {% for message in messages %}<li role="status">{{ message }}</li>{% endfor %}
     </ul>
     {% endif %}
     {% block content %}{% endblock %}
   </main>
-  <footer>
+  <footer class="site-footer">
     <p><a href="{% url 'licences' %}">{% translate "Licences and source code" %}</a></p>
   </footer>
 </body>
