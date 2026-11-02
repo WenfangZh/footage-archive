@@ -270,3 +270,27 @@ input.code { font-size: 1.125rem; letter-spacing: 0.06em; text-transform: upperc
 .danger-zone { border: 1px solid var(--danger); padding: 0 1rem 1rem; margin-top: 2.5rem; }
 .danger-zone h2 { color: var(--danger); border: 0; margin-top: 1rem; }
 
+
+/* A row of links to a page's other actions. */
+.actions { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; }
+
+/* A short status next to a record (not a clip's tag). */
+.status {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  border: 1px solid var(--muted);
+  color: var(--muted);
+  padding: 0 0.4rem;
+  white-space: nowrap;
+}
+
+/* Tags on a lawyer's clip page, each with its own small form. */
+.tag-list { padding-left: 0; list-style: none; }
+.tag-list li { margin-bottom: 0.4rem; }
+.tag-list form { display: inline; }
+.tag-list button, td button { min-height: 2rem; padding: 0.2rem 0.6rem; }
+
+/* A thread of messages, oldest first. */
+ol.thread { list-style: none; padding: 0; }
+ol.thread li { border-left: 1px solid var(--rule); padding-left: 1rem; margin-bottom: 1rem; }
+ol.thread p { margin: 0.25rem 0; }

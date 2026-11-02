@@ -302,7 +302,7 @@ msgstr "Si vous n'attendiez pas cette invitation, ignorez ce message."
 
 #: accounts/templates/accounts/invite.html:4
 #: accounts/templates/accounts/invite.html:7
-#: accounts/templates/accounts/manage_home.html:22
+#: accounts/templates/accounts/manage_home.html:23 core/navigation.py:21
 msgid "Send an invitation"
 msgstr "Envoyer une invitation"
 
@@ -320,47 +320,41 @@ msgstr "Envoyer l'invitation"
 
 #: accounts/templates/accounts/lawyer_home.html:4
 #: accounts/templates/accounts/lawyer_home.html:9
-#: cases/templates/cases/case.html:40
-#: cases/templates/cases/closed_cases.html:18
+#: cases/templates/cases/case.html:47
+#: cases/templates/cases/closed_cases.html:26 core/navigation.py:14
 msgid "Your cases"
 msgstr "Vos dossiers de recherche"
 
-#: accounts/templates/accounts/lawyer_home.html:13
+#: accounts/templates/accounts/lawyer_home.html:14
+msgid "Case"
+msgstr "Dossier de recherche"
+
+#: accounts/templates/accounts/lawyer_home.html:14
+#: cases/templates/cases/case.html:21
+#: cases/templates/cases/case_request.html:10
+msgid "Time window"
+msgstr "Plage horaire"
+
+#: accounts/templates/accounts/lawyer_home.html:19
 msgid "waiting for approval"
 msgstr "en attente de validation"
 
-#: accounts/templates/accounts/lawyer_home.html:16
+#: accounts/templates/accounts/lawyer_home.html:25
 msgid "You have no cases yet."
 msgstr "Vous n'avez pas encore de dossier de recherche."
 
-#: accounts/templates/accounts/lawyer_home.html:18
+#: accounts/templates/accounts/lawyer_home.html:29
 #: cases/templates/cases/new_case.html:4 cases/templates/cases/new_case.html:15
 msgid "New case"
 msgstr "Nouveau dossier de recherche"
 
-#: accounts/templates/accounts/lawyer_home.html:19
-#: cases/templates/cases/messages.html:4 cases/templates/cases/messages.html:9
-msgid "Your messages"
-msgstr "Vos messages"
-
-#: accounts/templates/accounts/lawyer_home.html:20
+#: accounts/templates/accounts/lawyer_home.html:30
 #: cases/templates/cases/closed_cases.html:4
 #: cases/templates/cases/closed_cases.html:9
 msgid "Closed cases"
 msgstr "Dossiers de recherche clos"
 
-#: accounts/templates/accounts/lawyer_home.html:21
-#: cases/templates/cases/settings.html:4 cases/templates/cases/settings.html:7
-msgid "Settings"
-msgstr "Réglages"
-
-#: accounts/templates/accounts/lawyer_home.html:22
-#: cases/templates/cases/clip.html:24 keys/templates/keys/key.html:4
-#: keys/templates/keys/key.html:15
-msgid "Your personal key"
-msgstr "Votre clé personnelle"
-
-#: accounts/templates/accounts/lawyer_home.html:23
+#: accounts/templates/accounts/lawyer_home.html:31
 #: keys/templates/keys/waiting.html:4 keys/templates/keys/waiting.html:7
 msgid "Colleagues waiting for the group key"
 msgstr "Collègues en attente de la clé commune"
@@ -392,7 +386,7 @@ msgstr "Il y a eu trop de tentatives de connexion. Réessayez dans une heure."
 #: accounts/templates/accounts/manage_home.html:4
 #: accounts/templates/accounts/manage_home.html:7
 #: alerts/templates/alerts/raise_limit.html:18
-#: cases/templates/cases/case_requests.html:17
+#: cases/templates/cases/case_requests.html:17 core/navigation.py:20
 msgid "Administration"
 msgstr "Administration"
 
@@ -400,70 +394,76 @@ msgstr "Administration"
 msgid "Alerts"
 msgstr "Alertes"
 
-#: accounts/templates/accounts/manage_home.html:16
+#: accounts/templates/accounts/manage_home.html:14
+#: cases/templates/cases/messages.html:22 clips/templates/clips/clip.html:96
+#, python-format
+msgid "%(day)s, in the four hours from %(start)s"
+msgstr "%(day)s, dans les quatre heures à partir de %(start)s"
+
+#: accounts/templates/accounts/manage_home.html:17
 msgid "Mark as seen"
 msgstr "Marquer comme vue"
 
-#: accounts/templates/accounts/manage_home.html:23
+#: accounts/templates/accounts/manage_home.html:24
 #: cases/templates/cases/case_requests.html:4
-#: cases/templates/cases/case_requests.html:7
+#: cases/templates/cases/case_requests.html:7 core/navigation.py:22
 msgid "Requests for larger cases"
 msgstr "Demandes de dépassement des plafonds"
 
-#: accounts/templates/accounts/manage_home.html:24
+#: accounts/templates/accounts/manage_home.html:25
 #: cases/templates/cases/disputed_tags.html:4
-#: cases/templates/cases/disputed_tags.html:7
+#: cases/templates/cases/disputed_tags.html:7 core/navigation.py:23
 msgid "Clips with disputed tags"
 msgstr "Clips aux étiquettes contestées"
 
-#: accounts/templates/accounts/manage_home.html:25
+#: accounts/templates/accounts/manage_home.html:26
 #: cases/templates/cases/withdrawn_clips.html:4
-#: cases/templates/cases/withdrawn_clips.html:7
+#: cases/templates/cases/withdrawn_clips.html:7 core/navigation.py:24
 msgid "Withdrawn clips"
 msgstr "Clips retirés"
 
-#: accounts/templates/accounts/manage_home.html:27
+#: accounts/templates/accounts/manage_home.html:28
 msgid "Applicants"
 msgstr "Candidat·es"
 
-#: accounts/templates/accounts/manage_home.html:36
+#: accounts/templates/accounts/manage_home.html:37
 msgid "Send a new invitation link"
 msgstr "Envoyer un nouveau lien d'invitation"
 
-#: accounts/templates/accounts/manage_home.html:43
+#: accounts/templates/accounts/manage_home.html:44
 msgid "No applicants."
 msgstr "Aucun·e candidat·e."
 
-#: accounts/templates/accounts/manage_home.html:46
+#: accounts/templates/accounts/manage_home.html:47
 msgid "Lawyers' access"
 msgstr "Accès des avocat·es"
 
-#: accounts/templates/accounts/manage_home.html:56
+#: accounts/templates/accounts/manage_home.html:57
 msgid "Suspend access"
 msgstr "Suspendre l'accès"
 
-#: accounts/templates/accounts/manage_home.html:61
+#: accounts/templates/accounts/manage_home.html:62
 msgid "Reinstate access"
 msgstr "Rétablir l'accès"
 
-#: accounts/templates/accounts/manage_home.html:64
+#: accounts/templates/accounts/manage_home.html:65
 #: accounts/templates/accounts/revoke.html:4
 #: accounts/templates/accounts/revoke.html:7
 msgid "Revoke access"
 msgstr "Révoquer l'accès"
 
-#: accounts/templates/accounts/manage_home.html:65
+#: accounts/templates/accounts/manage_home.html:66
 #: keys/templates/keys/confirm_key.html:16
 msgid "Confirm their new key"
 msgstr "Confirmer sa nouvelle clé"
 
-#: accounts/templates/accounts/manage_home.html:66
+#: accounts/templates/accounts/manage_home.html:67
 #: alerts/templates/alerts/raise_limit.html:4
 #: alerts/templates/alerts/raise_limit.html:7
 msgid "Raise an alert limit"
 msgstr "Relever un seuil d'alerte"
 
-#: accounts/templates/accounts/manage_home.html:71
+#: accounts/templates/accounts/manage_home.html:72
 msgid "No lawyers yet."
 msgstr "Aucun·e avocat·e pour l'instant."
 
@@ -682,11 +682,11 @@ msgstr ""
 "Un renouvellement a trouvé des éléments qu'aucun·e avocat·e ne peut ouvrir : "
 "leurs clips sont dans le journal du serveur"
 
-#: alerts/models.py:50
+#: alerts/models.py:55
 msgid "Downloads"
 msgstr "Téléchargements"
 
-#: alerts/models.py:51
+#: alerts/models.py:56
 msgid "Cases created"
 msgstr "Dossiers de recherche créés"
 
@@ -1317,11 +1317,6 @@ msgstr "Au-delà des plafonds, et validé par l'administrateur·rice."
 msgid "The admin's note:"
 msgstr "Note de l'administrateur·rice :"
 
-#: cases/templates/cases/case.html:21
-#: cases/templates/cases/case_request.html:10
-msgid "Time window"
-msgstr "Plage horaire"
-
 #: cases/templates/cases/case.html:23
 #: cases/templates/cases/case_request.html:12
 msgid "Area"
@@ -1365,12 +1360,12 @@ msgstr "Clore ce dossier de recherche"
 msgid "Case log"
 msgstr "Journal du dossier de recherche"
 
-#: cases/templates/cases/case.html:38
+#: cases/templates/cases/case.html:42
 #, python-format
 msgid "clip %(clip)s"
 msgstr "clip %(clip)s"
 
-#: cases/templates/cases/case.html:38
+#: cases/templates/cases/case.html:42
 #, python-format
 msgid "core matches: %(core)s, margin matches: %(margin)s"
 msgstr ""
@@ -1450,6 +1445,11 @@ msgstr ""
 "données d'index de ce clip, sans version de prévisualisation, copie de "
 "preuve, contexte ni moyen de contact."
 
+#: cases/templates/cases/clip.html:24 core/navigation.py:16
+#: keys/templates/keys/key.html:4 keys/templates/keys/key.html:15
+msgid "Your personal key"
+msgstr "Votre clé personnelle"
+
 #: cases/templates/cases/clip.html:30
 msgid ""
 "Some of this clip's contents could not be opened with your key. Reload the "
@@ -1524,7 +1524,7 @@ msgstr "Heure indiquée telle qu'uploadée"
 msgid "Duration"
 msgstr "Durée"
 
-#: cases/templates/cases/clip.html:53 cases/templates/cases/matches.html:5
+#: cases/templates/cases/clip.html:53 cases/templates/cases/matches.html:8
 #, python-format
 msgid "%(seconds)s s"
 msgstr "%(seconds)s s"
@@ -1742,7 +1742,7 @@ msgstr "Clore le dossier de recherche"
 msgid "Keep it open"
 msgstr "Le garder ouvert"
 
-#: cases/templates/cases/closed_cases.html:16
+#: cases/templates/cases/closed_cases.html:24
 msgid "You have no closed cases."
 msgstr "Vous n'avez aucun dossier de recherche clos."
 
@@ -1782,14 +1782,19 @@ msgstr "dernière proposition : %(at)s"
 msgid "No lawyer has proposed removing or restoring a tag."
 msgstr "Aucun·e avocat·e n'a proposé d'écarter ou de rétablir une étiquette."
 
-#: cases/templates/cases/matches.html:5
+#: cases/templates/cases/matches.html:9
 #, python-format
 msgid "about %(width)s m across"
 msgstr "environ %(width)s m de large"
 
-#: cases/templates/cases/matches.html:9
+#: cases/templates/cases/matches.html:15
 msgid "No matches."
 msgstr "Aucune correspondance."
+
+#: cases/templates/cases/messages.html:4 cases/templates/cases/messages.html:9
+#: core/navigation.py:15
+msgid "Your messages"
+msgstr "Vos messages"
 
 #: cases/templates/cases/messages.html:14
 #: cases/templates/cases/tag_history.html:8
@@ -1814,11 +1819,6 @@ msgstr "Vous"
 #: cases/templates/cases/messages.html:21
 msgid "The code holder"
 msgstr "La personne qui détient le code"
-
-#: cases/templates/cases/messages.html:22 clips/templates/clips/clip.html:96
-#, python-format
-msgid "%(day)s, in the four hours from %(start)s"
-msgstr "%(day)s, dans les quatre heures à partir de %(start)s"
 
 #: cases/templates/cases/messages.html:23
 msgid "with your name and bar"
@@ -1977,6 +1977,11 @@ msgstr ""
 "Clips trouvés seulement dans la marge, juste en dehors de la plage horaire "
 "ou du périmètre."
 
+#: cases/templates/cases/settings.html:4 cases/templates/cases/settings.html:7
+#: core/navigation.py:17
+msgid "Settings"
+msgstr "Réglages"
+
 #: cases/templates/cases/settings.html:11
 msgid "Default margin"
 msgstr "Marge par défaut"
@@ -2043,7 +2048,7 @@ msgid "Delete this clip for good"
 msgstr "Supprimer ce clip définitivement"
 
 #: cases/templates/cases/withdrawn_clips.html:16
-#: clips/templates/clips/clip.html:137
+#: clips/templates/clips/clip.html:138
 msgid "Delete"
 msgstr "Supprimer"
 
@@ -2107,7 +2112,7 @@ msgstr "Vos réglages sont enregistrés."
 msgid "The case is closed."
 msgstr "Le dossier de recherche est clos."
 
-#: cases/withdrawn_clips.py:34 clips/templates/clips/clip.html:130
+#: cases/withdrawn_clips.py:34 clips/templates/clips/clip.html:131
 msgid "Tick the box to confirm."
 msgstr "Cochez la case pour confirmer."
 
@@ -2523,11 +2528,11 @@ msgstr ""
 msgid "Your reply was not sent. Here it is, to keep:"
 msgstr "Votre réponse n'a pas été envoyée. La voici, pour la garder :"
 
-#: clips/templates/clips/clip.html:126
+#: clips/templates/clips/clip.html:127
 msgid "Delete this clip"
 msgstr "Supprimer ce clip"
 
-#: clips/templates/clips/clip.html:134
+#: clips/templates/clips/clip.html:135
 msgid "Yes, delete this clip and everything it holds, for good."
 msgstr "Oui, supprimer définitivement ce clip et tout ce qu'il contient."
 
@@ -2833,11 +2838,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:417
+#: config/settings.py:418
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:418
+#: config/settings.py:419
 msgid "English"
 msgstr "Anglais"
 
@@ -3429,15 +3434,16 @@ msgstr ""
 msgid "%(name)s now holds the group key."
 msgstr "%(name)s a maintenant la clé commune."
 
-#: templates/base.html:7 templates/home.html:5
+#: templates/base.html:7 templates/base.html:13 templates/base.html:14
+#: templates/home.html:5
 msgid "Footage archive"
 msgstr "Archive de vidéos"
 
-#: templates/base.html:29
+#: templates/base.html:37
 msgid "Log out"
 msgstr "Se déconnecter"
 
-#: templates/base.html:42 templates/licences.html:4 templates/licences.html:7
+#: templates/base.html:51 templates/licences.html:4 templates/licences.html:7
 msgid "Licences and source code"
 msgstr "Licences et code source"
 

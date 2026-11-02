@@ -1,10 +1,16 @@
 {% load i18n %}
 {% if clips %}
-  <ul>
-    {% for clip in clips %}
-      <li><a href="{% url 'lawyer:clip' case_id=case.pk clip_id=clip.pk %}">{{ clip.stated_time|date:"DATETIME_FORMAT" }}</a>{% if clip.duration %}, {% blocktranslate with seconds=clip.duration.total_seconds|floatformat:"0" %}{{ seconds }} s{% endblocktranslate %}{% endif %}{% with place=clip.stated_place %}, {% blocktranslate with width=place.width|floatformat:"0" %}about {{ width }} m across{% endblocktranslate %}{% endwith %}</li>
-    {% endfor %}
-  </ul>
+  <div class="scroll">
+    <table>
+      <tbody>
+        {% for clip in clips %}<tr>
+          <td class="data"><a href="{% url 'lawyer:clip' case_id=case.pk clip_id=clip.pk %}">{{ clip.stated_time|date:"DATETIME_FORMAT" }}</a></td>
+          <td class="number data">{% if clip.duration %}{% blocktranslate with seconds=clip.duration.total_seconds|floatformat:"0" %}{{ seconds }} s{% endblocktranslate %}{% endif %}</td>
+          <td>{% with place=clip.stated_place %}{% blocktranslate with width=place.width|floatformat:"0" %}about {{ width }} m across{% endblocktranslate %}{% endwith %}</td>
+        </tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
 {% else %}
   <p>{% translate "No matches." %}</p>
 {% endif %}
