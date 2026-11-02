@@ -158,6 +158,13 @@ dd { margin: 0; }
 
 [role="alert"] { color: var(--danger); }
 
+/* A status a script fills in shows as a notice once it says something. */
+p[role="status"]:not(:empty) {
+  border: 1px solid var(--rule);
+  background: var(--tint);
+  padding: 0.6rem 0.9rem;
+}
+
 /* Tables: wide ones scroll in their own box, never the page. */
 .scroll { overflow-x: auto; }
 
@@ -192,6 +199,10 @@ legend {
   padding: 0 0.6rem 0 0;
 }
 
+/* A question inside a section (a field of choices) reads as a label, not a heading. */
+fieldset fieldset { border: 0; margin: 0; padding: 0; }
+fieldset fieldset legend { font-size: inherit; font-variant: normal; letter-spacing: 0; margin-bottom: 0.25rem; }
+
 label { display: inline-block; margin-bottom: 0.25rem; }
 
 input, select, textarea, button { font: inherit; font-family: var(--mono); font-size: 0.875rem; }
@@ -209,7 +220,18 @@ input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="file"]), se
 
 textarea { min-height: 7rem; resize: vertical; }
 
-input[type="checkbox"], input[type="radio"] { accent-color: var(--ink); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--ink); margin: 0 0.5rem 0 0; }
+
+input:not([type="checkbox"], [type="radio"], [type="hidden"]), select, textarea { margin-bottom: 1rem; }
+
+/* Lists of checkboxes (Django's CheckboxSelectMultiple): a grid of choices. */
+div:has(> div > label > input[type="checkbox"]) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.25rem 1.25rem;
+  margin-bottom: 1rem;
+}
+label:has(> input[type="checkbox"], > input[type="radio"]) { display: flex; align-items: baseline; }
 
 .helptext { display: block; color: var(--muted); font-size: 0.9375rem; }
 
@@ -237,3 +259,14 @@ details { border: 1px solid var(--rule); padding: 0.6rem 0.9rem; margin: 0.5rem 
 summary { cursor: pointer; }
 
 progress { accent-color: var(--ink); width: 100%; max-width: 32rem; }
+
+/* The code card, made to be screenshotted (SPEC.md §8): the code wraps only at its dashes. */
+.card { border: 2px solid var(--ink); padding: 1.25rem 1.25rem 0.5rem; margin: 1.5rem 0; }
+.card h2 { border: 0; margin-top: 0; }
+.card code { font-size: 1.5rem; letter-spacing: 0.06em; overflow-wrap: normal; }
+input.code { font-size: 1.125rem; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* Actions that cannot be undone. */
+.danger-zone { border: 1px solid var(--danger); padding: 0 1rem 1rem; margin-top: 2.5rem; }
+.danger-zone h2 { color: var(--danger); border: 0; margin-top: 1rem; }
+

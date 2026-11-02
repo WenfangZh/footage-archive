@@ -74,7 +74,7 @@
     </details>
 
     <p>{% translate "Lawyers see which details you changed, and roughly when, but not the old values. For the time, the place and the tags, they also see what you gave at upload." %}</p>
-    <button type="submit">{% translate "Save changes" %}</button>
+    <button type="submit" class="primary">{% translate "Save changes" %}</button>
   </form>
   {% endif %}
 
@@ -123,6 +123,7 @@
   {% endfor %}
   {% endif %}
 
+  <section class="danger-zone">
   <h2>{% translate "Delete this clip" %}</h2>
   <form method="post" action="{% url 'clips:delete' %}">
     {% csrf_token %}
@@ -134,7 +135,8 @@
         {% translate "Yes, delete this clip and everything it holds, for good." %}
       </label>
     </p>
-    <button type="submit">{% translate "Delete" %}</button>
+    <button type="submit" class="danger">{% translate "Delete" %}</button>
   </form>
+  </section>
   <script src="{% static 'clips/forms.js' %}" defer></script>
 {% endblock %}

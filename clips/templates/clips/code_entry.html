@@ -14,8 +14,8 @@
     {% csrf_token %}
     <p>
       <label for="code">{% translate "Upload code" %}</label>
-      <input type="text" id="code" name="code" required autocomplete="off" autocapitalize="characters" spellcheck="false">
+      <input type="text" id="code" class="code" name="code" required autocomplete="off" autocapitalize="characters" spellcheck="false">
     </p>
-    <button type="submit">{% translate "Open my clip" %}</button>
+    <button type="submit" class="primary">{% translate "Open my clip" %}</button>
   </form>
 {% endblock %}
