@@ -9,6 +9,7 @@
   <h2>{% translate "Alerts" %}</h2>
   <div class="scroll">
     <table>
+      <thead><tr><th>{% translate "Alert" %}</th><th>{% translate "When" %}</th><th>{% translate "Actions" %}</th></tr></thead>
       <tbody>
         {% for alert in alerts %}<tr>
           <td>{{ alert.get_kind_display }}{% if alert.account %} <span class="data">({{ alert.account.email|default:alert.account.former_email }})</span>{% endif %}</td>
@@ -30,6 +31,7 @@
   {% if applicants %}
     <div class="scroll">
       <table>
+        <thead><tr><th>{% translate "Name" %}</th><th>{% translate "Bar" %}</th><th>{% translate "Email address" %}</th><th>{% translate "Actions" %}</th></tr></thead>
         <tbody>
           {% for profile in applicants %}<tr>
             <td><a href="{% url 'manage:applicant' profile.pk %}">{{ profile.user.first_name }} {{ profile.user.last_name }}</a></td>
@@ -55,6 +57,7 @@
   {% if lawyers %}
     <div class="scroll">
       <table>
+        <thead><tr><th>{% translate "Name" %}</th><th>{% translate "Bar" %}</th><th>{% translate "Email address" %}</th><th>{% translate "Actions" %}</th></tr></thead>
         <tbody>
           {% for profile in lawyers %}<tr>
             <td>{{ profile.user.first_name }} {{ profile.user.last_name }}

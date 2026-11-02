@@ -2,6 +2,7 @@
 {% if clips %}
   <div class="scroll">
     <table>
+      <thead><tr><th>{% translate "Stated time" %}</th><th class="number">{% translate "Duration" %}</th><th>{% translate "Place" %}</th></tr></thead>
       <tbody>
         {% for clip in clips %}<tr>
           <td class="data"><a href="{% url 'lawyer:clip' case_id=case.pk clip_id=clip.pk %}">{{ clip.stated_time|date:"DATETIME_FORMAT" }}</a></td>

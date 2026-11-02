@@ -36,6 +36,7 @@
   <h2>{% translate "Case log" %}</h2>
   <div class="scroll">
     <table>
+      <thead><tr><th>{% translate "When" %}</th><th>{% translate "Event" %}</th></tr></thead>
       <tbody>
         {% for entry in entries %}<tr>
           <td class="data">{{ entry.at|date:"DATETIME_FORMAT" }}</td>

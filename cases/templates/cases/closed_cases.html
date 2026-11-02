@@ -11,6 +11,7 @@
   {% if cases %}
     <div class="scroll">
       <table>
+        <thead><tr><th>{% translate "Case" %}</th><th>{% translate "Reason" %}</th><th>{% translate "Closed on" %}</th></tr></thead>
         <tbody>
           {% for case in cases %}<tr>
             <td><a href="{% url 'lawyer:case' case_id=case.pk %}">{% case_label case %}</a></td>

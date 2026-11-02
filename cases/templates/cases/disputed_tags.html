@@ -9,6 +9,7 @@
   {% if clips %}
     <div class="scroll">
       <table>
+        <thead><tr><th>{% translate "Clip" %}</th><th>{% translate "Latest proposal" %}</th></tr></thead>
         <tbody>
           {% for clip in clips %}<tr>
             <td class="data"><a href="{% url 'manage:tag_history' clip.clip_id %}">{{ clip.clip_id }}</a></td>

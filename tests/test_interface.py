@@ -117,3 +117,11 @@ def test_each_upload_step_marks_its_own_step(client, video):
 
     assert marked(client.get(reverse('clips:upload')).content.decode()) == ['1']
     assert marked(client.get(start_upload(client, video)).content.decode()) == ['2']
+
+
+def test_every_table_of_records_has_a_header_row():
+    templates = list(settings.BASE_DIR.glob('*/templates/**/*.html')) + list((settings.BASE_DIR / 'templates').glob('**/*.html'))
+    tables = {path: path.read_text().count('<tbody>') for path in templates}
+    headed = {path: path.read_text().count('<thead><tr><th') for path in templates}
+    assert sum(tables.values()) > 0
+    assert {path.name: (tables[path], headed[path]) for path in templates if tables[path] != headed[path]} == {}
