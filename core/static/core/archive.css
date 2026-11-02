@@ -263,10 +263,10 @@ progress { accent-color: var(--ink); width: 100%; max-width: 32rem; }
 /* The code card, made to be screenshotted (SPEC.md §8): the code wraps only at its dashes. */
 .card { border: 2px solid var(--ink); padding: 1.25rem 1.25rem 0.5rem; margin: 1.5rem 0; }
 .card h2 { border: 0; margin-top: 0; }
-.card code { font-size: 1.5rem; letter-spacing: 0.06em; }
+.card code { font-size: 1.5rem; letter-spacing: 0.06em; overflow-wrap: normal; }
 input.code { font-size: 1.125rem; letter-spacing: 0.06em; text-transform: uppercase; }
 
 /* Actions that cannot be undone. */
 .danger-zone { border: 1px solid var(--danger); padding: 0 1rem 1rem; margin-top: 2.5rem; }
-.danger-zone h2 { color: var(--danger); border: 0; }
+.danger-zone h2 { color: var(--danger); border: 0; margin-top: 1rem; }
 
