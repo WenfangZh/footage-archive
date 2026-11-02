@@ -325,4 +325,3 @@ input.year, input.month, input.day, input.time { display: inline-block; width: a
 input.year { width: 4.2rem; }
 input.month, input.day { width: 3.2rem; }
 input.time { width: 7.5rem; }
-

@@ -54,7 +54,12 @@ class TypedDateTimeField(forms.MultiValueField):
     def __init__(self, **kwargs):
         # A time left wholly empty is no time (when the field allows it); one partly empty is
         # refused with the message below.
-        parts = [forms.IntegerField(), forms.IntegerField(), forms.IntegerField(), forms.CharField()]
+        # Bounded here, so that no typed number reaches the date arithmetic below (which
+        # overflows on a huge month or day); the year's range is checked in compress.
+        parts = [
+            forms.IntegerField(), forms.IntegerField(min_value=1, max_value=12),
+            forms.IntegerField(min_value=1, max_value=31), forms.CharField(),
+        ]
         error_messages = {'incomplete': _('Enter the year, month, day and time.')}
         super().__init__(parts, require_all_fields=False, error_messages=error_messages, **kwargs)
 

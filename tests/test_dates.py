@@ -55,6 +55,9 @@ WRONG_TIMES = {
     'impossible': (lambda name: typed_time(name, '2026-02-31T10:00'), 'Enter a date that exists.'),
     'partly empty': (lambda name: {**typed_time(name, '2026-06-15T10:00'), f'{name}_day': ''}, 'Enter the year, month, day and time.'),
     'too early': (lambda name: typed_time(name, '1999-12-31T10:00'), 'Enter a date between 2000 and next year.'),
+    'too late': (lambda name: typed_time(name, '9999-12-31T10:00'), 'Enter a date between 2000 and next year.'),
+    # Once a server error: a number too large for the date arithmetic.
+    'huge month': (lambda name: {**typed_time(name, '2026-06-15T10:00'), f'{name}_month': '9' * 30}, 'Ensure this value is less than or equal to 12.'),
 }
 
 

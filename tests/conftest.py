@@ -138,6 +138,7 @@ def typed_time(name, value):
     year, month, day = date.split('-')
     return {f'{name}_year': year, f'{name}_month': month, f'{name}_day': day, f'{name}_time': time}
 
+
 def admit(profile):
     """Admit an applicant, as the admin does once their bar is verified and someone vouched for them."""
     from accounts.models import LawyerProfile
