@@ -6,7 +6,7 @@ from unittest import mock
 
 from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
-from tests.conftest import log_in_with_second_factor
+from tests.conftest import admit, log_in_with_second_factor, make_lawyer
 
 pytestmark = pytest.mark.django_db
 
@@ -16,18 +16,8 @@ PASSWORD = 'a long test passphrase'
 
 
 @pytest.fixture
-def admin_client():
-    return log_in_with_second_factor(Client(), User.objects.create_superuser('admin@example.org'))
-
-
-@pytest.fixture
 def lawyer():
-    user = User.objects.create_user('lawyer@example.org', PASSWORD, first_name='Camille', last_name='Exemple')
-    profile = LawyerProfile.objects.create(user=user, bar='Paris')
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(Status.LAWYER)
-    return profile
+    return make_lawyer(password=PASSWORD, first_name='Camille', last_name='Exemple')
 
 
 def test_a_suspended_lawyer_sees_nothing_at_once_and_a_reinstated_one_sees_again(admin_client, lawyer):
@@ -92,9 +82,7 @@ def test_reinstating_never_reopens_a_revoked_or_declined_account(admin_client, f
     user = User.objects.create_user(f'{final}@example.org', PASSWORD)
     profile = LawyerProfile.objects.create(user=user, bar='Paris')
     if final == Status.REVOKED:
-        profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-        profile.save()
-        profile.change_status(Status.LAWYER)
+        admit(profile)
     profile.change_status(final)
     user.is_active = False
     user.save()

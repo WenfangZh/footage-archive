@@ -14,7 +14,7 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from cases.models import Case
-from tests.conftest import log_in_with_second_factor, make_case
+from tests.conftest import log_in_with_second_factor, make_case, make_lawyer
 
 pytestmark = pytest.mark.django_db
 
@@ -24,18 +24,8 @@ PASSWORD = 'a long test passphrase'
 
 
 @pytest.fixture
-def admin_client():
-    return log_in_with_second_factor(Client(), User.objects.create_superuser('admin@example.org'))
-
-
-@pytest.fixture
 def lawyer():
-    user = User.objects.create_user('lawyer@example.org', PASSWORD, first_name='Camille', last_name='Exemple')
-    profile = LawyerProfile.objects.create(user=user, bar='Paris')
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(Status.LAWYER)
-    return profile
+    return make_lawyer(password=PASSWORD, first_name='Camille', last_name='Exemple')
 
 
 def revoke(admin_client, profile, email='lawyer@example.org'):
@@ -55,11 +45,7 @@ def test_revocation_closes_all_the_lawyer_s_cases_and_no_one_else_s(admin_client
     earlier = timezone.now()
     already_closed = make_case(lawyer, 'Old case')
     Case.objects.filter(pk=already_closed.pk).close(Case.ClosedBecause.LAWYER, now=earlier)
-    other_user = User.objects.create_user('other@example.org')
-    other = LawyerProfile.objects.create(user=other_user, bar='Lyon')
-    other.verified_via, other.vouched_by = 'The bar directory', 'A defence organisation'
-    other.save()
-    other.change_status(Status.LAWYER)
+    other = make_lawyer('other@example.org')
     others_case = make_case(other, 'Not theirs')
 
     revoke(admin_client, lawyer)
@@ -133,11 +119,7 @@ def test_an_applicant_cannot_be_revoked(admin_client):
 
 def test_confirming_one_revoked_address_does_not_confirm_another(admin_client, lawyer):
     revoke(admin_client, lawyer)
-    other_user = User.objects.create_user('other@example.org', PASSWORD)
-    other = LawyerProfile.objects.create(user=other_user, bar='Lyon')
-    other.verified_via, other.vouched_by = 'The bar directory', 'A defence organisation'
-    other.save()
-    other.change_status(Status.LAWYER)
+    other = make_lawyer('other@example.org', PASSWORD)
     revoke(admin_client, other, 'other@example.org')
     invitation = {'email': 'other@example.org', 'first_name': 'A', 'last_name': 'B', 'bar': 'Paris',
                   'invite_former_address': 'lawyer@example.org'}
@@ -172,10 +154,7 @@ def test_a_lawyer_sees_their_open_cases_only(lawyer):
     open_case = make_case(lawyer, 'Bastille, 15 June')
     closed = make_case(lawyer, 'Closed one')
     Case.objects.filter(pk=closed.pk).close(Case.ClosedBecause.LAWYER)
-    other = LawyerProfile.objects.create(user=User.objects.create_user('other@example.org'), bar='Lyon')
-    other.verified_via, other.vouched_by = 'The bar directory', 'A defence organisation'
-    other.save()
-    other.change_status(Status.LAWYER)
+    other = make_lawyer('other@example.org')
     not_theirs = make_case(other, 'Not theirs')
     page = log_in_with_second_factor(Client(), lawyer.user).get(reverse('lawyer:home')).content.decode()
     case_url = lambda case: reverse('lawyer:case', kwargs={'case_id': case.pk})  # noqa: E731

@@ -19,13 +19,12 @@ from django.test import Client
 from django.urls import reverse
 from nacl.public import SealedBox
 
-from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from cases.models import Case
 from clips import grid, vault
 from clips.models import Clip, VaultFile
 from tests.conftest import (
-    BASTILLE, hand_over, log_in_with_second_factor, make_case, put_vault_file, with_data_key,
+    BASTILLE, hand_over, log_in_with_second_factor, make_case, make_lawyer, put_vault_file, with_data_key,
 )
 
 pytestmark = pytest.mark.django_db
@@ -33,15 +32,6 @@ pytestmark = pytest.mark.django_db
 START = datetime.datetime(2026, 6, 15, 16, tzinfo=datetime.UTC)
 # Three chunks, the last one short, so that ranges near the end cross into the final chunk.
 PLAINTEXT = bytes(range(256)) * (2 * vault.CHUNK_SIZE // 256) + b'the last bytes of the file'
-
-
-def make_lawyer(email):
-    from django.contrib.auth import get_user_model
-    profile = LawyerProfile.objects.create(user=get_user_model().objects.create_user(email), bar='Paris')
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(LawyerProfile.Status.LAWYER)
-    return profile
 
 
 @pytest.fixture

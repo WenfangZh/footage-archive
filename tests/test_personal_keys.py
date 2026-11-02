@@ -17,7 +17,7 @@ from nacl.public import PrivateKey
 
 from accounts.models import LawyerProfile
 from keys.models import ENCRYPTED_PRIVATE_KEY_BYTES, MEMLIMIT, OPSLIMIT, PUBLIC_KEY_BYTES, SALT_BYTES, LawyerKey, safety_number
-from tests.conftest import log_in_with_second_factor, make_key
+from tests.conftest import admit, log_in_with_second_factor, make_key
 
 pytestmark = pytest.mark.django_db
 
@@ -43,9 +43,7 @@ def person(status=Status.APPLICANT, email='camille@example.org'):
     user = User.objects.create_user(email, 'a long test passphrase')
     profile = LawyerProfile.objects.create(user=user, bar='Paris')
     if status in (Status.LAWYER, Status.SUSPENDED, Status.REVOKED):
-        profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-        profile.save()
-        profile.change_status(Status.LAWYER)
+        admit(profile)
     if status != Status.LAWYER and status != Status.APPLICANT:
         profile.change_status(status)
     return profile

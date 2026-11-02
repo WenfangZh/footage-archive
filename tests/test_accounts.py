@@ -7,6 +7,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError
 
 from accounts.models import LawyerProfile
+from tests.conftest import admit
 
 pytestmark = pytest.mark.django_db
 
@@ -18,14 +19,6 @@ PASSWORD = 'a long test passphrase'
 def make_profile(email='applicant@example.org'):
     user = User.objects.create_user(email, PASSWORD)
     return LawyerProfile.objects.create(user=user, bar='Paris')
-
-
-def admit(profile):
-    profile.verified_via = 'The bar directory'
-    profile.vouched_by = 'A defence organisation'
-    profile.save()
-    profile.change_status(Status.LAWYER)
-    return profile
 
 
 def stored_status(profile):

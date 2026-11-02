@@ -10,19 +10,19 @@ import json
 import re
 
 import pytest
-from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 from nacl import bindings
 from nacl.public import PrivateKey, SealedBox
 
-from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from cases.models import Case
 from clips import grid, upload_codes, vault
 from clips.models import Clip, ClipTag, Message
-from tests.conftest import BASTILLE, TEST_CODE, log_in_with_second_factor, make_case, make_key, with_code_holder_key
+from tests.conftest import (
+    BASTILLE, TEST_CODE, log_in_with_second_factor, make_case, make_key, make_lawyer, with_code_holder_key,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -36,10 +36,7 @@ class Lawyer:
     """An admitted lawyer with a confirmed personal key and a case the clip matches, logged in."""
 
     def __init__(self, email, confirmed=True):
-        self.profile = LawyerProfile.objects.create(user=get_user_model().objects.create_user(email), bar='Paris')
-        self.profile.verified_via, self.profile.vouched_by = 'The bar directory', 'A defence organisation'
-        self.profile.save()
-        self.profile.change_status(LawyerProfile.Status.LAWYER)
+        self.profile = make_lawyer(email)
         self.private_key = PrivateKey.generate()
         key = make_key(self.profile, self.private_key)
         if confirmed:

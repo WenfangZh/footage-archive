@@ -2,41 +2,23 @@ import datetime
 from unittest import mock
 
 import pytest
-from django.contrib.auth import get_user_model
 from django.db import connection
 from django.test import Client
 from django.views.debug import ExceptionReporter, SafeExceptionReporterFilter
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
 from cases.models import Case, CaseApproval
 from clips import grid
-from nacl.public import PrivateKey
 
-from tests.conftest import BASTILLE, database_dump, log_in_with_second_factor, make_case, make_key, open_label
+from tests.conftest import BASTILLE, database_dump, log_in_with_second_factor, make_case, make_lawyer, open_label
 
 pytestmark = pytest.mark.django_db
 
-User = get_user_model()
-
-
-def make_lawyer(email):
-    user = User.objects.create_user(email)
-    profile = LawyerProfile.objects.create(user=user, bar='Paris')
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(LawyerProfile.Status.LAWYER)
-    # A real key pair, so that tests can open the labels sealed to it, as the browser does.
-    profile.private_key = PrivateKey.generate()
-    make_key(profile, profile.private_key)
-    return profile
-
-
 @pytest.fixture
 def lawyer():
-    return make_lawyer('lawyer@example.org')
+    return make_lawyer(key=True)
 
 
 @pytest.fixture
@@ -190,7 +172,7 @@ def test_a_bad_place_or_radius_makes_no_cells(lawyer_client, monkeypatch, field,
 
 def test_a_lawyer_sees_only_their_own_cases(lawyer, lawyer_client):
     own = make_case(lawyer, 'Mine')
-    others = make_case(make_lawyer('other@example.org'), 'Not mine')
+    others = make_case(make_lawyer('other@example.org', key=True), 'Not mine')
     assert lawyer_client.get(reverse('lawyer:case', kwargs={'case_id': own.pk})).status_code == 200
     home = lawyer_client.get(reverse('lawyer:home')).content.decode()
     # Labels come encrypted (cases.labels): the links tell which cases are listed.
@@ -230,11 +212,6 @@ def test_a_default_margin_is_bounded(lawyer, lawyer_client):
 # Larger cases (SPEC.md §7): over the size caps, a case waits for the admin's approval.
 
 LARGER = {'starts_at': '2026-06-15T17:00', 'ends_at': '2026-06-15T19:00'}
-
-
-@pytest.fixture
-def admin_client():
-    return log_in_with_second_factor(Client(), User.objects.create_superuser('admin@example.org'))
 
 
 def test_a_case_over_the_caps_with_a_reason_waits_for_approval(lawyer, lawyer_client):

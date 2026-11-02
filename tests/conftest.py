@@ -131,6 +131,44 @@ def log_in_with_second_factor(client, user):
     return client
 
 
+def admit(profile):
+    """Admit an applicant, as the admin does once their bar is verified and someone vouched for them."""
+    from accounts.models import LawyerProfile
+    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
+    profile.save()
+    profile.change_status(LawyerProfile.Status.LAWYER)
+    return profile
+
+
+def make_lawyer(email='lawyer@example.org', password=None, key=False, **user_fields):
+    """An admitted lawyer's profile. With `key`, a personal key from a real key pair, kept as
+    `profile.private_key`, so that a test can open what is sealed to it as the browser does."""
+    from django.contrib.auth import get_user_model
+    from nacl.public import PrivateKey
+
+    from accounts.models import LawyerProfile
+    user = get_user_model().objects.create_user(email, password, **user_fields)
+    profile = LawyerProfile.objects.create(user=user, bar='Paris')
+    admit(profile)
+    if key:
+        profile.private_key = PrivateKey.generate()
+        make_key(profile, profile.private_key)
+    return profile
+
+
+@pytest.fixture
+def admin():
+    from django.contrib.auth import get_user_model
+    return get_user_model().objects.create_superuser('admin@example.org')
+
+
+@pytest.fixture
+def admin_client(admin):
+    """The admin, logged in with a second factor. It replaces pytest-django's admin_client, which has none."""
+    from django.test import Client
+    return log_in_with_second_factor(Client(), admin)
+
+
 def make_key(lawyer_profile, private_key=None):
     """A personal key as a browser would have stored it (keys.views.setup). The server
     cannot tell its encrypted parts from random bytes, so random bytes stand in for them, and

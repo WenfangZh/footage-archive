@@ -13,7 +13,6 @@ from django.utils.http import urlsafe_base64_encode
 
 from accounts.models import LawyerProfile
 from audit.models import Action, AuditEntry
-from tests.conftest import log_in_with_second_factor
 from tests.test_roles import SHUT_OUT, make_account
 
 pytestmark = pytest.mark.django_db
@@ -23,11 +22,6 @@ NEW_PASSWORD = 'a long new passphrase for the archive'
 INVITATION = {
     'email': 'Invited@Example.org', 'first_name': 'Camille', 'last_name': 'Exemple', 'bar': 'Paris',
 }
-
-
-@pytest.fixture
-def admin_client():
-    return log_in_with_second_factor(Client(), User.objects.create_superuser('admin@example.org'))
 
 
 @pytest.fixture

@@ -9,7 +9,7 @@ from accounts.models import LawyerProfile
 from cases.models import Case, CaseApproval, CaseApprovalQuerySet, CaseCell, CaseCellQuerySet
 from cases.size import CaseTooLarge
 from clips import grid
-from tests.conftest import BASTILLE, make_case
+from tests.conftest import BASTILLE, make_case, make_lawyer
 
 pytestmark = pytest.mark.django_db
 
@@ -18,12 +18,7 @@ CENTRE = grid.cell_for_point(*BASTILLE, 11)
 
 @pytest.fixture
 def lawyer():
-    user = get_user_model().objects.create_user('lawyer@example.org')
-    profile = LawyerProfile.objects.create(user=user, bar='Paris')
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(LawyerProfile.Status.LAWYER)
-    return profile
+    return make_lawyer()
 
 
 def test_a_case_keeps_its_time_window_area_and_margin(lawyer):

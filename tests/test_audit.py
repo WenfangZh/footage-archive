@@ -12,16 +12,11 @@ from clips.editing import delete_clip
 from clips.models import Clip, ClipTag
 from keys.grants import current_key
 from keys.models import GroupKey
-from tests.conftest import make_case, rotation_attempt
+from tests.conftest import admit, make_case, rotation_attempt
 
 pytestmark = pytest.mark.django_db
 
 User = get_user_model()
-
-
-@pytest.fixture
-def admin():
-    return User.objects.create_superuser('admin@example.org')
 
 
 @pytest.fixture
@@ -170,9 +165,7 @@ def test_the_admin_can_be_given_as_django_gives_the_logged_in_account(admin, app
 
 @pytest.fixture
 def case(applicant):
-    applicant.verified_via, applicant.vouched_by = 'The bar directory', 'A defence organisation'
-    applicant.save()
-    applicant.change_status(LawyerProfile.Status.LAWYER)
+    admit(applicant)
     return make_case(applicant, 'A case')
 
 

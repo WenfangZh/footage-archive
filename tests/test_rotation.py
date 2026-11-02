@@ -23,7 +23,7 @@ from clips import vault
 from clips.models import Clip, SealedKey
 from keys import grants, recovery, rotation
 from keys.models import GroupKey, KeyGrant, Rotation, RotationAttempt, RotationCheck
-from tests.conftest import log_in_with_second_factor, make_key, with_code_holder_key
+from tests.conftest import log_in_with_second_factor, make_key, make_lawyer, with_code_holder_key
 
 pytestmark = pytest.mark.django_db
 
@@ -40,10 +40,7 @@ def b64(value):
 
 
 def lawyer(name, unlocked_days_ago=0):
-    profile = LawyerProfile.objects.create(user=User.objects.create_user(f'{name}@example.org'), bar='Paris')
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(Status.LAWYER)
+    profile = make_lawyer(f'{name}@example.org')
     key = make_key(profile)
     key.admin_confirmed_at = timezone.now()
     key.last_unlocked_on = timezone.localdate() - datetime.timedelta(days=unlocked_days_ago)
@@ -485,16 +482,15 @@ def test_lawyers_pages_take_part_in_rotations(world):
         assert f'"{reverse("lawyer:" + name)}"' in page
 
 
-def test_the_revoke_page_warns_before_revoking_the_last_holder(settings):
+def test_the_revoke_page_warns_before_revoking_the_last_holder(settings, admin_client):
     settings.LANGUAGE_CODE = 'en'
     key = GroupKey.objects.create(public_key=os.urandom(32))
     only = lawyer('only')
     give(key, only)
-    admin = log_in_with_second_factor(Client(), User.objects.create_superuser('admin@example.org'))
-    page = admin.get(reverse('manage:revoke', args=[only.pk])).content.decode()
+    page = admin_client.get(reverse('manage:revoke', args=[only.pk])).content.decode()
     assert 'the last lawyer holding the group key' in page
     give(key, lawyer('second'))
-    assert 'the last lawyer holding the group key' not in admin.get(reverse('manage:revoke', args=[only.pk])).content.decode()
+    assert 'the last lawyer holding the group key' not in admin_client.get(reverse('manage:revoke', args=[only.pk])).content.decode()
 
 
 def test_a_confirmer_redrawn_after_three_days_checks_the_same_items(world):

@@ -9,7 +9,7 @@ import pytest
 from django.urls import reverse
 
 from accounts.models import LawyerProfile
-from tests.conftest import log_in_with_second_factor, make_key
+from tests.conftest import admit, log_in_with_second_factor, make_key
 from tests.test_roles import ADMIN_AREA, LAWYER_AREA, area_urls, client_for  # noqa: F401 (a fixture)
 
 pytestmark = pytest.mark.django_db
@@ -70,9 +70,7 @@ def test_the_pages_where_a_key_is_set_up_unlocked_or_replaced_may_run_webassembl
         assert policy['script-src'] == ["'self'", WASM], url
     # A lawyer's only: replacing a key that may have been seen.
     profile = user.lawyer_profile
-    profile.verified_via, profile.vouched_by = 'The bar directory', 'A defence organisation'
-    profile.save()
-    profile.change_status(LawyerProfile.Status.LAWYER)
+    admit(profile)
     url = reverse('accounts:key_exposure')
     response = client.get(url)
     assert response.status_code == 200 and directives(response, url)['script-src'] == ["'self'", WASM]
