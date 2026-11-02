@@ -427,6 +427,9 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Dates as 2026-11-01 and times as 2026-11-01 18:42 in both languages (config/formats).
+FORMAT_MODULE_PATH = ['config.formats']
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

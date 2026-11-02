@@ -10,7 +10,7 @@
   {% unlock_form %}
   {% if cases %}
     <ul>
-      {% for case in cases %}<li><a href="{% url 'lawyer:case' case_id=case.pk %}">{% case_label case %}</a>: {{ case.get_closed_because_display }}, {{ case.closed_at|date:"j F Y" }}</li>{% endfor %}
+      {% for case in cases %}<li><a href="{% url 'lawyer:case' case_id=case.pk %}">{% case_label case %}</a>: {{ case.get_closed_because_display }}, {{ case.closed_at|date:"DATE_FORMAT" }}</li>{% endfor %}
     </ul>
   {% else %}
     <p>{% translate "You have no closed cases." %}</p>

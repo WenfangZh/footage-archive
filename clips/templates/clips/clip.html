@@ -85,7 +85,7 @@
   {% for thread in threads %}
     <section>
       <h3>{% blocktranslate with letter=thread.letter %}Lawyer {{ letter }}{% endblocktranslate %}</h3>
-      <p>{% blocktranslate with day=thread.deleted_on|date:"j F Y" %}These messages will be deleted on {{ day }}, unless you or the lawyer write again before then.{% endblocktranslate %}</p>
+      <p>{% blocktranslate with day=thread.deleted_on|date:"DATE_FORMAT" %}These messages will be deleted on {{ day }}, unless you or the lawyer write again before then.{% endblocktranslate %}</p>
       {% if thread.no_longer_has_access %}<p role="note">{% translate "This lawyer no longer has access." %}</p>{% endif %}
       <ol>
         {% for item in thread.messages %}
@@ -93,7 +93,7 @@
           <li>
             <p>
               {% if message.direction == "to_code_holder" %}{% if item.named %}{{ item.named }}{% else %}{% translate "A verified defence lawyer" %}{% endif %}{% else %}{% translate "You" %}{% endif %}{% if message.kind != "message" %}, {{ message.get_kind_display }}{% endif %},
-              {% blocktranslate with day=message.sent_at|date:"j F Y" start=message.sent_at|date:"H:i" %}{{ day }}, in the four hours from {{ start }}{% endblocktranslate %}
+              {% blocktranslate with day=message.sent_at|date:"DATE_FORMAT" start=message.sent_at|date:"TIME_FORMAT" %}{{ day }}, in the four hours from {{ start }}{% endblocktranslate %}
               {% if item.new %}<strong>{% translate "New" %}</strong>{% endif %}
             </p>
             {% if item.text is None %}<p>{% translate "This message could not be opened." %}</p>{% elif item.text %}<p>{{ item.text|linebreaksbr }}</p>{% else %}<p>{% translate "No note." %}</p>{% endif %}

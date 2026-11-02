@@ -20,7 +20,7 @@
             {% endif %}
             {{ event.lawyer.user.first_name }} {{ event.lawyer.user.last_name }}, {{ event.lawyer.bar }} ({{ event.lawyer.user.email|default:event.lawyer.user.former_email }})
           {% else %}
-            {% blocktranslate with day=event.at|date:"j F Y" start=event.at|date:"H:i" %}{{ day }}, in the four hours from {{ start }}: the code holder changed their tags{% endblocktranslate %}
+            {% blocktranslate with day=event.at|date:"DATE_FORMAT" start=event.at|date:"TIME_FORMAT" %}{{ day }}, in the four hours from {{ start }}: the code holder changed their tags{% endblocktranslate %}
           {% endif %}
         </li>
       {% endfor %}

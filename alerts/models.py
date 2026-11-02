@@ -38,6 +38,11 @@ class Alert(models.Model):
     raised_at = models.DateTimeField(default=timezone.now)
     seen_at = models.DateTimeField(null=True, blank=True)
 
+    @property
+    def raised_in_block(self):
+        # Kept only to its 4-hour block (alerts.checks.check_ingest_queue), so shown as one.
+        return self.kind == self.Kind.QUEUE_BACKED_UP
+
 
 class AlertLimitRaise(models.Model):
     """The admin raising one lawyer's limit for an activity alert, for a few days (SPEC.md §7).

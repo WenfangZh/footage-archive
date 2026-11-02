@@ -69,7 +69,7 @@ def test_a_deleted_tag_shows_without_its_name_and_the_code_holders_changes_by_th
     assert 'a tag since deleted' in proposal and 'Barricade' not in proposal
     assert 'the code holder changed their tags' in change
     # 09:00 UTC is 10:00 in Paris, in the block from 08:00 (SPEC.md §6).
-    assert '1 January 2099, in the four hours from 08:00' in change
+    assert '2099-01-01, in the four hours from 08:00' in change
 
 
 def test_another_clips_entries_are_not_in_its_history(admin_client, clip):
