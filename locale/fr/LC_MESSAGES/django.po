@@ -74,7 +74,8 @@ msgstr ""
 msgid "%(name)s is admitted."
 msgstr "%(name)s est admis·e."
 
-#: accounts/invitations.py:38
+#: accounts/invitations.py:38 accounts/templates/accounts/manage_home.html:34
+#: accounts/templates/accounts/manage_home.html:60
 msgid "Email address"
 msgstr "Adresse e-mail"
 
@@ -90,7 +91,8 @@ msgstr "Prénom"
 msgid "Last name"
 msgstr "Nom"
 
-#: accounts/invitations.py:42
+#: accounts/invitations.py:42 accounts/templates/accounts/manage_home.html:34
+#: accounts/templates/accounts/manage_home.html:60
 msgid "Bar"
 msgstr "Barreau"
 
@@ -133,7 +135,7 @@ msgstr "Candidat·e"
 msgid "Declined applicant"
 msgstr "Candidat·e non retenu·e"
 
-#: accounts/models.py:126
+#: accounts/models.py:126 cases/templates/cases/case_requests.html:11
 msgid "Lawyer"
 msgstr "Avocat·e"
 
@@ -319,12 +321,13 @@ msgstr "Envoyer l'invitation"
 
 #: accounts/templates/accounts/lawyer_home.html:4
 #: accounts/templates/accounts/lawyer_home.html:9
-#: cases/templates/cases/case.html:47
-#: cases/templates/cases/closed_cases.html:26 core/navigation.py:14
+#: cases/templates/cases/case.html:48
+#: cases/templates/cases/closed_cases.html:27 core/navigation.py:14
 msgid "Your cases"
 msgstr "Vos dossiers de recherche"
 
 #: accounts/templates/accounts/lawyer_home.html:14
+#: cases/templates/cases/closed_cases.html:14
 msgid "Case"
 msgstr "Dossier de recherche"
 
@@ -385,7 +388,7 @@ msgstr "Il y a eu trop de tentatives de connexion. Réessayez dans une heure."
 #: accounts/templates/accounts/manage_home.html:4
 #: accounts/templates/accounts/manage_home.html:7
 #: alerts/templates/alerts/raise_limit.html:18
-#: cases/templates/cases/case_requests.html:22 core/navigation.py:20
+#: cases/templates/cases/case_requests.html:23 core/navigation.py:20
 msgid "Administration"
 msgstr "Administration"
 
@@ -393,58 +396,79 @@ msgstr "Administration"
 msgid "Alerts"
 msgstr "Alertes"
 
-#: accounts/templates/accounts/manage_home.html:15
+#: accounts/templates/accounts/manage_home.html:12 alerts/views.py:31
+msgid "Alert"
+msgstr "Alerte"
+
+#: accounts/templates/accounts/manage_home.html:12
+#: cases/templates/cases/case.html:39
+msgid "When"
+msgstr "Quand"
+
+#: accounts/templates/accounts/manage_home.html:12
+#: accounts/templates/accounts/manage_home.html:34
+#: accounts/templates/accounts/manage_home.html:60
+#: cases/templates/cases/withdrawn_clips.html:12
+msgid "Actions"
+msgstr "Actions"
+
+#: accounts/templates/accounts/manage_home.html:16
 #: cases/templates/cases/messages.html:22 clips/templates/clips/clip.html:96
 #, python-format
 msgid "%(day)s, in the four hours from %(start)s"
 msgstr "%(day)s, dans les quatre heures à partir de %(start)s"
 
-#: accounts/templates/accounts/manage_home.html:19
+#: accounts/templates/accounts/manage_home.html:20
 msgid "Mark as seen"
 msgstr "Marquer comme vue"
 
-#: accounts/templates/accounts/manage_home.html:29
+#: accounts/templates/accounts/manage_home.html:30
 msgid "Applicants"
 msgstr "Candidat·es"
 
-#: accounts/templates/accounts/manage_home.html:42
+#: accounts/templates/accounts/manage_home.html:34
+#: accounts/templates/accounts/manage_home.html:60
+msgid "Name"
+msgstr "Nom"
+
+#: accounts/templates/accounts/manage_home.html:44
 msgid "Send a new invitation link"
 msgstr "Envoyer un nouveau lien d'invitation"
 
-#: accounts/templates/accounts/manage_home.html:51
+#: accounts/templates/accounts/manage_home.html:53
 msgid "No applicants."
 msgstr "Aucun·e candidat·e."
 
-#: accounts/templates/accounts/manage_home.html:54
+#: accounts/templates/accounts/manage_home.html:56
 msgid "Lawyers' access"
 msgstr "Accès des avocat·es"
 
-#: accounts/templates/accounts/manage_home.html:68
+#: accounts/templates/accounts/manage_home.html:71
 msgid "Suspend access"
 msgstr "Suspendre l'accès"
 
-#: accounts/templates/accounts/manage_home.html:73
+#: accounts/templates/accounts/manage_home.html:76
 msgid "Reinstate access"
 msgstr "Rétablir l'accès"
 
-#: accounts/templates/accounts/manage_home.html:76
+#: accounts/templates/accounts/manage_home.html:79
 #: keys/templates/keys/confirm_key.html:16
 msgid "Confirm their new key"
 msgstr "Confirmer sa nouvelle clé"
 
-#: accounts/templates/accounts/manage_home.html:77
+#: accounts/templates/accounts/manage_home.html:80
 #: alerts/templates/alerts/raise_limit.html:4
 #: alerts/templates/alerts/raise_limit.html:7
 msgid "Raise an alert limit"
 msgstr "Relever un seuil d'alerte"
 
-#: accounts/templates/accounts/manage_home.html:78
+#: accounts/templates/accounts/manage_home.html:81
 #: accounts/templates/accounts/revoke.html:4
 #: accounts/templates/accounts/revoke.html:7
 msgid "Revoke access"
 msgstr "Révoquer l'accès"
 
-#: accounts/templates/accounts/manage_home.html:85
+#: accounts/templates/accounts/manage_home.html:88
 msgid "No lawyers yet."
 msgstr "Aucun·e avocat·e pour l'instant."
 
@@ -695,10 +719,6 @@ msgstr "%(activity)s : %(limit)s, jusqu'au %(until)s"
 #: alerts/templates/alerts/raise_limit.html:16
 msgid "Raise the limit"
 msgstr "Relever le seuil d'alerte"
-
-#: alerts/views.py:31
-msgid "Alert"
-msgstr "Alerte"
 
 #: alerts/views.py:32
 msgid "New limit"
@@ -1331,12 +1351,16 @@ msgstr "Clore ce dossier de recherche"
 msgid "Case log"
 msgstr "Journal du dossier de recherche"
 
-#: cases/templates/cases/case.html:42
+#: cases/templates/cases/case.html:39
+msgid "Event"
+msgstr "Événement"
+
+#: cases/templates/cases/case.html:43
 #, python-format
 msgid "clip %(clip)s"
 msgstr "clip %(clip)s"
 
-#: cases/templates/cases/case.html:42
+#: cases/templates/cases/case.html:43
 #, python-format
 msgid "core matches: %(core)s, margin matches: %(margin)s"
 msgstr ""
@@ -1385,11 +1409,17 @@ msgstr "Décider"
 msgid "Requests for larger cases"
 msgstr "Demandes de dépassement des plafonds"
 
-#: cases/templates/cases/case_requests.html:20
+#: cases/templates/cases/case_requests.html:11
+msgid "Requested on"
+msgstr "Demandé le"
+
+#: cases/templates/cases/case_requests.html:21
 msgid "No requests are waiting."
 msgstr "Aucune demande en attente."
 
 #: cases/templates/cases/clip.html:4 cases/templates/cases/clip.html:13
+#: cases/templates/cases/disputed_tags.html:12
+#: cases/templates/cases/withdrawn_clips.html:12
 msgid "Clip"
 msgstr "Clip"
 
@@ -1479,7 +1509,8 @@ msgstr[1] ""
 msgid "Time"
 msgstr "Heure"
 
-#: cases/templates/cases/clip.html:50 clips/models.py:243
+#: cases/templates/cases/clip.html:50 cases/templates/cases/matches.html:5
+#: clips/models.py:243
 msgid "Stated time"
 msgstr "Heure indiquée"
 
@@ -1496,11 +1527,11 @@ msgstr "non renseigné"
 msgid "Stated time as uploaded"
 msgstr "Heure indiquée telle qu'uploadée"
 
-#: cases/templates/cases/clip.html:53
+#: cases/templates/cases/clip.html:53 cases/templates/cases/matches.html:5
 msgid "Duration"
 msgstr "Durée"
 
-#: cases/templates/cases/clip.html:53 cases/templates/cases/matches.html:8
+#: cases/templates/cases/clip.html:53 cases/templates/cases/matches.html:9
 #, python-format
 msgid "%(seconds)s s"
 msgstr "%(seconds)s s"
@@ -1510,7 +1541,8 @@ msgstr "%(seconds)s s"
 msgid "Place"
 msgstr "Lieu"
 
-#: cases/templates/cases/clip.html:58 clips/models.py:244
+#: cases/templates/cases/clip.html:58 cases/templates/cases/matches.html:5
+#: clips/models.py:244
 msgid "Stated location"
 msgstr "Lieu indiqué"
 
@@ -1718,7 +1750,15 @@ msgstr "Clore le dossier de recherche"
 msgid "Keep it open"
 msgstr "Le garder ouvert"
 
-#: cases/templates/cases/closed_cases.html:24
+#: cases/templates/cases/closed_cases.html:14
+msgid "Reason"
+msgstr "Motif"
+
+#: cases/templates/cases/closed_cases.html:14
+msgid "Closed on"
+msgstr "Clos le"
+
+#: cases/templates/cases/closed_cases.html:25
 msgid "You have no closed cases."
 msgstr "Vous n'avez aucun dossier de recherche clos."
 
@@ -1754,21 +1794,25 @@ msgstr ""
 "Clips sur lesquels un·e avocat·e a proposé d'écarter ou de rétablir une "
 "étiquette, de la proposition la plus récente à la plus ancienne."
 
-#: cases/templates/cases/disputed_tags.html:15
+#: cases/templates/cases/disputed_tags.html:12
+msgid "Latest proposal"
+msgstr "Dernière proposition"
+
+#: cases/templates/cases/disputed_tags.html:16
 #, python-format
 msgid "latest proposal %(at)s"
 msgstr "dernière proposition : %(at)s"
 
-#: cases/templates/cases/disputed_tags.html:21
+#: cases/templates/cases/disputed_tags.html:22
 msgid "No lawyer has proposed removing or restoring a tag."
 msgstr "Aucun·e avocat·e n'a proposé d'écarter ou de rétablir une étiquette."
 
-#: cases/templates/cases/matches.html:9
+#: cases/templates/cases/matches.html:10
 #, python-format
 msgid "about %(width)s m across"
 msgstr "environ %(width)s m de large"
 
-#: cases/templates/cases/matches.html:15
+#: cases/templates/cases/matches.html:16
 msgid "No matches."
 msgstr "Aucune correspondance."
 
@@ -2024,21 +2068,21 @@ msgstr ""
 "les regarder. Vous pouvez en supprimer un : ses empreintes numériques (hash) "
 "sont conservées, ainsi que les entrées du journal d'audit."
 
-#: cases/templates/cases/withdrawn_clips.html:14
+#: cases/templates/cases/withdrawn_clips.html:15
 #, python-format
 msgid "%(clip_id)s, withdrawn %(at)s"
 msgstr "%(clip_id)s, retiré le %(at)s"
 
-#: cases/templates/cases/withdrawn_clips.html:18
+#: cases/templates/cases/withdrawn_clips.html:19
 msgid "Delete this clip for good"
 msgstr "Supprimer ce clip définitivement"
 
-#: cases/templates/cases/withdrawn_clips.html:19
+#: cases/templates/cases/withdrawn_clips.html:20
 #: clips/templates/clips/clip.html:138
 msgid "Delete"
 msgstr "Supprimer"
 
-#: cases/templates/cases/withdrawn_clips.html:27
+#: cases/templates/cases/withdrawn_clips.html:28
 msgid "No clip is withdrawn."
 msgstr "Aucun clip n'est retiré."
 

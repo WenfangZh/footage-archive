@@ -8,6 +8,7 @@
   {% if waiting %}
     <div class="scroll">
       <table>
+        <thead><tr><th>{% translate "Lawyer" %}</th><th>{% translate "Requested on" %}</th></tr></thead>
         <tbody>
           {% for approval in waiting %}<tr>
             <td><a href="{% url 'manage:case_request' approval.pk %}">{{ approval.case.lawyer_profile.user.get_full_name }}</a></td>

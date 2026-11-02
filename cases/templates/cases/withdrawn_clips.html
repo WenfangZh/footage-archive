@@ -9,6 +9,7 @@
   {% if clips %}
     <div class="scroll">
       <table>
+        <thead><tr><th>{% translate "Clip" %}</th><th>{% translate "Actions" %}</th></tr></thead>
         <tbody>
           {% for clip in clips %}<tr>
             <td>{% blocktranslate with clip_id=clip.clip_id at=clip.withdrawn_at|date:"DATETIME_FORMAT" %}{{ clip_id }}, withdrawn {{ at }}{% endblocktranslate %}</td>
