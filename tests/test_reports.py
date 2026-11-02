@@ -76,9 +76,10 @@ def clip():
 
 
 def code_holder_page(clip):
-    # Without the CSRF tokens, which change on every page.
+    # Without the CSRF tokens, which change on every page, and the map pass, a time stamp signed
+    # anew each second (maps.passes).
     content = Client().post(reverse('clips:code_holder'), {'code': TEST_CODE}, headers=ENGLISH).content.decode()
-    return re.sub(r'[A-Za-z0-9]{64}', '', content)
+    return re.sub(r'[A-Za-z0-9]{64}|map\.[\w-]+\.[\w-]+', '', content)
 
 
 def actions():
