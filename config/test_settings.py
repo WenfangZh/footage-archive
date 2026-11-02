@@ -24,3 +24,7 @@ from .settings import *  # noqa: E402,F403
 
 # Tasks run at once, in memory, without a worker.
 HUEY = {**HUEY, 'immediate': True}  # noqa: F405
+
+# Argon2 is slow on purpose, and most tests log someone in: a fast hasher here takes about
+# a third off the suite. The real settings keep Argon2 (tests/test_settings.py checks it).
+PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']

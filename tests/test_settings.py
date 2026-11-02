@@ -12,7 +12,9 @@ from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
 from django.db import connection
+from django.test import override_settings
 
+import config.settings
 from config.settings import env_bool, env_colour, env_int, env_list
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -135,10 +137,12 @@ def test_tests_never_use_the_developer_data_folder():
 
 
 def test_new_passwords_are_hashed_with_argon2():
-    auth_user = get_user_model()(email='someone@example.org')
-    auth_user.set_password('a long test passphrase')
-    assert auth_user.password.startswith('argon2$')
-    assert check_password('a long test passphrase', auth_user.password)
+    # The test settings swap in a fast hasher: check the archive's own settings.
+    with override_settings(PASSWORD_HASHERS=config.settings.PASSWORD_HASHERS):
+        auth_user = get_user_model()(email='someone@example.org')
+        auth_user.set_password('a long test passphrase')
+        assert auth_user.password.startswith('argon2$')
+        assert check_password('a long test passphrase', auth_user.password)
 
 
 @pytest.mark.parametrize('value, expected', [
