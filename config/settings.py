@@ -83,6 +83,11 @@ DEBUG = env_bool('DJANGO_DEBUG', default=False)
 # With DEBUG on and this list empty, Django still allows localhost.
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS')
 
+# Behind a proxy that ends TLS, every request reaches Django as plain HTTP; trust the proxy's
+# word for it, and only where .env.example's conditions hold (SPEC.md §12 M8.6).
+if env_bool('DJANGO_BEHIND_TLS_PROXY'):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Local runtime data: the SQLite database and stored media (gitignored).
 DATA_DIR = Path(os.environ.get('DJANGO_DATA_DIR') or BASE_DIR / 'var')
 DATA_DIR.mkdir(parents=True, exist_ok=True)

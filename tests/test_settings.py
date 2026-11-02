@@ -219,3 +219,31 @@ def test_a_tag_colour_must_be_rrggbb(monkeypatch, value):
     monkeypatch.setenv('SOME_COLOUR', value)
     with pytest.raises(ImproperlyConfigured, match='#rrggbb'):
         env_colour('SOME_COLOUR', '#0072b2')
+
+
+def proxy_header(**variables):
+    script = 'import config.settings as s; print(getattr(s, "SECURE_PROXY_SSL_HEADER", None))'
+    return subprocess.run(
+        [sys.executable, '-c', script], cwd=BASE_DIR, env={**os.environ, **variables}, capture_output=True, text=True,
+    ).stdout.strip()
+
+
+def test_the_proxys_word_on_https_is_trusted_only_when_configured():
+    # SPEC.md §12 M8.6: off by default, so that development works.
+    assert proxy_header(DJANGO_BEHIND_TLS_PROXY='') == 'None'
+    assert proxy_header(DJANGO_BEHIND_TLS_PROXY='true') == "('HTTP_X_FORWARDED_PROTO', 'https')"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('behind_proxy', [True, False])
+def test_a_request_the_proxy_marks_as_https_counts_as_secure_only_behind_it(client, settings, behind_proxy):
+    from tests.conftest import log_in_with_second_factor, make_lawyer
+    if behind_proxy:
+        settings.SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    marked = {'HTTP_X_FORWARDED_PROTO': 'https'}
+    cookie = client.post('/theme/', {'theme': 'dark', 'next': '/'}, **marked).cookies['theme']
+    assert bool(cookie['secure']) == behind_proxy
+    log_in_with_second_factor(client, make_lawyer().user)
+    style = client.get('/lawyer/map/style.json', **marked).json()
+    scheme = 'https' if behind_proxy else 'http'
+    assert style['glyphs'].startswith(f'{scheme}://') and style['sources']['protomaps']['url'].startswith(f'pmtiles://{scheme}://')
