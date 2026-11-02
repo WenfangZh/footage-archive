@@ -4,7 +4,7 @@ This is a learning build (README.md): it holds no real footage and has no real u
 
 ## Licence of contributions
 
-A contribution is licensed under the licence of the files it changes: the GNU Affero General Public License, version 3 or any later version, for code, and Creative Commons Attribution 4.0 for the documentation (README.md, Licence). GitHub's terms of service already say so (section D.6). There is no contributor licence agreement and no sign-off line: you keep the copyright in what you contribute.
+A contribution is licensed under the licence of the files it changes: the GNU Affero General Public License, version 3 or (at your option) any later version, for code, and Creative Commons Attribution 4.0 for the documentation, the Markdown files (README.md, Licence). GitHub's terms of service already say so (section D.6). There is no contributor licence agreement and no sign-off line: you keep the copyright in what you contribute.
 
 You may contribute under a pseudonym. Commits are public and permanent, so leave out anything that identifies you that you don't want there, including your email address: GitHub can give you a `noreply` address for commits.
 

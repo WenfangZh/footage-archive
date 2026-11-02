@@ -159,7 +159,7 @@ All tests should pass. `manage.py` refuses to start if ffmpeg or ffprobe is miss
 Copyright 2026 the footage-archive contributors.
 
 - The code is free software: you can redistribute it and change it under the GNU Affero General Public License, version 3 or (at your option) any later version ([LICENSE](LICENSE)). Whoever runs a changed copy for others must offer them its source: set `SOURCE_URL` to where it can be had, and the archive's licences page links to it.
-- The documentation (README.md, SPEC.md, GLOSSARY.md, CLAUDE.md, THIRD_PARTY_NOTICES.md and docs/) is under Creative Commons Attribution 4.0 ([LICENSE-docs](LICENSE-docs)).
+- The documentation, its Markdown files (this README, SPEC.md, GLOSSARY.md, CLAUDE.md, CONTRIBUTING.md, THIRD_PARTY_NOTICES.md, docs/ and the READMEs in other folders), is under Creative Commons Attribution 4.0 ([LICENSE-docs](LICENSE-docs)).
 - Third-party libraries, the map's style, its data and its fonts keep their own licences, listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 [ADR 0010](docs/adr/0010-agpl-code-cc-by-docs.md) says why.
