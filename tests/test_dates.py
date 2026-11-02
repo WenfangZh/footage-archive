@@ -58,6 +58,8 @@ WRONG_TIMES = {
     'too late': (lambda name: typed_time(name, '9999-12-31T10:00'), 'Enter a date between 2000 and next year.'),
     # Once a server error: a number too large for the date arithmetic.
     'huge month': (lambda name: {**typed_time(name, '2026-06-15T10:00'), f'{name}_month': '9' * 30}, 'Ensure this value is less than or equal to 12.'),
+    'huge day': (lambda name: {**typed_time(name, '2026-06-15T10:00'), f'{name}_day': '9' * 30}, 'Ensure this value is less than or equal to 31.'),
+    'huge year': (lambda name: {**typed_time(name, '2026-06-15T10:00'), f'{name}_year': '9' * 30}, 'Enter a date between 2000 and next year.'),
 }
 
 
