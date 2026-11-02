@@ -2,6 +2,7 @@
 choice, without a script; the cookie holds only the choice."""
 
 import pytest
+from django.test import Client
 from django.urls import reverse
 
 pytestmark = pytest.mark.django_db
@@ -37,5 +38,13 @@ def test_an_unknown_cookie_value_counts_as_the_systems_choice(client):
     assert 'value="system" aria-current="true" disabled' in page
 
 
-def test_the_switch_returns_only_to_a_page_of_the_archive(client):
-    assert choose(client, 'dark', back_to='https://elsewhere.example/')['Location'] == '/'
+@pytest.mark.parametrize('elsewhere', ['https://elsewhere.example/', '//elsewhere.example/', '\\\\elsewhere.example', 'javascript:alert(1)'])
+def test_the_switch_returns_only_to_a_page_of_the_archive(client, elsewhere):
+    assert choose(client, 'dark', back_to=elsewhere)['Location'] == '/'
+
+
+def test_the_switch_takes_only_a_form_with_its_token():
+    client = Client(enforce_csrf_checks=True)
+    refused = client.post(reverse('set_theme'), {'theme': 'dark', 'next': '/'})
+    assert refused.status_code == 403 and 'CSRF' in refused.content.decode()
+    assert client.get(reverse('set_theme')).status_code == 405
