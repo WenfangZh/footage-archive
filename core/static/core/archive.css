@@ -274,8 +274,8 @@ input.code { font-size: 1.125rem; letter-spacing: 0.06em; text-transform: upperc
 /* A row of links to a page's other actions. */
 .actions { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; }
 
-/* A short status next to a record. */
-.tag {
+/* A short status next to a record (not a clip's tag). */
+.status {
   font-family: var(--mono);
   font-size: 0.75rem;
   border: 1px solid var(--muted);
