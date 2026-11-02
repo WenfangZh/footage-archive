@@ -40,8 +40,8 @@ def assert_strict(policy, url):
 
 
 def assert_styled(response, url):
-    """The site stylesheet and no inline style; the archive's name and the language switch in
-    the header, and the licences page in the footer (M8)."""
+    """The site stylesheet and no inline style; the archive's name and the language and theme
+    switches in the header, and the licences page in the footer (M8, M8.5)."""
     # Only pages: redirects, refusals of a method and JSON have nothing to style.
     if response.status_code != 200 or not response['Content-Type'].startswith('text/html'):
         return
@@ -51,6 +51,7 @@ def assert_styled(response, url):
     header, footer = page.split('<main>')[0], page.split('</main>')[1]
     assert f'class="site-name" href="{reverse("home")}"' in header, url
     assert f'action="{reverse("set_language")}"' in header, url
+    assert f'formaction="{reverse("set_theme")}"' in header, url
     assert f'href="{reverse("licences")}"' in footer, url
 
 

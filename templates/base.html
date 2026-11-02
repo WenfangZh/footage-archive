@@ -1,6 +1,6 @@
 {% load i18n static %}<!doctype html>
 {% get_current_language as LANGUAGE_CODE %}
-<html lang="{{ LANGUAGE_CODE }}">
+<html lang="{{ LANGUAGE_CODE }}"{% if theme %} data-theme="{{ theme }}"{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -29,6 +29,12 @@
             {{ language.name_local|capfirst }}
           </button>
         {% endfor %}
+        {# The theme switch shares the form, so that both return to the same page (core/theme.py). #}
+        <span class="theme-switch">
+          <button type="submit" formaction="{% url 'set_theme' %}" name="theme" value="light"{% if theme == 'light' %} aria-current="true" disabled{% endif %}>{% translate "Light" %}</button>
+          <button type="submit" formaction="{% url 'set_theme' %}" name="theme" value="dark"{% if theme == 'dark' %} aria-current="true" disabled{% endif %}>{% translate "Dark" %}</button>
+          <button type="submit" formaction="{% url 'set_theme' %}" name="theme" value="system"{% if not theme %} aria-current="true" disabled{% endif %}>{% translate "System" %}</button>
+        </span>
       </form>
       {% endblock %}
       {% if user.is_authenticated %}

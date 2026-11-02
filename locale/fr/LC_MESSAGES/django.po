@@ -1000,11 +1000,11 @@ msgstr "Heure française, comme dans le procès-verbal."
 msgid "End of the time window"
 msgstr "Fin de la plage horaire"
 
-#: cases/forms.py:65 clips/forms.py:158
+#: cases/forms.py:65 clips/forms.py:163
 msgid "Latitude"
 msgstr "Latitude"
 
-#: cases/forms.py:69 clips/forms.py:162
+#: cases/forms.py:69 clips/forms.py:167
 msgid "Longitude"
 msgstr "Longitude"
 
@@ -1656,7 +1656,7 @@ msgstr ""
 msgid "Send the report"
 msgstr "Envoyer le signalement de clip"
 
-#: cases/templates/cases/clip.html:121 clips/forms.py:178 clips/models.py:246
+#: cases/templates/cases/clip.html:121 clips/forms.py:183 clips/models.py:246
 #: clips/models.py:293
 msgid "Context"
 msgstr "Contexte"
@@ -2135,65 +2135,65 @@ msgstr "Jour"
 msgid "DD"
 msgstr "JJ"
 
-#: clips/forms.py:58
+#: clips/forms.py:63
 msgid "Enter the year, month, day and time."
 msgstr "Indiquez l'année, le mois, le jour et l'heure."
 
-#: clips/forms.py:67
+#: clips/forms.py:72
 msgid "Enter the time as hours and minutes, such as 18:42."
 msgstr "Indiquez l'heure en heures et minutes, par exemple 18:42."
 
-#: clips/forms.py:69
+#: clips/forms.py:74
 #, python-format
 msgid "Enter a date between %(first)s and next year."
 msgstr "Saisissez une date entre %(first)s et l'an prochain."
 
-#: clips/forms.py:73
+#: clips/forms.py:78
 msgid "Enter a date that exists."
 msgstr "Indiquez une date qui existe."
 
-#: clips/forms.py:78
+#: clips/forms.py:83
 msgid "About 50 m"
 msgstr "Environ 50 m"
 
-#: clips/forms.py:79
+#: clips/forms.py:84
 msgid "About 130 m"
 msgstr "Environ 130 m"
 
-#: clips/forms.py:80
+#: clips/forms.py:85
 msgid "About 340 m"
 msgstr "Environ 340 m"
 
-#: clips/forms.py:101
+#: clips/forms.py:106
 msgid "The place painted on the map could not be read. Paint it again."
 msgstr ""
 "Le lieu colorié sur la carte n'a pas pu être lu. Coloriez-le à nouveau."
 
-#: clips/forms.py:102
+#: clips/forms.py:107
 msgid "The place painted on the map is too large."
 msgstr "Le lieu colorié sur la carte est trop grand."
 
-#: clips/forms.py:133
+#: clips/forms.py:138
 msgid "Video"
 msgstr "Vidéo"
 
-#: clips/forms.py:153
+#: clips/forms.py:158
 msgid "When was it filmed?"
 msgstr "Quand la vidéo a-t-elle été filmée ?"
 
-#: clips/forms.py:166
+#: clips/forms.py:171
 msgid "How precise is this place?"
 msgstr "Quelle est la précision de ce lieu ?"
 
-#: clips/forms.py:170
+#: clips/forms.py:175
 msgid "What can be seen?"
 msgstr "Que voit-on dans la vidéo ?"
 
-#: clips/forms.py:174
+#: clips/forms.py:179
 msgid "Other tags, separated by commas"
 msgstr "Autres étiquettes, séparées par des virgules"
 
-#: clips/forms.py:180
+#: clips/forms.py:185
 msgid ""
 "What happened, and anything a lawyer should know. Leave out names, and "
 "addresses more precise than the place above."
@@ -2201,55 +2201,55 @@ msgstr ""
 "Ce qui s'est passé, et tout ce qu'un·e avocat·e devrait savoir. N'indiquez "
 "pas de noms, ni d'adresse plus précise que le lieu ci-dessus."
 
-#: clips/forms.py:185
+#: clips/forms.py:190
 msgid "Contact details or social media handle"
 msgstr "Moyen de contact ou pseudonyme sur un réseau social"
 
-#: clips/forms.py:197
+#: clips/forms.py:202
 #, python-format
 msgid "Each tag can be at most %(length)d characters."
 msgstr "Chaque étiquette peut compter au plus %(length)d caractères."
 
-#: clips/forms.py:203
+#: clips/forms.py:208
 #, python-format
 msgid "At most %(count)d other tags."
 msgstr "Au plus %(count)d autres étiquettes."
 
-#: clips/forms.py:215
+#: clips/forms.py:220
 msgid "Give both the latitude and the longitude, or neither."
 msgstr "Indiquez la latitude et la longitude, ou aucune des deux."
 
-#: clips/forms.py:217
+#: clips/forms.py:222
 msgid "Say how precise this place is."
 msgstr "Indiquez la précision de ce lieu."
 
-#: clips/forms.py:225
+#: clips/forms.py:230
 #, python-format
 msgid "The place painted on the map is more than %(metres)d m across."
 msgstr "Le lieu colorié sur la carte fait plus de %(metres)d m de large."
 
-#: clips/forms.py:235
+#: clips/forms.py:240
 msgid "How precisely may we keep the GPS position found in the video?"
 msgstr ""
 "Avec quelle précision pouvons-nous garder la position GPS trouvée dans la "
 "vidéo ?"
 
-#: clips/forms.py:252
+#: clips/forms.py:257
 msgid "Remove the place"
 msgstr "Retirer le lieu"
 
-#: clips/forms.py:253
+#: clips/forms.py:258
 msgid "No lawyer can find the clip until you give a place again."
 msgstr ""
 "Aucun·e avocat·e ne peut trouver le clip tant que vous n'indiquez pas à "
 "nouveau un lieu."
 
-#: clips/forms.py:256
+#: clips/forms.py:261
 msgid "How precisely we keep the GPS position found in the video"
 msgstr ""
 "Précision avec laquelle nous gardons la position GPS trouvée dans la vidéo"
 
-#: clips/forms.py:288 clips/templates/clips/clip.html:112
+#: clips/forms.py:293 clips/templates/clips/clip.html:112
 msgid "Your reply"
 msgstr "Votre réponse"
 
@@ -2892,11 +2892,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:418
+#: config/settings.py:419
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:419
+#: config/settings.py:420
 msgid "English"
 msgstr "Anglais"
 
@@ -3493,11 +3493,23 @@ msgstr "%(name)s a maintenant la clé commune."
 msgid "Footage archive"
 msgstr "Archive de vidéos"
 
-#: templates/base.html:37
+#: templates/base.html:34
+msgid "Light"
+msgstr "Clair"
+
+#: templates/base.html:35
+msgid "Dark"
+msgstr "Sombre"
+
+#: templates/base.html:36
+msgid "System"
+msgstr "Système"
+
+#: templates/base.html:43
 msgid "Log out"
 msgstr "Se déconnecter"
 
-#: templates/base.html:51 templates/licences.html:4 templates/licences.html:7
+#: templates/base.html:57 templates/licences.html:4 templates/licences.html:7
 msgid "Licences and source code"
 msgstr "Licences et code source"
 
