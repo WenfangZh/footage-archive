@@ -1,11 +1,13 @@
 """Every page tells the browser to load nothing from elsewhere and run no inline code, and
 only lawyer pages may run WebAssembly, for libsodium.js (SPEC.md §12 M5, ADR 0006, ADR 0007).
+Every page is styled by the site stylesheet alone, with no inline style (M8).
 
 Lawyer and admin pages are found by walking the URL configuration, as in test_roles.py, so
 pages added later are checked too.
 """
 
 import pytest
+from django.templatetags.static import static
 from django.urls import reverse
 
 from accounts.models import LawyerProfile
@@ -37,10 +39,27 @@ def assert_strict(policy, url):
             assert source in {"'self'", "'none'", WASM} or (name == 'img-src' and source in {'data:', 'blob:'}), (url, name, source)
 
 
+def assert_styled(response, url):
+    """The site stylesheet and no inline style; the archive's name and the language switch in
+    the header, and the licences page in the footer (M8)."""
+    # Only pages: redirects, refusals of a method and JSON have nothing to style.
+    if response.status_code != 200 or not response['Content-Type'].startswith('text/html'):
+        return
+    page = response.content.decode()
+    assert f'<link rel="stylesheet" href="{static("core/archive.css")}">' in page, url
+    assert '<style' not in page and ' style=' not in page, url
+    header, footer = page.split('<main>')[0], page.split('</main>')[1]
+    assert f'class="site-name" href="{reverse("home")}"' in header, url
+    assert f'action="{reverse("set_language")}"' in header, url
+    assert f'href="{reverse("licences")}"' in footer, url
+
+
 def test_every_lawyer_page_may_run_webassembly(client_for):
     client = client_for('lawyer')
     for url in area_urls(LAWYER_AREA):
-        policy = directives(client.get(url), url)
+        response = client.get(url)
+        assert_styled(response, url)
+        policy = directives(response, url)
         assert_strict(policy, url)
         assert policy['script-src'] == ["'self'", WASM], url
 
@@ -52,7 +71,9 @@ def test_no_other_page_may_run_webassembly(client_for, client, kind):
         reverse('home'), reverse('clips:upload'), reverse('clips:code_holder'), reverse('accounts:login'),
     ]
     for url in urls:
-        policy = directives(client.get(url), url)
+        response = client.get(url)
+        assert_styled(response, url)
+        policy = directives(response, url)
         assert_strict(policy, url)
         assert WASM not in policy.get('script-src', []), url
 
