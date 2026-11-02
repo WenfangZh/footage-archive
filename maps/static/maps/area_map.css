@@ -13,6 +13,9 @@
   bottom: 0;
   margin: 0;
   padding: 0 0.3rem;
-  background: rgb(255 255 255 / 80%);
+  /* The site's colours (core/archive.css), so the credit stays readable in the dark theme too. */
+  background: var(--paper);
+  background: color-mix(in srgb, var(--paper) 85%, transparent);
+  color: var(--ink);
   font-size: 0.75rem;
 }
