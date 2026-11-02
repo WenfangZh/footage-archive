@@ -22,10 +22,10 @@
   </section>
   {# Shown by clips/static/clips/copy_code.js where the browser can copy; below the card, so that one screenshot still holds the code and its label. #}
   <p id="copy-code-line" hidden>
-    <button type="button" id="copy-code" data-copied="{% translate 'Copied.' %}">{% translate "Copy the code" %}</button>
+    <button type="button" id="copy-code" data-copied="{% translate 'Copied.' %}" data-failed="{% translate 'Could not copy. Select the code and copy it by hand.' %}">{% translate "Copy the code" %}</button>
     <span class="helptext">{% translate "Some phones share what you copy with your other devices or with keyboard apps. Anyone who has the code can read the clip's messages and delete it." %}</span>
+    <span id="copy-code-status" role="status"></span>
   </p>
-  <p id="copy-code-status" role="status"></p>
 
   <p>{% translate "With this code you can come back to change the clip's details, delete the clip, and read messages from lawyers." %}</p>
   <p><strong>{% translate "Anyone who finds this card can read the clip's messages and delete it." %}</strong></p>

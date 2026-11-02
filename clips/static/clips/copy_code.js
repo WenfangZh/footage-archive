@@ -7,8 +7,12 @@ const code = document.querySelector('.card code');
 if (navigator.clipboard) {
   line.hidden = false;
   button.addEventListener('click', () => {
-    navigator.clipboard.writeText(code.textContent.trim()).then(() => {
-      status.textContent = button.dataset.copied;
-    });
+    // Emptied first, so that a second click is announced again.
+    status.textContent = '';
+    navigator.clipboard.writeText(code.textContent.trim()).then(
+      () => { status.textContent = button.dataset.copied; },
+      // The code is shown only once: never leave a refusal unsaid.
+      () => { status.textContent = button.dataset.failed; },
+    );
   });
 }

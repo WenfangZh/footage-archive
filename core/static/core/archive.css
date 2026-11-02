@@ -319,4 +319,3 @@ ol.thread p { margin: 0.25rem 0; }
 /* The upload's steps, the current one marked. */
 ol.steps { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.25rem 1.5rem; font-family: var(--mono); font-size: 0.875rem; color: var(--muted); }
 ol.steps [aria-current] { color: var(--ink); border-bottom: 1px solid var(--ink); }
-

@@ -103,7 +103,7 @@ def test_nobody_else_gets_links_to_role_pages(client_for, client, kind):
 ])
 def test_the_front_page_offers_three_paths_with_what_each_leads_to(client, language, descriptions):
     page = client.get(reverse('home'), HTTP_ACCEPT_LANGUAGE=language).content.decode()
-    paths = re.findall(r'<li><a href="([^"]+)">', page)
+    paths = re.findall(r'<li><a href="([^"]+)"', page)
     assert paths == [reverse('clips:upload'), reverse('clips:code_holder'), reverse('accounts:login')]
     for description in descriptions:
         assert description in page

@@ -5,11 +5,11 @@
   <h1>{% translate "Footage archive" %}</h1>
   <p>{% translate "Learning build: not deployed, not for real footage." %}</p>
   <ul class="paths">
-    <li><a href="{% url 'clips:upload' %}"><strong>{% translate "Upload a video" %}</strong>
-      <span>{% translate "No account needed. You get an upload code, shown once, to come back with." %}</span></a></li>
-    <li><a href="{% url 'clips:code_holder' %}"><strong>{% translate "Come back with your upload code" %}</strong>
-      <span>{% translate "Change your clip's details, read lawyers' messages, or delete the clip." %}</span></a></li>
-    <li><a href="{% url 'accounts:login' %}"><strong>{% translate "Defence lawyers: log in" %}</strong>
-      <span>{% translate "With your password and the code from your authenticator app." %}</span></a></li>
+    <li><a href="{% url 'clips:upload' %}" aria-labelledby="path-1" aria-describedby="path-1-what"><strong id="path-1">{% translate "Upload a video" %}</strong>
+      <span id="path-1-what">{% translate "No account needed. You get an upload code, shown once, to come back with." %}</span></a></li>
+    <li><a href="{% url 'clips:code_holder' %}" aria-labelledby="path-2" aria-describedby="path-2-what"><strong id="path-2">{% translate "Come back with your upload code" %}</strong>
+      <span id="path-2-what">{% translate "Change your clip's details, read lawyers' messages, or delete the clip." %}</span></a></li>
+    <li><a href="{% url 'accounts:login' %}" aria-labelledby="path-3" aria-describedby="path-3-what"><strong id="path-3">{% translate "Defence lawyers: log in" %}</strong>
+      <span id="path-3-what">{% translate "With your password and the code from your authenticator app." %}</span></a></li>
   </ul>
 {% endblock %}
