@@ -5,7 +5,7 @@
 // pmtiles and h3 are the globals of the two classic scripts loaded before this one.
 
 import * as maplibregl from './vendor/maplibre-gl.mjs';
-import { showGrid, spanMetres } from './cells.js';
+import { showGrid, showPicked, spanMetres, styleUrl } from './cells.js';
 
 // Below this zoom a cell is a few pixels wide: too small to pick on purpose.
 const PICKING_ZOOM = 14;
@@ -72,7 +72,7 @@ function start() {
   maplibregl.addProtocol('pmtiles', new pmtiles.Protocol().tile);
   map = new maplibregl.Map({
     container: box.querySelector('.area-map-canvas'),
-    style: box.dataset.styleUrl,
+    style: styleUrl(box),
     center: [2.35, 48.86],
     zoom: 11,
     maxZoom: 19,
@@ -99,9 +99,7 @@ function start() {
 
   map.on('load', () => {
     showGrid(map, resolution, PICKING_ZOOM);
-    map.addSource('picked', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    map.addLayer({ id: 'picked-fill', type: 'fill', source: 'picked', paint: { 'fill-color': '#d9480f', 'fill-opacity': 0.35 } });
-    map.addLayer({ id: 'picked-outline', type: 'line', source: 'picked', paint: { 'line-color': '#d9480f', 'line-width': 1 } });
+    showPicked(map);
     cellsChanged();
   });
   map.on('zoomend', showSize);

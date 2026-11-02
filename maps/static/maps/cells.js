@@ -2,13 +2,42 @@
 // stated location (clips/static/clips/location_map.js, M6.6). h3 is the global of the classic
 // script loaded before either.
 
+// What is drawn over the map, in each theme (SPEC.md §12 M8.6). On the dark map the picked
+// cells' outline and the grid meet 3:1 against land and water; the fill is only a tint
+// (tests/test_map_page.py reads these colours).
+const COLOURS = {
+  light: { picked: '#d9480f', grid: '#333333', gridOpacity: 0.25 },
+  dark: { picked: '#ff8c42', grid: '#c8c8c8', gridOpacity: 0.5 },
+};
+
+// The theme chosen with the header's switch, or else the system's, as the map loads.
+function theme() {
+  const chosen = document.documentElement.dataset.theme;
+  if (chosen === 'light' || chosen === 'dark') return chosen;
+  return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+// The map's style for that theme: its two URLs are on the map's box.
+export function styleUrl(box) {
+  return theme() === 'dark' ? box.dataset.styleDarkUrl : box.dataset.styleUrl;
+}
+
+// The picked cells: a tint, and an outline that marks each one.
+export function showPicked(map) {
+  const { picked } = COLOURS[theme()];
+  map.addSource('picked', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  map.addLayer({ id: 'picked-fill', type: 'fill', source: 'picked', paint: { 'fill-color': picked, 'fill-opacity': 0.35 } });
+  map.addLayer({ id: 'picked-outline', type: 'line', source: 'picked', paint: { 'line-color': picked, 'line-width': 1 } });
+}
+
 // A faint grid of the cells that can be picked, drawn once the map is zoomed in to `fromZoom`,
 // where a cell is large enough to pick, so that a cell's size shows before any is picked. With
 // more cells than `limit` in view, none is drawn.
 export function showGrid(map, resolution, fromZoom, limit = 8000) {
   const empty = { type: 'FeatureCollection', features: [] };
   map.addSource('grid', { type: 'geojson', data: empty });
-  map.addLayer({ id: 'grid', type: 'line', source: 'grid', paint: { 'line-color': '#333', 'line-opacity': 0.25, 'line-width': 0.5 } });
+  const { grid, gridOpacity } = COLOURS[theme()];
+  map.addLayer({ id: 'grid', type: 'line', source: 'grid', paint: { 'line-color': grid, 'line-opacity': gridOpacity, 'line-width': 0.5 } });
   const draw = () => {
     if (map.getZoom() < fromZoom) {
       map.getSource('grid').setData(empty);

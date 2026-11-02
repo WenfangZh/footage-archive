@@ -41,9 +41,10 @@ def test_with_a_pass_anyone_gets_the_style_tiles_and_fonts(map_dir):  # noqa: F8
     assert b''.join(client.get(glyphs_url).streaming_content) == b'glyphs'
 
 
-def test_the_style_points_only_to_this_archive_and_the_same_pass(map_dir):  # noqa: F811
+@pytest.mark.parametrize('name', ['maps:style', 'maps:style_dark'])
+def test_each_style_points_only_to_this_archive_and_the_same_pass(map_dir, name):  # noqa: F811
     map_pass = passes.issue()
-    style = Client().get(urls(map_pass)[0]).content.decode()
+    style = Client().get(reverse(name, kwargs={'map_pass': map_pass})).content.decode()
 
     found = re.findall(r'[a-z]+://[^"\s]+', style)
     assert found and all(url.removeprefix('pmtiles://').startswith(f'http://testserver/map/{map_pass}/') for url in found)

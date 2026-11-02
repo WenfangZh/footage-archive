@@ -1,14 +1,15 @@
 """Where the map's data lives (M4.5, ADR 0006): one PMTiles file and the fonts, in settings.MAP_DIR.
 
 Both are downloaded by `python manage.py fetch_map_data` and kept out of git. The style is
-small and lives in the code, beside this file.
+small and lives in the code, beside this file, in a light and a dark flavour.
 """
 
 from pathlib import Path
 
 from django.conf import settings
 
-STYLE_FILE = Path(__file__).with_name('style.json')
+# The light style, and the dark one for the dark theme (M8.6).
+STYLE_FILES = {'light': Path(__file__).with_name('style.json'), 'dark': Path(__file__).with_name('style-dark.json')}
 # Where every route for the map's data starts, a lawyer's (accounts.urls) or a pass's (maps.urls),
 # as maps.logs drops their log records.
 URL_PREFIXES = ('/lawyer/map/', '/map/')
