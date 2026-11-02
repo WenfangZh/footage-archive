@@ -12,14 +12,14 @@
     {% for thread in threads %}
       <section id="thread-{{ thread.clip_id }}">
         <h2>{% blocktranslate with clip_id=thread.clip_id %}Clip {{ clip_id }}{% endblocktranslate %}</h2>
-        <p role="note">{% blocktranslate with day=thread.deleted_on|date:"j F Y" %}This thread will be deleted on {{ day }}, unless you or the code holder write again before then. Save what you need into your own records.{% endblocktranslate %}</p>
+        <p role="note">{% blocktranslate with day=thread.deleted_on|date:"DATE_FORMAT" %}This thread will be deleted on {{ day }}, unless you or the code holder write again before then. Save what you need into your own records.{% endblocktranslate %}</p>
         <ol class="thread">
           {% for item in thread.messages %}
             {% with message=item.message %}
             <li>
               <p>
                 {% if message.direction == "to_code_holder" %}{% translate "You" %}{% else %}{% translate "The code holder" %}{% endif %}{% if message.kind != "message" %}, {{ message.get_kind_display }}{% endif %},
-                {% blocktranslate with day=message.sent_at|date:"j F Y" start=message.sent_at|date:"H:i" %}{{ day }}, in the four hours from {{ start }}{% endblocktranslate %}{% if message.direction == "to_code_holder" %},
+                {% blocktranslate with day=message.sent_at|date:"DATE_FORMAT" start=message.sent_at|date:"TIME_FORMAT" %}{{ day }}, in the four hours from {{ start }}{% endblocktranslate %}{% if message.direction == "to_code_holder" %},
                 {% if message.identified %}{% translate "with your name and bar" %}{% else %}{% translate "as a verified defence lawyer" %}{% endif %}{% endif %}
                 {% if item.new %}<strong>{% translate "New" %}</strong>{% endif %}
               </p>

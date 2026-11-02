@@ -96,7 +96,7 @@ def test_a_lawyer_sees_a_matching_clip_with_its_values(case, clip, lawyer_client
         'Stated time: ', 'in the four hours from', '42 s', 'the cell around',
         'about 60 m across',
         # Stated, metadata and as-uploaded times, in Paris time.
-        '15 June 2026 18:10:00', '15 June 2026 18:10:30', '15 June 2026 18:00:00',
+        '2026-06-15 18:10:00', '2026-06-15 18:10:30', '2026-06-15 18:00:00',
     ):
         assert shown in page, shown
     assert url('preview', case, clip) in page

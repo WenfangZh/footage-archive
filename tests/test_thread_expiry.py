@@ -72,9 +72,9 @@ def test_each_page_says_when_its_thread_is_deleted(clip):  # noqa: F811
     code_holders_page = page(Client())
 
     # Ten days after the end of that block.
-    assert 'This thread will be deleted on 31 October 2026' in lawyers_page
+    assert 'This thread will be deleted on 2026-10-31' in lawyers_page
     assert 'Save what you need into your own records.' in lawyers_page
-    assert 'These messages will be deleted on 31 October 2026' in section(code_holders_page, 'A')
+    assert 'These messages will be deleted on 2026-10-31' in section(code_holders_page, 'A')
 
 
 def test_no_letter_is_given_again_to_another_lawyer_once_a_thread_is_deleted(clip):  # noqa: F811

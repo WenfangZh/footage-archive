@@ -47,9 +47,9 @@
 
   <h2>{% translate "Time" %}</h2>
   <dl>
-    <dt>{% translate "Stated time" %}</dt><dd>{{ clip.stated_time|date:"j F Y H:i:s" }}</dd>
-    <dt>{% translate "Metadata time" %}</dt><dd>{{ clip.metadata_time|date:"j F Y H:i:s"|default:_("not given") }}</dd>
-    <dt>{% translate "Stated time as uploaded" %}</dt><dd>{{ clip.as_uploaded_stated_time|date:"j F Y H:i:s"|default:_("not given") }}</dd>
+    <dt>{% translate "Stated time" %}</dt><dd>{{ clip.stated_time|date:"Y-m-d H:i:s" }}</dd>
+    <dt>{% translate "Metadata time" %}</dt><dd>{{ clip.metadata_time|date:"Y-m-d H:i:s"|default:_("not given") }}</dd>
+    <dt>{% translate "Stated time as uploaded" %}</dt><dd>{{ clip.as_uploaded_stated_time|date:"Y-m-d H:i:s"|default:_("not given") }}</dd>
     {% if clip.duration %}<dt>{% translate "Duration" %}</dt><dd>{% blocktranslate with seconds=clip.duration.total_seconds|floatformat:"0" %}{{ seconds }} s{% endblocktranslate %}</dd>{% endif %}
   </dl>
 
@@ -130,7 +130,7 @@
 
   <h2>{% translate "Edits since upload" %}</h2>
   {% if edits %}
-    <ul>{% for edit in edits %}<li>{% blocktranslate with field=edit.get_field_display day=edit.edited_at|date:"j F Y" start=edit.edited_at|date:"H:i" %}{{ field }}: {{ day }}, in the four hours from {{ start }}{% endblocktranslate %}</li>{% endfor %}</ul>
+    <ul>{% for edit in edits %}<li>{% blocktranslate with field=edit.get_field_display day=edit.edited_at|date:"DATE_FORMAT" start=edit.edited_at|date:"TIME_FORMAT" %}{{ field }}: {{ day }}, in the four hours from {{ start }}{% endblocktranslate %}</li>{% endfor %}</ul>
   {% else %}<p>{% translate "None." %}</p>{% endif %}
 
   <h2>{% translate "Message to the code holder" %}</h2>
