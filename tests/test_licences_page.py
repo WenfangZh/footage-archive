@@ -85,3 +85,13 @@ def test_its_only_links_elsewhere_are_the_source_and_the_data_licences(client):
     }
     # Links only, which load nothing until followed.
     assert all('noreferrer' in link['rel'] for link in links(html) if '://' in link['href'])
+
+
+def test_it_serves_the_archives_own_licences(client):
+    hrefs = [link['href'] for link in links(page(client, 'fr'))]
+    for name, file in (('licence_code', 'LICENSE'), ('licence_documentation', 'LICENSE-docs')):
+        assert reverse(name) in hrefs
+        response = client.get(reverse(name))
+        assert response['Content-Type'] == 'text/plain; charset=utf-8'
+        assert b''.join(response.streaming_content) == (ROOT / file).read_bytes()
+        response.close()

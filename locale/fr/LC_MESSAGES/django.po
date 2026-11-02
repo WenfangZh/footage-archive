@@ -3469,42 +3469,56 @@ msgstr ""
 "pour d'autres doit leur en proposer le code source."
 
 #: templates/licences.html:13
+msgid "The licence"
+msgstr "La licence"
+
+#: templates/licences.html:13
 msgid "Source code"
 msgstr "Code source"
 
-#: templates/licences.html:15
+#: templates/licences.html:14
+#, python-format
+msgid ""
+"Its documentation is under the <a "
+"href=\"%(documentation_licence)s\">Creative Commons Attribution 4.0</a> "
+"licence."
+msgstr ""
+"Sa documentation est sous la licence <a "
+"href=\"%(documentation_licence)s\">Creative Commons Attribution 4.0</a>."
+
+#: templates/licences.html:18
 msgid "Libraries the archive's pages load"
 msgstr "Bibliothèques chargées par les pages de l'archive"
 
-#: templates/licences.html:17
+#: templates/licences.html:20
 msgid "The map:"
 msgstr "La carte :"
 
-#: templates/licences.html:19 templates/licences.html:31
+#: templates/licences.html:22 templates/licences.html:34
 msgid "libraries it bundles"
 msgstr "bibliothèques intégrées"
 
-#: templates/licences.html:21
+#: templates/licences.html:24
 msgid "library it bundles"
 msgstr "bibliothèque intégrée"
 
-#: templates/licences.html:23
+#: templates/licences.html:26
 msgid "notice"
 msgstr "mentions"
 
-#: templates/licences.html:25
+#: templates/licences.html:28
 msgid "Encryption in lawyers' browsers:"
 msgstr "Le chiffrement dans le navigateur des avocat·es :"
 
-#: templates/licences.html:29
+#: templates/licences.html:32
 msgid "Resumable uploads:"
 msgstr "La reprise des envois interrompus :"
 
-#: templates/licences.html:34
+#: templates/licences.html:37
 msgid "The map"
 msgstr "La carte"
 
-#: templates/licences.html:36
+#: templates/licences.html:39
 msgid ""
 "Map data © <a href=\"https://www.openstreetmap.org/copyright\" "
 "rel=\"noopener noreferrer\">OpenStreetMap</a> contributors, available under "
@@ -3517,7 +3531,7 @@ msgstr ""
 "issues d'osmdata.openstreetmap.de (ODbL) ; et Natural Earth, dans le domaine "
 "public."
 
-#: templates/licences.html:39
+#: templates/licences.html:42
 msgid ""
 "The map's data also holds land cover from ESA WorldCover, through Daylight, "
 "under the <a href=\"https://creativecommons.org/licenses/by/4.0/\" "
@@ -3529,20 +3543,20 @@ msgstr ""
 "creativecommons.org/licenses/by/4.0/\" rel=\"noopener noreferrer\">Creative "
 "Commons Attribution 4.0</a>. La carte ne l'affiche pas."
 
-#: templates/licences.html:42
+#: templates/licences.html:45
 msgid "The map's style comes from Protomaps' basemaps:"
 msgstr "Le style de la carte vient des basemaps de Protomaps :"
 
-#: templates/licences.html:43
+#: templates/licences.html:46
 msgid "its licences"
 msgstr "ses licences"
 
-#: templates/licences.html:44
+#: templates/licences.html:47
 msgid "Place names are drawn in Noto Sans, under the SIL Open Font License:"
 msgstr ""
 "Les noms de lieux sont écrits en Noto Sans, sous la SIL Open Font License :"
 
-#: templates/licences.html:45
+#: templates/licences.html:48
 msgid "its licence"
 msgstr "sa licence"
 

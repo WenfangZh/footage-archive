@@ -10,7 +10,10 @@
   <p>{% blocktranslate trimmed %}
     The archive's code is free software, under the GNU Affero General Public License, version 3 or any later version: anyone may use, study, change and share it, and whoever runs a changed copy for others must offer them its source.
   {% endblocktranslate %}</p>
-  <p><a href="{{ source_url }}" rel="noopener noreferrer">{% translate "Source code" %}</a></p>
+  <p><a href="{% url 'licence_code' %}">{% translate "The licence" %}</a> · <a href="{{ source_url }}" rel="noopener noreferrer">{% translate "Source code" %}</a></p>
+  <p>{% url 'licence_documentation' as documentation_licence %}{% blocktranslate trimmed %}
+    Its documentation is under the <a href="{{ documentation_licence }}">Creative Commons Attribution 4.0</a> licence.
+  {% endblocktranslate %}</p>
 
   <h2>{% translate "Libraries the archive's pages load" %}</h2>
   <ul>
