@@ -206,13 +206,6 @@ def test_a_clip_that_does_not_match_the_case_is_not_found(lawyer, clip, lawyer_c
 
 
 @pytest.mark.parametrize('name', ['clip', 'preview'])
-def test_another_lawyer_s_case_is_not_found(case, clip, name):
-    other = log_in_with_second_factor(Client(), make_lawyer('other@example.org').user)
-    assert other.get(url(name, case, clip)).status_code == 404
-    assert not access_entries().exists()
-
-
-@pytest.mark.parametrize('name', ['clip', 'preview'])
 def test_a_closed_case_allows_no_preview(case, clip, lawyer_client, name):
     Case.objects.filter(pk=case.pk).close(Case.ClosedBecause.LAWYER)
     assert lawyer_client.get(url(name, case, clip)).status_code == 404

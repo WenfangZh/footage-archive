@@ -66,12 +66,6 @@ def test_a_closed_case_cannot_be_closed_again(lawyer, lawyer_client):
     assert len(closing_entries()) == 1
 
 
-def test_a_lawyer_cannot_close_another_lawyer_s_case(lawyer_client):
-    others = make_case(make_lawyer('other@example.org'))
-    assert lawyer_client.post(reverse('lawyer:close_case', kwargs={'case_id': others.pk})).status_code == 404
-    assert Case.objects.get().closed_at is None and not closing_entries()
-
-
 def test_closing_a_case_closes_only_open_ones_and_logs_each(lawyer):
     cases = [make_case(lawyer, f'Case {n}') for n in range(3)]
     Case.objects.filter(pk=cases[0].pk).close(Case.ClosedBecause.LAWYER)

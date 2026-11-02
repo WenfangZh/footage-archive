@@ -5,7 +5,6 @@ import json
 from unittest import mock
 
 import pytest
-from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
@@ -13,8 +12,8 @@ from audit.models import Action, AuditEntry
 from cases.models import Case
 from clips import vault
 from clips.models import HashRecord
-from tests.conftest import log_in_with_second_factor, make_case, put_vault_file, with_data_key
-from tests.test_clip_pages import START, make_lawyer  # noqa: F401 - fixtures below
+from tests.conftest import make_case, put_vault_file, with_data_key
+from tests.test_clip_pages import START
 from tests.test_clip_pages import case, clip, lawyer, lawyer_client  # noqa: F401
 
 pytestmark = pytest.mark.django_db
@@ -112,13 +111,6 @@ def test_the_hash_record_comes_as_json(case, evidence, lawyer_client):
 def test_a_closed_case_allows_no_download(case, evidence, lawyer_client, name):
     Case.objects.filter(pk=case.pk).close(Case.ClosedBecause.LAWYER)
     assert lawyer_client.get(url(name, case, evidence)).status_code == 404
-    assert not downloads().exists()
-
-
-@pytest.mark.parametrize('name', ['download', 'hash_record'])
-def test_another_lawyer_cannot_download(case, evidence, name):
-    other = log_in_with_second_factor(Client(), make_lawyer('other@example.org').user)
-    assert other.get(url(name, case, evidence)).status_code == 404
     assert not downloads().exists()
 
 

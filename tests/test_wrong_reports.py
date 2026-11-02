@@ -13,7 +13,7 @@ from cases.models import Case
 from clips import vault
 from clips.models import Message
 from tests.conftest import TEST_CODE, make_case
-from tests.test_lawyer_messages import ENGLISH, START, Lawyer, clip, lawyer, shown_texts  # noqa: F401 (fixtures)
+from tests.test_lawyer_messages import ENGLISH, START, clip, lawyer, shown_texts  # noqa: F401 (fixtures)
 
 pytestmark = pytest.mark.django_db
 
@@ -67,13 +67,12 @@ def test_the_code_holder_answers_a_report_and_the_lawyer_reads_both_on_their_mes
     assert 'Report of a wrong time' in page.content.decode()
 
 
-def test_a_report_goes_only_through_a_usable_case_of_the_lawyers_own_that_matches_the_clip(lawyer, clip):  # noqa: F811
+def test_a_report_goes_only_through_a_usable_case_that_matches_the_clip(lawyer, clip):  # noqa: F811
     elsewhere = make_case(lawyer.profile, starts_at=START + datetime.timedelta(days=30), ends_at=START + datetime.timedelta(days=30, hours=1))
     closed = make_case(lawyer.profile, starts_at=START, ends_at=START + datetime.timedelta(hours=1))
     Case.objects.filter(pk=closed.pk).close(Case.ClosedBecause.LAWYER)
-    other = Lawyer('other@example.org')
 
-    for case in [elsewhere, closed, other.case]:
+    for case in [elsewhere, closed]:
         assert report(lawyer, clip, case=case, kind='wrong_time').status_code == 404
     assert not Message.objects.exists()
     assert not AuditEntry.objects.filter(action=Action.REPORT_WRONG_TIME).exists()

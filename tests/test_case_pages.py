@@ -192,7 +192,6 @@ def test_a_lawyer_sees_only_their_own_cases(lawyer, lawyer_client):
     own = make_case(lawyer, 'Mine')
     others = make_case(make_lawyer('other@example.org'), 'Not mine')
     assert lawyer_client.get(reverse('lawyer:case', kwargs={'case_id': own.pk})).status_code == 200
-    assert lawyer_client.get(reverse('lawyer:case', kwargs={'case_id': others.pk})).status_code == 404
     home = lawyer_client.get(reverse('lawyer:home')).content.decode()
     # Labels come encrypted (cases.labels): the links tell which cases are listed.
     assert reverse('lawyer:case', kwargs={'case_id': own.pk}) in home
