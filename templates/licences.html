@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{% translate "Licences and source code" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Licences and source code" %}</h1>
+
+  <h2>{% translate "This archive" %}</h2>
+  <p>{% blocktranslate trimmed %}
+    The archive's code is free software, under the GNU Affero General Public License, version 3 or any later version: anyone may use, study, change and share it, and whoever runs a changed copy for others must offer them its source.
+  {% endblocktranslate %}</p>
+  <p><a href="{{ source_url }}" rel="noopener noreferrer">{% translate "Source code" %}</a></p>
+
+  <h2>{% translate "Libraries the archive's pages load" %}</h2>
+  <ul>
+    <li>{% translate "The map:" %} MapLibre GL JS
+      (<a href="{% static 'maps/vendor/maplibre-gl.LICENSE.txt' %}">BSD-3-Clause</a>,
+      <a href="{% static 'maps/vendor/maplibre-gl.bundled.LICENSES.txt' %}">{% translate "libraries it bundles" %}</a>),
+      pmtiles (<a href="{% static 'maps/vendor/pmtiles.LICENSE.txt' %}">BSD-3-Clause</a>,
+      <a href="{% static 'maps/vendor/pmtiles.bundled.LICENSES.txt' %}">{% translate "library it bundles" %}</a>),
+      h3-js (<a href="{% static 'maps/vendor/h3-js.LICENSE.txt' %}">Apache-2.0</a>,
+      <a href="{% static 'maps/vendor/h3-js.NOTICE.txt' %}">{% translate "notice" %}</a>,
+      <a href="{% static 'maps/vendor/emscripten.LICENSE.txt' %}">Emscripten</a>).</li>
+    <li>{% translate "Encryption in lawyers' browsers:" %} libsodium.js
+      (<a href="{% static 'core/vendor/libsodium/libsodium.js.LICENSE.txt' %}">ISC</a>),
+      libsodium (<a href="{% static 'core/vendor/libsodium/libsodium.LICENSE.txt' %}">ISC</a>,
+      <a href="{% static 'core/vendor/libsodium/emscripten.LICENSE.txt' %}">Emscripten</a>).</li>
+    <li>{% translate "Resumable uploads:" %} tus-js-client
+      (<a href="{% static 'clips/vendor/tus-js-client.LICENSE.txt' %}">MIT</a>,
+      <a href="{% static 'clips/vendor/tus-js-client.bundled.LICENSES.txt' %}">{% translate "libraries it bundles" %}</a>).</li>
+  </ul>
+
+  <h2>{% translate "The map" %}</h2>
+  <ul>
+    <li>{% blocktranslate trimmed %}
+      Map data © <a href="https://www.openstreetmap.org/copyright" rel="noopener noreferrer">OpenStreetMap</a> contributors, available under the Open Database License (ODbL), through Protomaps; coastlines from osmdata.openstreetmap.de (ODbL); and Natural Earth, in the public domain.
+    {% endblocktranslate %}</li>
+    <li>{% blocktranslate trimmed %}
+      The map's data also holds land cover from ESA WorldCover, through Daylight, under the <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener noreferrer">Creative Commons Attribution 4.0</a> licence. The map does not draw it.
+    {% endblocktranslate %}</li>
+    <li>{% translate "The map's style comes from Protomaps' basemaps:" %}
+      <a href="{% static 'maps/style.LICENSE.txt' %}">{% translate "its licences" %}</a>.</li>
+    <li>{% translate "Place names are drawn in Noto Sans, under the SIL Open Font License:" %}
+      <a href="{% static 'maps/fonts.OFL.txt' %}">{% translate "its licence" %}</a>.</li>
+  </ul>
+{% endblock %}
