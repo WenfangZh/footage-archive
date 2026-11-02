@@ -5,7 +5,8 @@
 
 {% block content %}
   <h1>{% translate "Upload a video" %}</h1>
-  <p>{% translate "Step 1 of 2: choose the video. Next, you can say when and where it was filmed." %}</p>
+  {% include "clips/steps.html" with step=1 %}
+  <p>{% translate "Choose the video. Next, you can say when and where it was filmed." %}</p>
 
   {% if problem == "too_large" %}
     <p role="alert">{% blocktranslate %}This file is larger than {{ size_limit }}, so it was refused. Nothing was kept.{% endblocktranslate %}</p>

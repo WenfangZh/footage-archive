@@ -1,0 +1,5 @@
+{% load i18n %}{# The upload's two steps (SPEC.md §12 M8.5); `step` is the current one. #}
+<ol class="steps">
+  <li{% if step == 1 %} aria-current="step"{% endif %}>1 · {% translate "video" %}</li>
+  <li{% if step == 2 %} aria-current="step"{% endif %}>2 · {% translate "when and where" %}</li>
+</ol>

@@ -301,8 +301,7 @@ msgid "If you did not expect this invitation, ignore this email."
 msgstr "Si vous n'attendiez pas cette invitation, ignorez ce message."
 
 #: accounts/templates/accounts/invite.html:4
-#: accounts/templates/accounts/invite.html:7
-#: accounts/templates/accounts/manage_home.html:23 core/navigation.py:21
+#: accounts/templates/accounts/invite.html:7 core/navigation.py:21
 msgid "Send an invitation"
 msgstr "Envoyer une invitation"
 
@@ -335,26 +334,26 @@ msgstr "Dossier de recherche"
 msgid "Time window"
 msgstr "Plage horaire"
 
-#: accounts/templates/accounts/lawyer_home.html:19
+#: accounts/templates/accounts/lawyer_home.html:17
 msgid "waiting for approval"
 msgstr "en attente de validation"
 
-#: accounts/templates/accounts/lawyer_home.html:25
+#: accounts/templates/accounts/lawyer_home.html:24
 msgid "You have no cases yet."
 msgstr "Vous n'avez pas encore de dossier de recherche."
 
-#: accounts/templates/accounts/lawyer_home.html:29
+#: accounts/templates/accounts/lawyer_home.html:28
 #: cases/templates/cases/new_case.html:4 cases/templates/cases/new_case.html:15
 msgid "New case"
 msgstr "Nouveau dossier de recherche"
 
-#: accounts/templates/accounts/lawyer_home.html:30
+#: accounts/templates/accounts/lawyer_home.html:29
 #: cases/templates/cases/closed_cases.html:4
 #: cases/templates/cases/closed_cases.html:9
 msgid "Closed cases"
 msgstr "Dossiers de recherche clos"
 
-#: accounts/templates/accounts/lawyer_home.html:31
+#: accounts/templates/accounts/lawyer_home.html:30
 #: keys/templates/keys/waiting.html:4 keys/templates/keys/waiting.html:7
 msgid "Colleagues waiting for the group key"
 msgstr "Collègues en attente de la clé commune"
@@ -386,7 +385,7 @@ msgstr "Il y a eu trop de tentatives de connexion. Réessayez dans une heure."
 #: accounts/templates/accounts/manage_home.html:4
 #: accounts/templates/accounts/manage_home.html:7
 #: alerts/templates/alerts/raise_limit.html:18
-#: cases/templates/cases/case_requests.html:17 core/navigation.py:20
+#: cases/templates/cases/case_requests.html:22 core/navigation.py:20
 msgid "Administration"
 msgstr "Administration"
 
@@ -394,76 +393,58 @@ msgstr "Administration"
 msgid "Alerts"
 msgstr "Alertes"
 
-#: accounts/templates/accounts/manage_home.html:14
+#: accounts/templates/accounts/manage_home.html:15
 #: cases/templates/cases/messages.html:22 clips/templates/clips/clip.html:96
 #, python-format
 msgid "%(day)s, in the four hours from %(start)s"
 msgstr "%(day)s, dans les quatre heures à partir de %(start)s"
 
-#: accounts/templates/accounts/manage_home.html:17
+#: accounts/templates/accounts/manage_home.html:19
 msgid "Mark as seen"
 msgstr "Marquer comme vue"
 
-#: accounts/templates/accounts/manage_home.html:24
-#: cases/templates/cases/case_requests.html:4
-#: cases/templates/cases/case_requests.html:7 core/navigation.py:22
-msgid "Requests for larger cases"
-msgstr "Demandes de dépassement des plafonds"
-
-#: accounts/templates/accounts/manage_home.html:25
-#: cases/templates/cases/disputed_tags.html:4
-#: cases/templates/cases/disputed_tags.html:7 core/navigation.py:23
-msgid "Clips with disputed tags"
-msgstr "Clips aux étiquettes contestées"
-
-#: accounts/templates/accounts/manage_home.html:26
-#: cases/templates/cases/withdrawn_clips.html:4
-#: cases/templates/cases/withdrawn_clips.html:7 core/navigation.py:24
-msgid "Withdrawn clips"
-msgstr "Clips retirés"
-
-#: accounts/templates/accounts/manage_home.html:28
+#: accounts/templates/accounts/manage_home.html:29
 msgid "Applicants"
 msgstr "Candidat·es"
 
-#: accounts/templates/accounts/manage_home.html:37
+#: accounts/templates/accounts/manage_home.html:42
 msgid "Send a new invitation link"
 msgstr "Envoyer un nouveau lien d'invitation"
 
-#: accounts/templates/accounts/manage_home.html:44
+#: accounts/templates/accounts/manage_home.html:51
 msgid "No applicants."
 msgstr "Aucun·e candidat·e."
 
-#: accounts/templates/accounts/manage_home.html:47
+#: accounts/templates/accounts/manage_home.html:54
 msgid "Lawyers' access"
 msgstr "Accès des avocat·es"
 
-#: accounts/templates/accounts/manage_home.html:57
+#: accounts/templates/accounts/manage_home.html:68
 msgid "Suspend access"
 msgstr "Suspendre l'accès"
 
-#: accounts/templates/accounts/manage_home.html:62
+#: accounts/templates/accounts/manage_home.html:73
 msgid "Reinstate access"
 msgstr "Rétablir l'accès"
 
-#: accounts/templates/accounts/manage_home.html:65
-#: accounts/templates/accounts/revoke.html:4
-#: accounts/templates/accounts/revoke.html:7
-msgid "Revoke access"
-msgstr "Révoquer l'accès"
-
-#: accounts/templates/accounts/manage_home.html:66
+#: accounts/templates/accounts/manage_home.html:76
 #: keys/templates/keys/confirm_key.html:16
 msgid "Confirm their new key"
 msgstr "Confirmer sa nouvelle clé"
 
-#: accounts/templates/accounts/manage_home.html:67
+#: accounts/templates/accounts/manage_home.html:77
 #: alerts/templates/alerts/raise_limit.html:4
 #: alerts/templates/alerts/raise_limit.html:7
 msgid "Raise an alert limit"
 msgstr "Relever un seuil d'alerte"
 
-#: accounts/templates/accounts/manage_home.html:72
+#: accounts/templates/accounts/manage_home.html:78
+#: accounts/templates/accounts/revoke.html:4
+#: accounts/templates/accounts/revoke.html:7
+msgid "Revoke access"
+msgstr "Révoquer l'accès"
+
+#: accounts/templates/accounts/manage_home.html:85
 msgid "No lawyers yet."
 msgstr "Aucun·e avocat·e pour l'instant."
 
@@ -1409,7 +1390,12 @@ msgstr "La justification est supprimée dès que vous décidez."
 msgid "Decide"
 msgstr "Décider"
 
-#: cases/templates/cases/case_requests.html:15
+#: cases/templates/cases/case_requests.html:4
+#: cases/templates/cases/case_requests.html:7 core/navigation.py:22
+msgid "Requests for larger cases"
+msgstr "Demandes de dépassement des plafonds"
+
+#: cases/templates/cases/case_requests.html:20
 msgid "No requests are waiting."
 msgstr "Aucune demande en attente."
 
@@ -1499,7 +1485,7 @@ msgstr[1] ""
 "L'heure indiquée est à %(minutes)s minutes de l'heure des métadonnées."
 
 #: cases/templates/cases/clip.html:48 clips/templates/clips/clip.html:37
-#: clips/templates/clips/confirm.html:15
+#: clips/templates/clips/confirm.html:16
 msgid "Time"
 msgstr "Heure"
 
@@ -1530,7 +1516,7 @@ msgid "%(seconds)s s"
 msgstr "%(seconds)s s"
 
 #: cases/templates/cases/clip.html:56 clips/templates/clips/clip.html:42
-#: clips/templates/clips/confirm.html:25
+#: clips/templates/clips/confirm.html:26
 msgid "Place"
 msgstr "Lieu"
 
@@ -1720,7 +1706,7 @@ msgid "Your thread with this clip's code holder"
 msgstr "Votre fil de messages avec la personne qui détient le code de ce clip"
 
 #: cases/templates/cases/clip.html:141 cases/templates/cases/messages.html:43
-#: clips/templates/clips/clip.html:115 clips/templates/clips/upload.html:42
+#: clips/templates/clips/clip.html:115 clips/templates/clips/upload.html:43
 msgid "Send"
 msgstr "Envoyer"
 
@@ -1765,6 +1751,11 @@ msgstr ""
 msgid "Back to the clip"
 msgstr "Retour au clip"
 
+#: cases/templates/cases/disputed_tags.html:4
+#: cases/templates/cases/disputed_tags.html:7 core/navigation.py:23
+msgid "Clips with disputed tags"
+msgstr "Clips aux étiquettes contestées"
+
 #: cases/templates/cases/disputed_tags.html:8
 msgid ""
 "Clips on which a lawyer proposed removing or restoring a tag, latest "
@@ -1773,12 +1764,12 @@ msgstr ""
 "Clips sur lesquels un·e avocat·e a proposé d'écarter ou de rétablir une "
 "étiquette, de la proposition la plus récente à la plus ancienne."
 
-#: cases/templates/cases/disputed_tags.html:12
+#: cases/templates/cases/disputed_tags.html:15
 #, python-format
 msgid "latest proposal %(at)s"
 msgstr "dernière proposition : %(at)s"
 
-#: cases/templates/cases/disputed_tags.html:16
+#: cases/templates/cases/disputed_tags.html:21
 msgid "No lawyer has proposed removing or restoring a tag."
 msgstr "Aucun·e avocat·e n'a proposé d'écarter ou de rétablir une étiquette."
 
@@ -2027,6 +2018,11 @@ msgstr ""
 msgid "Nothing has happened to this clip's tags since upload."
 msgstr "Aucune modification des étiquettes de ce clip depuis l'upload."
 
+#: cases/templates/cases/withdrawn_clips.html:4
+#: cases/templates/cases/withdrawn_clips.html:7 core/navigation.py:24
+msgid "Withdrawn clips"
+msgstr "Clips retirés"
+
 #: cases/templates/cases/withdrawn_clips.html:8
 msgid ""
 "Clips that two different lawyers reported as inappropriate, latest "
@@ -2038,21 +2034,21 @@ msgstr ""
 "les regarder. Vous pouvez en supprimer un : ses empreintes numériques (hash) "
 "sont conservées, ainsi que les entrées du journal d'audit."
 
-#: cases/templates/cases/withdrawn_clips.html:12
+#: cases/templates/cases/withdrawn_clips.html:14
 #, python-format
 msgid "%(clip_id)s, withdrawn %(at)s"
 msgstr "%(clip_id)s, retiré le %(at)s"
 
-#: cases/templates/cases/withdrawn_clips.html:15
+#: cases/templates/cases/withdrawn_clips.html:18
 msgid "Delete this clip for good"
 msgstr "Supprimer ce clip définitivement"
 
-#: cases/templates/cases/withdrawn_clips.html:16
+#: cases/templates/cases/withdrawn_clips.html:19
 #: clips/templates/clips/clip.html:138
 msgid "Delete"
 msgstr "Supprimer"
 
-#: cases/templates/cases/withdrawn_clips.html:22
+#: cases/templates/cases/withdrawn_clips.html:27
 msgid "No clip is withdrawn."
 msgstr "Aucun clip n'est retiré."
 
@@ -2409,15 +2405,15 @@ msgstr ""
 "Vous pouvez encore le supprimer, et lire les messages des avocat·es à son "
 "sujet et y répondre."
 
-#: clips/templates/clips/clip.html:25 clips/templates/clips/confirm.html:17
+#: clips/templates/clips/clip.html:25 clips/templates/clips/confirm.html:18
 msgid "Time found in the video:"
 msgstr "Heure trouvée dans la vidéo :"
 
-#: clips/templates/clips/clip.html:26 clips/templates/clips/confirm.html:18
+#: clips/templates/clips/clip.html:26 clips/templates/clips/confirm.html:19
 msgid "none"
 msgstr "aucune"
 
-#: clips/templates/clips/clip.html:28 clips/templates/clips/confirm.html:20
+#: clips/templates/clips/clip.html:28 clips/templates/clips/confirm.html:21
 msgid "It is kept as found, and nobody can change it."
 msgstr "Elle est gardée telle quelle, et personne ne peut la modifier."
 
@@ -2444,7 +2440,7 @@ msgstr ""
 msgid "Contact details (optional)"
 msgstr "Moyen de contact (facultatif)"
 
-#: clips/templates/clips/clip.html:72 clips/templates/clips/confirm.html:51
+#: clips/templates/clips/clip.html:72 clips/templates/clips/confirm.html:52
 msgid ""
 "Defence lawyers whose case finds this clip will see these details, to "
 "contact you. Anyone else who obtains them could use them against you. Leave "
@@ -2565,7 +2561,24 @@ msgstr ""
 msgid "To come back:"
 msgstr "Pour revenir :"
 
-#: clips/templates/clips/code_card.html:24
+#: clips/templates/clips/code_card.html:25
+msgid "Copied."
+msgstr "Copié."
+
+#: clips/templates/clips/code_card.html:25
+msgid "Copy the code"
+msgstr "Copier le code"
+
+#: clips/templates/clips/code_card.html:26
+msgid ""
+"Some phones share what you copy with your other devices or with keyboard "
+"apps. Anyone who has the code can read the clip's messages and delete it."
+msgstr ""
+"Certains téléphones partagent ce que vous copiez avec vos autres appareils "
+"ou avec des applications de clavier. Toute personne qui a le code peut lire "
+"les messages du clip et le supprimer."
+
+#: clips/templates/clips/code_card.html:30
 msgid ""
 "With this code you can come back to change the clip's details, delete the "
 "clip, and read messages from lawyers."
@@ -2573,13 +2586,13 @@ msgstr ""
 "Avec ce code, vous pouvez revenir pour modifier les informations du clip, le "
 "supprimer et lire les messages des avocat·es."
 
-#: clips/templates/clips/code_card.html:25
+#: clips/templates/clips/code_card.html:31
 msgid "Anyone who finds this card can read the clip's messages and delete it."
 msgstr ""
 "Toute personne qui trouve cette fiche peut lire les messages du clip et le "
 "supprimer."
 
-#: clips/templates/clips/code_card.html:27
+#: clips/templates/clips/code_card.html:33
 msgid ""
 "No lawyer can find this clip until you add the time and the place. Come back "
 "with your code to add them."
@@ -2588,7 +2601,7 @@ msgstr ""
 "l'heure et le lieu. Revenez avec votre code pour les ajouter."
 
 #: clips/templates/clips/code_entry.html:4
-#: clips/templates/clips/code_entry.html:8 templates/home.html:8
+#: clips/templates/clips/code_entry.html:8 templates/home.html:10
 msgid "Come back with your upload code"
 msgstr "Revenir avec votre code d'upload"
 
@@ -2606,30 +2619,30 @@ msgstr "Ouvrir mon clip"
 
 #: clips/templates/clips/confirm.html:4 clips/templates/clips/confirm.html:7
 #: clips/templates/clips/upload.html:4 clips/templates/clips/upload.html:7
-#: templates/home.html:7
+#: templates/home.html:8
 msgid "Upload a video"
 msgstr "Envoyer une vidéo"
 
-#: clips/templates/clips/confirm.html:8
+#: clips/templates/clips/confirm.html:9
 msgid ""
-"Step 2 of 2. Everything here is optional, and you can change it later with "
-"your upload code."
+"Everything here is optional, and you can change it later with your upload "
+"code."
 msgstr ""
-"Étape 2 sur 2. Tout est facultatif, et vous pourrez le modifier plus tard "
-"avec votre code d'upload."
+"Tout est facultatif ici, et vous pourrez le modifier plus tard avec votre "
+"code d'upload."
 
-#: clips/templates/clips/confirm.html:26
+#: clips/templates/clips/confirm.html:27
 msgid "Pre-filled from the GPS position in the video."
 msgstr "Prérempli à partir de la position GPS de la vidéo."
 
-#: clips/templates/clips/confirm.html:38
+#: clips/templates/clips/confirm.html:39
 msgid ""
 "Lawyers use it to check the place you give. The exact position is never kept."
 msgstr ""
 "Les avocat·es s'en servent pour vérifier le lieu que vous indiquez. La "
 "position exacte n'est jamais gardée."
 
-#: clips/templates/clips/confirm.html:42
+#: clips/templates/clips/confirm.html:43
 msgid ""
 "If you leave the time or the place empty, no lawyer can find this clip until "
 "you add both."
@@ -2637,11 +2650,11 @@ msgstr ""
 "Si vous laissez l'heure ou le lieu vide, aucun·e avocat·e ne pourra trouver "
 "ce clip tant que vous n'aurez pas ajouté les deux."
 
-#: clips/templates/clips/confirm.html:50
+#: clips/templates/clips/confirm.html:51
 msgid "Leave contact details (optional)"
 msgstr "Laisser un moyen de contact (facultatif)"
 
-#: clips/templates/clips/confirm.html:55
+#: clips/templates/clips/confirm.html:56
 msgid "Confirm and get my upload code"
 msgstr "Confirmer et obtenir mon code d'upload"
 
@@ -2735,29 +2748,35 @@ msgstr[1] ""
 "m de large"
 
 #: clips/templates/clips/rate_limited.html:9
-#: clips/templates/clips/upload.html:39
+#: clips/templates/clips/upload.html:40
 msgid ""
 "There have been too many attempts from your connection. Try again in an hour."
 msgstr ""
 "Il y a eu trop de tentatives depuis votre connexion. Réessayez dans une "
 "heure."
 
-#: clips/templates/clips/upload.html:8
-msgid ""
-"Step 1 of 2: choose the video. Next, you can say when and where it was "
-"filmed."
-msgstr ""
-"Étape 1 sur 2 : choisissez la vidéo. Ensuite, vous pourrez indiquer quand et "
-"où elle a été filmée."
+#: clips/templates/clips/steps.html:3
+msgid "video"
+msgstr "vidéo"
 
-#: clips/templates/clips/upload.html:11
+#: clips/templates/clips/steps.html:4
+msgid "when and where"
+msgstr "quand et où"
+
+#: clips/templates/clips/upload.html:9
+msgid "Choose the video. Next, you can say when and where it was filmed."
+msgstr ""
+"Choisissez la vidéo. Ensuite, vous pourrez indiquer quand et où elle a été "
+"filmée."
+
+#: clips/templates/clips/upload.html:12
 #, python-format
 msgid ""
 "This file is larger than %(size_limit)s, so it was refused. Nothing was kept."
 msgstr ""
 "Ce fichier dépasse %(size_limit)s : il a été refusé, et rien n'a été gardé."
 
-#: clips/templates/clips/upload.html:13 clips/templates/clips/upload.html:37
+#: clips/templates/clips/upload.html:14 clips/templates/clips/upload.html:38
 msgid ""
 "This file is not a video we can accept (MP4, MOV, MKV or WebM). It was "
 "deleted, and nothing was kept."
@@ -2765,21 +2784,21 @@ msgstr ""
 "Ce fichier n'est pas une vidéo que nous pouvons accepter (MP4, MOV, MKV ou "
 "WebM). Il a été supprimé, et rien n'a été gardé."
 
-#: clips/templates/clips/upload.html:26
+#: clips/templates/clips/upload.html:27
 #, python-format
 msgid "Maximum size: %(size_limit)s."
 msgstr "Taille maximale : %(size_limit)s."
 
-#: clips/templates/clips/upload.html:27
+#: clips/templates/clips/upload.html:28
 #, python-format
 msgid "This file is larger than %(size_limit)s, so it cannot be sent."
 msgstr "Ce fichier dépasse %(size_limit)s : il ne peut pas être envoyé."
 
-#: clips/templates/clips/upload.html:29
+#: clips/templates/clips/upload.html:30
 msgid "Sent so far"
 msgstr "Transféré jusqu'ici"
 
-#: clips/templates/clips/upload.html:34
+#: clips/templates/clips/upload.html:35
 msgid ""
 "A video sent from this browser was cut off. Choose the same video again and "
 "press Send: it continues where it stopped."
@@ -2788,7 +2807,7 @@ msgstr ""
 "nouveau la même vidéo et appuyez sur « Envoyer » : il reprendra là où il "
 "s'était arrêté."
 
-#: clips/templates/clips/upload.html:35
+#: clips/templates/clips/upload.html:36
 msgid ""
 "Sending. Keep this page open: if the connection drops, sending continues "
 "where it stopped."
@@ -2796,7 +2815,7 @@ msgstr ""
 "Transfert en cours. Gardez cette page ouverte : si la connexion est coupée, "
 "le transfert reprend là où il s'est arrêté."
 
-#: clips/templates/clips/upload.html:36
+#: clips/templates/clips/upload.html:37
 msgid ""
 "Sending stopped. Check your connection, then press Send to continue where it "
 "stopped."
@@ -2804,11 +2823,11 @@ msgstr ""
 "Le transfert s'est arrêté. Vérifiez votre connexion, puis appuyez sur "
 "« Envoyer » pour le reprendre là où il s'est arrêté."
 
-#: clips/templates/clips/upload.html:38
+#: clips/templates/clips/upload.html:39
 msgid "Sent. Checking that it is a video…"
 msgstr "Transfert terminé. Vérification qu'il s'agit bien d'une vidéo…"
 
-#: clips/templates/clips/upload.html:40
+#: clips/templates/clips/upload.html:41
 #: clips/templates/clips/uploads_closed.html:8
 msgid ""
 "The archive cannot take videos at the moment. Please try again later. A "
@@ -3454,8 +3473,26 @@ msgstr ""
 "vidéos."
 
 #: templates/home.html:9
+msgid ""
+"No account needed. You get an upload code, shown once, to come back with."
+msgstr ""
+"Pas besoin de compte : vous recevez un code d'upload, affiché une seule "
+"fois, pour revenir."
+
+#: templates/home.html:11
+msgid "Change your clip's details, read lawyers' messages, or delete the clip."
+msgstr ""
+"Modifier les informations de votre clip, lire les messages des avocat·es ou "
+"supprimer le clip."
+
+#: templates/home.html:12
 msgid "Defence lawyers: log in"
 msgstr "Avocat·es de la défense : se connecter"
+
+#: templates/home.html:13
+msgid "With your password and the code from your authenticator app."
+msgstr ""
+"Avec votre mot de passe et le code de votre application d'authentification."
 
 #: templates/licences.html:9
 msgid "This archive"
