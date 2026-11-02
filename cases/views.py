@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_POST
@@ -57,7 +58,11 @@ def new_case(request):
             else:
                 return redirect('lawyer:case', case_id=case.pk)
     else:
+        # Today's date, in French time, with no hour: the lawyer types the time (M8.7).
+        today = timezone.localdate()
+        date_only = [today.year, today.month, today.day, None]
         form = CaseForm(initial={
+            'starts_at': date_only, 'ends_at': date_only,
             'margin_minutes': profile.default_margin_minutes, 'margin_rings': profile.default_margin_rings,
         })
     return render(request, 'cases/new_case.html', {

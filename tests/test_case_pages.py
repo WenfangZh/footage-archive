@@ -1,4 +1,5 @@
 import datetime
+import re
 from unittest import mock
 
 import pytest
@@ -387,3 +388,13 @@ def test_no_coordinates_or_map_view_are_kept_with_a_case_from_the_map(lawyer_cli
     assert Case.objects.exists()
     database = database_dump()
     assert '85417' not in database and '36923' not in database and '123457' not in database
+
+
+def test_a_new_case_starts_with_todays_date_and_no_time(lawyer_client, monkeypatch):
+    # SPEC.md §12 M8.7: today in French time: 22:30 UTC on 15 June is already the 16th in Paris.
+    monkeypatch.setattr(timezone, 'now', lambda: datetime.datetime(2026, 6, 15, 22, 30, tzinfo=datetime.UTC))
+    page = lawyer_client.get(reverse('lawyer:new_case')).content.decode()
+    for name in ('starts_at', 'ends_at'):
+        for part, value in [('year', '2026'), ('month', '6'), ('day', '16')]:
+            assert re.search(rf'name="{name}_{part}"[^>]*value="{value}"', page), (name, part)
+        assert not re.search(rf'name="{name}_time"[^>]*value=', page), name
