@@ -271,16 +271,19 @@ if (box && opener) {
     precision.value = 'street';
     typed.open = true;
     tell(lookup.dataset.chosen);
+    latitude.focus(); // The button pressed is gone: where the keyboard goes on from.
   }
 
   function showStreet(street) {
     const [south, west, north, east] = street.bounds;
     map.fitBounds([[west, south], [east, north]], { padding: 40, duration: 0, maxZoom: 18 });
-    box.scrollIntoView({ block: 'nearest' });
     tell(lookup.dataset.shown);
+    box.focus(); // As above; this also brings the map into view.
   }
 
   function choose(street) {
+    // Choosing a street gives a place, as without JavaScript (clips.views.place_lookup).
+    if (form.elements.remove_place) form.elements.remove_place.checked = false;
     if (expired || state === 'failed') {
       fillCoordinates(street);
     } else if (state === 'ready') {
@@ -314,6 +317,9 @@ if (box && opener) {
         tell(lookup.dataset.empty);
         return;
       }
+      // One lookup at a time: a later answer must not replace a newer one.
+      const button = event.submitter;
+      button.disabled = true;
       let answer = null;
       try {
         const response = await fetch(lookup.dataset.url, {
@@ -325,9 +331,10 @@ if (box && opener) {
       } catch (error) {
         console.error(error);
       }
+      button.disabled = false;
       if (answer === null) {
         askPage = true;
-        form.requestSubmit(event.submitter);
+        form.requestSubmit(button);
       } else if (answer.matches?.length) {
         list(answer.matches);
       } else {
