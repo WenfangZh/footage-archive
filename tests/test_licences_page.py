@@ -82,6 +82,7 @@ def test_its_only_links_elsewhere_are_the_source_and_the_data_licences(client):
         settings.SOURCE_URL,
         'https://www.openstreetmap.org/copyright',
         'https://creativecommons.org/licenses/by/4.0/',
+        'https://www.etalab.gouv.fr/licence-ouverte-open-licence/',
     }
     # Links only, which load nothing until followed.
     assert all('noreferrer' in link['rel'] for link in links(html) if '://' in link['href'])
