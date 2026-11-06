@@ -23,3 +23,8 @@ def tiles_file():
 
 def fonts_dir():
     return settings.MAP_DIR / 'fonts'
+
+
+def places_file():
+    """The place lookup's index (M9, ADR 0011), built by `python manage.py fetch_address_data`."""
+    return settings.PLACES_DIR / 'places.sqlite3'

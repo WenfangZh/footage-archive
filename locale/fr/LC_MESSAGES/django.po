@@ -2940,11 +2940,11 @@ msgstr "%(size)s Mo"
 msgid "%(size)s bytes"
 msgstr "%(size)s octets"
 
-#: config/settings.py:425
+#: config/settings.py:427
 msgid "French"
 msgstr "Français"
 
-#: config/settings.py:426
+#: config/settings.py:428
 msgid "English"
 msgstr "Anglais"
 
@@ -3697,6 +3697,26 @@ msgstr ""
 #: templates/licences.html:48
 msgid "its licence"
 msgstr "sa licence"
+
+#: templates/licences.html:51
+msgid "Place lookup"
+msgstr "Repérage"
+
+#: templates/licences.html:52
+msgid ""
+"Streets and addresses come from the Base Adresse Nationale, produced by the "
+"French State, under the <a href=\"https://www.etalab.gouv.fr/licence-ouverte-"
+"open-licence/\" rel=\"noopener noreferrer\">Licence Ouverte 2.0</a>."
+msgstr "Les rues et les adresses proviennent de la Base Adresse Nationale, produite par l'État, sous <a href=\"https://www.etalab.gouv.fr/licence-ouverte-open-licence/\" rel=\"noopener noreferrer\">Licence Ouverte 2.0</a>."
+
+#: templates/licences.html:55
+#, python-format
+msgid "Data of %(date)s."
+msgstr "Données du %(date)s."
+
+#: templates/licences.html:55
+msgid "Not downloaded on this archive: the place lookup is unavailable."
+msgstr "Non téléchargée sur cette archive : le repérage n'est pas disponible."
 
 #~ msgid "Enter the time without a time zone: it is read as French time."
 #~ msgstr ""

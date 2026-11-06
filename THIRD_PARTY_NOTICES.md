@@ -27,6 +27,12 @@ Each folder's README lists its files, their versions, SHA-256 and licence files,
 | | Landcover from Daylight, derived from ESA WorldCover (zooms 0 to 7), which the style does not draw | CC BY 4.0 | Credited here, with its licence |
 | Fonts: Noto Sans Regular, Medium and Italic, as glyph files | protomaps/basemaps-assets at a fixed commit (`fetch_map_data.FONTS_COMMIT`) | SIL Open Font License 1.1, "Copyright 2022 The Noto Project Authors" | [`maps/static/maps/fonts.OFL.txt`](maps/static/maps/fonts.OFL.txt), also saved beside the fonts |
 
+`python manage.py fetch_address_data` downloads this into `var/places/`; the archive searches it for the place lookup, and returns at most ten matches at a time (ADR 0011).
+
+| Data | Source | Licence | Notice |
+|---|---|---|---|
+| Streets and addresses of Île-de-France's eight départements | Base Adresse Nationale, produced by the French State (adresse.data.gouv.fr), one file per département | Licence Ouverte 2.0 (Etalab) | The source and the data's date on the licences page, the date read from the data downloaded |
+
 ## Python packages, installed by pip
 
 Not copied into the repository: `pip` installs them from the pinned requirements files. Packages they need in turn are listed with the package that pulls them in.
