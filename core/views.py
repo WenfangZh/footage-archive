@@ -1,3 +1,4 @@
+import contextlib
 import sqlite3
 
 from django.conf import settings
@@ -18,7 +19,7 @@ def places_published():
     if not data.places_file().exists():
         return None
     # Opened read-only: this page never writes to the index.
-    with sqlite3.connect(f'file:{data.places_file()}?mode=ro', uri=True) as index:
+    with contextlib.closing(sqlite3.connect(f'{data.places_file().as_uri()}?mode=ro', uri=True)) as index:
         row = index.execute("SELECT value FROM meta WHERE key = 'published'").fetchone()
     return row[0] if row else None
 
