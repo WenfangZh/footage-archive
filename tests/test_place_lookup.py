@@ -33,6 +33,8 @@ ROWS = [
     # (shorter communes' names), which must still come first.
     *[('1', "Rue de l'Église", '77000', f'77{n:03}', f'Bourg {n}', 2.6, 48.5) for n in range(250)],
     ('1', "Rue de l'Église", '75015', '75115', 'Paris 15e Arrondissement, au long nom de commune', 2.29, 48.84),
+    # A name made only of kinds of street.
+    ('7', 'Rue du Sentier', '75002', '75102', 'Paris 2e Arrondissement', 2.3460, 48.8690),
 ]
 
 
@@ -88,6 +90,8 @@ def test_a_lawyer_finds_house_numbers_and_an_uploader_streets_only(index):
     assert not any(label[0].isdigit() for label in streets)
     # A number, small words or a kind of street alone name no place.
     assert labels('12', addresses=True) == [] and labels('12 bis') == [] and labels('1 rue de la', addresses=True) == []
+    # Two kinds of street may be a name.
+    assert labels('rue du sentier') == ['Rue du Sentier, 75002 Paris 2e Arrondissement']
     match = places.lookup('place republique')[0]
     assert set(match) == {'label', 'lat', 'lon', 'bounds'}
 

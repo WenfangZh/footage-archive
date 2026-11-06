@@ -39,47 +39,65 @@ class Unavailable(Exception):
     """The index has not been downloaded."""
 
 
-def words(text):
-    """The words of `text`, without case or accents, abbreviations spelled out."""
+def plain_words(text):
+    """The words of `text`, without case or accents."""
     plain = unicodedata.normalize('NFKD', text.lower())
     plain = ''.join(char for char in plain if not unicodedata.combining(char))
-    return [ABBREVIATIONS.get(word, word) for word in re.findall(r'\w+', plain)]
+    return re.findall(r'\w+', plain)
+
+
+def words(text):
+    """The words of `text`, without case or accents, abbreviations spelled out."""
+    return [ABBREVIATIONS.get(word, word) for word in plain_words(text)]
 
 
 def lookup(query, addresses=False):
     """At most ten places for `query`, best first: streets, or, for a lawyer's lookup
     (`addresses`) with a number typed, addresses. An empty query finds nothing."""
-    typed = words(query[:MAX_QUERY])
+    as_typed = plain_words(query[:MAX_QUERY])
+    typed = [ABBREVIATIONS.get(word, word) for word in as_typed]
     numbers = [word for word in typed if word.isdigit() and len(word) < 5]
     by_address = addresses and bool(numbers)
     if not by_address:
         # A street has no house number; a five-digit number is a postcode, and stays.
         typed = [word for word in typed if word not in numbers and word not in NUMBER_SUFFIXES]
-    # A number, a small word or a kind of street alone names no place, and would match
-    # hundreds of thousands of addresses.
-    if not set(typed) - set(numbers) - NUMBER_SUFFIXES - SMALL_WORDS - STREET_KINDS:
+    # A number, small words, or one kind of street alone ("rue") name no place, and would match
+    # hundreds of thousands of addresses; two kinds may ("Rue du Sentier").
+    meaningful = set(typed) - set(numbers) - NUMBER_SUFFIXES - SMALL_WORDS
+    if not meaningful or (len(meaningful) == 1 and meaningful <= STREET_KINDS):
         return []
-    # Each word must appear; the last one may be the start of a word.
-    match = ' '.join(f'"{word}"' for word in typed[:-1]) + f' "{typed[-1]}"*'
+    # Each word must appear, spelled out or as typed ("ave" is also a word of "Ave Maria");
+    # the last one may be the start of a word.
+    typed_forms = {}
+    for as_written, spelled_out in zip(as_typed, [ABBREVIATIONS.get(word, word) for word in as_typed]):
+        typed_forms.setdefault(spelled_out, {spelled_out}).add(as_written)
+
+    def term(word, prefix):
+        forms = [f'"{form}"' + ('*' if prefix else '') for form in sorted(typed_forms.get(word, {word}))]
+        return forms[0] if len(forms) == 1 else '(' + ' OR '.join(forms) + ')'
+
+    # FTS5 needs AND spelled out next to OR.
+    match = ' AND '.join(term(word, prefix=index == len(typed) - 1) for index, word in enumerate(typed))
     if by_address:
         columns, table, make = 'a.number, a.name, a.postcode, a.commune, a.in_paris, a.lat, a.lon', 'addresses', address
     else:
         columns, table, make = 's.name, s.postcodes, s.commune, s.in_paris, s.lat, s.lon, s.south, s.west, s.north, s.east', 'streets', street
     alias = table[0]
     try:
-        with contextlib.closing(sqlite3.connect(f'{data.places_file().resolve().as_uri()}?mode=ro', uri=True)) as index:
-            found = [
-                row
-                for in_paris in (1, 0)
-                for row in index.execute(
-                    f'SELECT {columns} FROM {table}_text t JOIN {table} {alias} ON {alias}.id = t.rowid '
-                    f'WHERE {table}_text MATCH ? AND {alias}.in_paris = ? ORDER BY bm25({table}_text) LIMIT ?',
-                    (match, in_paris, CANDIDATES),
-                )
-            ]
+        index = sqlite3.connect(f'{data.places_file().resolve().as_uri()}?mode=ro', uri=True)
     except sqlite3.OperationalError:
-        # No index downloaded (or it is being replaced in a way SQLite cannot open).
+        # No index downloaded; any other error is a fault, and shows as one.
         raise Unavailable from None
+    with contextlib.closing(index):
+        found = [
+            row
+            for in_paris in (1, 0)
+            for row in index.execute(
+                f'SELECT {columns} FROM {table}_text t JOIN {table} {alias} ON {alias}.id = t.rowid '
+                f'WHERE {table}_text MATCH ? AND {alias}.in_paris = ? ORDER BY bm25({table}_text) LIMIT ?',
+                (match, in_paris, CANDIDATES),
+            )
+        ]
     places = [make(*row) for row in found]
     typed_words = set(typed)
     # A place whose whole name was typed before longer names holding it ("Place de la
