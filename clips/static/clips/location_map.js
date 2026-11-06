@@ -9,6 +9,7 @@
 const box = document.getElementById('location-map');
 const opener = document.getElementById('location-map-open');
 const status = document.getElementById('location-map-status');
+const clear = document.getElementById('location-map-clear');
 
 // A tap waits this long for a second one: two make a double tap, which zooms instead.
 const DOUBLE_TAP_MS = 300;
@@ -56,6 +57,7 @@ if (box && opener) {
 
   function changed() {
     field.value = [...picked].join(' ');
+    clear.disabled = picked.size === 0;
     map.getSource('picked')?.setData({
       type: 'FeatureCollection',
       features: [...picked].map((cell) => ({
@@ -145,6 +147,12 @@ if (box && opener) {
       }
       cellsModule.showPicked(map);
       changed();
+      // Every cell picked goes at once; on the edit page, that clears the place (SPEC.md §8).
+      clear.hidden = false;
+      clear.addEventListener('click', () => {
+        picked.clear();
+        changed();
+      });
       state = 'ready';
       if (pending) showStreet(pending);
       pending = null;
