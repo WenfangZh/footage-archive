@@ -258,6 +258,8 @@ PARTIAL_UPLOAD_MINUTES = env_int('PARTIAL_UPLOAD_MINUTES', default=120, minimum=
 RATE_LIMIT_WINDOW_MINUTES = env_int('RATE_LIMIT_WINDOW_MINUTES', default=60, minimum=1)
 RATE_LIMIT_UPLOADS = env_int('RATE_LIMIT_UPLOADS', default=20, minimum=1)
 RATE_LIMIT_FAILED_CODES = env_int('RATE_LIMIT_FAILED_CODES', default=20, minimum=1)
+# Place lookups (M9), from the map's box and the forms' button alike.
+RATE_LIMIT_PLACE_LOOKUPS = env_int('RATE_LIMIT_PLACE_LOOKUPS', default=60, minimum=1)
 # Failed logins (SPEC.md §10): per connection, and per account on one connection.
 RATE_LIMIT_FAILED_LOGINS = env_int('RATE_LIMIT_FAILED_LOGINS', default=20, minimum=1)
 RATE_LIMIT_FAILED_LOGINS_FOR_ACCOUNT = env_int('RATE_LIMIT_FAILED_LOGINS_FOR_ACCOUNT', default=10, minimum=1)
