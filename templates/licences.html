@@ -47,4 +47,10 @@
     <li>{% translate "Place names are drawn in Noto Sans, under the SIL Open Font License:" %}
       <a href="{% static 'maps/fonts.OFL.txt' %}">{% translate "its licence" %}</a>.</li>
   </ul>
+
+  <h2>{% translate "Place lookup" %}</h2>
+  <p>{% blocktranslate trimmed %}
+    Streets and addresses come from the Base Adresse Nationale, produced by the French State, under the <a href="https://www.etalab.gouv.fr/licence-ouverte-open-licence/" rel="noopener noreferrer">Licence Ouverte 2.0</a>.
+  {% endblocktranslate %}
+  {% if places_published %}{% blocktranslate with date=places_published %}Data of {{ date }}.{% endblocktranslate %}{% else %}{% translate "Not downloaded on this archive: the place lookup is unavailable." %}{% endif %}</p>
 {% endblock %}
