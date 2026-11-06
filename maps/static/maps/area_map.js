@@ -160,6 +160,7 @@ function start() {
   clear.addEventListener('click', () => {
     picked.clear();
     cellsChanged();
+    box.focus(); // The button is now disabled: where the keyboard goes on from.
   });
 }
 
@@ -168,6 +169,7 @@ if (box && field) {
     box.hidden = false;
     readout.hidden = false;
     clear.hidden = false;
+    clear.disabled = picked.size === 0;
     start();
   } catch {
     // Without WebGL2 there is no map: the typed place and radius still work.

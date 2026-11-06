@@ -152,6 +152,7 @@ if (box && opener) {
       clear.addEventListener('click', () => {
         picked.clear();
         changed();
+        box.focus(); // The button is now disabled: where the keyboard goes on from.
       });
       state = 'ready';
       if (pending) showStreet(pending);
