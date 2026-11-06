@@ -25,7 +25,6 @@ if (box && opener) {
   const pickingZoom = Number(box.dataset.pickingZoom);
   const ceiling = Number(box.dataset.ceilingMetres);
   const maxCells = Number(box.dataset.maxCells);
-  const instead = document.getElementById('typed-place-show');
   let map = null;
   let spanMetres = null;
   let picked = new Set();
@@ -94,8 +93,7 @@ if (box && opener) {
     latitude.value = '';
     longitude.value = '';
     for (const choice of precision) choice.checked = false;
-    typed.hidden = true;
-    instead.hidden = false;
+    typed.open = false;
   }
 
   function fit() {
@@ -154,8 +152,7 @@ if (box && opener) {
       const tilesRefused = /Bad response code: 404/.test(error.message || '');
       if (styleRefused || tilesRefused) {
         expired = true;
-        typed.hidden = false; // Coordinates given there replace the cells (clips.forms).
-        instead.hidden = true;
+        typed.open = true; // Coordinates given there replace the cells (clips.forms).
         describe();
       }
     });
@@ -243,14 +240,6 @@ if (box && opener) {
     });
   }
 
-  // For whoever cannot pick on a map (a keyboard, a screen reader): the coordinates again, which
-  // replace the cells when given.
-  instead.addEventListener('click', () => {
-    typed.hidden = false;
-    instead.hidden = true;
-    latitude.focus();
-  });
-
   opener.hidden = false;
   opener.addEventListener('click', async () => {
     opener.disabled = true;
@@ -270,7 +259,7 @@ if (box && opener) {
       console.error(error);
       box.hidden = true;
       opener.hidden = true;
-      typed.hidden = false;
+      typed.open = true;
       say(box.dataset.unavailable);
     }
   });

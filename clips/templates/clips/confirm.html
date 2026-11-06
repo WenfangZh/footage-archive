@@ -24,15 +24,17 @@
 
     <fieldset>
       <legend>{% translate "Place" %}</legend>
+      {% include "clips/place_lookup.html" %}
       {% if read.gps %}<p>{% translate "Pre-filled from the GPS position in the video." %}</p>{% endif %}
       {{ form.cells }}
       {{ form.cells.errors }}
-      {# Without the map: the place as coordinates and a precision (ADR 0004, ADR 0009). #}
-      <div id="typed-place">
+      {# Without the map: the place as coordinates and a precision (ADR 0004, ADR 0009), folded away unless given (M9). #}
+      <details id="typed-place"{% if form.latitude.value or form.longitude.value or form.latitude.errors or form.longitude.errors or form.precision.errors %} open{% endif %}>
+        <summary>{% translate "Type coordinates instead" %}</summary>
         {{ form.latitude.as_field_group }}
         {{ form.longitude.as_field_group }}
         {{ form.precision.as_field_group }}
-      </div>
+      </details>
       {% include "clips/location_map.html" %}
       {% if read.gps %}
         {{ form.metadata_precision.as_field_group }}

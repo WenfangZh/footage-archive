@@ -40,6 +40,7 @@
 
     <fieldset>
       <legend>{% translate "Place" %}</legend>
+      {% include "clips/place_lookup.html" %}
       {{ form.cells }}
       {{ form.cells.errors }}
       {% if clip.stated_cells %}
@@ -47,12 +48,13 @@
           {% translate "Coordinates given below replace it." %}</p>
         {{ form.remove_place.as_field_group }}
       {% endif %}
-      {# Without the map: the place as coordinates and a precision (ADR 0004, ADR 0009). #}
-      <div id="typed-place">
+      {# Without the map: the place as coordinates and a precision (ADR 0004, ADR 0009), folded away unless given (M9). #}
+      <details id="typed-place"{% if form.latitude.value or form.longitude.value or form.latitude.errors or form.longitude.errors or form.precision.errors %} open{% endif %}>
+        <summary>{% translate "Type coordinates instead" %}</summary>
         {{ form.latitude.as_field_group }}
         {{ form.longitude.as_field_group }}
         {{ form.precision.as_field_group }}
-      </div>
+      </details>
       {% include "clips/location_map.html" %}
       {% if metadata_size %}
         <p>{% translate "GPS position found in the video, as we keep it:" %} {{ metadata_size }}</p>

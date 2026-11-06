@@ -13,7 +13,7 @@ from django.views.decorators.http import require_http_methods
 
 from keys import grants
 from keys.grants import uploads_open
-from maps import passes
+from maps import data as map_data, passes, places
 
 from . import grid, probe, rate_limits, vault
 from .confirmation import AlreadyConfirmed, confirm_upload
@@ -33,7 +33,8 @@ METADATA_SIZES = {int(value): label for value, label in METADATA_PRECISIONS}
 PICKING_ZOOM = 16
 
 # Fields that error reports must never show (SPEC.md §10).
-PRIVATE_FIELDS = ('latitude', 'longitude', 'custom_tags', 'context', 'contact_details')
+# A place lookup's query, and a match chosen, are as private as typed coordinates (ADR 0011).
+PRIVATE_FIELDS = ('latitude', 'longitude', 'place', 'choose', 'custom_tags', 'context', 'contact_details')
 
 
 @require_http_methods(['GET', 'POST'])
@@ -96,7 +97,12 @@ def confirm(request, original_id):
     if request.method == 'GET':
         form = ConfirmForm(initial=initial_values(read), has_gps=has_gps)
     else:
-        form = ConfirmForm(request.POST, has_gps=has_gps)
+        lookup, data = place_lookup(request)
+        form = ConfirmForm(data, has_gps=has_gps)
+        if lookup is not None:
+            return lookup_response(lookup, render(request, 'clips/confirm.html', {
+                'form': form.unchecked(), 'read': read, 'place_lookup': lookup, **location_map(),
+            }))
         if form.is_valid():
             try:
                 code = confirm_upload(original, read, form.cleaned_data)
@@ -166,7 +172,10 @@ def edit(request):
         return refusal
     if clip.status not in EDITABLE:
         return render_clip(request, clip, edit_form(clip, code=typed), status=409)
-    form = edit_form(clip, data=request.POST)
+    lookup, data = place_lookup(request)
+    form = edit_form(clip, data=data)
+    if lookup is not None:
+        return lookup_response(lookup, render_clip(request, clip, form.unchecked(), place_lookup=lookup))
     if not form.is_valid():
         return render_clip(request, clip, form, status=400)
     try:
@@ -287,6 +296,60 @@ def render_clip(request, clip, form, status=200, **flags):
     }, status=status)
 
 
+def place_lookup(request):
+    """The place lookup without JavaScript (SPEC.md §12 M9, ADR 0011), for a form sent back by
+    its "Look up" button or by choosing a match: what the page shows of it, and the form's data,
+    a chosen street's point filled in as typed coordinates. (None, the data) for a form sent to
+    be confirmed or saved. Nothing of it is stored or logged."""
+    if 'choose' not in request.POST and 'lookup' not in request.POST:
+        return None, request.POST
+    query = request.POST.get('place', '').strip()
+    found = {'query': query}
+    if 'choose' in request.POST:
+        data = request.POST.copy()
+        point = chosen_point(request.POST['choose'])
+        if point is None:  # Not a match this page offered: shown again as sent.
+            return found, data
+        data['latitude'], data['longitude'] = point
+        data['precision'] = Precision.STREET
+        data.pop('remove_place', None)  # Choosing a street gives a place.
+        return {**found, 'chosen': True}, data
+    if rate_limits.is_limited(request, rate_limits.PLACE_LOOKUPS):
+        return {**found, 'problem': 'too_many'}, request.POST
+    rate_limits.count(request, rate_limits.PLACE_LOOKUPS)
+    if not query:
+        return {**found, 'problem': 'empty'}, request.POST
+    if len(query) > places.MAX_QUERY:
+        return {**found, 'problem': 'too_long'}, request.POST
+    try:
+        matches = places.lookup(query, addresses=False)
+    except places.Unavailable:
+        return {**found, 'problem': 'unavailable'}, request.POST
+    if not matches:
+        return {**found, 'problem': 'none_found'}, request.POST
+    return {**found, 'matches': matches}, request.POST
+
+
+def chosen_point(value):
+    """A match's point as two strings, latitude and longitude, or None. Sent back by the page, it
+    is checked as typed coordinates are (and is no more than they could be)."""
+    try:
+        latitude, longitude = (float(part) for part in value.split())
+    except ValueError:
+        return None
+    if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):  # Also refuses nan.
+        return None
+    return str(latitude), str(longitude)
+
+
+def lookup_response(lookup, response):
+    """Too many lookups are answered as the map's lookup route answers them."""
+    if lookup.get('problem') == 'too_many':
+        response.status_code = 429
+        response['Retry-After'] = str(settings.RATE_LIMIT_WINDOW_MINUTES * 60)
+    return response
+
+
 def location_map():
     """What the map of the stated location needs (SPEC.md §8, M6.5, M6.6): a fresh map pass,
     which names no upload; the grid's finest resolution and the ceiling, as the server checks them;
@@ -302,6 +365,9 @@ def location_map():
             precision.value: min(resolution, grid.finest_resolution()) for precision, resolution in STATED_RESOLUTIONS.items()
         },
         'picking_zoom': PICKING_ZOOM,
+        # Without the downloaded data, the form says the place lookup is unavailable (M9).
+        'places_available': map_data.places_file().exists(),
+        'place_max_length': places.MAX_QUERY,
     }
 
 
