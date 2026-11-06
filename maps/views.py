@@ -11,6 +11,7 @@ import json
 import os
 import re
 
+from django.conf import settings
 from django.http import FileResponse, Http404, JsonResponse
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_POST
@@ -126,7 +127,9 @@ def lookup_with_pass(request, map_pass):
 
 def lookup_response(request, addresses):
     if rate_limits.is_limited(request, rate_limits.PLACE_LOOKUPS):
-        return private(JsonResponse({'error': 'too_many'}, status=429))
+        refused = JsonResponse({'error': 'too_many'}, status=429)
+        refused['Retry-After'] = str(settings.RATE_LIMIT_WINDOW_MINUTES * 60)
+        return private(refused)
     rate_limits.count(request, rate_limits.PLACE_LOOKUPS)
     query = request.POST.get('place', '').strip()
     if len(query) > places.MAX_QUERY:

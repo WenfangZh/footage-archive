@@ -29,6 +29,10 @@ ROWS = [
     ('4', 'Rue Victor Hugo', '78100', '78551', 'Saint-Germain-en-Laye', 2.0900, 48.9000),
     ('4', 'Rue Victor Hugo Prolongée', '77760', '77478', 'Ury', 2.6010, 48.3410),
     *[(str(n), f'Rue Test {n}', '75001', '75101', 'Paris 1er Arrondissement', 2.34, 48.86) for n in range(1, 16)],
+    # More streets of one name than the lookup takes as candidates, all scored above Paris's
+    # (shorter communes' names), which must still come first.
+    *[('1', "Rue de l'Église", '77000', f'77{n:03}', f'Bourg {n}', 2.6, 48.5) for n in range(250)],
+    ('1', "Rue de l'Église", '75015', '75115', 'Paris 15e Arrondissement, au long nom de commune', 2.29, 48.84),
 ]
 
 
@@ -65,6 +69,7 @@ def test_a_street_is_found_despite_accents_case_and_abbreviations(index):
 def test_the_whole_name_typed_and_paris_come_first(index):
     assert labels('place republique')[0] == 'Place de la République, 75011 Paris 11e Arrondissement'
     assert labels('rue de la paix') == ['Rue de la Paix, 75002 Paris 2e Arrondissement', 'Rue de la Paix, 77760 Ury']
+    assert labels("rue de l'eglise")[0] == "Rue de l'Église, 75015 Paris 15e Arrondissement, au long nom de commune"
     assert labels('rue victor hugo') == ['Rue Victor Hugo, 78100 Saint-Germain-en-Laye', 'Rue Victor Hugo Prolongée, 77760 Ury']
 
 
@@ -81,6 +86,8 @@ def test_a_lawyer_finds_house_numbers_and_an_uploader_streets_only(index):
     streets = labels('2 place republique')
     assert streets[0] == 'Place de la République, 75011 Paris 11e Arrondissement'
     assert not any(label[0].isdigit() for label in streets)
+    # A number, small words or a kind of street alone name no place.
+    assert labels('12', addresses=True) == [] and labels('12 bis') == [] and labels('1 rue de la', addresses=True) == []
     match = places.lookup('place republique')[0]
     assert set(match) == {'label', 'lat', 'lon', 'bounds'}
 
@@ -110,7 +117,7 @@ def test_an_over_long_query_and_too_many_lookups_are_refused(index, settings):
     assert client.post(pass_url(), {'place': 'x' * 101}).json() == {'error': 'too_long'}
     assert client.post(pass_url(), {'place': 'paix'}).status_code == 200
     refused = client.post(pass_url(), {'place': 'paix'})
-    assert refused.status_code == 429 and refused.json() == {'error': 'too_many'}
+    assert refused.status_code == 429 and refused.json() == {'error': 'too_many'} and refused['Retry-After'] == '3600'
 
 
 def test_without_the_data_the_lookup_says_it_is_unavailable(settings, tmp_path):

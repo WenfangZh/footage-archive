@@ -14,7 +14,8 @@ from . import data
 
 MAX_QUERY = 100
 MAX_MATCHES = 10
-# Enough candidates for the ordering below to find the best ten among them.
+# Enough candidates for the ordering below to find the best ten among them: this many from
+# Paris and as many from elsewhere, so that no Paris match is cut before Paris comes first.
 CANDIDATES = 200
 # The usual abbreviations, as people type them.
 ABBREVIATIONS = {
@@ -25,6 +26,11 @@ ABBREVIATIONS = {
 }
 # What may follow a house number: a street search leaves these out, with the number.
 NUMBER_SUFFIXES = {'bis', 'ter', 'quater'}
+# Kinds of street: on their own they name no place.
+STREET_KINDS = {
+    'rue', 'avenue', 'boulevard', 'place', 'impasse', 'allee', 'chemin', 'square', 'quai', 'route',
+    'cours', 'passage', 'faubourg', 'villa', 'cite', 'sentier', 'voie', 'rond', 'point',
+}
 # Words a street's name may hold that nobody needs to type.
 SMALL_WORDS = {'de', 'du', 'des', 'la', 'le', 'les', 'l', 'd', 'a', 'au', 'aux', 'et', 'en', 'sur'}
 
@@ -49,28 +55,32 @@ def lookup(query, addresses=False):
     if not by_address:
         # A street has no house number; a five-digit number is a postcode, and stays.
         typed = [word for word in typed if word not in numbers and word not in NUMBER_SUFFIXES]
-    if not typed:
+    # A number, a small word or a kind of street alone names no place, and would match
+    # hundreds of thousands of addresses.
+    if not set(typed) - set(numbers) - NUMBER_SUFFIXES - SMALL_WORDS - STREET_KINDS:
         return []
-    if not data.places_file().exists():
-        raise Unavailable
     # Each word must appear; the last one may be the start of a word.
     match = ' '.join(f'"{word}"' for word in typed[:-1]) + f' "{typed[-1]}"*'
-    with contextlib.closing(sqlite3.connect(f'{data.places_file().as_uri()}?mode=ro', uri=True)) as index:
-        if by_address:
-            found = index.execute(
-                'SELECT a.number, a.name, a.postcode, a.commune, a.in_paris, a.lat, a.lon FROM addresses_text t '
-                'JOIN addresses a ON a.id = t.rowid WHERE addresses_text MATCH ? ORDER BY bm25(addresses_text) LIMIT ?',
-                (match, CANDIDATES),
-            ).fetchall()
-            places = [address(*row) for row in found]
-        else:
-            found = index.execute(
-                'SELECT s.name, s.postcodes, s.commune, s.in_paris, s.lat, s.lon, s.south, s.west, s.north, s.east '
-                'FROM streets_text t JOIN streets s ON s.id = t.rowid WHERE streets_text MATCH ? '
-                'ORDER BY bm25(streets_text) LIMIT ?',
-                (match, CANDIDATES),
-            ).fetchall()
-            places = [street(*row) for row in found]
+    if by_address:
+        columns, table, make = 'a.number, a.name, a.postcode, a.commune, a.in_paris, a.lat, a.lon', 'addresses', address
+    else:
+        columns, table, make = 's.name, s.postcodes, s.commune, s.in_paris, s.lat, s.lon, s.south, s.west, s.north, s.east', 'streets', street
+    alias = table[0]
+    try:
+        with contextlib.closing(sqlite3.connect(f'{data.places_file().resolve().as_uri()}?mode=ro', uri=True)) as index:
+            found = [
+                row
+                for in_paris in (1, 0)
+                for row in index.execute(
+                    f'SELECT {columns} FROM {table}_text t JOIN {table} {alias} ON {alias}.id = t.rowid '
+                    f'WHERE {table}_text MATCH ? AND {alias}.in_paris = ? ORDER BY bm25({table}_text) LIMIT ?',
+                    (match, in_paris, CANDIDATES),
+                )
+            ]
+    except sqlite3.OperationalError:
+        # No index downloaded (or it is being replaced in a way SQLite cannot open).
+        raise Unavailable from None
+    places = [make(*row) for row in found]
     typed_words = set(typed)
     # A place whose whole name was typed before longer names holding it ("Place de la
     # République" before "… Dominicaine"), the number typed before its "bis", then Paris.
