@@ -57,6 +57,7 @@ lawyer_patterns = [
     # The map's data, never logged (maps.logs): keep every route of it under map/.
     path('map/style.json', map_views.style, {'flavour': 'light'}, name='map_style'),
     path('map/style-dark.json', map_views.style, {'flavour': 'dark'}, name='map_style_dark'),
+    path('map/places/', map_views.lookup, name='map_lookup'),
     path('map/tiles.pmtiles', map_views.tiles, name='map_tiles'),
     path('map/fonts/<str:fontstack>/<str:glyph_range>.pbf', map_views.glyphs, name='map_glyphs'),
 ]
