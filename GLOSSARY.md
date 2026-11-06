@@ -282,6 +282,12 @@ What lets an uploader or code holder, who has no account, load the map data: a s
 _French_: laissez-passer cartographique
 _Avoid_: Token, key (a key opens something encrypted), ticket
 
+**Place lookup**:
+Finding a place by its name in the archive's own copy of the Base Adresse Nationale (ADR 0011): a street for an uploader or code holder, an address with its house number for a lawyer's case. It moves the map or fills typed coordinates; it keeps nothing.
+_French_: repérage
+_Avoid_: Search (the clip search a lawyer runs for a case), geocoding (in the interface)
+_Avoid in French_: recherche (the clip search)
+
 **Closed case**:
 A case that can no longer be used to search, preview or download, closed by its lawyer, by revocation, or after a long period without use. It remains in the audit log.
 _French_: dossier de recherche clos
