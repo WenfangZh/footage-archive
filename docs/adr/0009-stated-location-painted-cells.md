@@ -17,3 +17,7 @@ Until M6.6, a clip's stated location was one H3 cell, sized by a precision the u
 - The precision of the metadata location, the GPS position kept from the file, is unchanged: one cell, which the code holder can make coarser, never finer.
 - Without JavaScript, the edit page cannot show the cells as coordinates: typed coordinates replace them, and empty fields keep them.
 - The map sends only cell ids, as the lawyers' map does: typed coordinates are now the only way a position reaches the server. This replaces what ADR 0006's addendum of 2026-10-31 says of the uploader's click, and, for the stated location, what ADR 0002's and ADR 0003's addenda of 2026-10-16 say of a cell's size following the precision; the metadata location still works that way.
+
+## Addendum (2026-11-06): a place lookup reaches the server too
+
+From M9, an uploader or code holder can find a street by a place lookup, run on the archive's server in its own copy of the Base Adresse Nationale (ADR 0011). What they type reaches the server, so "typed coordinates are now the only way a position reaches the server" above no longer holds: a typed street does too. As for coordinates, nothing of it is kept; it is never stored or logged, and only the painted cells, or the coordinates the person confirms, are kept as before. The lookup only moves the map, or fills the typed coordinates without JavaScript.
