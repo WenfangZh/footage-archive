@@ -1948,7 +1948,12 @@ msgstr ""
 "la carte : un clic ajoute ou retire une maille, et la souris glissée avec la "
 "touche Maj enfoncée ajoute toutes les mailles traversées."
 
-#: cases/templates/cases/new_case.html:48
+#: cases/templates/cases/new_case.html:46
+#: clips/templates/clips/location_map.html:29
+msgid "Clear all cells"
+msgstr "Effacer toutes les mailles"
+
+#: cases/templates/cases/new_case.html:49
 msgid "Create the case"
 msgstr "Créer le dossier de recherche"
 

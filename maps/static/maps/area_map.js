@@ -16,6 +16,7 @@ const box = document.getElementById('area-map');
 const field = document.querySelector('form input[name=cells]');
 const rings = field && field.form.elements.margin_rings;
 const readout = document.getElementById('area-map-size');
+const clear = document.getElementById('area-map-clear');
 const resolution = box && Number(box.dataset.resolution);
 const maxCells = box && Number(box.dataset.maxCells);
 
@@ -29,6 +30,7 @@ let redrawing = false;
 // The field follows each change at once; the drawing and the size, once per frame.
 function cellsChanged() {
   field.value = [...picked].join(' ');
+  clear.disabled = picked.size === 0;
   if (redrawing) return;
   redrawing = true;
   requestAnimationFrame(() => {
@@ -155,16 +157,24 @@ function start() {
     cellsChanged();
   });
   rings.addEventListener('input', showSize);
+  clear.addEventListener('click', () => {
+    picked.clear();
+    cellsChanged();
+    box.focus(); // The button is now disabled: where the keyboard goes on from.
+  });
 }
 
 if (box && field) {
   try {
     box.hidden = false;
     readout.hidden = false;
+    clear.hidden = false;
+    clear.disabled = picked.size === 0;
     start();
   } catch {
     // Without WebGL2 there is no map: the typed place and radius still work.
     box.hidden = true;
     readout.hidden = true;
+    clear.hidden = true;
   }
 }
