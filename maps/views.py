@@ -11,14 +11,18 @@ import json
 import os
 import re
 
+from django.conf import settings
 from django.http import FileResponse, Http404, JsonResponse
+from django.views.decorators.debug import sensitive_post_parameters
+from django.views.decorators.http import require_POST
 from django.urls import reverse
 from django.utils.cache import patch_cache_control
 
 from accounts.roles import lawyer_required
+from clips import rate_limits
 from clips.streaming import file_response
 
-from . import data, passes
+from . import data, passes, places
 
 GLYPH_RANGE = re.compile(r'[0-9]{1,5}-[0-9]{1,5}')
 # Stand-ins that MapLibre replaces, kept out of reverse(), which would escape the braces.
@@ -102,3 +106,36 @@ def private(response):
     # As the tiles are (clips.streaming): no shared cache keeps them, and the style names a pass.
     patch_cache_control(response, no_store=True, private=True)
     return response
+
+
+# The place lookup (M9, ADR 0011): what is typed comes in the request's body, never its URL,
+# under the map data's unlogged prefixes; error reports hide it. Streets only with a map pass;
+# a lawyer's lookup finds addresses too.
+@lawyer_required
+@sensitive_post_parameters('place')
+@require_POST
+def lookup(request):
+    return lookup_response(request, addresses=True)
+
+
+@pass_required
+@sensitive_post_parameters('place')
+@require_POST
+def lookup_with_pass(request, map_pass):
+    return lookup_response(request, addresses=False)
+
+
+def lookup_response(request, addresses):
+    if rate_limits.is_limited(request, rate_limits.PLACE_LOOKUPS):
+        refused = JsonResponse({'error': 'too_many'}, status=429)
+        refused['Retry-After'] = str(settings.RATE_LIMIT_WINDOW_MINUTES * 60)
+        return private(refused)
+    rate_limits.count(request, rate_limits.PLACE_LOOKUPS)
+    query = request.POST.get('place', '').strip()
+    if len(query) > places.MAX_QUERY:
+        return private(JsonResponse({'error': 'too_long'}, status=400))
+    try:
+        matches = places.lookup(query, addresses=addresses)
+    except places.Unavailable:
+        return private(JsonResponse({'error': 'unavailable'}, status=503))
+    return private(JsonResponse({'matches': matches}))

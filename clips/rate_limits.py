@@ -1,4 +1,5 @@
-"""Rate limits for uploads, failed upload-code attempts and failed logins (SPEC.md §5, §8, §10).
+"""Rate limits for uploads, failed upload-code attempts, failed logins and place lookups
+(SPEC.md §5, §8, §10, §12 M9).
 
 Counts are kept per connection, and failed logins also per account on that connection, so
 that nobody can lock a lawyer out from elsewhere. The IP address and
@@ -23,6 +24,7 @@ FAILED_LOGINS = 'failed_logins'
 FAILED_LOGINS_FOR_ACCOUNT = 'failed_logins_for_account'
 # Counted per account from any connection, never to refuse anything: only for the alert.
 FAILED_LOGINS_ANYWHERE = 'failed_logins_anywhere'
+PLACE_LOOKUPS = 'place_lookups'
 
 
 def limit(action):
@@ -32,6 +34,7 @@ def limit(action):
         FAILED_LOGINS: settings.RATE_LIMIT_FAILED_LOGINS,
         FAILED_LOGINS_FOR_ACCOUNT: settings.RATE_LIMIT_FAILED_LOGINS_FOR_ACCOUNT,
         FAILED_LOGINS_ANYWHERE: settings.ALERT_FAILED_LOGINS,
+        PLACE_LOOKUPS: settings.RATE_LIMIT_PLACE_LOOKUPS,
     }[action]
 
 
