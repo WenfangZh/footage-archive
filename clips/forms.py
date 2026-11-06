@@ -242,8 +242,9 @@ class ClipFieldsForm(forms.Form):
         return cleaned
 
     def unchecked(self):
-        """This form shown again as sent, without its errors: a place lookup saves nothing, so it
-        has nothing to say about the rest of the form (SPEC.md §12 M9)."""
+        """This form, to render again as sent, without its errors: a place lookup saves nothing,
+        so it has nothing to say about the rest of the form (SPEC.md §12 M9). For rendering only:
+        never validate or save it."""
         self._errors = ErrorDict()
         return self
 

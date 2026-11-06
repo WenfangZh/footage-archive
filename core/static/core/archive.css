@@ -353,3 +353,8 @@ input.year { width: 4.2rem; }
 input.month, input.day { width: 3.2rem; }
 input.time { width: 7.5rem; }
 input.calendar { display: inline-block; width: auto; margin-bottom: 1rem; }
+
+/* A place lookup's matches (clips/place_lookup.html): one per line, as long as their names. */
+.place-matches { list-style: none; padding: 0; }
+.place-matches li + li { margin-top: 0.4rem; }
+.place-matches button { text-align: start; }

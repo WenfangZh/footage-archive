@@ -100,9 +100,9 @@ def confirm(request, original_id):
         lookup, data = place_lookup(request)
         form = ConfirmForm(data, has_gps=has_gps)
         if lookup is not None:
-            return render(request, 'clips/confirm.html', {
+            return lookup_response(lookup, render(request, 'clips/confirm.html', {
                 'form': form.unchecked(), 'read': read, 'place_lookup': lookup, **location_map(),
-            }, status=lookup_status(lookup))
+            }))
         if form.is_valid():
             try:
                 code = confirm_upload(original, read, form.cleaned_data)
@@ -175,7 +175,7 @@ def edit(request):
     lookup, data = place_lookup(request)
     form = edit_form(clip, data=data)
     if lookup is not None:
-        return render_clip(request, clip, form.unchecked(), status=lookup_status(lookup), place_lookup=lookup)
+        return lookup_response(lookup, render_clip(request, clip, form.unchecked(), place_lookup=lookup))
     if not form.is_valid():
         return render_clip(request, clip, form, status=400)
     try:
@@ -301,19 +301,19 @@ def place_lookup(request):
     its "Look up" button or by choosing a match: what the page shows of it, and the form's data,
     a chosen street's point filled in as typed coordinates. (None, the data) for a form sent to
     be confirmed or saved. Nothing of it is stored or logged."""
-    if 'choose' in request.POST:
-        data = request.POST.copy()
-        point = chosen_point(request.POST['choose'])
-        if point is None:
-            return {}, data
-        data['latitude'], data['longitude'] = point
-        data['precision'] = Precision.STREET
-        data.pop('remove_place', None)  # Choosing a street gives a place.
-        return {'chosen': True}, data
-    if 'lookup' not in request.POST:
+    if 'choose' not in request.POST and 'lookup' not in request.POST:
         return None, request.POST
     query = request.POST.get('place', '').strip()
     found = {'query': query}
+    if 'choose' in request.POST:
+        data = request.POST.copy()
+        point = chosen_point(request.POST['choose'])
+        if point is None:  # Not a match this page offered: shown again as sent.
+            return found, data
+        data['latitude'], data['longitude'] = point
+        data['precision'] = Precision.STREET
+        data.pop('remove_place', None)  # Choosing a street gives a place.
+        return {**found, 'chosen': True}, data
     if rate_limits.is_limited(request, rate_limits.PLACE_LOOKUPS):
         return {**found, 'problem': 'too_many'}, request.POST
     rate_limits.count(request, rate_limits.PLACE_LOOKUPS)
@@ -342,8 +342,12 @@ def chosen_point(value):
     return str(latitude), str(longitude)
 
 
-def lookup_status(lookup):
-    return 429 if lookup.get('problem') == 'too_many' else 200
+def lookup_response(lookup, response):
+    """Too many lookups are answered as the map's lookup route answers them."""
+    if lookup.get('problem') == 'too_many':
+        response.status_code = 429
+        response['Retry-After'] = str(settings.RATE_LIMIT_WINDOW_MINUTES * 60)
+    return response
 
 
 def location_map():

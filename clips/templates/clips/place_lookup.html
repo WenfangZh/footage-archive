@@ -5,14 +5,14 @@
   <p>
     <label for="place-lookup-query">{% translate "Look up a street" %}</label>
     <input type="search" id="place-lookup-query" name="place" maxlength="{{ place_max_length }}" autocomplete="off" value="{{ place_lookup.query }}">
-    <button type="submit" name="lookup" value="yes" formnovalidate>{% translate "Look up" %}</button>
+    <button type="submit" name="lookup" value="yes" formnovalidate data-lookup>{% translate "Look up" %}</button>
   </p>
   <div id="place-lookup-result" role="status">
   {% if place_lookup.matches %}
     <p>{% translate "Choose the street where it was filmed:" %}</p>
     <ul class="place-matches">
       {% for match in place_lookup.matches %}
-        <li><button type="submit" name="choose" value="{{ match.lat|unlocalize }} {{ match.lon|unlocalize }}" formnovalidate>{{ match.label }}</button></li>
+        <li><button type="submit" name="choose" value="{{ match.lat|unlocalize }} {{ match.lon|unlocalize }}" formnovalidate data-lookup>{{ match.label }}</button></li>
       {% endfor %}
     </ul>
   {% elif place_lookup.chosen %}

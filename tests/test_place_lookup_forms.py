@@ -60,7 +60,7 @@ def test_on_the_upload_form_a_lookup_and_a_choice_keep_the_form_and_confirm_noth
 
     chosen = client.post(url, full_form(**NO_COORDINATES, place='bd st germain', choose=' '.join(POINT)), headers=ENGLISH)
     html = chosen.content.decode()
-    assert f'value="{POINT[0]}"' in html and f'value="{POINT[1]}"' in html
+    assert f'value="{POINT[0]}"' in html and f'value="{POINT[1]}"' in html and 'value="bd st germain"' in html
     assert re.search(r'value="street"[^>]*checked', html)
     assert 'one point of the street' in html and '<details id="typed-place" open>' in html
     assert 'Filmed from across the street.' in html
@@ -99,7 +99,7 @@ def test_lookups_by_button_are_rate_limited_and_never_kept_or_logged(index, sett
     first = client.post(url, {'place': 'rue de la paix', 'lookup': 'yes'}, headers=ENGLISH)
     assert 'Rue de la Paix, 75002' in first.content.decode()
     refused = client.post(url, {'place': 'rue de la paix', 'lookup': 'yes'}, headers=ENGLISH)
-    assert refused.status_code == 429 and 'Too many lookups' in refused.content.decode()
+    assert refused.status_code == 429 and refused['Retry-After'] == '3600' and 'Too many lookups' in refused.content.decode()
     logging.getLogger('django.server').info('"%s" %s %s', f'POST {url} HTTP/1.1', 200, 128)
     assert 'paix' not in django_log.getvalue() and database_dump() == before
     # Error reports hide the query and the match chosen (Django's SafeExceptionReporterFilter reads this).
