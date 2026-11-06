@@ -358,6 +358,7 @@ def location_map():
     return {
         'map_style_url': reverse('maps:style', kwargs={'map_pass': map_pass}),
         'map_style_dark_url': reverse('maps:style_dark', kwargs={'map_pass': map_pass}),
+        'place_lookup_url': reverse('maps:lookup', kwargs={'map_pass': map_pass}),
         'grid_resolution': grid.finest_resolution(),
         'ceiling_metres': settings.STATED_LOCATION_CEILING_METRES,
         'max_cells': max_stated_cells(),

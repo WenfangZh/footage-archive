@@ -1,6 +1,17 @@
 {% load i18n l10n %}
-{# The place lookup (SPEC.md §12 M9, ADR 0011): a street found by name. "Look up" is the form's first button, so Enter in any field runs a lookup, never the form's main action. Both kinds of button send the form back to this page, which saves nothing. #}
-<div id="place-lookup">
+{# The place lookup (SPEC.md §12 M9, ADR 0011): a street found by name. "Look up" is the form's first button, so Enter in any field runs a lookup, never the form's main action. Without JavaScript, both kinds of button send the form back to this page, which saves nothing; with it, clips/location_map.js asks the map's lookup route instead and moves the map. #}
+{% translate "Choose the street where it was filmed:" as choose_text %}
+{% translate "The coordinates below are one point of the street you chose. Change them if you know a closer one, or choose the cells on the map." as chosen_text %}
+{% translate "The map shows the street you chose: zoom in and tap the cells where it was filmed." as shown_text %}
+{% translate "Type the name of a street to look it up." as empty_text %}
+{% blocktranslate with count=place_max_length asvar too_long_text %}Type at most {{ count }} characters.{% endblocktranslate %}
+{% translate "No street of that name in Île-de-France. Check the spelling, or give the coordinates." as none_found_text %}
+{% translate "Too many lookups from this connection. Try again later, or give the coordinates." as too_many_text %}
+{% translate "Looking up a street is unavailable for now. Give the coordinates instead." as unavailable_text %}
+<div id="place-lookup"{% if places_available %} data-url="{{ place_lookup_url }}"
+  data-choose="{{ choose_text|force_escape }}" data-chosen="{{ chosen_text|force_escape }}" data-shown="{{ shown_text|force_escape }}"
+  data-empty="{{ empty_text|force_escape }}" data-too-long="{{ too_long_text|force_escape }}" data-none-found="{{ none_found_text|force_escape }}"
+  data-too-many="{{ too_many_text|force_escape }}" data-unavailable="{{ unavailable_text|force_escape }}"{% endif %}>
 {% if places_available %}
   <p>
     <label for="place-lookup-query">{% translate "Look up a street" %}</label>
@@ -9,27 +20,27 @@
   </p>
   <div id="place-lookup-result" role="status">
   {% if place_lookup.matches %}
-    <p>{% translate "Choose the street where it was filmed:" %}</p>
+    <p>{{ choose_text }}</p>
     <ul class="place-matches">
       {% for match in place_lookup.matches %}
         <li><button type="submit" name="choose" value="{{ match.lat|unlocalize }} {{ match.lon|unlocalize }}" formnovalidate data-lookup>{{ match.label }}</button></li>
       {% endfor %}
     </ul>
   {% elif place_lookup.chosen %}
-    <p>{% translate "The coordinates below are one point of the street you chose. Change them if you know a closer one, or choose the cells on the map." %}</p>
+    <p>{{ chosen_text }}</p>
   {% elif place_lookup.problem == "empty" %}
-    <p>{% translate "Type the name of a street to look it up." %}</p>
+    <p>{{ empty_text }}</p>
   {% elif place_lookup.problem == "too_long" %}
-    <p>{% blocktranslate with count=place_max_length %}Type at most {{ count }} characters.{% endblocktranslate %}</p>
+    <p>{{ too_long_text }}</p>
   {% elif place_lookup.problem == "none_found" %}
-    <p>{% translate "No street of that name in Île-de-France. Check the spelling, or give the coordinates." %}</p>
+    <p>{{ none_found_text }}</p>
   {% elif place_lookup.problem == "too_many" %}
-    <p>{% translate "Too many lookups from this connection. Try again later, or give the coordinates." %}</p>
+    <p>{{ too_many_text }}</p>
   {% elif place_lookup.problem == "unavailable" %}
-    <p>{% translate "Looking up a street is unavailable for now. Give the coordinates instead." %}</p>
+    <p>{{ unavailable_text }}</p>
   {% endif %}
   </div>
 {% else %}
-  <p>{% translate "Looking up a street is unavailable for now. Give the coordinates instead." %}</p>
+  <p>{{ unavailable_text }}</p>
 {% endif %}
 </div>

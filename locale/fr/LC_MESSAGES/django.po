@@ -2826,19 +2826,11 @@ msgstr[1] ""
 "%(cells)s mailles autour de %(latitude)s, %(longitude)s, d'environ %(width)s "
 "m de large"
 
-#: clips/templates/clips/place_lookup.html:6
-msgid "Look up a street"
-msgstr "Repérer une rue"
-
-#: clips/templates/clips/place_lookup.html:8
-msgid "Look up"
-msgstr "Repérer"
-
-#: clips/templates/clips/place_lookup.html:12
+#: clips/templates/clips/place_lookup.html:3
 msgid "Choose the street where it was filmed:"
 msgstr "Choisissez la rue où la vidéo a été filmée :"
 
-#: clips/templates/clips/place_lookup.html:19
+#: clips/templates/clips/place_lookup.html:4
 msgid ""
 "The coordinates below are one point of the street you chose. Change them if "
 "you know a closer one, or choose the cells on the map."
@@ -2846,16 +2838,24 @@ msgstr ""
 "Les coordonnées ci-dessous sont un point de la rue choisie. Modifiez-les si "
 "vous en connaissez un plus proche, ou choisissez les mailles sur la carte."
 
-#: clips/templates/clips/place_lookup.html:21
+#: clips/templates/clips/place_lookup.html:5
+msgid ""
+"The map shows the street you chose: zoom in and tap the cells where it was "
+"filmed."
+msgstr ""
+"La carte montre la rue choisie : zoomez puis touchez les mailles où la vidéo "
+"a été filmée."
+
+#: clips/templates/clips/place_lookup.html:6
 msgid "Type the name of a street to look it up."
 msgstr "Saisissez le nom d'une rue pour la repérer."
 
-#: clips/templates/clips/place_lookup.html:23
+#: clips/templates/clips/place_lookup.html:7
 #, python-format
 msgid "Type at most %(count)s characters."
 msgstr "Saisissez au plus %(count)s caractères."
 
-#: clips/templates/clips/place_lookup.html:25
+#: clips/templates/clips/place_lookup.html:8
 msgid ""
 "No street of that name in Île-de-France. Check the spelling, or give the "
 "coordinates."
@@ -2863,7 +2863,7 @@ msgstr ""
 "Aucune rue de ce nom en Île-de-France. Vérifiez l'orthographe, ou donnez les "
 "coordonnées."
 
-#: clips/templates/clips/place_lookup.html:27
+#: clips/templates/clips/place_lookup.html:9
 msgid ""
 "Too many lookups from this connection. Try again later, or give the "
 "coordinates."
@@ -2871,13 +2871,20 @@ msgstr ""
 "Trop de repérages depuis cette connexion. Réessayez plus tard, ou donnez les "
 "coordonnées."
 
-#: clips/templates/clips/place_lookup.html:29
-#: clips/templates/clips/place_lookup.html:33
+#: clips/templates/clips/place_lookup.html:10
 msgid ""
 "Looking up a street is unavailable for now. Give the coordinates instead."
 msgstr ""
 "Le repérage des rues est indisponible pour le moment. Donnez plutôt les "
 "coordonnées."
+
+#: clips/templates/clips/place_lookup.html:17
+msgid "Look up a street"
+msgstr "Repérer une rue"
+
+#: clips/templates/clips/place_lookup.html:19
+msgid "Look up"
+msgstr "Repérer"
 
 #: clips/templates/clips/rate_limited.html:9
 #: clips/templates/clips/upload.html:40
