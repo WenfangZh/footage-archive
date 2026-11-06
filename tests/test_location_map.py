@@ -108,6 +108,6 @@ def test_the_map_is_given_the_servers_own_ceiling_and_cells_and_can_set_the_type
     assert 'data-ceiling-metres="1000"' in box and 'data-resolution="11"' in box and 'data-picking-zoom="16"' in box
     assert 'data-cells="/static/maps/cells.js"' in box
     # Without the map, the place is typed; once the map opens, these give way to it.
-    typed = html[html.index('<div id="typed-place">'):html.index('id="location-map-open"')]
+    typed = html[html.index('<details id="typed-place"'):html.index('</details>', html.index('<details id="typed-place"'))]
     assert 'name="latitude"' in typed and 'name="precision"' in typed
     assert re.search(r'<input type="hidden" name="cells"', html)

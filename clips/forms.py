@@ -4,6 +4,7 @@ import zoneinfo
 
 from django import forms
 from django.conf import settings
+from django.forms.utils import ErrorDict
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -239,6 +240,12 @@ class ClipFieldsForm(forms.Form):
                 params={'metres': settings.STATED_LOCATION_CEILING_METRES},
             ))
         return cleaned
+
+    def unchecked(self):
+        """This form shown again as sent, without its errors: a place lookup saves nothing, so it
+        has nothing to say about the rest of the form (SPEC.md §12 M9)."""
+        self._errors = ErrorDict()
+        return self
 
 
 class ConfirmForm(ClipFieldsForm):
