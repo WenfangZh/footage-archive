@@ -82,7 +82,7 @@ def render_upload(request, form, problem=None, status=200):
 
 @never_cache
 @sensitive_post_parameters(*PRIVATE_FIELDS)
-@sensitive_variables('code')
+@sensitive_variables('code', 'lookup', 'data')
 @require_http_methods(['GET', 'POST'])
 def confirm(request, original_id):
     """Upload step 2: the form, then the code card. The metadata time is never a field."""
@@ -163,7 +163,7 @@ def code_holder(request):
 
 @never_cache
 @sensitive_post_parameters('code', *PRIVATE_FIELDS)
-@sensitive_variables('typed')
+@sensitive_variables('typed', 'lookup', 'data')
 @require_http_methods(['POST'])
 def edit(request):
     typed = request.POST.get('code', '')
@@ -296,6 +296,7 @@ def render_clip(request, clip, form, status=200, **flags):
     }, status=status)
 
 
+@sensitive_variables('lookup', 'data')
 def street_lookup(request):
     """The place lookup without JavaScript (maps.form_lookup): a chosen street's point is typed
     with the precision "street", and gives a place."""

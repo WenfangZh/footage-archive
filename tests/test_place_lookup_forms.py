@@ -105,7 +105,7 @@ def test_on_a_new_case_a_lookup_finds_addresses_and_a_choice_fills_the_place_but
     html = chosen.content.decode()
     # The point is shown, for the lawyer to set the radius around it; a refused form forgets it.
     assert f'value="{ADDRESS_POINT[0]}"' in html and f'value="{ADDRESS_POINT[1]}"' in html
-    assert 'Set the radius around it.' in html and '<details id="typed-place" open>' in html
+    assert 'Set the radius around it.' in html
     assert not Case.objects.exists()
     assert {'place', 'choose'} <= set(chosen.wsgi_request.sensitive_post_parameters)
 

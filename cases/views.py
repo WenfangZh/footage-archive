@@ -35,7 +35,7 @@ def own_profile(request):
 # chosen are as private as the typed place (M9).
 @sensitive_post_parameters('latitude', 'longitude', 'cells', 'reason', 'label', 'place', 'choose')
 # And out of the variables a traceback shows: the form and its cleaned data hold them too.
-@sensitive_variables('form', 'fields')
+@sensitive_variables('form', 'fields', 'lookup', 'data')
 def new_case(request):
     profile = own_profile(request)
     if request.method == 'POST':
@@ -75,6 +75,7 @@ def new_case(request):
     return render_new_case(request, form)
 
 
+@sensitive_variables('form', 'lookup')
 def render_new_case(request, form, lookup=None):
     return render(request, 'cases/new_case.html', {
         'form': form, 'grid_resolution': grid.finest_resolution(),

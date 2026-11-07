@@ -8,12 +8,14 @@ What is typed is never stored or logged here; the views hide it from error repor
 
 from django.conf import settings
 from django.forms.utils import ErrorDict
+from django.views.decorators.debug import sensitive_variables
 
 from clips import rate_limits
 
 from . import data, places
 
 
+@sensitive_variables('query', 'found', 'point', 'sent', 'matches')
 def run(request, addresses):
     """For a form sent back by "Look up" or by a match's button: what the page shows of the
     lookup, and the form's data, a chosen match's point filled in as its latitude and longitude.
@@ -26,9 +28,9 @@ def run(request, addresses):
         point = chosen_point(request.POST['choose'])
         if point is None:  # Not a match the page offered: shown again as sent.
             return found, request.POST
-        data = request.POST.copy()
-        data['latitude'], data['longitude'] = point
-        return {**found, 'chosen': True}, data
+        sent = request.POST.copy()
+        sent['latitude'], sent['longitude'] = point
+        return {**found, 'chosen': True}, sent
     if rate_limits.is_limited(request, rate_limits.PLACE_LOOKUPS):
         return {**found, 'problem': 'too_many'}, request.POST
     rate_limits.count(request, rate_limits.PLACE_LOOKUPS)
@@ -45,6 +47,7 @@ def run(request, addresses):
     return {**found, 'matches': matches}, request.POST
 
 
+@sensitive_variables('value', 'latitude', 'longitude')
 def chosen_point(value):
     """A match's point as two strings, latitude and longitude, or None. Sent back by the page, it
     is checked as typed coordinates are (and is no more than they could be)."""
