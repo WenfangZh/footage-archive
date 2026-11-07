@@ -3563,7 +3563,7 @@ msgid ""
 "in: set the radius around it."
 msgstr ""
 "La carte montre l'adresse choisie, et les coordonnées ci-dessous sont "
-"remplies : indiquez le rayon autour."
+"remplies : indiquez le rayon autour de celle-ci."
 
 #: maps/templates/maps/place_lookup.html:8
 msgid ""
