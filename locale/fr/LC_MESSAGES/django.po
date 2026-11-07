@@ -1020,11 +1020,11 @@ msgstr "Heure française, comme dans le procès-verbal."
 msgid "End of the time window"
 msgstr "Fin de la plage horaire"
 
-#: cases/forms.py:66 clips/forms.py:172
+#: cases/forms.py:66 clips/forms.py:171
 msgid "Latitude"
 msgstr "Latitude"
 
-#: cases/forms.py:70 clips/forms.py:176
+#: cases/forms.py:70 clips/forms.py:175
 msgid "Longitude"
 msgstr "Longitude"
 
@@ -1066,17 +1066,17 @@ msgstr ""
 "supprimée ; pour un dossier dans les plafonds, elle n'est pas gardée. Jamais "
 "le nom d'un·e client·e."
 
-#: cases/forms.py:98
+#: cases/forms.py:105
 msgid "The time window must end after it starts."
 msgstr "La plage horaire doit se terminer après son début."
 
-#: cases/forms.py:119
+#: cases/forms.py:126
 msgid "Give the area either as a place and a radius or on the map, not both."
 msgstr ""
 "Donnez le périmètre soit par un lieu et un rayon, soit sur la carte, pas les "
 "deux."
 
-#: cases/forms.py:129
+#: cases/forms.py:136
 msgid ""
 "Give the place and radius from the police report, or pick the area on the "
 "map."
@@ -1084,7 +1084,7 @@ msgstr ""
 "Donnez le lieu et le rayon du procès-verbal, ou choisissez le périmètre sur "
 "la carte."
 
-#: cases/forms.py:136
+#: cases/forms.py:143
 #, python-format
 msgid ""
 "With its margin, this case lasts %(minutes)s minutes and is about %(metres)s "
@@ -1095,7 +1095,7 @@ msgstr ""
 "%(metres)s m de large. Aucun dossier de recherche ne peut dépasser "
 "%(ceiling_minutes)s minutes ni %(ceiling_metres)s m de large."
 
-#: cases/forms.py:143
+#: cases/forms.py:150
 #, python-format
 msgid ""
 "With its margin, this case lasts %(minutes)s minutes and is about %(metres)s "
@@ -1109,17 +1109,17 @@ msgstr ""
 "large. Pour demander cette validation, donnez votre justification dans le "
 "champ « Pourquoi ce dossier de recherche doit dépasser les plafonds »."
 
-#: cases/forms.py:159
+#: cases/forms.py:166
 msgid "Show code holders my name and bar on my messages"
 msgstr ""
 "Montrer mon nom et mon barreau sur mes messages aux personnes qui détiennent "
 "le code"
 
-#: cases/forms.py:160
+#: cases/forms.py:167
 msgid "Email me when something is waiting for me in the archive"
 msgstr "M'envoyer un e-mail quand quelque chose m'attend dans l'archive"
 
-#: cases/forms.py:163
+#: cases/forms.py:170
 msgid ""
 "Otherwise they see only \"a verified defence lawyer\". You can still choose "
 "on each message."
@@ -1127,7 +1127,7 @@ msgstr ""
 "Sinon, elles voient seulement « un·e avocat·e de la défense vérifié·e ». "
 "Vous pouvez encore choisir sur chaque message."
 
-#: cases/forms.py:164
+#: cases/forms.py:171
 msgid ""
 "At most one email until you open your messages, saying only that something "
 "is waiting: never what, nor about which clip."
@@ -1136,37 +1136,37 @@ msgstr ""
 "seulement que quelque chose vous attend : jamais quoi, ni à propos de quel "
 "clip."
 
-#: cases/forms.py:172
+#: cases/forms.py:179
 msgid "Decision"
 msgstr "Décision"
 
-#: cases/forms.py:173
+#: cases/forms.py:180
 msgid "Approve the case"
 msgstr "Valider le dossier de recherche"
 
-#: cases/forms.py:173
+#: cases/forms.py:180
 msgid "Refuse the case: it is closed"
 msgstr "Refuser le dossier de recherche : il est clos"
 
-#: cases/forms.py:176
+#: cases/forms.py:183
 msgid "Your note to the lawyer (optional)"
 msgstr "Votre note à l'avocat·e (facultatif)"
 
-#: cases/forms.py:177
+#: cases/forms.py:184
 msgid "Kept with the case, which its lawyer can see. Never a client's name."
 msgstr ""
 "Gardée avec le dossier de recherche, et visible par son avocat·e. Jamais le "
 "nom d'un·e client·e."
 
-#: cases/forms.py:185
+#: cases/forms.py:192
 msgid "Default tag"
 msgstr "Étiquette prédéfinie"
 
-#: cases/forms.py:188
+#: cases/forms.py:195
 msgid "Or your own tag"
 msgstr "Ou votre propre étiquette"
 
-#: cases/forms.py:190
+#: cases/forms.py:197
 msgid ""
 "Every lawyer whose case matches this clip will see it. Write only what can "
 "be seen, nothing about your case."
@@ -1174,19 +1174,19 @@ msgstr ""
 "Chaque avocat·e dont le dossier de recherche correspond à ce clip la verra. "
 "N'écrivez que ce qu'on voit, rien sur votre dossier de recherche."
 
-#: cases/forms.py:198
+#: cases/forms.py:205
 msgid "A tag needs at least one letter or digit."
 msgstr "Une étiquette doit contenir au moins une lettre ou un chiffre."
 
-#: cases/forms.py:206
+#: cases/forms.py:213
 msgid "Choose a default tag or write your own, not both."
 msgstr "Choisissez une étiquette prédéfinie ou écrivez la vôtre, pas les deux."
 
-#: cases/forms.py:214 clips/models.py:425
+#: cases/forms.py:221 clips/models.py:425
 msgid "Message"
 msgstr "Message"
 
-#: cases/forms.py:215 cases/forms.py:233
+#: cases/forms.py:222 cases/forms.py:240
 msgid ""
 "Stored so that only the code holder of this clip, with their upload code, "
 "and you, with your personal key, can read it."
@@ -1195,29 +1195,29 @@ msgstr ""
 "avec son code d'upload, et vous, avec votre clé personnelle, puissiez le "
 "lire."
 
-#: cases/forms.py:218
+#: cases/forms.py:225
 msgid "Show the code holder my name and bar on this message"
 msgstr ""
 "Montrer mon nom et mon barreau sur ce message à la personne qui détient le "
 "code"
 
-#: cases/forms.py:219
+#: cases/forms.py:226
 msgid "Otherwise they see only \"a verified defence lawyer\"."
 msgstr "Sinon, elle voit seulement « un·e avocat·e de la défense vérifié·e »."
 
-#: cases/forms.py:228
+#: cases/forms.py:235
 msgid "What is wrong"
 msgstr "Ce qui est erroné"
 
-#: cases/forms.py:229
+#: cases/forms.py:236
 msgid "The time"
 msgstr "L'heure"
 
-#: cases/forms.py:229
+#: cases/forms.py:236
 msgid "The place"
 msgstr "Le lieu"
 
-#: cases/forms.py:232
+#: cases/forms.py:239
 msgid "Note (optional)"
 msgstr "Note (facultative)"
 
@@ -1504,7 +1504,7 @@ msgstr[0] ""
 msgstr[1] ""
 "L'heure indiquée est à %(minutes)s minutes de l'heure des métadonnées."
 
-#: cases/templates/cases/clip.html:48 clips/forms.py:39
+#: cases/templates/cases/clip.html:48 clips/forms.py:38
 #: clips/templates/clips/clip.html:37 clips/templates/clips/confirm.html:16
 msgid "Time"
 msgstr "Heure"
@@ -1688,7 +1688,7 @@ msgstr ""
 msgid "Send the report"
 msgstr "Envoyer le signalement de clip"
 
-#: cases/templates/cases/clip.html:121 clips/forms.py:192 clips/models.py:246
+#: cases/templates/cases/clip.html:121 clips/forms.py:191 clips/models.py:246
 #: clips/models.py:293
 msgid "Context"
 msgstr "Contexte"
@@ -1938,7 +1938,12 @@ msgstr "Zoomer"
 msgid "Zoom out"
 msgstr "Dézoomer"
 
-#: cases/templates/cases/new_case.html:39
+#: cases/templates/cases/new_case.html:36 clips/templates/clips/clip.html:53
+#: clips/templates/clips/confirm.html:33
+msgid "Type coordinates instead"
+msgstr "Saisir plutôt des coordonnées"
+
+#: cases/templates/cases/new_case.html:46
 msgid ""
 "Or, instead of a place and a radius, pick the area on the map: a click adds "
 "or removes one cell, and dragging with Shift held down adds every cell you "
@@ -1948,12 +1953,12 @@ msgstr ""
 "la carte : un clic ajoute ou retire une maille, et la souris glissée avec la "
 "touche Maj enfoncée ajoute toutes les mailles traversées."
 
-#: cases/templates/cases/new_case.html:46
+#: cases/templates/cases/new_case.html:53
 #: clips/templates/clips/location_map.html:29
 msgid "Clear all cells"
 msgstr "Effacer toutes les mailles"
 
-#: cases/templates/cases/new_case.html:49
+#: cases/templates/cases/new_case.html:56
 msgid "Create the case"
 msgstr "Créer le dossier de recherche"
 
@@ -2131,7 +2136,7 @@ msgstr ""
 msgid "Your message is sent."
 msgstr "Votre message est envoyé."
 
-#: cases/views.py:57
+#: cases/views.py:64
 msgid ""
 "Your account has no personal key to lock the case label with. Ask the admin "
 "what to do."
@@ -2139,11 +2144,11 @@ msgstr ""
 "Votre compte n'a pas de clé personnelle pour chiffrer le libellé du dossier "
 "de recherche. Demandez à l'administrateur·rice comment faire."
 
-#: cases/views.py:94
+#: cases/views.py:107
 msgid "Your settings are saved."
 msgstr "Vos réglages sont enregistrés."
 
-#: cases/views.py:105
+#: cases/views.py:118
 msgid "The case is closed."
 msgstr "Le dossier de recherche est clos."
 
@@ -2160,89 +2165,89 @@ msgid "The clip is deleted. Its hash record is kept."
 msgstr ""
 "Le clip est supprimé. Ses empreintes numériques (hash) sont conservées."
 
-#: clips/forms.py:36
+#: clips/forms.py:35
 msgid "Year"
 msgstr "Année"
 
-#: clips/forms.py:36
+#: clips/forms.py:35
 msgid "YYYY"
 msgstr "AAAA"
 
-#: clips/forms.py:37
+#: clips/forms.py:36
 msgid "Month"
 msgstr "Mois"
 
-#: clips/forms.py:37
+#: clips/forms.py:36
 msgid "MM"
 msgstr "MM"
 
-#: clips/forms.py:38
+#: clips/forms.py:37
 msgid "Day"
 msgstr "Jour"
 
-#: clips/forms.py:38
+#: clips/forms.py:37
 msgid "DD"
 msgstr "JJ"
 
-#: clips/forms.py:72
+#: clips/forms.py:71
 msgid "Enter the year, month, day and time."
 msgstr "Indiquez l'année, le mois, le jour et l'heure."
 
-#: clips/forms.py:81
+#: clips/forms.py:80
 msgid "Enter the time as hours and minutes, such as 18:42."
 msgstr "Indiquez l'heure en heures et minutes, par exemple 18:42."
 
-#: clips/forms.py:83
+#: clips/forms.py:82
 #, python-format
 msgid "Enter a date between %(first)s and next year."
 msgstr "Saisissez une date entre %(first)s et l'an prochain."
 
-#: clips/forms.py:87
+#: clips/forms.py:86
 msgid "Enter a date that exists."
 msgstr "Indiquez une date qui existe."
 
-#: clips/forms.py:92
+#: clips/forms.py:91
 msgid "About 50 m"
 msgstr "Environ 50 m"
 
-#: clips/forms.py:93
+#: clips/forms.py:92
 msgid "About 130 m"
 msgstr "Environ 130 m"
 
-#: clips/forms.py:94
+#: clips/forms.py:93
 msgid "About 340 m"
 msgstr "Environ 340 m"
 
-#: clips/forms.py:115
+#: clips/forms.py:114
 msgid "The place painted on the map could not be read. Paint it again."
 msgstr ""
 "Le lieu colorié sur la carte n'a pas pu être lu. Coloriez-le à nouveau."
 
-#: clips/forms.py:116
+#: clips/forms.py:115
 msgid "The place painted on the map is too large."
 msgstr "Le lieu colorié sur la carte est trop grand."
 
-#: clips/forms.py:147
+#: clips/forms.py:146
 msgid "Video"
 msgstr "Vidéo"
 
-#: clips/forms.py:167
+#: clips/forms.py:166
 msgid "When was it filmed?"
 msgstr "Quand la vidéo a-t-elle été filmée ?"
 
-#: clips/forms.py:180
+#: clips/forms.py:179
 msgid "How precise is this place?"
 msgstr "Quelle est la précision de ce lieu ?"
 
-#: clips/forms.py:184
+#: clips/forms.py:183
 msgid "What can be seen?"
 msgstr "Que voit-on dans la vidéo ?"
 
-#: clips/forms.py:188
+#: clips/forms.py:187
 msgid "Other tags, separated by commas"
 msgstr "Autres étiquettes, séparées par des virgules"
 
-#: clips/forms.py:194
+#: clips/forms.py:193
 msgid ""
 "What happened, and anything a lawyer should know. Leave out names, and "
 "addresses more precise than the place above."
@@ -2250,55 +2255,55 @@ msgstr ""
 "Ce qui s'est passé, et tout ce qu'un·e avocat·e devrait savoir. N'indiquez "
 "pas de noms, ni d'adresse plus précise que le lieu ci-dessus."
 
-#: clips/forms.py:199
+#: clips/forms.py:198
 msgid "Contact details or social media handle"
 msgstr "Moyen de contact ou pseudonyme sur un réseau social"
 
-#: clips/forms.py:211
+#: clips/forms.py:210
 #, python-format
 msgid "Each tag can be at most %(length)d characters."
 msgstr "Chaque étiquette peut compter au plus %(length)d caractères."
 
-#: clips/forms.py:217
+#: clips/forms.py:216
 #, python-format
 msgid "At most %(count)d other tags."
 msgstr "Au plus %(count)d autres étiquettes."
 
-#: clips/forms.py:229
+#: clips/forms.py:228
 msgid "Give both the latitude and the longitude, or neither."
 msgstr "Indiquez la latitude et la longitude, ou aucune des deux."
 
-#: clips/forms.py:231
+#: clips/forms.py:230
 msgid "Say how precise this place is."
 msgstr "Indiquez la précision de ce lieu."
 
-#: clips/forms.py:239
+#: clips/forms.py:238
 #, python-format
 msgid "The place painted on the map is more than %(metres)d m across."
 msgstr "Le lieu colorié sur la carte fait plus de %(metres)d m de large."
 
-#: clips/forms.py:256
+#: clips/forms.py:248
 msgid "How precisely may we keep the GPS position found in the video?"
 msgstr ""
 "Avec quelle précision pouvons-nous garder la position GPS trouvée dans la "
 "vidéo ?"
 
-#: clips/forms.py:273
+#: clips/forms.py:265
 msgid "Remove the place"
 msgstr "Retirer le lieu"
 
-#: clips/forms.py:274
+#: clips/forms.py:266
 msgid "No lawyer can find the clip until you give a place again."
 msgstr ""
 "Aucun·e avocat·e ne peut trouver le clip tant que vous n'indiquez pas à "
 "nouveau un lieu."
 
-#: clips/forms.py:277
+#: clips/forms.py:269
 msgid "How precisely we keep the GPS position found in the video"
 msgstr ""
 "Précision avec laquelle nous gardons la position GPS trouvée dans la vidéo"
 
-#: clips/forms.py:309 clips/templates/clips/clip.html:114
+#: clips/forms.py:301 clips/templates/clips/clip.html:114
 msgid "Your reply"
 msgstr "Votre réponse"
 
@@ -2504,10 +2509,6 @@ msgstr "Le lieu que nous conservons :"
 #: clips/templates/clips/clip.html:48
 msgid "Coordinates given below replace it."
 msgstr "Les coordonnées indiquées ci-dessous le remplacent."
-
-#: clips/templates/clips/clip.html:53 clips/templates/clips/confirm.html:33
-msgid "Type coordinates instead"
-msgstr "Saisir plutôt des coordonnées"
 
 #: clips/templates/clips/clip.html:60
 msgid "GPS position found in the video, as we keep it:"
@@ -2830,66 +2831,6 @@ msgstr[0] ""
 msgstr[1] ""
 "%(cells)s mailles autour de %(latitude)s, %(longitude)s, d'environ %(width)s "
 "m de large"
-
-#: clips/templates/clips/place_lookup.html:3
-msgid "Choose the street where it was filmed:"
-msgstr "Choisissez la rue où la vidéo a été filmée :"
-
-#: clips/templates/clips/place_lookup.html:4
-msgid ""
-"The coordinates below are one point of the street you chose. Change them if "
-"you know a closer one, or choose the cells on the map."
-msgstr ""
-"Les coordonnées ci-dessous sont un point de la rue choisie. Modifiez-les si "
-"vous en connaissez un plus proche, ou choisissez les mailles sur la carte."
-
-#: clips/templates/clips/place_lookup.html:5
-msgid ""
-"The map shows the street you chose: zoom in and tap the cells where it was "
-"filmed."
-msgstr ""
-"La carte montre la rue choisie : zoomez puis touchez les mailles où la vidéo "
-"a été filmée."
-
-#: clips/templates/clips/place_lookup.html:6
-msgid "Type the name of a street to look it up."
-msgstr "Saisissez le nom d'une rue pour la repérer."
-
-#: clips/templates/clips/place_lookup.html:7
-#, python-format
-msgid "Type at most %(count)s characters."
-msgstr "Saisissez au plus %(count)s caractères."
-
-#: clips/templates/clips/place_lookup.html:8
-msgid ""
-"No street of that name in Île-de-France. Check the spelling, or give the "
-"coordinates."
-msgstr ""
-"Aucune rue de ce nom en Île-de-France. Vérifiez l'orthographe, ou donnez les "
-"coordonnées."
-
-#: clips/templates/clips/place_lookup.html:9
-msgid ""
-"Too many lookups from this connection. Try again later, or give the "
-"coordinates."
-msgstr ""
-"Trop de repérages depuis cette connexion. Réessayez plus tard, ou donnez les "
-"coordonnées."
-
-#: clips/templates/clips/place_lookup.html:10
-msgid ""
-"Looking up a street is unavailable for now. Give the coordinates instead."
-msgstr ""
-"Le repérage des rues est indisponible pour le moment. Donnez plutôt les "
-"coordonnées."
-
-#: clips/templates/clips/place_lookup.html:17
-msgid "Look up a street"
-msgstr "Repérer une rue"
-
-#: clips/templates/clips/place_lookup.html:19
-msgid "Look up"
-msgstr "Repérer"
 
 #: clips/templates/clips/rate_limited.html:9
 #: clips/templates/clips/upload.html:40
@@ -3600,6 +3541,100 @@ msgstr ""
 #, python-format
 msgid "%(name)s now holds the group key."
 msgstr "%(name)s a maintenant la clé commune."
+
+#: maps/templates/maps/place_lookup.html:4
+msgid "Look up an address"
+msgstr "Repérer une adresse"
+
+#: maps/templates/maps/place_lookup.html:5
+msgid "Choose the address:"
+msgstr "Choisissez l'adresse :"
+
+#: maps/templates/maps/place_lookup.html:6
+msgid ""
+"The coordinates below are the address you chose. Set the radius around it."
+msgstr ""
+"Les coordonnées ci-dessous sont celles de l'adresse choisie. Indiquez le "
+"rayon autour."
+
+#: maps/templates/maps/place_lookup.html:7
+msgid "Type an address to look it up."
+msgstr "Saisissez une adresse pour la repérer."
+
+#: maps/templates/maps/place_lookup.html:8
+msgid ""
+"No address of that name in Île-de-France. Check the spelling, or give the "
+"coordinates."
+msgstr ""
+"Aucune adresse de ce nom en Île-de-France. Vérifiez l'orthographe, ou donnez "
+"les coordonnées."
+
+#: maps/templates/maps/place_lookup.html:9
+msgid ""
+"Looking up an address is unavailable for now. Give the coordinates instead."
+msgstr ""
+"Le repérage des adresses est indisponible pour le moment. Donnez plutôt les "
+"coordonnées."
+
+#: maps/templates/maps/place_lookup.html:11
+msgid "Look up a street"
+msgstr "Repérer une rue"
+
+#: maps/templates/maps/place_lookup.html:12
+msgid "Choose the street where it was filmed:"
+msgstr "Choisissez la rue où la vidéo a été filmée :"
+
+#: maps/templates/maps/place_lookup.html:13
+msgid ""
+"The coordinates below are one point of the street you chose. Change them if "
+"you know a closer one, or choose the cells on the map."
+msgstr ""
+"Les coordonnées ci-dessous sont un point de la rue choisie. Modifiez-les si "
+"vous en connaissez un plus proche, ou choisissez les mailles sur la carte."
+
+#: maps/templates/maps/place_lookup.html:14
+msgid ""
+"The map shows the street you chose: zoom in and tap the cells where it was "
+"filmed."
+msgstr ""
+"La carte montre la rue choisie : zoomez puis touchez les mailles où la vidéo "
+"a été filmée."
+
+#: maps/templates/maps/place_lookup.html:15
+msgid "Type the name of a street to look it up."
+msgstr "Saisissez le nom d'une rue pour la repérer."
+
+#: maps/templates/maps/place_lookup.html:16
+msgid ""
+"No street of that name in Île-de-France. Check the spelling, or give the "
+"coordinates."
+msgstr ""
+"Aucune rue de ce nom en Île-de-France. Vérifiez l'orthographe, ou donnez les "
+"coordonnées."
+
+#: maps/templates/maps/place_lookup.html:17
+msgid ""
+"Looking up a street is unavailable for now. Give the coordinates instead."
+msgstr ""
+"Le repérage des rues est indisponible pour le moment. Donnez plutôt les "
+"coordonnées."
+
+#: maps/templates/maps/place_lookup.html:19
+#, python-format
+msgid "Type at most %(count)s characters."
+msgstr "Saisissez au plus %(count)s caractères."
+
+#: maps/templates/maps/place_lookup.html:20
+msgid ""
+"Too many lookups from this connection. Try again later, or give the "
+"coordinates."
+msgstr ""
+"Trop de repérages depuis cette connexion. Réessayez plus tard, ou donnez les "
+"coordonnées."
+
+#: maps/templates/maps/place_lookup.html:29
+msgid "Look up"
+msgstr "Repérer"
 
 #: templates/base.html:7 templates/base.html:13 templates/base.html:14
 #: templates/home.html:5

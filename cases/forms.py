@@ -90,6 +90,13 @@ class CaseForm(forms.Form):
         ),
     )
 
+    def showing_typed_place(self):
+        """On a page answering a place lookup (M9), the coordinates typed or chosen are shown
+        again, for the lawyer to set the radius around them; on any other page they are forgotten."""
+        for name in ('latitude', 'longitude'):
+            self.fields[name].widget = forms.NumberInput(attrs=self.fields[name].widget.attrs)
+        return self
+
     @method_decorator(sensitive_variables('cleaned', 'place'))
     def clean(self):
         cleaned = super().clean()
