@@ -32,7 +32,8 @@ def margin_fields():
 
 
 class ForgottenNumberInput(forms.NumberInput):
-    """A number field whose value is never sent back to the browser: typed coordinates are not kept."""
+    """A number field whose value is not sent back to the browser: typed coordinates are not kept.
+    The one exception is the page answering a place lookup (CaseForm.showing_typed_place)."""
 
     def format_value(self, value):
         return None
@@ -89,6 +90,16 @@ class CaseForm(forms.Form):
             "for a case within them, it is not kept. Never a client's name."
         ),
     )
+
+    def showing_typed_place(self):
+        """On a page answering a place lookup (M9), the coordinates typed or chosen are sent back
+        to the browser, for the lawyer to set the radius around them: the one exception to
+        ForgottenNumberInput. They are still never stored, and the page is never cached
+        (lawyer_required); the browser is asked not to remember them either."""
+        for name in ('latitude', 'longitude'):
+            attrs = {**self.fields[name].widget.attrs, 'autocomplete': 'off'}
+            self.fields[name].widget = forms.NumberInput(attrs=attrs)
+        return self
 
     @method_decorator(sensitive_variables('cleaned', 'place'))
     def clean(self):

@@ -17,7 +17,7 @@ if (fileInput) {
 // Send a form only once. A second click on "confirm" would replace the page showing
 // the upload code, which can never be shown again, with one that cannot show it. A place
 // lookup's buttons save nothing, and the map's script may answer them in the page: they leave
-// the form free to be sent (clips/place_lookup.html), but never go once it is.
+// the form free to be sent (maps/place_lookup.html), but never go once it is.
 for (const form of document.querySelectorAll('form[data-submit-once]')) {
   form.addEventListener('submit', (event) => {
     if (event.submitter?.hasAttribute('data-lookup')) {

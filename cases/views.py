@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
@@ -15,6 +16,7 @@ from alerts.checks import check_activity
 from alerts.models import AlertLimitRaise
 from audit.models import Action, record
 from clips import grid
+from maps import form_lookup
 
 from . import size
 from .forms import CaseForm, SettingsForm, max_cells, too_large_message
@@ -29,14 +31,19 @@ def own_profile(request):
 @lawyer_required
 # Left out of Django's error reports: the typed place is never kept, and the cells are as precise.
 # The reason is deleted after the admin's decision, so it stays out of them too, and the label is
-# stored only encrypted (docs/m5-encryption-design.md §7.4).
-@sensitive_post_parameters('latitude', 'longitude', 'cells', 'reason', 'label')
+# stored only encrypted (docs/m5-encryption-design.md §7.4). A place lookup's query and the match
+# chosen are as private as the typed place (M9).
+@sensitive_post_parameters('latitude', 'longitude', 'cells', 'reason', 'label', 'place', 'choose')
 # And out of the variables a traceback shows: the form and its cleaned data hold them too.
-@sensitive_variables('form', 'fields')
+@sensitive_variables('form', 'fields', 'lookup', 'data')
 def new_case(request):
     profile = own_profile(request)
     if request.method == 'POST':
-        form = CaseForm(request.POST)
+        lookup, data = form_lookup.run(request, addresses=True)
+        form = CaseForm(data)
+        if lookup is not None:
+            form = form_lookup.unchecked(form).showing_typed_place()
+            return form_lookup.respond(lookup, render_new_case(request, form, lookup))
         if form.is_valid():
             fields = form.cleaned_data
             try:
@@ -65,10 +72,17 @@ def new_case(request):
             'starts_at': date_only, 'ends_at': date_only,
             'margin_minutes': profile.default_margin_minutes, 'margin_rings': profile.default_margin_rings,
         })
+    return render_new_case(request, form)
+
+
+@sensitive_variables('form', 'lookup')
+def render_new_case(request, form, lookup=None):
     return render(request, 'cases/new_case.html', {
         'form': form, 'grid_resolution': grid.finest_resolution(),
         'cap_metres': settings.CASE_AREA_CAP_METRES, 'ceiling_metres': settings.CASE_AREA_CEILING_METRES,
         'max_cells': max_cells(),
+        'place_lookup': lookup,
+        **form_lookup.page_context(reverse('lawyer:map_lookup'), addresses=True),
     }, status=400 if form.errors else 200)
 
 

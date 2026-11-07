@@ -1,20 +1,30 @@
 {% load i18n l10n %}
-{# The place lookup (SPEC.md §12 M9, ADR 0011): a street found by name. "Look up" is the form's first button, so Enter in any field runs a lookup, never the form's main action. Without JavaScript, both kinds of button send the form back to this page, which saves nothing; with it, clips/location_map.js asks the map's lookup route instead and moves the map. #}
+{# The place lookup (SPEC.md §12 M9, ADR 0011): a street found by name, or for a lawyer's case an address. "Look up" is the form's first button, so Enter in any field runs a lookup, never the form's main action. Without JavaScript, both kinds of button send the form back to this page, which saves nothing (maps.form_lookup); with it, the map's script asks the map's lookup route instead and moves the map. #}
+{% if place_lookup_addresses %}
+{% translate "Look up an address" as label_text %}
+{% translate "Choose the address:" as choose_text %}
+{% translate "The coordinates below are the address you chose. Set the radius around it." as chosen_text %}
+{% translate "Type an address to look it up." as empty_text %}
+{% translate "No address of that name in Île-de-France. Check the spelling, or give the coordinates." as none_found_text %}
+{% translate "Looking up an address is unavailable for now. Give the coordinates instead." as unavailable_text %}
+{% else %}
+{% translate "Look up a street" as label_text %}
 {% translate "Choose the street where it was filmed:" as choose_text %}
 {% translate "The coordinates below are one point of the street you chose. Change them if you know a closer one, or choose the cells on the map." as chosen_text %}
 {% translate "The map shows the street you chose: zoom in and tap the cells where it was filmed." as shown_text %}
 {% translate "Type the name of a street to look it up." as empty_text %}
-{% blocktranslate with count=place_max_length asvar too_long_text %}Type at most {{ count }} characters.{% endblocktranslate %}
 {% translate "No street of that name in Île-de-France. Check the spelling, or give the coordinates." as none_found_text %}
-{% translate "Too many lookups from this connection. Try again later, or give the coordinates." as too_many_text %}
 {% translate "Looking up a street is unavailable for now. Give the coordinates instead." as unavailable_text %}
+{% endif %}
+{% blocktranslate with count=place_max_length asvar too_long_text %}Type at most {{ count }} characters.{% endblocktranslate %}
+{% translate "Too many lookups from this connection. Try again later, or give the coordinates." as too_many_text %}
 <div id="place-lookup"{% if places_available %} data-url="{{ place_lookup_url }}"
   data-choose="{{ choose_text|force_escape }}" data-chosen="{{ chosen_text|force_escape }}" data-shown="{{ shown_text|force_escape }}"
   data-empty="{{ empty_text|force_escape }}" data-too-long="{{ too_long_text|force_escape }}" data-none-found="{{ none_found_text|force_escape }}"
   data-too-many="{{ too_many_text|force_escape }}" data-unavailable="{{ unavailable_text|force_escape }}"{% endif %}>
 {% if places_available %}
   <p>
-    <label for="place-lookup-query">{% translate "Look up a street" %}</label>
+    <label for="place-lookup-query">{{ label_text }}</label>
     <input type="search" id="place-lookup-query" name="place" maxlength="{{ place_max_length }}" autocomplete="off" value="{{ place_lookup.query }}">
     <button type="submit" name="lookup" value="yes" formnovalidate data-lookup>{% translate "Look up" %}</button>
   </p>

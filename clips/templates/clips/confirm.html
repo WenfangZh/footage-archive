@@ -24,7 +24,7 @@
 
     <fieldset>
       <legend>{% translate "Place" %}</legend>
-      {% include "clips/place_lookup.html" %}
+      {% include "maps/place_lookup.html" %}
       {% if read.gps %}<p>{% translate "Pre-filled from the GPS position in the video." %}</p>{% endif %}
       {{ form.cells }}
       {{ form.cells.errors }}

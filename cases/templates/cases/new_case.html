@@ -29,7 +29,14 @@
     {% translate "Zoom in" as zoom_in_label %}
     {% translate "Zoom out" as zoom_out_label %}
     {% for field in form.visible_fields %}
+      {% if field.name == 'latitude' %}
+        {% include "maps/place_lookup.html" %}
+        {# Folded away unless given (M9); the radius stays in sight, for a place typed or looked up. #}
+        <details id="typed-place"{% if form.latitude.value or form.longitude.value or form.latitude.errors or form.longitude.errors %} open{% endif %}>
+          <summary>{% translate "Type coordinates instead" %}</summary>
+      {% endif %}
       <div>{{ field.as_field_group }}</div>
+      {% if field.name == 'longitude' %}</details>{% endif %}
       {% if field.name == 'radius_metres' %}
         <div id="area-map" class="area-map" hidden tabindex="-1"
           data-style-url="{% url 'lawyer:map_style' %}" data-style-dark-url="{% url 'lawyer:map_style_dark' %}" data-resolution="{{ grid_resolution|unlocalize }}"
