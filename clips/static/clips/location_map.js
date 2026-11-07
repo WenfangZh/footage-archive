@@ -258,40 +258,29 @@ if (box && opener) {
     });
   }
 
-  // The place lookup (SPEC.md §12 M9, ADR 0011): "Look up", or Enter in any field, asks the map's
-  // lookup route for streets, under the map pass, with what is typed in the request's body; a
-  // street chosen moves the map to it. Should the map be unavailable, its point fills the typed
-  // coordinates, as without JavaScript; should the route refuse the pass or be out of reach, the
-  // form asks its own page instead (clips.views.place_lookup).
-  const lookup = document.getElementById('place-lookup');
-  const query = form.elements.place;
-  const result = document.getElementById('place-lookup-result');
-  let askPage = false;
-
-  const tell = (text) => {
-    const line = document.createElement('p');
-    line.textContent = text;
-    result.replaceChildren(line);
-  };
+  // The place lookup (SPEC.md §12 M9, ADR 0011; maps/place_lookup.js): a street chosen moves
+  // the map to it. Should the map be unavailable, its point fills the typed coordinates, as
+  // without JavaScript.
+  let tell = () => {};
 
   function fillCoordinates(street) {
     latitude.value = street.lat;
     longitude.value = street.lon;
     precision.value = 'street';
     typed.open = true;
-    tell(lookup.dataset.chosen);
+    tell('chosen');
     latitude.focus(); // The button pressed is gone: where the keyboard goes on from.
   }
 
   function showStreet(street) {
     const [south, west, north, east] = street.bounds;
     map.fitBounds([[west, south], [east, north]], { padding: 40, duration: 0, maxZoom: 18 });
-    tell(lookup.dataset.shown);
+    tell('shown');
     box.focus(); // As above; this also brings the map into view.
   }
 
   function choose(street) {
-    // Choosing a street gives a place, as without JavaScript (clips.views.place_lookup).
+    // Choosing a street gives a place, as without JavaScript (clips.views.street_lookup).
     if (form.elements.remove_place) form.elements.remove_place.checked = false;
     if (expired || state === 'failed') {
       fillCoordinates(street);
@@ -303,54 +292,12 @@ if (box && opener) {
     }
   }
 
-  function list(matches) {
-    const items = matches.map((match) => {
-      const button = Object.assign(document.createElement('button'), { type: 'button', textContent: match.label });
-      button.addEventListener('click', () => choose(match));
-      const item = document.createElement('li');
-      item.append(button);
-      return item;
-    });
-    const choices = Object.assign(document.createElement('ul'), { className: 'place-matches' });
-    choices.append(...items);
-    tell(lookup.dataset.choose);
-    result.append(choices);
-  }
-
-  if (lookup?.dataset.url && query) {
-    form.addEventListener('submit', async (event) => {
-      if (event.submitter?.name !== 'lookup' || askPage) return;
-      event.preventDefault();
-      const typedQuery = query.value.trim();
-      if (!typedQuery) {
-        tell(lookup.dataset.empty);
-        return;
-      }
-      // One lookup at a time: a later answer must not replace a newer one.
-      const button = event.submitter;
-      button.disabled = true;
-      let answer = null;
-      try {
-        const response = await fetch(lookup.dataset.url, {
-          method: 'POST',
-          body: new URLSearchParams({ place: typedQuery, csrfmiddlewaretoken: form.elements.csrfmiddlewaretoken.value }),
-        });
-        // A 404 is a pass refused (maps.views.pass_required): the page has its own lookup.
-        if (response.status !== 404) answer = await response.json();
-      } catch (error) {
-        console.error(error);
-      }
-      button.disabled = false;
-      if (answer === null) {
-        askPage = true;
-        form.requestSubmit(button);
-      } else if (answer.matches?.length) {
-        list(answer.matches);
-      } else {
-        const problems = { too_long: 'tooLong', too_many: 'tooMany', unavailable: 'unavailable' };
-        tell(lookup.dataset[problems[answer.error] ?? 'noneFound']);
-      }
-    });
+  const lookupModule = document.getElementById('place-lookup')?.dataset.module;
+  if (lookupModule) {
+    // Should it fail to load, "Look up" asks the page instead.
+    import(lookupModule).then(({ setUpPlaceLookup }) => {
+      tell = setUpPlaceLookup(form, choose) ?? tell;
+    }).catch(console.error);
   }
 
   opener.hidden = false;

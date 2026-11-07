@@ -3558,10 +3558,28 @@ msgstr ""
 "rayon autour de celle-ci."
 
 #: maps/templates/maps/place_lookup.html:7
+msgid ""
+"The map shows the address you chose, and the coordinates below are filled "
+"in: set the radius around it."
+msgstr ""
+"La carte montre l'adresse choisie, et les coordonnées ci-dessous sont "
+"remplies : indiquez le rayon autour de celle-ci."
+
+#: maps/templates/maps/place_lookup.html:8
+msgid ""
+"The map shows the address you chose. Its coordinates were not filled in: a "
+"case takes cells picked on the map or a place and a radius, and cells are "
+"picked."
+msgstr ""
+"La carte montre l'adresse choisie. Ses coordonnées n'ont pas été remplies : "
+"un dossier de recherche prend soit des mailles choisies sur la carte, soit "
+"un lieu et un rayon, et des mailles sont choisies."
+
+#: maps/templates/maps/place_lookup.html:9
 msgid "Type an address to look it up."
 msgstr "Saisissez une adresse pour la repérer."
 
-#: maps/templates/maps/place_lookup.html:8
+#: maps/templates/maps/place_lookup.html:10
 msgid ""
 "No address of that name in Île-de-France. Check the spelling, or give the "
 "coordinates."
@@ -3569,22 +3587,22 @@ msgstr ""
 "Aucune adresse de ce nom en Île-de-France. Vérifiez l'orthographe, ou donnez "
 "les coordonnées."
 
-#: maps/templates/maps/place_lookup.html:9
+#: maps/templates/maps/place_lookup.html:11
 msgid ""
 "Looking up an address is unavailable for now. Give the coordinates instead."
 msgstr ""
 "Le repérage des adresses est indisponible pour le moment. Donnez plutôt les "
 "coordonnées."
 
-#: maps/templates/maps/place_lookup.html:11
+#: maps/templates/maps/place_lookup.html:13
 msgid "Look up a street"
 msgstr "Repérer une rue"
 
-#: maps/templates/maps/place_lookup.html:12
+#: maps/templates/maps/place_lookup.html:14
 msgid "Choose the street where it was filmed:"
 msgstr "Choisissez la rue où la vidéo a été filmée :"
 
-#: maps/templates/maps/place_lookup.html:13
+#: maps/templates/maps/place_lookup.html:15
 msgid ""
 "The coordinates below are one point of the street you chose. Change them if "
 "you know a closer one, or choose the cells on the map."
@@ -3592,7 +3610,7 @@ msgstr ""
 "Les coordonnées ci-dessous sont un point de la rue choisie. Modifiez-les si "
 "vous en connaissez un plus proche, ou choisissez les mailles sur la carte."
 
-#: maps/templates/maps/place_lookup.html:14
+#: maps/templates/maps/place_lookup.html:16
 msgid ""
 "The map shows the street you chose: zoom in and tap the cells where it was "
 "filmed."
@@ -3600,11 +3618,11 @@ msgstr ""
 "La carte montre la rue choisie : zoomez puis touchez les mailles où la vidéo "
 "a été filmée."
 
-#: maps/templates/maps/place_lookup.html:15
+#: maps/templates/maps/place_lookup.html:17
 msgid "Type the name of a street to look it up."
 msgstr "Saisissez le nom d'une rue pour la repérer."
 
-#: maps/templates/maps/place_lookup.html:16
+#: maps/templates/maps/place_lookup.html:18
 msgid ""
 "No street of that name in Île-de-France. Check the spelling, or give the "
 "coordinates."
@@ -3612,19 +3630,19 @@ msgstr ""
 "Aucune rue de ce nom en Île-de-France. Vérifiez l'orthographe, ou donnez les "
 "coordonnées."
 
-#: maps/templates/maps/place_lookup.html:17
+#: maps/templates/maps/place_lookup.html:19
 msgid ""
 "Looking up a street is unavailable for now. Give the coordinates instead."
 msgstr ""
 "Le repérage des rues est indisponible pour le moment. Donnez plutôt les "
 "coordonnées."
 
-#: maps/templates/maps/place_lookup.html:19
+#: maps/templates/maps/place_lookup.html:21
 #, python-format
 msgid "Type at most %(count)s characters."
 msgstr "Saisissez au plus %(count)s caractères."
 
-#: maps/templates/maps/place_lookup.html:20
+#: maps/templates/maps/place_lookup.html:22
 msgid ""
 "Too many lookups from this connection. Try again later, or give the "
 "coordinates."
@@ -3632,7 +3650,7 @@ msgstr ""
 "Trop de repérages depuis cette connexion. Réessayez plus tard, ou donnez les "
 "coordonnées."
 
-#: maps/templates/maps/place_lookup.html:29
+#: maps/templates/maps/place_lookup.html:31
 msgid "Look up"
 msgstr "Repérer"
 
