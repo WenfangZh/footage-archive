@@ -294,9 +294,10 @@ if (box && opener) {
 
   const lookupModule = document.getElementById('place-lookup')?.dataset.module;
   if (lookupModule) {
+    // Should it fail to load, "Look up" asks the page instead.
     import(lookupModule).then(({ setUpPlaceLookup }) => {
       tell = setUpPlaceLookup(form, choose) ?? tell;
-    });
+    }).catch(console.error);
   }
 
   opener.hidden = false;

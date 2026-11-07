@@ -191,7 +191,12 @@ if (field) {
   let tell = () => {};
   tell = setUpPlaceLookup(form, (address) => {
     if (mapShown()) map.jumpTo({ center: [address.lon, address.lat], zoom: ADDRESS_ZOOM });
-    if (picked.size) {
+    if (!mapShown()) {
+      // Cells sent back by a refused form cannot be seen or changed without the map: the
+      // address chosen replaces them.
+      picked.clear();
+      field.value = '';
+    } else if (picked.size) {
       tell('painted');
       box.focus(); // The button pressed is gone: where the keyboard goes on from.
       return;
