@@ -89,4 +89,5 @@ Fill these in as they're created:
 - Background worker (ingest, and scheduled deletion of unconfirmed originals): `python manage.py run_huey`
 - Delete unconfirmed originals by hand: `python manage.py delete_unconfirmed_originals`
 - Map data (tiles and fonts into `var/map/`, needs the `pmtiles` tool on `PATH`): `python manage.py fetch_map_data`
+- Place lookup data (the Base Adresse Nationale for Île-de-France into `var/places/`, about 280 MB): `python manage.py fetch_address_data`
 - Open a pull request: `gh pr create --base master` (CI: `.github/workflows/tests.yml`)
