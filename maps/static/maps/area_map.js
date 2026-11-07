@@ -6,11 +6,14 @@
 
 import * as maplibregl from './vendor/maplibre-gl.mjs';
 import { showGrid, showPicked, spanMetres, styleUrl } from './cells.js';
+import { setUpPlaceLookup } from './place_lookup.js';
 
 // Below this zoom a cell is a few pixels wide: too small to pick on purpose.
 const PICKING_ZOOM = 14;
 // A drag that jumps farther than this many cells between two mouse events is not filled in.
 const LONGEST_FILL = 200;
+// Where an address chosen in the place lookup is shown: its street and the cells around it.
+const ADDRESS_ZOOM = 17;
 
 const box = document.getElementById('area-map');
 const field = document.querySelector('form input[name=cells]');
@@ -177,4 +180,26 @@ if (box && field) {
     readout.hidden = true;
     clear.hidden = true;
   }
+}
+
+// The place lookup (SPEC.md §12 M9, ADR 0011; place_lookup.js): an address chosen moves the map
+// to it and, unless cells are already picked (a case takes one or the other), fills the typed
+// place, whose radius the lawyer sets. Without the map, it fills the place all the same.
+if (field) {
+  const { form } = field;
+  const mapShown = () => map !== undefined && !box.hidden;
+  let tell = () => {};
+  tell = setUpPlaceLookup(form, (address) => {
+    if (mapShown()) map.jumpTo({ center: [address.lon, address.lat], zoom: ADDRESS_ZOOM });
+    if (picked.size) {
+      tell('painted');
+      box.focus(); // The button pressed is gone: where the keyboard goes on from.
+      return;
+    }
+    form.elements.latitude.value = address.lat;
+    form.elements.longitude.value = address.lon;
+    document.getElementById('typed-place').open = true;
+    tell(mapShown() ? 'shown' : 'chosen');
+    form.elements.radius_metres.focus();
+  }) ?? tell;
 }
