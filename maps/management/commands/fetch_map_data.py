@@ -13,7 +13,8 @@ import json
 import os
 import re
 import shutil
-import subprocess
+# Runs only pmtiles, with an argument list and no shell (Bandit B404).
+import subprocess  # nosec B404
 import tempfile
 import urllib.request
 import zipfile
@@ -65,7 +66,8 @@ class Command(BaseCommand):
 
     def fetch_fonts(self):
         self.stdout.write(f'Fonts: downloading {FONTS_URL}')
-        with urllib.request.urlopen(urllib.request.Request(FONTS_URL, headers=HEADERS), timeout=60) as response:
+        # A constant https:// URL (Bandit B310).
+        with urllib.request.urlopen(urllib.request.Request(FONTS_URL, headers=HEADERS), timeout=60) as response:  # nosec B310
             archive = response.read()
         if hashlib.sha256(archive).hexdigest() != FONTS_SHA256:
             raise CommandError('The fonts archive is not the one expected: nothing was kept.')
@@ -101,7 +103,8 @@ class Command(BaseCommand):
         partial.unlink(missing_ok=True)
         self.stdout.write(f'Tiles: extracting Île-de-France up to zoom {MAX_ZOOM} from {source}')
         try:
-            subprocess.run([tool, 'extract', source, str(partial), f'--bbox={BOUNDS}', f'--maxzoom={MAX_ZOOM}'], check=True)
+            # An argument list with no shell; the build id was checked against BUILD (Bandit B603).
+            subprocess.run([tool, 'extract', source, str(partial), f'--bbox={BOUNDS}', f'--maxzoom={MAX_ZOOM}'], check=True)  # nosec B603
         except subprocess.CalledProcessError:
             raise CommandError(f'pmtiles could not extract the tiles from {source}: the old tiles, if any, are kept.') from None
         os.replace(partial, data.tiles_file())
@@ -109,7 +112,8 @@ class Command(BaseCommand):
 
 
 def latest_build():
-    with urllib.request.urlopen(urllib.request.Request(BUILDS_URL, headers=HEADERS), timeout=60) as response:
+    # A constant https:// URL (Bandit B310).
+    with urllib.request.urlopen(urllib.request.Request(BUILDS_URL, headers=HEADERS), timeout=60) as response:  # nosec B310
         builds = json.load(response)
     keys = [build['key'].removesuffix('.pmtiles') for build in builds]
     return max(key for key in keys if BUILD.fullmatch(key))

@@ -53,3 +53,5 @@ Not copied into the repository: `pip` installs them from the pinned requirements
 ## Programs the archive runs but does not ship
 
 ffmpeg and ffprobe (LGPL or GPL, depending on the build; Ubuntu's is GPL) check and copy uploaded videos, as separate programs. GNU gettext (GPL) compiles the translations. The `pmtiles` tool (BSD-3-Clause) cuts the map's tiles, and Node.js (MIT) runs only on a developer's machine, to regenerate the map's style or the test vectors. None of them is part of the archive; a deployment that packages any of them, in a container image for instance, takes on its licence's terms for that package.
+
+`scripts/security_scan.sh` (SPEC.md §12, M10) installs four security scanners into `var/security-tools/`, outside the archive's virtualenv and requirements files, and runs them on the repository: pip-audit 2.10.1 (Apache-2.0), Bandit 1.9.4 (Apache-2.0), Semgrep Community Edition 1.181.1 (LGPL-2.1-or-later), with its Python and Django rules fetched at each run under the Semgrep Rules License, which allows only internal use (so they are never copied here), and gitleaks 8.30.1 (MIT). They are development tools, not part of the archive.

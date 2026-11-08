@@ -10,7 +10,8 @@ import os
 import shutil
 import tempfile
 
-os.environ['DJANGO_SECRET_KEY'] = 'test-only-not-secret'
+# A key for tests only (Bandit B105).
+os.environ['DJANGO_SECRET_KEY'] = 'test-only-not-secret'  # nosec B105
 os.environ['UPLOAD_CODE_KEY'] = 'test-only-not-secret-test-only-not-secret'
 # Kept in memory (pytest-django does the same for each test).
 os.environ['EMAIL_BACKEND'] = 'django.core.mail.backends.locmem.EmailBackend'

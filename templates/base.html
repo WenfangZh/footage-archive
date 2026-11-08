@@ -18,7 +18,7 @@
     </nav>
     <div class="account">
       {% block language_switch %}
-      <form action="{% url 'set_language' %}" method="post">
+      <form action="{% url 'set_language' %}" method="post">{# nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -- csrf_token is on the next line; the rule misreads the template tags inside this form #}
         {% csrf_token %}
         <input type="hidden" name="next" value="{% block language_next %}{{ request.get_full_path }}{% endblock %}">
         {% get_available_languages as LANGUAGES %}

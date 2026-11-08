@@ -1,0 +1,66 @@
+# Runs the security scanners (scripts/security_scan.sh, SPEC.md §12 M10) for
+# every pull request and push to master, and weekly, so that a vulnerability
+# published in a pinned package shows up even when nothing changes.
+# The owner makes it a required check on master, like `tests`.
+name: security
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  schedule:
+    # Mondays 06:17 UTC (off the hour, when GitHub drops fewer runs). GitHub
+    # notifies whoever last changed this line, by their Actions notification
+    # settings; failed runs also show in the Actions tab. GitHub disables
+    # scheduled runs after 60 days without activity in the repository; they
+    # are turned back on from the Actions tab.
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+# The workflow only reads the repository.
+permissions:
+  contents: read
+
+jobs:
+  security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      # Third-party actions are pinned to a commit, not a tag, so that a moved
+      # tag cannot change what runs here.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # gitleaks searches every commit, so it needs the whole history.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      # A pull request runs its own copy of the scan, so one that weakens it
+      # would still pass. Such changes get a warning on the check, for the
+      # reviewer and the owner to look at; they are not blocked (SPEC.md M10).
+      # A pull request can also remove this step: it guards against mistakes,
+      # not against a hostile change.
+      - name: Flag changes to what the scan checks
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # File names are read NUL-separated and escaped, so no name can add
+          # properties or commands to a warning.
+          escape() { local s=$1; s=${s//'%'/%25}; s=${s//$'\r'/%0D}; s=${s//$'\n'/%0A}; s=${s//:/%3A}; s=${s//,/%2C}; printf '%s' "$s"; }
+          warn() { while IFS= read -r -d '' file; do echo "::warning file=$(escape "$file")::$1"; done < "$2"; }
+          scan_files=(scripts/security_scan.sh .github/workflows/security.yml .gitleaks.toml .gitleaksignore .semgrepignore .bandit pyproject.toml setup.cfg tox.ini)
+          # The pull request's own changes only, even if its base has moved since.
+          git diff -z --name-only "$BASE"..."$HEAD_SHA" -- "${scan_files[@]}" > "$RUNNER_TEMP/scan-files"
+          warn 'This pull request changes the security scan or its configuration.' "$RUNNER_TEMP/scan-files"
+          git diff -z --name-only -G 'nosec|nosemgrep|gitleaks:allow' "$BASE"..."$HEAD_SHA" -- . \
+            ':(exclude)scripts/security_scan.sh' ':(exclude).github/workflows/security.yml' > "$RUNNER_TEMP/silences"
+          warn 'This pull request adds, removes or edits a comment that silences the security scan.' "$RUNNER_TEMP/silences"
+
+      - name: Security scan
+        run: scripts/security_scan.sh
