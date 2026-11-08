@@ -22,7 +22,7 @@ ABBREVIATIONS = {
     'av': 'avenue', 'ave': 'avenue', 'bd': 'boulevard', 'bld': 'boulevard', 'boul': 'boulevard',
     'r': 'rue', 'fg': 'faubourg', 'fbg': 'faubourg', 'pl': 'place', 'imp': 'impasse',
     'all': 'allee', 'ch': 'chemin', 'chem': 'chemin', 'sq': 'square', 'qu': 'quai', 'q': 'quai',
-    'rte': 'route', 'crs': 'cours', 'pass': 'passage',  # nosec B105: an abbreviation, not a password 'st': 'saint', 'ste': 'sainte',
+    'rte': 'route', 'crs': 'cours', 'pass': 'passage', 'st': 'saint', 'ste': 'sainte',  # nosec B105: 'passage' is not a password
 }
 # What may follow a house number: a street search leaves these out, with the number.
 NUMBER_SUFFIXES = {'bis', 'ter', 'quater'}
