@@ -4,9 +4,13 @@
 useDefault = true
 
 [[allowlists]]
-description = "Test vectors: keys made from fixed seeds (01 02 03 ...) by tests/vectors/make_*.  They protect nothing and are public by design."
-paths = ['''^tests/vectors/''']
+description = "Test vectors: keys made from fixed seeds (01 02 03 ...) by tests/vectors/make_*. They protect nothing and are public by design."
+paths = ['''^tests/vectors/[^/]+\.json$''']
 
 [[allowlists]]
 description = "Vendored third-party JavaScript (SPEC.md M10 leaves it out of every scan): libsodium's function names look like keys to the generic rule."
-paths = ['''^(clips|core|maps)/static/(clips|core|maps)/vendor/''']
+paths = [
+  '''^clips/static/clips/vendor/''',
+  '''^core/static/core/vendor/''',
+  '''^maps/static/maps/vendor/''',
+]
