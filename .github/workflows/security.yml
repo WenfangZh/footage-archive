@@ -38,5 +38,29 @@ jobs:
         with:
           python-version: '3.12'
 
+      # A pull request runs its own copy of the scan, so one that weakens it
+      # would still pass. Such changes get a warning on the check, for the
+      # reviewer and the owner to look at; they are not blocked (SPEC.md M10).
+      # A pull request can also remove this step: it guards against mistakes,
+      # not against a hostile change.
+      - name: Flag changes to what the scan checks
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # File names are read NUL-separated and escaped, so no name can add
+          # properties or commands to a warning.
+          escape() { local s=$1; s=${s//'%'/%25}; s=${s//$'\r'/%0D}; s=${s//$'\n'/%0A}; s=${s//:/%3A}; s=${s//,/%2C}; printf '%s' "$s"; }
+          warn() { while IFS= read -r -d '' file; do echo "::warning file=$(escape "$file")::$1"; done < "$2"; }
+          scan_files=(scripts/security_scan.sh .github/workflows/security.yml .gitleaks.toml .gitleaksignore .semgrepignore .bandit pyproject.toml setup.cfg tox.ini)
+          # The pull request's own changes only, even if its base has moved since.
+          git diff -z --name-only "$BASE"..."$HEAD_SHA" -- "${scan_files[@]}" > "$RUNNER_TEMP/scan-files"
+          warn 'This pull request changes the security scan or its configuration.' "$RUNNER_TEMP/scan-files"
+          git diff -z --name-only -G 'nosec|nosemgrep|gitleaks:allow' "$BASE"..."$HEAD_SHA" -- . \
+            ':(exclude)scripts/security_scan.sh' ':(exclude).github/workflows/security.yml' > "$RUNNER_TEMP/silences"
+          warn 'This pull request adds, removes or edits a comment that silences the security scan.' "$RUNNER_TEMP/silences"
+
       - name: Security scan
         run: scripts/security_scan.sh
