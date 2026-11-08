@@ -2,8 +2,10 @@
 # Runs the security scanners of SPEC.md §12 (M10): pip-audit, Bandit, Semgrep
 # and gitleaks, each at a pinned version. The tools are installed into
 # var/security-tools/ (gitignored), outside the archive's virtualenv, so that
-# none of them enters the requirements files. Every tool runs even when an
-# earlier one fails; the script fails if any of them found something.
+# none of them enters the requirements files. Only the tools themselves are
+# pinned, not the packages they pull in. Once installed, every tool runs even
+# when an earlier one fails, and the script fails if any of them found
+# something; a failed install (no network, a wrong checksum) stops it at once.
 #
 # Usage: scripts/security_scan.sh   (from anywhere; needs python3 and network)
 set -euo pipefail
@@ -27,7 +29,8 @@ PIP_AUDIT_IGNORE=(
 #   */vendor: third-party JavaScript copied in (listed with hashes in each
 #   folder's README, THIRD_PARTY_NOTICES.md); minified, so a finding there
 #   can't be silenced where it is raised.
-# Left out of Bandit only:
+# Left out of Bandit, and of Semgrep by its default ignore list (which also
+# skips *.min.js):
 #   tests: asserts and subprocess calls to ffmpeg are how tests work, and no
 #   test code runs in the archive.
 VENDOR_DIRS=(clips/static/clips/vendor core/static/core/vendor maps/static/maps/vendor)
@@ -54,8 +57,9 @@ install_gitleaks() {
         return
     fi
     local tmp archive=gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz
+    rm -rf "$TOOLS"/.gitleaks.*  # left by a run that crashed halfway
     tmp=$(mktemp -d "$TOOLS/.gitleaks.XXXXXX")
-    curl -sSfL -o "$tmp/$archive" \
+    curl -sSfL --proto '=https' --retry 3 -o "$tmp/$archive" \
         "https://github.com/gitleaks/gitleaks/releases/download/v$GITLEAKS_VERSION/$archive"
     echo "$GITLEAKS_SHA256  $tmp/$archive" | sha256sum --check --quiet
     tar -xzf "$tmp/$archive" -C "$tmp" gitleaks
