@@ -22,7 +22,7 @@ ABBREVIATIONS = {
     'av': 'avenue', 'ave': 'avenue', 'bd': 'boulevard', 'bld': 'boulevard', 'boul': 'boulevard',
     'r': 'rue', 'fg': 'faubourg', 'fbg': 'faubourg', 'pl': 'place', 'imp': 'impasse',
     'all': 'allee', 'ch': 'chemin', 'chem': 'chemin', 'sq': 'square', 'qu': 'quai', 'q': 'quai',
-    'rte': 'route', 'crs': 'cours', 'pass': 'passage', 'st': 'saint', 'ste': 'sainte',
+    'rte': 'route', 'crs': 'cours', 'pass': 'passage',  # nosec B105: an abbreviation, not a password 'st': 'saint', 'ste': 'sainte',
 }
 # What may follow a house number: a street search leaves these out, with the number.
 NUMBER_SUFFIXES = {'bis', 'ter', 'quater'}
@@ -93,7 +93,7 @@ def lookup(query, addresses=False):
             row
             for in_paris in (1, 0)
             for row in index.execute(
-                f'SELECT {columns} FROM {table}_text t JOIN {table} {alias} ON {alias}.id = t.rowid '
+                f'SELECT {columns} FROM {table}_text t JOIN {table} {alias} ON {alias}.id = t.rowid '  # nosec B608: constant columns and table; the query is a parameter
                 f'WHERE {table}_text MATCH ? AND {alias}.in_paris = ? ORDER BY bm25({table}_text) LIMIT ?',
                 (match, in_paris, CANDIDATES),
             )

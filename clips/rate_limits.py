@@ -47,7 +47,7 @@ def cache_key(request, action, account=None):
     else:
         subject = address if account is None else f'{account}\n{address}'
     digest = salted_hmac(f'clips.rate_limits.{action}', subject, algorithm='sha256').hexdigest()
-    return f'rate-limit:{action}:{digest}'
+    return f'rate-limit:{action}:{digest}'  # nosemgrep: python.flask.security.audit.directly-returned-format-string.directly-returned-format-string -- a cache key, not a response (no Flask here)
 
 
 def is_limited(request, action, account=None):
