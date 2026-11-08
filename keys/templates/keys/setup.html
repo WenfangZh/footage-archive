@@ -21,7 +21,7 @@
   {% endif %}
   <noscript><p>{% translate "Setting up a key needs JavaScript." %}</p></noscript>
 
-  <form id="key-setup" method="post" action="{% url 'accounts:key_setup' %}" data-opslimit="{{ opslimit }}" data-memlimit="{{ memlimit }}" hidden>
+  <form id="key-setup" method="post" action="{% url 'accounts:key_setup' %}" data-opslimit="{{ opslimit }}" data-memlimit="{{ memlimit }}" hidden>{# nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -- csrf_token is on the next line; the rule misreads the template tags inside this form #}
     {% csrf_token %}
     {% for field in form %}{{ field.as_hidden }}{% endfor %}
 

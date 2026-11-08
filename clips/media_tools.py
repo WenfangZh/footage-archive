@@ -16,7 +16,7 @@ about its filmer.
 """
 
 import os
-import subprocess
+import subprocess  # nosec B404: runs only ffprobe, ffmpeg or pmtiles, with argument lists and no shell
 
 # Demuxer names as ffmpeg knows them: MP4 and QuickTime (iPhone, most Android
 # phones), and Matroska and WebM (some Android phones).
@@ -44,7 +44,7 @@ def file_url(path):
 def run(command, timeout):
     """Run ffprobe or ffmpeg; returns its standard output, or raises ToolFailed."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603: the command is a list naming ffprobe or ffmpeg, no shell
             command, capture_output=True, timeout=timeout,
             env={'PATH': os.environ.get('PATH', '/usr/bin:/bin'), 'LC_ALL': 'C'},
         )

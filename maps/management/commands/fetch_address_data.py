@@ -86,7 +86,7 @@ def download(departement, folder):
     url = FILE_URL.format(departement)
     target = os.path.join(folder, f'{departement}.csv.gz')
     try:
-        with urllib.request.urlopen(urllib.request.Request(url, headers=HEADERS), timeout=120) as response:
+        with urllib.request.urlopen(urllib.request.Request(url, headers=HEADERS), timeout=120) as response:  # nosec B310: an https:// URL from a constant, and redirects must stay on https
             # A redirect must not leave HTTPS.
             if not response.geturl().startswith('https://'):
                 raise CommandError(f'{url} redirected away from HTTPS: the old index, if any, is kept.')
